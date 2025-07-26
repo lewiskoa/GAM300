@@ -167,6 +167,7 @@
     <ClInclude Include="includes\Application\Context.h" />
     <ClInclude Include="includes\Application\Interface.h" />
     <ClInclude Include="includes\BoomEngine.h" />
+    <ClInclude Include="includes\common\Events.h" />
     <ClInclude Include="includes\common\framework.h" />
     <ClInclude Include="includes\common\Core.h" />
   </ItemGroup>
