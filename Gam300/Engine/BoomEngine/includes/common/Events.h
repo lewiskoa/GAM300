@@ -1,8 +1,13 @@
 #pragma once
 #include "Core.h"
 
+#include <cstdint>
+#include <utility>      // std::move
 namespace Boom
 {    
+
+
+
     template <typename Event> 
     struct EventListener
     {
