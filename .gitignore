@@ -110,3 +110,4 @@ Gam300/conanbuild/opengl_system-Target-release.cmake
 Gam300/conanbuild/opengl_systemTargets.cmake
 *.props
 *.cmake
+Gam300/Gam300.slnLaunch.user

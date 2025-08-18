@@ -181,7 +181,31 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
+
+  <!-- Resolve conanbuild folder: prefer SolutionDir, fallback to ProjectDir -->
+  <PropertyGroup Label="ConanImportSettings">
+    <_ConanRoot Condition="'$(SolutionDir)' != ''">$(SolutionDir)conanbuild\</_ConanRoot>
+    <_ConanRoot Condition="'$(_ConanRoot)' == ''">$(ProjectDir)conanbuild\</_ConanRoot>
+
+    <!-- Map VS config/platform to Conan's lowercase filenames -->
+    <_Cfg  Condition="'$(Configuration)'=='Debug'">debug</_Cfg>
+    <_Cfg  Condition="'$(Configuration)'=='Release'">release</_Cfg>
+
+    <!-- Conan uses x64 / x86 (not Win32) -->
+    <_Plat Condition="'$(Platform)'=='x64'">x64</_Plat>
+    <_Plat Condition="'$(Platform)'=='Win32'">x86</_Plat>
+  </PropertyGroup>
+
+  <!-- Base (all configs) -->
+  <Import Project="$(_ConanRoot)conandeps.props"
+          Condition="Exists('$(_ConanRoot)conandeps.props')" />
+
+  <!-- Per-config (preferred when present) -->
+  <Import Project="$(_ConanRoot)conandeps_$(_Cfg)_$(_Plat).props"
+          Condition="Exists('$(_ConanRoot)conandeps_$(_Cfg)_$(_Plat).props')" />
+
+  <!-- Must remain after our .props imports -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
+
 </Project>
