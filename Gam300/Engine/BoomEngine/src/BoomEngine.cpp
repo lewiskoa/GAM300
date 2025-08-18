@@ -12,7 +12,10 @@
 
 #include <imgui.h>
 using namespace std;
+using namespace Boom;
+#define LOG_EVENT(MSG) std::cout << "[Event] " << MSG << '\n'
 // TODO: This is an example of a library function
+
 void MyEngineClass::whatup() {
     cout << "nig\n";
 
