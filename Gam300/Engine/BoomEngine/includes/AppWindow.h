@@ -13,6 +13,8 @@ namespace Boom {
 		~AppWindow();
 
 	private: //GLFW callbacks
+
+		//TODOS: events system not implemented
 		BOOM_INLINE static void SetupCallbacks();
 		BOOM_INLINE static void OnError(int32_t errorNo, char const* description);
 		BOOM_INLINE static void OnMaximized(GLFWwindow* win, int32_t action);
@@ -26,6 +28,9 @@ namespace Boom {
 		BOOM_INLINE static void OnMotion(GLFWwindow* win, double x, double y);
 		BOOM_INLINE static void OnKey(GLFWwindow* win, int32_t key, int32_t scancode, int32_t action, int32_t);
 
+		//to be called explicitly to reference window from application
+		//example: GetUserData(win)->isFullscreen 
+		BOOM_INLINE static AppWindow* GetUserData(GLFWwindow* window);
 	public:
 		void ToggleFullscreen(bool firstRun = false);
 

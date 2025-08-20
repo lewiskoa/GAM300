@@ -107,11 +107,14 @@ namespace Boom {
 	}
 
 	BOOM_INLINE void AppWindow::OnMaximized(GLFWwindow* win, int32_t action) {
-		(void)win; (void)action;
+		(void)win;
+		if (action) {
+			//GetUserData(win)->isFullscreen;
+		}
 	}
 
 	BOOM_INLINE void AppWindow::OnIconify(GLFWwindow* win, int32_t action) {
-		(void)win; (action);
+		(void)win; (void)action;
 	}
 	BOOM_INLINE void AppWindow::OnClose(GLFWwindow* win) {
 		(void)win;
@@ -127,14 +130,53 @@ namespace Boom {
 		(void)win; (void)x; (void)y;
 	}
 	BOOM_INLINE void AppWindow::OnMouse(GLFWwindow* win, int32_t button, int32_t action, int32_t) {
-		(void)win; (void)button; (void)action;
+		AppWindow* self{ GetUserData(win) };
+
+		if (button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST) {
+			switch (action) {
+			case GLFW_RELEASE:
+				//mouse release event 
+				break;
+
+			case GLFW_PRESS:
+				//...
+				break;
+			}
+			return;
+		}
+		BOOM_ERROR("AppWindow::OnMouse() invalid keycode: [{}]", button);
 	}
 	BOOM_INLINE void AppWindow::OnMotion(GLFWwindow* win, double x, double y) {
-		(void)win; (void)x; (void)y;
+		AppWindow* self{ GetUserData(win) };
+		//ADD HERE: mouse movement post_event(set in this function)
+		//GLFW_MOUSE_BUTTON_LEFT;
+		(void)x; (void)y; //remove when added in
 	}
 	BOOM_INLINE void AppWindow::OnKey(GLFWwindow* win, int32_t key, int32_t scancode, int32_t action, int32_t) {
-		(void)win; (void)key; (void)scancode; (void)action;
+		AppWindow* self{ GetUserData(win) };
+
+		if (key >= 0 && key <= GLFW_KEY_LAST) {
+			switch (action) {
+			case GLFW_RELEASE:
+				//key release event 
+				break;
+
+			case GLFW_PRESS:
+				//...
+				break;
+
+			case GLFW_REPEAT:
+				break;
+			}
+			return;
+		}
+		BOOM_ERROR("AppWindow::OnKey() invalid keycode: [{}]", key);
 	}
+
+	BOOM_INLINE AppWindow* AppWindow::GetUserData(GLFWwindow* window) {
+		return static_cast<AppWindow*>(glfwGetWindowUserPointer(windowPtr));
+	}
+
 
 	void AppWindow::ToggleFullscreen(bool firstRun) {
 		if (firstRun) {
