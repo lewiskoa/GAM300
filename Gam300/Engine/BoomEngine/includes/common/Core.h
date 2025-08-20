@@ -8,6 +8,9 @@
 #define CORE_H
 
 // add headers that you want to pre-compile here
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #include <queue>
 #include <vector>
 #include <string>

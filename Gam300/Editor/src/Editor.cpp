@@ -8,9 +8,8 @@ int32_t main()
 
     BOOM_INFO("Editor Started");
 
-    //Boom::Test test{};
-    //Boom::AppWindow awin{};
-    //awin.Init();
+    Boom::AppWindow awin;
+    awin.Init();
     //auto terminate
     return 0;
 }

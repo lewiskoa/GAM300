@@ -1,25 +1,14 @@
 #pragma once
 
 #include "Core.h" //used for variables and error handling
-#include <GL/glew.h>
-#include <glm/glm.hpp>
-#include <GLFW/glfw3.h>
-class Test {
-public:
-	Test();
-	Test(Test const&) = delete;
-	BOOM_INLINE void Init();
-	~Test();
-};
 
 namespace Boom {
-
-	class AppWindow {
+	class BOOM_API AppWindow {
 	public:
 		AppWindow();
 		AppWindow(AppWindow const&) = delete;
 
-		BOOM_INLINE void Init();
+		void Init();
 		void Update(float dt);
 		~AppWindow();
 
@@ -49,7 +38,7 @@ namespace Boom {
 		int32_t width;
 		int32_t height;
 		int32_t refreshRate;
-		std::string title;
+		char const* title;
 		bool isFullscreen;
 
 		//glfw window context

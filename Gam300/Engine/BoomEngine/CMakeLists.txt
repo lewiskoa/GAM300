@@ -15,6 +15,7 @@ target_include_directories(BoomEngine PUBLIC
 # 2b) Your custom preprocessor defs
 target_compile_definitions(BoomEngine
   PUBLIC
+    GLEW_STATIC
     $<$<CONFIG:Debug>:MY_DEBUG_DEF>
     $<$<CONFIG:Release>:NDEBUG>
 )

@@ -50,7 +50,7 @@
     <ClCompile Include="src\Logger.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Test.cpp">
+    <ClCompile Include="src\AppWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

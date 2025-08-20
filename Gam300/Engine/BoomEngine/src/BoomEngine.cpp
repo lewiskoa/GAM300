@@ -6,9 +6,6 @@
 #include "framework.h"
 #include "common/Events.h"
 #include <iostream>
-#include <GL/glew.h>
-#include <glm/glm.hpp>
-#include <GLFW/glfw3.h>
 
 #include <imgui.h>
 using namespace std;

@@ -173,9 +173,11 @@
     <ClInclude Include="includes\common\Core.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\AppWindow.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\BoomEngine.cpp" />
     <ClCompile Include="src\Logger.cpp" />
-    <ClCompile Include="src\Test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
