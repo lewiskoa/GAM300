@@ -166,6 +166,7 @@
     <ClInclude Include="includes\Application\Application.h" />
     <ClInclude Include="includes\Application\Context.h" />
     <ClInclude Include="includes\Application\Interface.h" />
+    <ClInclude Include="includes\AppWindow.h" />
     <ClInclude Include="includes\BoomEngine.h" />
     <ClInclude Include="includes\common\Events.h" />
     <ClInclude Include="includes\common\framework.h" />
@@ -174,6 +175,7 @@
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp" />
     <ClCompile Include="src\Logger.cpp" />
+    <ClCompile Include="src\Test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
