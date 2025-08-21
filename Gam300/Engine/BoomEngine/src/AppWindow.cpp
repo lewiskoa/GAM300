@@ -1,48 +1,27 @@
 #include "Core.h"
 #include "AppWindow.h"
 
-namespace {
-	//helper functions
-	std::string GetGlewString(GLenum name, bool isError = false) {
-		if (isError)
-			return reinterpret_cast<char const*>(glewGetErrorString(name));
-		else
-			return reinterpret_cast<char const*>(glewGetString(name));
-	}
-}
-
 namespace Boom {
-	GLFWwindow* AppWindow::windowPtr;
+	GLFWwindow* AppWindow::windowPtr{};
 	GLFWmonitor* AppWindow::monitorPtr{};
 	GLFWvidmode const* AppWindow::modePtr{};
 
-	AppWindow::AppWindow() :
-		width{ 1800 },
-		height{ 900 },
-		refreshRate{ 144 },
-		title{ "hello BOOM" },
-		isFullscreen{ false }
+	AppWindow::AppWindow(int32_t w, int32_t h, char const* windowTitle)
+		: width{ w }
+		, height{ h }
+		, refreshRate{ 144 }
+		, title{ windowTitle }
+		, isFullscreen{ false }
 	{
-	}
-	AppWindow::~AppWindow() {
-		glfwTerminate();
-	}
-
-	void AppWindow::Init() {
-		//edit: deserialize window var here
-		//owowow//
-
-		if (glfwInit() != GLEW_OK) {
+		if (!glfwInit()) {
 			BOOM_FATAL("AppWindow::Init() - glfwInit() failed.");
 			std::exit(EXIT_FAILURE);
 		}
 
-		glfwWindowHint(GLFW_OPENGL_CORE_PROFILE, GLFW_TRUE);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-
 		monitorPtr = glfwGetPrimaryMonitor();
 		modePtr = glfwGetVideoMode(monitorPtr);
+		glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+		glfwWindowHint(GLFW_DEPTH_BITS, 24);
 		glfwWindowHint(GLFW_REFRESH_RATE, modePtr->refreshRate);
 		glfwWindowHint(GLFW_GREEN_BITS, modePtr->greenBits);
 		glfwWindowHint(GLFW_BLUE_BITS, modePtr->blueBits);
@@ -57,35 +36,25 @@ namespace Boom {
 			BOOM_FATAL("AppWindow::Init() - failed to init app window.");
 			std::exit(EXIT_FAILURE);
 		}
+		glfwMakeContextCurrent(windowPtr);
 
 		//user data
 		glfwSetWindowUserPointer(windowPtr, this);
-		SetupCallbacks();
-		glfwMakeContextCurrent(windowPtr);
 		//enable a-vsync
 		glfwSwapInterval(-1);
-
-		//Glew stuff
-		GLenum err = glewInit();
-		if (GLEW_OK != err) {
-			BOOM_FATAL("Unable to initialize GLEW - error: {} abort program.\n", GetGlewString(err, true));
-			std::exit(EXIT_FAILURE);
-		}
-		if (GLEW_VERSION_3_3) {
-			BOOM_INFO("Using glew version: {}", GetGlewString(GLEW_VERSION));
-			BOOM_INFO("Driver supports OpenGL 3.3");
-		}
-		else {
-			BOOM_WARN("Warning: The driver may lack full compatibility with OpenGL 3.3, potentially limiting access to advanced features.");
-		}
-
-		PrintSpecs();
+		SetupCallbacks();
 	}
-
-	void AppWindow::Update(float dt) {
-		(void)dt;
+	BOOM_INLINE AppWindow::~AppWindow() {
+		glfwDestroyWindow(windowPtr);
+		glfwTerminate();
 	}
+	BOOM_INLINE void AppWindow::OnStart() {
 
+	}
+	BOOM_INLINE void AppWindow::OnUpdate() {
+		glfwSwapBuffers(Window());
+		glfwPollEvents();
+	}
 
 	void AppWindow::SetupCallbacks() {
 
@@ -130,12 +99,13 @@ namespace Boom {
 		(void)win; (void)x; (void)y;
 	}
 	BOOM_INLINE void AppWindow::OnMouse(GLFWwindow* win, int32_t button, int32_t action, int32_t) {
-		AppWindow* self{ GetUserData(win) };
+		(void)win;
+		//AppWindow* self{ GetUserData(win) };
 
 		if (button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST) {
 			switch (action) {
 			case GLFW_RELEASE:
-				//mouse release event 
+				//mouse release event
 				break;
 
 			case GLFW_PRESS:
@@ -147,18 +117,25 @@ namespace Boom {
 		BOOM_ERROR("AppWindow::OnMouse() invalid keycode: [{}]", button);
 	}
 	BOOM_INLINE void AppWindow::OnMotion(GLFWwindow* win, double x, double y) {
-		AppWindow* self{ GetUserData(win) };
+		//AppWindow* self{ GetUserData(win) };
 		//ADD HERE: mouse movement post_event(set in this function)
 		//GLFW_MOUSE_BUTTON_LEFT;
-		(void)x; (void)y; //remove when added in
+		(void)win;  (void)x; (void)y; //remove when added in
 	}
 	BOOM_INLINE void AppWindow::OnKey(GLFWwindow* win, int32_t key, int32_t scancode, int32_t action, int32_t) {
-		AppWindow* self{ GetUserData(win) };
+		(void)scancode; (void)win;
+		//AppWindow* self{ GetUserData(win) };
+		
+		//temporary force close...
+		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+			glfwSetWindowShouldClose(windowPtr, GLFW_TRUE);
+			return;
+		}
 
 		if (key >= 0 && key <= GLFW_KEY_LAST) {
 			switch (action) {
 			case GLFW_RELEASE:
-				//key release event 
+				//key release event
 				break;
 
 			case GLFW_PRESS:
@@ -170,13 +147,13 @@ namespace Boom {
 			}
 			return;
 		}
+		
 		BOOM_ERROR("AppWindow::OnKey() invalid keycode: [{}]", key);
 	}
 
 	BOOM_INLINE AppWindow* AppWindow::GetUserData(GLFWwindow* window) {
-		return static_cast<AppWindow*>(glfwGetWindowUserPointer(windowPtr));
+		return static_cast<AppWindow*>(glfwGetWindowUserPointer(window));
 	}
-
 
 	void AppWindow::ToggleFullscreen(bool firstRun) {
 		if (firstRun) {
@@ -197,42 +174,10 @@ namespace Boom {
 	[[nodiscard]] int32_t& AppWindow::Height() noexcept {
 		return height;
 	}
-
-	void AppWindow::PrintSpecs() {
-		BOOM_DEBUG("GPU Vendor: {}", GetGlewString(GL_VENDOR));
-		BOOM_DEBUG("GPU Renderer: {}", GetGlewString(GL_RENDERER));
-		BOOM_DEBUG("GPU Version: {}", GetGlewString(GL_VERSION));
-		BOOM_DEBUG("GPU Shader Version: {}", GetGlewString(GL_SHADING_LANGUAGE_VERSION));
-
-		GLint output;
-		glGetIntegerv(GL_MAJOR_VERSION, &output);
-		BOOM_DEBUG("GL Major Version: {}", output);
-		glGetIntegerv(GL_MINOR_VERSION, &output);
-		BOOM_DEBUG("GL Minor Version: {}", output);
-
-		GLboolean isDB;
-		glGetBooleanv(GL_DOUBLEBUFFER, &isDB);
-		if (isDB)
-			BOOM_DEBUG("Current OpenGL Context is double-buffered");
-		else
-			BOOM_DEBUG("Current OpenGL Context is not double-buffered");
-
-		glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, &output);
-		BOOM_DEBUG("Maximum Vertex Count: {}", output);
-		glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &output);
-		BOOM_DEBUG("Maximum Indicies Count: {}", output);
-		glGetIntegerv(GL_MAX_TEXTURE_SIZE, &output);
-		BOOM_DEBUG("Maximum texture size: {}", output);
-
-		GLint viewport[2];
-		glGetIntegerv(GL_MAX_VIEWPORT_DIMS, viewport);
-		BOOM_DEBUG("Maximum Viewport Dimensions: {} x {}", viewport[0], viewport[1]);
-
-		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &output);
-		BOOM_DEBUG("Maximum generic vertex attributes: {}", output);
-		glGetIntegerv(GL_MAX_VERTEX_ATTRIB_BINDINGS, &output);
-		BOOM_DEBUG("Maximum vertex buffer bindings: {}", output);
-
-		BOOM_DEBUG('\n');
+	GLFWwindow* AppWindow::Window() noexcept {
+		return windowPtr;
+	}
+	[[nodiscard]] int AppWindow::IsExit() const {
+		return glfwWindowShouldClose(windowPtr);
 	}
 }

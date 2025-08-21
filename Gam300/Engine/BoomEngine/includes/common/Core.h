@@ -10,7 +10,17 @@
 // add headers that you want to pre-compile here
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+#pragma warning(push)
+#pragma warning(disable : 4201) //unfortunate nameless struct warning.
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
+#pragma warning(pop)
+
 #include <queue>
 #include <vector>
 #include <string>

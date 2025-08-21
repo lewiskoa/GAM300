@@ -42,6 +42,21 @@
     <ClInclude Include="includes\AppWindow.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Graphics\Renderer.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Graphics\Buffers\Frame.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Graphics\Buffers\Mesh.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Graphics\Buffers\Vertex.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Graphics\Utilities\Quad.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">
@@ -51,6 +66,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\AppWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

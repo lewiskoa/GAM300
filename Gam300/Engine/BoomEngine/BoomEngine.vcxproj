@@ -171,6 +171,11 @@
     <ClInclude Include="includes\common\Events.h" />
     <ClInclude Include="includes\common\framework.h" />
     <ClInclude Include="includes\common\Core.h" />
+    <ClInclude Include="includes\Graphics\Buffers\Frame.h" />
+    <ClInclude Include="includes\Graphics\Buffers\Mesh.h" />
+    <ClInclude Include="includes\Graphics\Buffers\Vertex.h" />
+    <ClInclude Include="includes\Graphics\Renderer.h" />
+    <ClInclude Include="includes\Graphics\Utilities\Quad.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\AppWindow.cpp">
@@ -178,6 +183,9 @@
     </ClCompile>
     <ClCompile Include="src\BoomEngine.cpp" />
     <ClCompile Include="src\Logger.cpp" />
+    <ClCompile Include="src\Renderer.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
