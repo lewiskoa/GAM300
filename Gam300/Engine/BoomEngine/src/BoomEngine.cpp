@@ -64,14 +64,20 @@ void MyEngineClass::whatup() {
 
         std::cout << "Dispatcher smoketest finished inside MyEngineClass::whatup().\n";
 
-        /*
+        
+        //auto app{ new Application() };
+        //app->AttachLayer<Editor>();
+        //app->RunContext();
+        
         std::cout << std::endl;
         Boom::AppWindow awin{&dispatcher, 1800, 900, "Boom Editor" };
         Boom::GraphicsRenderer g{ 1800, 900 };
         while (awin.PollEvents()) {
-            awin.OnUpdate();
-            g.OnUpdate();
+            g.NewFrame();
+            //ecs stuff
+            g.EndFrame();
+            g.ShowFrame();
 
             dispatcher.PollEvents();
-        }*/
+        }
 }

@@ -103,7 +103,8 @@ namespace Boom {
 				return pgmId;
 			}
 			catch (std::exception const& e) {
-				BOOM_ERROR("Load('{}') Failed: {}", filename, e.what());
+				char const* errStr{ e.what() };
+				BOOM_ERROR("Load('{}') Failed: {}", filename, errStr);
 			}
 			return 0u;
 		}

@@ -31,6 +31,8 @@ namespace Boom {
 			BOOM_WARN("Warning: The driver may lack full compatibility with OpenGL 4.5, potentially limiting access to advanced features.");
 		}
 		PrintSpecs();
+#else
+		(void)err;
 #endif
 		finalShader = std::make_unique<FinalShader>(std::string(CONSTANTS::SHADERS_LOCATION) + "final.glsl");
 		pbrShader = std::make_unique<PBRShader>(std::string(CONSTANTS::SHADERS_LOCATION) + "pbr.glsl");
