@@ -17,7 +17,8 @@ namespace Boom {
 		BOOM_INLINE void UnUse() {
 			glUseProgram(shaderId);
 		}
-	private:
+
+	private: //main logic for initializing shader
 		BOOM_INLINE uint32_t Build(char const* src, uint32_t type) {
 			uint32_t id{ glCreateShader(type) };
 			glShaderSource(id, 1, &src, NULL);
@@ -106,6 +107,46 @@ namespace Boom {
 			}
 			return 0u;
 		}
+
+	protected: //helper functions for accessing uniform variables in vert & frag
+		BOOM_INLINE int32_t GetUniformVar(std::string const& str) {
+			int32_t res{ glGetUniformLocation(shaderId, str.c_str()) };
+			if (res < 0) {
+				BOOM_ERROR("Shader_{} - invalid uniform var:{}", shaderId, str);
+			}
+			return res;
+		}
+		//uint
+		void SetUniform(unsigned val) const
+		{
+			glUniform1ui(shaderId, val);
+		}
+		//int
+		void SetUniform(int val) const
+		{
+			glUniform1i(shaderId, val);
+		}
+		//vec3
+		void SetUniform(glm::vec3 const& val) const
+		{
+			glUniform3fv(shaderId, 1, glm::value_ptr(val));
+		}
+		//vec4
+		void SetUniform(glm::vec4 const& val) const
+		{
+			glUniform4fv(shaderId, 1, glm::value_ptr(val));
+		}
+		//mat3
+		void SetUniform(glm::mat3 const& val) const
+		{
+			glUniformMatrix3fv(shaderId, 1, GL_FALSE, glm::value_ptr(val));
+		}
+		//mat4
+		void SetUniform(glm::mat4 const& val) const
+		{
+			glUniformMatrix4fv(shaderId, 1, GL_FALSE, glm::value_ptr(val));
+		}
+
 	protected:
 		uint32_t shaderId;
 	};

@@ -1,5 +1,6 @@
 #pragma once
 #include"Core.h"
+#include "Application/Application.h"
 //#ifdef BOOM_EXPORTS
 //#define BOOM_API __declspec(dllexport)
 //#else

@@ -1,5 +1,6 @@
 #include "Core.h"
 #include "Graphics/Renderer.h"
+#include "GlobalConstants.h"
 
 namespace {
 	//helper functions
@@ -15,9 +16,8 @@ namespace {
 
 namespace Boom {
 	GraphicsRenderer::GraphicsRenderer(int32_t w, int32_t h)
-		: width{ w }
-		, height{ h } 
 	{
+		glewExperimental = GL_TRUE;
 		GLenum err = glewInit();
 #ifdef BOOM_ENABLE_LOG
 		if (GLEW_OK != err) {
@@ -26,27 +26,43 @@ namespace Boom {
 		}
 		if (GLEW_VERSION_4_5) {
 			BOOM_INFO("Using glew version: {}", GetGlewString(GLEW_VERSION));
-			//BOOM_INFO("Driver supports OpenGL {}.{}", GetGlewString(GLEW_VERSION_MAJOR), GetGlewString(GLEW_VERSION_MINOR));
 		}
 		else {
 			BOOM_WARN("Warning: The driver may lack full compatibility with OpenGL 4.5, potentially limiting access to advanced features.");
 		}
-
 		PrintSpecs();
 #endif
-	}
-
-	BOOM_INLINE void GraphicsRenderer::OnStart() {
-
-	}
-	BOOM_INLINE void GraphicsRenderer::OnUpdate() {
-		glClearColor(0.5f, 0.5f, 0.5f, 1.f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		//rendering blah...
+		finalShader = std::make_unique<FinalShader>(std::string(CONSTANTS::SHADERS_LOCATION) + "final.glsl");
+		pbrShader = std::make_unique<PBRShader>(std::string(CONSTANTS::SHADERS_LOCATION) + "pbr.glsl");
+		frame = std::make_unique<FrameBuffer>(w, h);
 	}
 	BOOM_INLINE GraphicsRenderer::~GraphicsRenderer() {
 
+	}
+
+	BOOM_INLINE void GraphicsRenderer::SetCamera(Camera3D& cam, Transform3D const& transform) {
+		pbrShader->SetCamera(cam, transform, frame->Ratio());
+	}
+	BOOM_INLINE void GraphicsRenderer::Draw(Mesh3D const& mesh, Transform3D const& transform) {
+		pbrShader->Draw(mesh, transform);
+	}
+	BOOM_INLINE void GraphicsRenderer::Resize(int32_t w, int32_t h) {
+		frame->Resize(w, h);
+	}
+
+	BOOM_INLINE uint32_t GraphicsRenderer::GetFrame() {
+		return frame->GetTexture();
+	}
+	BOOM_INLINE void GraphicsRenderer::NewFrame() {
+		frame->Begin();
+		pbrShader->Use();
+	}
+	BOOM_INLINE void GraphicsRenderer::EndFrame() {
+		pbrShader->UnUse();
+		frame->End();
+	}
+	BOOM_INLINE void GraphicsRenderer::ShowFrame() {
+		finalShader->Show(frame->GetTexture());
 	}
 
 	void GraphicsRenderer::PrintSpecs() {

@@ -171,6 +171,7 @@
     <ClInclude Include="includes\common\Events.h" />
     <ClInclude Include="includes\common\framework.h" />
     <ClInclude Include="includes\common\Core.h" />
+    <ClInclude Include="includes\GlobalConstants.h" />
     <ClInclude Include="includes\Graphics\Buffers\Frame.h" />
     <ClInclude Include="includes\Graphics\Buffers\Mesh.h" />
     <ClInclude Include="includes\Graphics\Buffers\Vertex.h" />
@@ -178,6 +179,7 @@
     <ClInclude Include="includes\Graphics\Shaders\Final.h" />
     <ClInclude Include="includes\Graphics\Shaders\PBR.h" />
     <ClInclude Include="includes\Graphics\Shaders\Shader.h" />
+    <ClInclude Include="includes\Graphics\Utilities\Data.h" />
     <ClInclude Include="includes\Graphics\Utilities\Quad.h" />
   </ItemGroup>
   <ItemGroup>

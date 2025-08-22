@@ -25,12 +25,11 @@ namespace Boom
             m_LayerID = TypeID<Application>();
             m_Context = new AppContext();
 
-            /*
             AttachCallback<WindowResizeEvent>([this](auto e) {
-                m_Context->Renderer->Resize(e.width, e.height);
+                m_Context->renderer->Resize(e.width, e.height);
                 }
             );
-            */
+            
         }
 
         /**
@@ -52,12 +51,46 @@ namespace Boom
          */
         BOOM_INLINE void RunContext()
         {
-            while (true)
+            /*
+            //create scene cam
+            auto cam{ CreateEntt<Entity>() };
+            camera.Attach<TransformComponent>().Transform.Translate.z = 2.f;
+            camera.Attach<CameraComponent>();
+
+            //create quad
+            auto quad{ CreateEntt<Entity>() };
+            quad.Attach<MeshComponent>().Mesh = CreateQuad3D();
+            quad.Attach<TransformComponent>();
+            */
+            while (m_Context->window->PollEvents())
             {
+                //updates new frame
+                m_Context->renderer->NewFrame();
+                /*
+                //set shader cam
+                EnttView<Entity, CameraComponent>([this](auto entity, auto& comp) {
+                        auto& transform{entity.templateGet<TransformComponent>().Transform};
+                        m_Context->renderer->SetCamera(comp.Camera, transform);
+                    }
+                );
+
+                //render models
+                EnttView<Entity, MeshComponent>([this](auto entity, auto& comp) {
+                        auto& transform{entity.templateGet<TransformComponent>().Transform};
+                        m_Context->renderer->Draw(comp.Mesh, transform);
+                    }
+                );
+                */
+                m_Context->renderer->EndFrame();
+
+                //update layers
                 for (auto layer : m_Context->Layers)
                 {
                     layer->OnUpdate();
                 }
+
+                //draw the updated frame
+                m_Context->renderer->ShowFrame();
             }
         }
     };

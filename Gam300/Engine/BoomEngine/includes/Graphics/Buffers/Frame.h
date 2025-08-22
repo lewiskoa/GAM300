@@ -1,5 +1,6 @@
 #pragma once
 #include "Core.h"
+#include "GlobalConstants.h"
 
 namespace Boom {
 	class FrameBuffer {
@@ -57,7 +58,12 @@ namespace Boom {
 		BOOM_INLINE void Begin() {
 			glBindFramebuffer(GL_FRAMEBUFFER, buffId);
 			glViewport(0, 0, width, height);
-			glClearColor(0.f, 0.f, 0.f, 1.f);
+			glClearColor(
+				CONSTANTS::DEFAULT_BACKGROUND_COLOR, 
+				CONSTANTS::DEFAULT_BACKGROUND_COLOR, 
+				CONSTANTS::DEFAULT_BACKGROUND_COLOR, 
+				1.f
+			);
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glEnable(GL_DEPTH_TEST);

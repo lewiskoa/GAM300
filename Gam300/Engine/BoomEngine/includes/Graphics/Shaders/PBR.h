@@ -1,14 +1,23 @@
 #pragma once
 #include "Shader.h"
+#include "../Utilities/Data.h"
 
 namespace Boom {
 	struct PBRShader : Shader {
 		BOOM_INLINE PBRShader(std::string const& filename)
 			: Shader{ filename }
-			, modelMat{ glGetUniformLocation(shaderId, "modelMat") }
-			, view{ glGetUniformLocation(shaderId, "view") }
-			, proj{ glGetUniformLocation(shaderId, "proj") }
+			, modelMat{ (uint32_t)GetUniformVar("modelMat") }
+			, view{ (uint32_t)GetUniformVar("view") }
+			, proj{ (uint32_t)GetUniformVar("proj") }
 		{
+		}
+		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
+			SetUniform(cam.Projection(ratio));
+			SetUniform(cam.View(transform));
+		}
+		BOOM_INLINE void Draw(Mesh3D const& mesh, Transform3D const& transform) {
+			SetUniform(transform.Matrix());
+			mesh->Draw(GL_TRIANGLES);
 		}
 
 	private:

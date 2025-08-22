@@ -140,4 +140,12 @@ namespace Boom
         std::unordered_map<uint32_t, void*> m_Registry;
         std::queue<std::function<void()>> m_Tasks;
     };
+
+    struct WindowResizeEvent {
+        WindowResizeEvent(int32_t w, int32_t h)
+            : width{ w }, height{h}
+        {}
+        int32_t width{};
+        int32_t height{};
+    };
 }

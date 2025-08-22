@@ -1,10 +1,9 @@
 #pragma once
 #include "Core.h" //used for variables and error handling
-//#include "Application/Interface.h"
 #include "common/Events.h"
 
 namespace Boom {
-	class BOOM_API AppWindow {// : public AppInterface {
+	struct AppWindow {
 	public:
 		AppWindow() = delete;
 		AppWindow(AppWindow const&) = delete;
@@ -12,11 +11,7 @@ namespace Boom {
 		//example for initializing with reference:
 		//std::unique_ptr<AppWindow> w = std::make_unique<AppWindow>(&Dispatcher, 1900, 800, "BOOM");
 		BOOM_INLINE AppWindow(EventDispatcher* disp, int32_t w, int32_t h, char const* windowTitle);
-	
-	public: //interface derive
-		BOOM_INLINE void OnStart();// override;
-		BOOM_INLINE void OnUpdate();// override;
-		BOOM_INLINE ~AppWindow();// override;
+		BOOM_INLINE ~AppWindow();
 
 	private: //GLFW callbacks
 		BOOM_INLINE static void SetupCallbacks(GLFWwindow* win);

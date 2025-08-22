@@ -54,13 +54,6 @@ namespace Boom {
 		glfwDestroyWindow(windowPtr);
 		glfwTerminate();
 	}
-	BOOM_INLINE void AppWindow::OnStart() {
-
-	}
-	BOOM_INLINE void AppWindow::OnUpdate() {
-		glfwSwapBuffers(Window());
-		glfwPollEvents();
-	}
 
 	BOOM_INLINE void AppWindow::SetupCallbacks(GLFWwindow* win) {
 		glfwSetErrorCallback(AppWindow::OnError);

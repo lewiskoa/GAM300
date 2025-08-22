@@ -81,6 +81,36 @@ namespace Boom
             return layer;
         }
 
+        // attach event callback
+        template <typename Event, typename Callback>
+        BOOM_INLINE void AttachCallback(Callback&& callback)
+        {
+            m_Context->dispatcher.AttachCallback<Event>
+                (std::move(callback), m_LayerID);
+        }
+
+        // post event
+        template <typename Event, typename... Args>
+        BOOM_INLINE void PostEvent(Args&&...args)
+        {
+            m_Context->dispatcher.PostEvent<Event>(std::forward<Args>
+                (args)...);
+        }
+
+        // post task event
+        template <typename Task>
+        BOOM_INLINE void PostTask(Task&& task)
+        {
+            m_Context->dispatcher.PostTask(std::move(task));
+        }
+
+        // detach callback
+        template <typename Event>
+        BOOM_INLINE void DetachCallback()
+        {
+            m_Context->dispatcher.DetachCallback<Event>(m_LayerID);
+        }
+
     protected:
         /** @brief  Called once when the layer is attached. Override to initialize. */
         BOOM_INLINE virtual void OnStart() {}

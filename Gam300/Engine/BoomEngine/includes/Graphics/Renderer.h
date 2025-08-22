@@ -1,23 +1,31 @@
 #pragma once
 #include "Core.h"
-//#include "Application/Interface.h"
+#include "Graphics/Buffers/Frame.h"
+#include "Shaders/PBR.h"
+#include "Shaders/Final.h"
 
 namespace Boom {
-	class BOOM_API GraphicsRenderer { //: public AppInterface {
+	struct GraphicsRenderer {
 	public:
 		GraphicsRenderer() = delete;
 
 		BOOM_INLINE GraphicsRenderer(int32_t w, int32_t h);
+		BOOM_INLINE ~GraphicsRenderer();
 
-	public: //interface derive
-		BOOM_INLINE void OnStart();// override;
-		BOOM_INLINE void OnUpdate();// override;
-		BOOM_INLINE ~GraphicsRenderer();// override;
+	public:
+		BOOM_INLINE void SetCamera(Camera3D& cam, Transform3D const& transform);
+		BOOM_INLINE void Draw(Mesh3D const& mesh, Transform3D const& transform);
+		BOOM_INLINE void Resize(int32_t w, int32_t h);
 
+		BOOM_INLINE uint32_t GetFrame();
+		BOOM_INLINE void NewFrame();
+		BOOM_INLINE void EndFrame();
+		BOOM_INLINE void ShowFrame();
 	private:
 		BOOM_INLINE void PrintSpecs();
 	private:
-		int32_t width;
-		int32_t height;
+		std::unique_ptr<FrameBuffer> frame;
+		std::unique_ptr<FinalShader> finalShader;
+		std::unique_ptr<PBRShader> pbrShader;
 	};
 }

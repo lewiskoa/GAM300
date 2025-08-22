@@ -49,3 +49,14 @@ target_link_libraries(BoomEngine
 set_target_properties(BoomEngine PROPERTIES
   LINK_FLAGS $<$<CONFIG:Release>:"/SUBSYSTEM:WINDOWS">
 )
+
+# copy resources
+if (EXISTS ${CMAKE_SOURCE_DIR}/Resources)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILDCOMMAND
+        ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/Resources
+        ${EXECUTABLE_OUTPUT_PATH}/Resources
+    )
+else()
+    message(WARNING "[WARNING] no resource directory!")
+endif()

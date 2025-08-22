@@ -9,8 +9,8 @@ namespace Boom {
 
 		//creates the mesh data in storage for the provided vertex data
 		BOOM_INLINE Mesh(MeshData<Vertex> const& data)
-			: numVtx{ data.vtx.size() }
-			, numIdx{ data.idx.size() }
+			: numVtx{ (uint32_t)data.vtx.size() }
+			, numIdx{ (uint32_t)data.idx.size() }
 			, buffId{} {
 			if (data.vtx.empty()) {
 				BOOM_ERROR("Mesh() - empty construct");
@@ -52,11 +52,11 @@ namespace Boom {
 				SetAttribute(2, 2, (void*)offsetof(ShadedVert, uv));
 			}
 			else if (TypeID<Vertex>() == TypeID<FlatVert>()) {
-				SetAttribute(0, 3, (void*)offsetof(ShadedVert, pos));
-				SetAttribute(1, 4, (void*)offsetof(ShadedVert, col));
+				SetAttribute(0, 3, (void*)offsetof(FlatVert, pos));
+				SetAttribute(1, 4, (void*)offsetof(FlatVert, col));
 			}
 			else if (TypeID<Vertex>() == TypeID<QuadVert>()) {
-				SetAttribute(0, 4, (void*)offsetof(ShadedVert, data));
+				SetAttribute(0, 4, (void*)offsetof(QuadVert, data));
 			}
 			else {
 				BOOM_ERROR(false && "Mesh() - invalid vertex type.");
@@ -83,7 +83,7 @@ namespace Boom {
 		}
 	private:
 		BOOM_INLINE void SetAttribute(uint32_t index, int32_t size, void const* val) {
-			glEnableVertexArrayAttrib(index);
+			glEnableVertexAttribArray(index);
 			glVertexAttribPointer(index, size, GL_FLOAT, GL_FALSE, sizeof(Vertex), val);
 		}
 

@@ -64,10 +64,8 @@ void MyEngineClass::whatup() {
 
         std::cout << "Dispatcher smoketest finished inside MyEngineClass::whatup().\n";
 
-
+        /*
         std::cout << std::endl;
-        //testing window and renderer within engine function
-        //idk appInterface usage
         Boom::AppWindow awin{&dispatcher, 1800, 900, "Boom Editor" };
         Boom::GraphicsRenderer g{ 1800, 900 };
         while (awin.PollEvents()) {
@@ -75,5 +73,5 @@ void MyEngineClass::whatup() {
             g.OnUpdate();
 
             dispatcher.PollEvents();
-        }
+        }*/
 }
