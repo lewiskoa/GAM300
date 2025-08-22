@@ -1,4 +1,4 @@
-#version 330 core
+#version 450 core
 
 layout (location = 0) in vec4 quad;
 out vec2 uv;
@@ -9,7 +9,7 @@ void main() {
 }
 ==VERTEX==
 
-#version 330 core
+#version 450 core
 
 out vec4 fragColor;
 in vec2 uv;

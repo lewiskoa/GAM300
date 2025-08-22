@@ -24,6 +24,13 @@ namespace Boom
         {
             m_LayerID = TypeID<Application>();
             m_Context = new AppContext();
+
+            /*
+            AttachCallback<WindowResizeEvent>([this](auto e) {
+                m_Context->Renderer->Resize(e.width, e.height);
+                }
+            );
+            */
         }
 
         /**

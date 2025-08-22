@@ -57,6 +57,15 @@
     <ClInclude Include="includes\Graphics\Utilities\Quad.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Graphics\Shaders\Final.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Graphics\Shaders\PBR.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Graphics\Shaders\Shader.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">

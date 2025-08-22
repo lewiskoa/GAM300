@@ -3,11 +3,13 @@
 
 namespace {
 	//helper functions
-	char const* GetGlewString(GLenum name, bool isError = false) {
+	std::string GetGlewString(GLenum name, bool isError = false) {
 		if (isError)
 			return reinterpret_cast<char const*>(glewGetErrorString(name));
-		else
-			return reinterpret_cast<char const*>(glewGetString(name));
+		else {
+			char const* ret{ reinterpret_cast<char const*>(glewGetString(name)) };
+			return ret ? ret : "Unknown glewGetString(" + std::to_string(name) + ')';
+		}
 	}
 }
 
@@ -22,12 +24,12 @@ namespace Boom {
 			BOOM_FATAL("Unable to initialize GLEW - error: {} abort program.\n", GetGlewString(err, true));
 			std::exit(EXIT_FAILURE);
 		}
-		if (GLEW_VERSION_3_3) {
+		if (GLEW_VERSION_4_5) {
 			BOOM_INFO("Using glew version: {}", GetGlewString(GLEW_VERSION));
 			//BOOM_INFO("Driver supports OpenGL {}.{}", GetGlewString(GLEW_VERSION_MAJOR), GetGlewString(GLEW_VERSION_MINOR));
 		}
 		else {
-			BOOM_WARN("Warning: The driver may lack full compatibility with OpenGL 3.3, potentially limiting access to advanced features.");
+			BOOM_WARN("Warning: The driver may lack full compatibility with OpenGL 4.5, potentially limiting access to advanced features.");
 		}
 
 		PrintSpecs();
@@ -48,11 +50,10 @@ namespace Boom {
 	}
 
 	void GraphicsRenderer::PrintSpecs() {
-		//std::cout << reinterpret_cast<char const*>(glewGetString(GL_VENDOR)) << std::endl;
-		//BOOM_DEBUG("GPU Vendor: {}\n", GetGlewString(GL_VENDOR));
-		//BOOM_DEBUG("GPU Renderer: {}", GetGlewString(GL_RENDERER));
-		//BOOM_DEBUG("GPU Version: {}", GetGlewString(GL_VERSION));
-		//BOOM_DEBUG("GPU Shader Version: {}", GetGlewString(GL_SHADING_LANGUAGE_VERSION));
+		BOOM_INFO("GPU Vendor: {}", GetGlewString(GL_VENDOR));
+		BOOM_INFO("GPU Renderer: {}", GetGlewString(GL_RENDERER));
+		BOOM_INFO("GPU Version: {}", GetGlewString(GL_VERSION));
+		BOOM_INFO("GPU Shader Version: {}", GetGlewString(GL_SHADING_LANGUAGE_VERSION));
 
 		GLint ver[2];
 		glGetIntegerv(GL_MAJOR_VERSION, &ver[0]);
@@ -81,6 +82,6 @@ namespace Boom {
 		glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &output);
 		BOOM_INFO("Maximum generic vertex attributes: {}", output);
 		glGetIntegerv(GL_MAX_VERTEX_ATTRIB_BINDINGS, &output);
-		BOOM_INFO("Maximum vertex buffer bindings: {}", output);
+		BOOM_INFO("Maximum vertex buffer bindings: {}\n", output);
 	}
 }
