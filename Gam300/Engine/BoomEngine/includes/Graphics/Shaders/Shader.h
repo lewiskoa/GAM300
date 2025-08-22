@@ -6,8 +6,8 @@ namespace Boom {
 	class Shader {
 	public:
 		BOOM_INLINE Shader(std::string const& filename) 
-			: shaderId{Load(filename)} 
-		{}
+			: shaderId{ Load(filename) } 
+		{ }
 		BOOM_INLINE virtual ~Shader() {
 			glDeleteProgram(shaderId);
 		}
@@ -68,7 +68,7 @@ namespace Boom {
 			}
 		}
 
-		BOOM_INLINE uint32_t Load(std::string const& filename) {
+		uint32_t Load(std::string const& filename) {
 			std::ifstream fs;
 			fs.exceptions(std::ifstream::failbit | std::fstream::badbit);
 			try {
