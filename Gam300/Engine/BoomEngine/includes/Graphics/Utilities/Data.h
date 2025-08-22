@@ -2,7 +2,7 @@
 #include "../Buffers/Mesh.h"
 
 namespace Boom {
-	glm::highp_mat4 GetRotationMatrix(glm::vec3 const& rot) {
+	BOOM_INLINE glm::highp_mat4 GetRotationMatrix(glm::vec3 const& rot) {
 		return glm::toMat4(glm::quat(glm::radians(rot)));
 	}
 

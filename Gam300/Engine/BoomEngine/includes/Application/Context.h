@@ -28,14 +28,15 @@ namespace Boom
 
 
 		/** @brief Destructor that deletes and nulls out all layer pointers. */ 
-		BOOM_INLINE ~AppContext()
-		{
-			// Iterate and delete each layer, then null out pointer
-			for (AppInterface*& layer : Layers)
-			{
-				BOOM_DELETE(layer);
-			}
-		}
+		~AppContext();
+		//BOOM_INLINE ~AppContext()
+		//{
+		//	// Iterate and delete each layer, then null out pointer
+		//	for (AppInterface*& layer : Layers)
+		//	{
+		//		BOOM_DELETE(layer);
+		//	}
+		//}
 
 		/**
 		 * @brief Container of all active layers in the application.

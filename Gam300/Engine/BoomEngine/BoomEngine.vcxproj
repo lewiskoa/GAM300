@@ -183,6 +183,9 @@
     <ClInclude Include="includes\Graphics\Utilities\Quad.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Application\Context.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\AppWindow.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
     </ClCompile>
