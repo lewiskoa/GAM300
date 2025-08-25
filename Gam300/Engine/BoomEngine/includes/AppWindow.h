@@ -1,6 +1,7 @@
 #pragma once
 #include "Core.h" //used for variables and error handling
 #include "common/Events.h"
+#include "GlobalConstants.h"
 
 namespace Boom {
 	struct AppWindow {
@@ -25,7 +26,7 @@ namespace Boom {
 				BOOM_FATAL("AppWindow::Init() - glfwInit() failed.");
 				std::exit(EXIT_FAILURE);
 			}
-			glfwWindowHint(GLFW_OPENGL_CORE_PROFILE, GLFW_TRUE);
+			//glfwWindowHint(GLFW_OPENGL_CORE_PROFILE, GLFW_TRUE);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 			glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 			glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -57,6 +58,9 @@ namespace Boom {
 			//enable a-vsync
 			glfwSwapInterval(-1);
 			SetupCallbacks(windowPtr);
+
+			//initial window color
+			std::apply(glClearColor, CONSTANTS::DEFAULT_BACKGROUND_COLOR);
 		}
 		BOOM_INLINE ~AppWindow() {
 			glfwDestroyWindow(windowPtr);

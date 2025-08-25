@@ -58,13 +58,7 @@ namespace Boom {
 		BOOM_INLINE void Begin() {
 			glBindFramebuffer(GL_FRAMEBUFFER, buffId);
 			glViewport(0, 0, width, height);
-			glClearColor(
-				CONSTANTS::DEFAULT_BACKGROUND_COLOR, 
-				CONSTANTS::DEFAULT_BACKGROUND_COLOR, 
-				CONSTANTS::DEFAULT_BACKGROUND_COLOR, 
-				1.f
-			);
-
+			std::apply(glClearColor, CONSTANTS::DEFAULT_BACKGROUND_COLOR);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_SAMPLES);

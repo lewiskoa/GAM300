@@ -176,6 +176,7 @@
     <ClInclude Include="includes\Graphics\Buffers\Mesh.h" />
     <ClInclude Include="includes\Graphics\Buffers\Vertex.h" />
     <ClInclude Include="includes\Graphics\Renderer.h" />
+    <ClInclude Include="includes\Graphics\Shaders\Color.h" />
     <ClInclude Include="includes\Graphics\Shaders\Final.h" />
     <ClInclude Include="includes\Graphics\Shaders\PBR.h" />
     <ClInclude Include="includes\Graphics\Shaders\Shader.h" />

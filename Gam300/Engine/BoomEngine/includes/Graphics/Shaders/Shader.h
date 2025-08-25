@@ -1,6 +1,6 @@
 #pragma once
 #include "Core.h"
-
+#include <iostream>
 namespace Boom {
 	int32_t const BITS = 512;
 	class Shader {
@@ -12,10 +12,10 @@ namespace Boom {
 			glDeleteProgram(shaderId);
 		}
 		BOOM_INLINE void Use() {
-			glUseProgram(0);
+			glUseProgram(shaderId);
 		}
 		BOOM_INLINE void UnUse() {
-			glUseProgram(shaderId);
+			glUseProgram(0);
 		}
 
 	private: //main logic for initializing shader
@@ -27,27 +27,29 @@ namespace Boom {
 			int32_t status{};
 			glGetShaderiv(id, GL_COMPILE_STATUS, &status);
 			if (!status) {
-				char err[BITS];
-				glGetShaderInfoLog(id, BITS, NULL, err);
+				char err[512];
+				glGetShaderInfoLog(id, 512, NULL, err);
 				glDeleteShader(id);
 				id = 0u;
-				throw std::runtime_error(err);
+				throw std::runtime_error(std::string("Compile") + err);
 			}
+
 			return id;
 		}
 		BOOM_INLINE uint32_t Link(uint32_t vert, uint32_t frag) {
 			uint32_t pgmId{ glCreateProgram() };
+
 			glAttachShader(pgmId, vert);
 			glAttachShader(pgmId, frag);
 			glLinkProgram(pgmId);
 
 			int32_t status{};
-			glGetShaderiv(pgmId, GL_LINK_STATUS, &status);
+			glGetProgramiv(pgmId, GL_LINK_STATUS, &status);
 			if (!status) {
 				char err[BITS];
-				glGetShaderInfoLog(pgmId, BITS, NULL, err);
+				glGetProgramInfoLog(pgmId, BITS, NULL, err);
 				glDeleteProgram(pgmId);
-				throw std::runtime_error(err);
+				throw std::runtime_error(std::string("Link") + err);
 			}
 
 			glDeleteShader(vert);
@@ -59,12 +61,12 @@ namespace Boom {
 			glValidateProgram(pgmId);
 
 			int32_t status{};
-			glGetShaderiv(pgmId, GL_VALIDATE_STATUS, &status);
+			glGetProgramiv(pgmId, GL_VALIDATE_STATUS, &status);
 			if (!status) {
 				char err[BITS];
-				glGetShaderInfoLog(pgmId, BITS, NULL, err);
+				glGetProgramInfoLog(pgmId, BITS, NULL, err);
 				glDeleteProgram(pgmId);
-				throw std::runtime_error(err);
+				throw std::runtime_error(std::string("Validate") + err);
 			}
 		}
 
@@ -109,7 +111,7 @@ namespace Boom {
 			return 0u;
 		}
 
-	protected: //helper functions for accessing uniform variables in vert & frag
+	public: //helper functions for accessing uniform variables in vert & frag
 		BOOM_INLINE int32_t GetUniformVar(std::string const& str) {
 			int32_t res{ glGetUniformLocation(shaderId, str.c_str()) };
 			if (res < 0) {
@@ -118,34 +120,34 @@ namespace Boom {
 			return res;
 		}
 		//uint
-		void SetUniform(unsigned val) const
+		void SetUniform(int32_t loc, unsigned val) const
 		{
-			glUniform1ui(shaderId, val);
+			glUniform1ui(loc, val);
 		}
 		//int
-		void SetUniform(int val) const
+		void SetUniform(int32_t loc, int val) const
 		{
-			glUniform1i(shaderId, val);
+			glUniform1i(loc, val);
 		}
 		//vec3
-		void SetUniform(glm::vec3 const& val) const
+		void SetUniform(int32_t loc, glm::vec3 const& val) const
 		{
-			glUniform3fv(shaderId, 1, glm::value_ptr(val));
+			glUniform3fv(loc, 1, glm::value_ptr(val));
 		}
 		//vec4
-		void SetUniform(glm::vec4 const& val) const
+		void SetUniform(int32_t loc, glm::vec4 const& val) const
 		{
-			glUniform4fv(shaderId, 1, glm::value_ptr(val));
+			glUniform4fv(loc, 1, glm::value_ptr(val));
 		}
 		//mat3
-		void SetUniform(glm::mat3 const& val) const
+		void SetUniform(int32_t loc, glm::mat3 const& val) const
 		{
-			glUniformMatrix3fv(shaderId, 1, GL_FALSE, glm::value_ptr(val));
+			glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(val));
 		}
 		//mat4
-		void SetUniform(glm::mat4 const& val) const
+		void SetUniform(int32_t loc, glm::mat4 const& val) const
 		{
-			glUniformMatrix4fv(shaderId, 1, GL_FALSE, glm::value_ptr(val));
+			glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(val));
 		}
 
 	protected:

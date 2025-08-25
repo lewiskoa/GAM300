@@ -11,7 +11,9 @@ namespace Boom {
 		GraphicsRenderer() = delete;
 
 		BOOM_INLINE GraphicsRenderer(int32_t w, int32_t h) {
-			glewExperimental = GL_TRUE;
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			//glewExperimental = GL_TRUE;
 			GLenum err = glewInit();
 #ifdef BOOM_ENABLE_LOG
 			if (GLEW_OK != err) {
@@ -61,10 +63,11 @@ namespace Boom {
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
-			BOOM_INFO("GPU Vendor: {}", GetGlewString(GL_VENDOR));
-			BOOM_INFO("GPU Renderer: {}", GetGlewString(GL_RENDERER));
-			BOOM_INFO("GPU Version: {}", GetGlewString(GL_VERSION));
-			BOOM_INFO("GPU Shader Version: {}", GetGlewString(GL_SHADING_LANGUAGE_VERSION));
+			//?? missing enum?
+			//BOOM_INFO("GPU Vendor: {}", GetGlewString(GL_VENDOR));
+			//BOOM_INFO("GPU Renderer: {}", GetGlewString(GL_RENDERER));
+			//BOOM_INFO("GPU Version: {}", GetGlewString(GL_VERSION));
+			//BOOM_INFO("GPU Shader Version: {}", GetGlewString(GL_SHADING_LANGUAGE_VERSION));
 
 			GLint ver[2];
 			glGetIntegerv(GL_MAJOR_VERSION, &ver[0]);

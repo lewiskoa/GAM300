@@ -8,10 +8,12 @@ namespace Boom {
 		BOOM_INLINE Mesh() = default; //to be decided what empty mesh should be.
 
 		//creates the mesh data in storage for the provided vertex data
-		BOOM_INLINE Mesh(MeshData<Vertex> const& data)
+		BOOM_INLINE Mesh(MeshData<Vertex>&& data)
 			: numVtx{ (uint32_t)data.vtx.size() }
 			, numIdx{ (uint32_t)data.idx.size() }
-			, buffId{} {
+			, buffId{}
+			, drawMode{ data.drawMode }
+		{
 			if (data.vtx.empty()) {
 				BOOM_ERROR("Mesh() - empty construct");
 				return;
@@ -46,17 +48,20 @@ namespace Boom {
 			}
 
 			//vert types
-			if (TypeID<Vertex>() == TypeID<ShadedVert>()) {
-				SetAttribute(0, 3, (void*)offsetof(ShadedVert, pos));
-				SetAttribute(1, 3, (void*)offsetof(ShadedVert, norm));
-				SetAttribute(2, 2, (void*)offsetof(ShadedVert, uv));
+			//if (TypeID<Vertex>() == TypeID<ShadedVert>()) {
+			if (std::is_same<Vertex, ShadedVert>::value) {
+				
+				SetAttribute<ShadedVert>(0, 3, (void*)offsetof(ShadedVert, pos));
+				SetAttribute<ShadedVert>(1, 3, (void*)offsetof(ShadedVert, norm));
+				SetAttribute<ShadedVert>(2, 2, (void*)offsetof(ShadedVert, uv));
 			}
-			else if (TypeID<Vertex>() == TypeID<FlatVert>()) {
-				SetAttribute(0, 3, (void*)offsetof(FlatVert, pos));
-				SetAttribute(1, 4, (void*)offsetof(FlatVert, col));
+			else if (std::is_same<Vertex, FlatVert>::value) {
+				SetAttribute<FlatVert>(0, 3, (void*)offsetof(FlatVert, pos));
+				SetAttribute<FlatVert>(1, 4, (void*)offsetof(FlatVert, col));
 			}
-			else if (TypeID<Vertex>() == TypeID<QuadVert>()) {
-				SetAttribute(0, 4, (void*)offsetof(QuadVert, data));
+			else if (std::is_same<Vertex, QuadVert>::value) {
+				SetAttribute<QuadVert>(0, 2, (void*)offsetof(QuadVert, pos));
+				SetAttribute<QuadVert>(1, 2, (void*)offsetof(QuadVert, uv));
 			}
 			else {
 				BOOM_ERROR(false && "Mesh() - invalid vertex type.");
@@ -66,13 +71,13 @@ namespace Boom {
 		}
 
 		//simple draw mesh function
-		BOOM_INLINE void Draw(uint32_t mode) {
+		BOOM_INLINE void Draw() {
 			glBindVertexArray(buffId);
 			if (numIdx) {
-				glDrawElements(mode, numIdx, GL_UNSIGNED_INT, 0);
+				glDrawElements(drawMode, numIdx, GL_UNSIGNED_INT, 0);
 			}
 			else {
-				glDrawArrays(mode, 0, numVtx);
+				glDrawArrays(drawMode, 0, numVtx);
 			}
 			glBindVertexArray(0);
 		}
@@ -82,15 +87,17 @@ namespace Boom {
 			glDeleteVertexArrays(1, &buffId);
 		}
 	private:
+		template <class TYPE>
 		BOOM_INLINE void SetAttribute(uint32_t index, int32_t size, void const* val) {
 			glEnableVertexAttribArray(index);
-			glVertexAttribPointer(index, size, GL_FLOAT, GL_FALSE, sizeof(Vertex), val);
+			glVertexAttribPointer(index, size, GL_FLOAT, GL_FALSE, sizeof(TYPE), val);
 		}
 
 	private:
 		uint32_t numVtx;
 		uint32_t numIdx;
 		uint32_t buffId;
+		uint32_t drawMode;
 	};
 
 	//3d Mesh

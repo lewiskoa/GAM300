@@ -5,19 +5,37 @@ namespace Boom {
 	using Quad3D = std::unique_ptr<Mesh<ShadedVert>>;
 	using Quad2D = std::unique_ptr<Mesh<QuadVert>>;
 
+	BOOM_INLINE Quad2D CreateTestQuad2D() {
+		MeshData<QuadVert> data;
+
+		data.vtx = {
+			{{-.5f, -.5f}, {0.f, 0.f}},
+			{{ .5f, -.5f}, {1.f, 0.f}},
+			{{ .5f,  .5f}, {1.f, 1.f}},
+			{{-.5f,  .5f}, {0.f, 1.f}}
+		};
+		data.idx = {
+			3, 0, 2, 1
+		};
+		data.drawMode = GL_TRIANGLE_STRIP;
+
+		return std::make_unique<Mesh<QuadVert>>(std::move(data));
+	}
+
+	//Triangle Strip config
 	BOOM_INLINE Quad2D CreateQuad2D() {
 		MeshData<QuadVert> data;
 
 		data.vtx = {
-			{-1.f, -1.f,  0.f,  0.f},
-			{-1.f,  1.f,  0.f,  1.f},
-			{ 1.f,  1.f,  1.f,  1.f},
-			{ 1.f, -1.f,  1.f,  0.f}
+			{{-1.f, -1.f}, {0.f, 0.f}},
+			{{ 1.f, -1.f}, {1.f, 0.f}},
+			{{ 1.f,  1.f}, {1.f, 1.f}},
+			{{-1.f,  1.f}, {0.f, 1.f}}
 		};
 		data.idx = {
-			0, 1, 2,
-			0, 2, 3
+			3, 0, 2, 1
 		};
+		data.drawMode = GL_TRIANGLE_STRIP;
 
 		return std::make_unique<Mesh<QuadVert>>(std::move(data));
 	}
@@ -51,6 +69,7 @@ namespace Boom {
 			0, 1, 2,
 			0, 2, 3
 		};
+		data.drawMode = GL_TRIANGLES;
 
 		return std::make_unique<Mesh<ShadedVert>>(std::move(data));
 	}

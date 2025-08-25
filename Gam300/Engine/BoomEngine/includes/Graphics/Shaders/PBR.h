@@ -6,23 +6,23 @@ namespace Boom {
 	struct PBRShader : Shader {
 		BOOM_INLINE PBRShader(std::string const& filename)
 			: Shader{ filename }
-			, modelMat{ (uint32_t)GetUniformVar("modelMat") }
-			, view{ (uint32_t)GetUniformVar("view") }
-			, proj{ (uint32_t)GetUniformVar("proj") }
+			, modelMat{ GetUniformVar("modelMat") }
+			, view{ GetUniformVar("view") }
+			, proj{ GetUniformVar("proj") }
 		{
 		}
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
-			SetUniform(cam.Projection(ratio));
-			SetUniform(cam.View(transform));
+			SetUniform(proj, cam.Projection(ratio));
+			SetUniform(view, cam.View(transform));
 		}
 		BOOM_INLINE void Draw(Mesh3D const& mesh, Transform3D const& transform) {
-			SetUniform(transform.Matrix());
-			mesh->Draw(GL_TRIANGLES);
+			SetUniform(modelMat, transform.Matrix());
+			mesh->Draw();
 		}
 
 	private:
-		uint32_t modelMat;
-		uint32_t view;
-		uint32_t proj;
+		int32_t modelMat;
+		int32_t view;
+		int32_t proj;
 	};
 }

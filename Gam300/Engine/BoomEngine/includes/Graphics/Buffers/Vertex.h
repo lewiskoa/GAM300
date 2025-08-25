@@ -3,7 +3,8 @@
 
 namespace Boom {
 	struct QuadVert {
-		float data[4]{};
+		glm::vec2 pos{};
+		glm::vec2 uv{};
 	};
 	struct FlatVert {
 		glm::vec3 pos{};
@@ -19,5 +20,6 @@ namespace Boom {
 	struct MeshData {
 		std::vector<uint32_t> idx;
 		std::vector<Vertex> vtx;
+		uint32_t drawMode;
 	};
 }
