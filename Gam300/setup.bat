@@ -109,15 +109,30 @@ if errorlevel 1 (
 )
 
 REM ------------------------------------------------------------------------
+REM 5.5) Ensure our custom msvc17 profile exists
+REM ------------------------------------------------------------------------
+if not exist profiles mkdir profiles
+(
+  echo [settings]
+  echo os=Windows
+  echo arch=x86_64
+  echo compiler=msvc
+  echo compiler.version=193
+  echo compiler.runtime=dynamic
+  echo compiler.cppstd=17
+  echo build_type=Release
+) > profiles\msvc17
+
+REM ------------------------------------------------------------------------
 REM 6) Install Debug and Release property sheets
 REM ------------------------------------------------------------------------
 echo [STEP] Installing Conan packages for Release...
-conan install . --output-folder=conanbuild --build=missing -g MSBuildDeps ^
-             -s build_type=Release -s arch=x86_64
+conan install . -of conanbuild\Release -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
+  -s build_type=Release -g CMakeDeps -g CMakeToolchain --build=missing
 
 echo [STEP] Installing Conan packages for Debug...
-conan install . --output-folder=conanbuild --build=missing -g MSBuildDeps ^
-             -s build_type=Debug   -s arch=x86_64
+conan install . -of conanbuild\Debug -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
+  -s build_type=Debug -g CMakeDeps -g CMakeToolchain --build=missing
 
 echo.
 echo ==== Done! Props are inside conanbuild/ ====
