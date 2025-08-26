@@ -13,7 +13,6 @@ namespace Boom {
 		BOOM_INLINE GraphicsRenderer(int32_t w, int32_t h) {
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			//glewExperimental = GL_TRUE;
 			GLenum err = glewInit();
 #ifdef BOOM_ENABLE_LOG
 			if (GLEW_OK != err) {
@@ -43,6 +42,10 @@ namespace Boom {
 		BOOM_INLINE void Draw(Mesh3D const& mesh, Transform3D const& transform) {
 			pbrShader->Draw(mesh, transform);
 		}
+		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material = {}) {
+			pbrShader->Draw(model, material, transform);
+		}
+
 		BOOM_INLINE void Resize(int32_t w, int32_t h) {
 			frame->Resize(w, h);
 		}

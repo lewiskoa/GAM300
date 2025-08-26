@@ -38,4 +38,10 @@ namespace Boom {
 		float farPlane{1000.f};
 		float FOV{45.f};
 	};
+
+	struct PbrMaterial {
+		glm::vec3 albedo{ 0.3f, 0.8f, 0.8f };
+		float roughness{ 0.5f };
+		float metallic{ 0.2f };
+	};
 }

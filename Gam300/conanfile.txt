@@ -8,8 +8,7 @@ imgui/1.89.7
 assimp/5.4.3
 
 [generators]
-CMakeDeps
-CMakeToolchain
+MSBuildDeps
 
 [options]
 assimp/5.4.3:shared=False

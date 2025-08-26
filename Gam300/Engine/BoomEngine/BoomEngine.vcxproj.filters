@@ -75,6 +75,12 @@
     <ClInclude Include="includes\Graphics\Shaders\Color.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Graphics\Models\Helper.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Graphics\Models\Model.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">

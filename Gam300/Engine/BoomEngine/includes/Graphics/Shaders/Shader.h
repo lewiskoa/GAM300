@@ -120,33 +120,31 @@ namespace Boom {
 			return res;
 		}
 		//uint
-		void SetUniform(int32_t loc, unsigned val) const
-		{
+		void SetUniform(int32_t loc, unsigned val) const {
 			glUniform1ui(loc, val);
 		}
 		//int
-		void SetUniform(int32_t loc, int val) const
-		{
+		void SetUniform(int32_t loc, int val) const {
 			glUniform1i(loc, val);
 		}
+		//float
+		void SetUniform(int32_t loc, float val) const {
+			glUniform1f(loc, val);
+		}
 		//vec3
-		void SetUniform(int32_t loc, glm::vec3 const& val) const
-		{
+		void SetUniform(int32_t loc, glm::vec3 const& val) const {
 			glUniform3fv(loc, 1, glm::value_ptr(val));
 		}
 		//vec4
-		void SetUniform(int32_t loc, glm::vec4 const& val) const
-		{
+		void SetUniform(int32_t loc, glm::vec4 const& val) const {
 			glUniform4fv(loc, 1, glm::value_ptr(val));
 		}
 		//mat3
-		void SetUniform(int32_t loc, glm::mat3 const& val) const
-		{
+		void SetUniform(int32_t loc, glm::mat3 const& val) const {
 			glUniformMatrix3fv(loc, 1, GL_FALSE, glm::value_ptr(val));
 		}
 		//mat4
-		void SetUniform(int32_t loc, glm::mat4 const& val) const
-		{
+		void SetUniform(int32_t loc, glm::mat4 const& val) const {
 			glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(val));
 		}
 

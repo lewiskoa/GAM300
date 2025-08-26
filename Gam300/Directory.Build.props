@@ -1,11 +1,14 @@
 <Project>
 	<ImportGroup Label="PropertySheets">
-		<Import Project="conanbuild\conandeps.props"
-				Condition="Exists('conanbuild\conandeps.props')" />
+		<!-- Debug -->
+		<Import Project="conanbuild\Debug\conandeps.props"
+				Condition="Exists('conanbuild\Debug\conandeps.props') AND '$(Configuration)'=='Debug'" />
+		<!-- Release -->
+		<Import Project="conanbuild\Release\conandeps.props"
+				Condition="Exists('conanbuild\Release\conandeps.props') AND '$(Configuration)'=='Release'" />
 	</ImportGroup>
 
-	
-	<ItemDefinitionGroup Condition="'$(Configuration)' == 'Debug'">
+	<ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
 		<ClCompile>
 			<!--MACRO DEFINITION FOR DEBUG MODE-->
 			<PreprocessorDefinitions>
@@ -14,7 +17,6 @@
 			</PreprocessorDefinitions>
 		</ClCompile>
 	</ItemDefinitionGroup>
-
 
 	<PropertyGroup>
 		<!-- 1) Engine import lib folder -->
