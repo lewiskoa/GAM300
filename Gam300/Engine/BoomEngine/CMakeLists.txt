@@ -33,6 +33,7 @@ find_package(GLEW     REQUIRED)
 find_package(glm      REQUIRED)
 find_package(imgui    REQUIRED)
 find_package(OpenGL   REQUIRED)
+find_package(assimp   REQUIRED)
 
 # 2e) Link libraries + any extra .lib you manually had
 target_link_libraries(BoomEngine
@@ -42,6 +43,7 @@ target_link_libraries(BoomEngine
     glm::glm
     imgui::imgui
     OpenGL::GL
+    assimp::assimp
     $<$<CONFIG:Debug>:MyExtraDebugOnly.lib>
 )
 
