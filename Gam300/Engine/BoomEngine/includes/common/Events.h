@@ -148,4 +148,9 @@ namespace Boom
         int32_t width{};
         int32_t height{};
     };
+
+    struct WindowTitleRenameEvent {
+        WindowTitleRenameEvent(std::string const& str) : title{ str } {}
+        std::string title{}; 
+    };
 }

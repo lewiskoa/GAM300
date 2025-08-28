@@ -26,11 +26,14 @@ namespace Boom
             m_Context = new AppContext();
 
             AttachCallback<WindowResizeEvent>([this](auto e) {
-                m_Context->renderer->Resize(e.width, e.height);
+                    m_Context->renderer->Resize(e.width, e.height);
                 }
             );
 
-            
+            AttachCallback<WindowTitleRenameEvent>([this](auto e) {
+                    m_Context->window->SetWindowTitle(e.title);
+                }
+            );
         }
 
         /**
@@ -73,6 +76,7 @@ namespace Boom
             */
             Camera3D cam{};
             auto model = std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "cube.fbx");
+            float testRotCam{}; //TEST VARIABLE: TO BE REMOVED
             while (m_Context->window->PollEvents())
             {
                 //updates new frame
@@ -80,24 +84,33 @@ namespace Boom
                 {
                     //testing rendering
                     {
-                        m_Context->renderer->SetCamera(cam, {});
+                        if ((testRotCam += 0.1f) > 360.f) { testRotCam -= 360.f; }
+                        m_Context->renderer->SetCamera(cam, {m_Context->window->camPos, {0.f, 0.f, testRotCam}, {}});
                         //cube model, (translate,rotate,scale), default material(red, rough, slight metal)
-                        m_Context->renderer->Draw(model, Transform3D({ {0.f, 0.f, -2.f}, {0.f, 30.f, 0.f}, glm::vec3{1.f} }));
+                        m_Context->renderer->Draw(model, Transform3D({ {0.f, 0.f, -2.f}, {testRotCam, 30.f, testRotCam}, glm::vec3{1.f} }));
                     }
                     /*
                     //set shader cam
                     EnttView<Entity, CameraComponent>([this](auto entity, auto& comp) {
                             auto& transform{entity.templateGet<TransformComponent>().Transform};
-                            m_Context->renderer->SetCamera(comp.Camera, transform);
+                            m_Context->renderer->SetCamera(comp.camera, transform);
                         }
                     );
 
-                    //render models
-                    EnttView<Entity, MeshComponent>([this](auto entity, auto& comp) {
-                            auto& transform{entity.templateGet<TransformComponent>().Transform};
-                            m_Context->renderer->Draw(comp.Mesh, transform);
-                        }
-                    );
+                    { //like before, comment out/remove non used code
+                        //render mesh
+                        EnttView<Entity, MeshComponent>([this](auto entity, auto& comp) {
+                                auto& transform{entity.templateGet<TransformComponent>().Transform};
+                                m_Context->renderer->Draw(comp.mesh, transform);
+                            }
+                        );
+                        //or render model
+                        EnttView<Entity, ModelCOmponent>([this](auto entity, auto& comp) {
+                                auto& transform{entity.templateGet<TransformComponent>().Transform};
+                                m_Context->renderer->Draw(comp.model, transform, comp.material);
+                            }
+                        );
+                    }
                     */
                 }
                 m_Context->renderer->EndFrame();

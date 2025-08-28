@@ -32,7 +32,7 @@ struct Material {
     vec3 albedo;
     float roughness;
     float metallic;
-}
+};
 uniform Material material;
 
 void main() {
@@ -55,7 +55,7 @@ void main() {
     float D = roughnessSq / (3.141 * denom * denom);
     vec3 specular = lightRadiance * (material.metallic * D);
 
-    vec3 color = (diffuse + specular);
+    vec3 color = diffuse + specular;
 
     fragColor = vec4(color, 1.0);
 }

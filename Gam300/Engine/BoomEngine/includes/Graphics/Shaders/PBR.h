@@ -10,9 +10,12 @@ namespace Boom {
 			, albedoLoc{ GetUniformVar("material.albedo") }
 			, roughLoc{ GetUniformVar("material.roughness") }
 			, metalLoc{ GetUniformVar("material.metallic") }
+			, viewPos{ GetUniformVar("viewPos") }
 			, modelMat{ GetUniformVar("modelMat") }
 			, view{ GetUniformVar("view") }
 			, proj{ GetUniformVar("proj") }
+
+			, camPos{0.f, 0.f, 2.f}
 		{
 		}
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
@@ -28,6 +31,7 @@ namespace Boom {
 			SetUniform(albedoLoc, material.albedo);
 			SetUniform(roughLoc, material.roughness);
 			SetUniform(metalLoc, material.metallic);
+			SetUniform(viewPos, camPos);
 			model->Draw();
 		}
 	public: //testers
@@ -39,6 +43,7 @@ namespace Boom {
 			SetUniform(albedoLoc, mat.albedo);
 			SetUniform(roughLoc, mat.roughness);
 			SetUniform(metalLoc, mat.metallic);
+			SetUniform(viewPos, glm::vec3(0.f, 0.f, 2.f));
 			model->Draw();
 			UnUse();
 		}
@@ -46,6 +51,7 @@ namespace Boom {
 			Use();
 			SetCamera({}, {}, 2.f);
 			SetUniform(modelMat, Transform3D().Matrix());
+			SetUniform(viewPos, glm::vec3(0.f, 0.f, 2.f));
 			mesh->Draw();
 			UnUse();
 		}
@@ -55,8 +61,12 @@ namespace Boom {
 		int32_t roughLoc;
 		int32_t metalLoc;
 
+		int32_t viewPos;
 		int32_t modelMat;
 		int32_t view;
 		int32_t proj;
+
+	private:
+		glm::vec3 camPos;
 	};
 }

@@ -34,11 +34,12 @@ struct Material {
     float metallic;
 };
 uniform Material material;
+uniform vec3 viewPos;
 
 void main() {
-    vec3 lightPos = vec3(-0.5, 0.0, 1.0);
+    //vec3 lightPos = vec3(-0.5, 0.0, 1.0);
+    vec3 lightPos = viewPos;
     vec3 lightRadiance = vec3(1.0, 1.0, 1.0);
-    vec3 viewPos = vec3(0.0, 0.0, 2.0);
 
     //diffuse
     vec3 N = normalize(vertex.vnormal);

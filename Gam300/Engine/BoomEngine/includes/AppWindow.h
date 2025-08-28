@@ -15,12 +15,13 @@ namespace Boom {
 			: width{ w }
 			, height{ h }
 			, refreshRate{ 144 }
-			, title{ windowTitle }
 			, isFullscreen{ false }
 			, windowPtr{}
 			, monitorPtr{}
 			, modePtr{}
 			, dispatcher{ disp }
+
+			, camPos{}
 		{
 			if (!glfwInit()) {
 				BOOM_FATAL("AppWindow::Init() - glfwInit() failed.");
@@ -46,7 +47,7 @@ namespace Boom {
 			glfwWindowHint(GLFW_MAXIMIZED, GL_FALSE);
 			glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
-			windowPtr = glfwCreateWindow(width, height, title, NULL, NULL);
+			windowPtr = glfwCreateWindow(width, height, windowTitle, NULL, NULL);
 			if (windowPtr == nullptr) {
 				BOOM_FATAL("AppWindow::Init() - failed to init app window.");
 				std::exit(EXIT_FAILURE);
@@ -177,13 +178,28 @@ namespace Boom {
 			(void)win;  (void)x; (void)y; //remove when added in
 		}
 		BOOM_INLINE static void OnKey(GLFWwindow* win, int32_t key, int32_t, int32_t action, int32_t) {
-			//AppWindow* self{ GetUserData(win) };
+			AppWindow* self{ GetUserData(win) };
 
 			//temporary force close...
 			if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 				//self->dispatcher->PostEvent<WindowCloseEvent>();
 				glfwSetWindowShouldClose(win, GLFW_TRUE);
 				return;
+			}
+			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+				static float xPos{};
+				if (key == GLFW_KEY_A) {
+					self->camPos.x -= 0.1f;
+				}
+				if (key == GLFW_KEY_D) {
+					self->camPos.x += 0.1f;
+				}
+				if (key == GLFW_KEY_W) {
+					self->camPos.y += 0.1f;
+				}
+				if (key == GLFW_KEY_S) {
+					self->camPos.y -= 0.1f;
+				}
 			}
 
 			if (key >= 0 && key <= GLFW_KEY_LAST) {
@@ -212,15 +228,20 @@ namespace Boom {
 		}
 
 	public:
-		[[nodiscard]] int32_t& Width() noexcept {
+		BOOM_INLINE void SetWindowTitle(std::string const& title) {
+			glfwSetWindowTitle(windowPtr, title.c_str());
+		}
+
+		[[nodiscard]] BOOM_INLINE int32_t& Width() noexcept {
 			return width;
 		}
-		[[nodiscard]] int32_t& Height() noexcept {
+		[[nodiscard]] BOOM_INLINE int32_t& Height() noexcept {
 			return height;
 		}
 		[[nodiscard]] BOOM_INLINE GLFWwindow* Window() noexcept {
 			return windowPtr;
 		}
+		
 		BOOM_INLINE bool PollEvents() {
 			glfwPollEvents();
 			dispatcher->PollEvents();
@@ -244,7 +265,6 @@ namespace Boom {
 		int32_t width;
 		int32_t height;
 		int32_t refreshRate;
-		char const* title;
 		bool isFullscreen;
 
 		//glfw window context
@@ -253,5 +273,10 @@ namespace Boom {
 		GLFWvidmode const* modePtr;
 		EventDispatcher* dispatcher;
 		//WindowInputs inputs;
+
+		//temporary for testing
+	public:
+		glm::vec3 camPos;
+		
 	};
 }
