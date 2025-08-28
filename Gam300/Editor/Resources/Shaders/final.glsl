@@ -17,10 +17,9 @@ layout (location = 1) in vec2 uv;
 
 out vec4 fragColor;
 uniform sampler2D map;
-uniform vec4 color;
 
 void main() {
     //red texture
-    fragColor = texture(map, uv) * color;
+    fragColor = texture(map, uv) * vec4(1.0, 0.0, 0.0, 1.0);
 }
 ==FRAGMENT==

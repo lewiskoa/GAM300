@@ -74,15 +74,12 @@ void MyEngineClass::whatup() {
 
         std::cout << "Dispatcher smoketest finished inside MyEngineClass::whatup().\n";
 
-        
-        //auto app{ new Application() };
-        //app->AttachLayer<Editor>();
-        //app->RunContext();
-        
         {
             std::cout << std::endl;
-            Boom::AppWindow awin{&dispatcher, 1800, 900, "Boom Editor - Press 'Esc' to quit" };
-            Boom::GraphicsRenderer g{ 1800, 900 };
+            //auto app{ std::make_unique<Application>() };
+            //app->RunContext();
+            Boom::AppWindow awin{&dispatcher, CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT, "Boom Editor - Press 'Esc' to quit" };
+            Boom::GraphicsRenderer g{ CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT };
             /*
             //actual code to be used
             while (awin.PollEvents()) {

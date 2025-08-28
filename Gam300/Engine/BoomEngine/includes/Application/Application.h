@@ -57,30 +57,45 @@ namespace Boom
             camera.Attach<TransformComponent>().Transform.Translate.z = 2.f;
             camera.Attach<CameraComponent>();
 
-            //create quad
-            auto quad{ CreateEntt<Entity>() };
-            quad.Attach<MeshComponent>().Mesh = CreateQuad3D();
-            quad.Attach<TransformComponent>();
+            { //chose one example entity to render by simply commenting out the other one.
+                //create cube entity (.fbx file reading)
+                auto model = std::make_shared<Model>("Resources/Models/{filename}.fbx");
+                auto cube = CreateEntt<Entity>();
+                cube.Attach<TransformComponent>().Transform.Rotation.y = 30.f;
+                cube.Attach<ModelComponent>().Model = model;
+
+                //create quad
+                auto quad{ CreateEntt<Entity>() };
+                quad.Attach<MeshComponent>().Mesh = CreateQuad3D();
+                quad.Attach<TransformComponent>();
+            }
             */
+            auto model = std::make_shared<Model>("Resources/Models/Cube.fbx");
             while (m_Context->window->PollEvents())
             {
                 //updates new frame
                 m_Context->renderer->NewFrame();
-                /*
-                //set shader cam
-                EnttView<Entity, CameraComponent>([this](auto entity, auto& comp) {
-                        auto& transform{entity.templateGet<TransformComponent>().Transform};
-                        m_Context->renderer->SetCamera(comp.Camera, transform);
+                {
+                    //testing rendering
+                    {
+                        m_Context->renderer->Draw(model, Transform3D({ {}, {}, glm::vec3{0.5f} }));
                     }
-                );
+                    /*
+                    //set shader cam
+                    EnttView<Entity, CameraComponent>([this](auto entity, auto& comp) {
+                            auto& transform{entity.templateGet<TransformComponent>().Transform};
+                            m_Context->renderer->SetCamera(comp.Camera, transform);
+                        }
+                    );
 
-                //render models
-                EnttView<Entity, MeshComponent>([this](auto entity, auto& comp) {
-                        auto& transform{entity.templateGet<TransformComponent>().Transform};
-                        m_Context->renderer->Draw(comp.Mesh, transform);
-                    }
-                );
-                */
+                    //render models
+                    EnttView<Entity, MeshComponent>([this](auto entity, auto& comp) {
+                            auto& transform{entity.templateGet<TransformComponent>().Transform};
+                            m_Context->renderer->Draw(comp.Mesh, transform);
+                        }
+                    );
+                    */
+                }
                 m_Context->renderer->EndFrame();
 
                 //update layers

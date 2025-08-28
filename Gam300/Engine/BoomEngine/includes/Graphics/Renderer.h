@@ -43,7 +43,7 @@ namespace Boom {
 			pbrShader->Draw(mesh, transform);
 		}
 		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material = {}) {
-			pbrShader->Draw(model, material, transform);
+			pbrShader->Draw(model, transform, material);
 		}
 
 		BOOM_INLINE void Resize(int32_t w, int32_t h) {
