@@ -21,8 +21,8 @@ namespace Boom
 		/// reducing function-call overhead in the engine’s core update loop
 		BOOM_INLINE AppContext()
 			: dispatcher{}
-			, renderer{ std::make_unique<GraphicsRenderer>(CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT) }
 			, window{ std::make_unique<AppWindow>(&dispatcher, CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT, "Boom Engine") }
+			, renderer{ std::make_unique<GraphicsRenderer>(CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT) }
 		{
 		}
 
@@ -46,8 +46,8 @@ namespace Boom
 		 */
 		std::vector<AppInterface*> Layers; //Use of pointers within containers to prevent memory leaks and promote safe practice
 		EventDispatcher dispatcher;
-		std::unique_ptr<GraphicsRenderer> renderer;
 		std::unique_ptr<AppWindow> window;
+		std::unique_ptr<GraphicsRenderer> renderer;
 		//scene
 	};
 

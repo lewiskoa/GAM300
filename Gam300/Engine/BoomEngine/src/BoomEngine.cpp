@@ -24,7 +24,7 @@ namespace {
     //void TestRender();
     
     //this function shows the renderer logic
-    void TestShaders(Boom::AppWindow& awin, Boom::EventDispatcher& dispatcher);
+    void TestShaders(Boom::EventDispatcher& dispatcher);
 }
 
 void MyEngineClass::whatup() {
@@ -76,25 +76,11 @@ void MyEngineClass::whatup() {
 
         {
             std::cout << std::endl;
-            //auto app{ std::make_unique<Application>() };
-            //app->RunContext();
-            Boom::AppWindow awin{&dispatcher, CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT, "Boom Editor - Press 'Esc' to quit" };
-            Boom::GraphicsRenderer g{ CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT };
-            /*
-            //actual code to be used
-            while (awin.PollEvents()) {
-                glClear(GL_COLOR_BUFFER_BIT);
-                g.NewFrame();
-                {
-                    //ecs stuff
-                }
-                g.EndFrame();
-                g.ShowFrame();
-
-                glfwSwapBuffers(awin.Window());
-                dispatcher.PollEvents();
-            }*/
-            TestShaders(awin, dispatcher);
+            
+            //TestShaders(dispatcher);
+            //actual application code to run
+            auto app{ std::make_unique<Application>() };
+            app->RunContext();
         }
 }
 
@@ -222,7 +208,9 @@ namespace {
         glfwDestroyWindow(window);
         glfwTerminate();
     }
-    void TestShaders(Boom::AppWindow& awin, Boom::EventDispatcher& dispatcher) {
+    void TestShaders(Boom::EventDispatcher& dispatcher) {
+        Boom::AppWindow awin{ &dispatcher, CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT, "Boom Editor - Press 'Esc' to quit" };
+        Boom::GraphicsRenderer g{ CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT };
         //color shader uses a test quad that only covers a portion of the screen
         ColorShader cs{
                 std::string(CONSTANTS::SHADERS_LOCATION) + "color.glsl",
@@ -232,8 +220,12 @@ namespace {
             std::string(CONSTANTS::SHADERS_LOCATION) + "final.glsl",
             {1.f, 0.f, 0.f, 1.f} //red
         };
-        PBRShader pbrs{ std::string(CONSTANTS::SHADERS_LOCATION) + "pbr.glsl" };
+        //PBRShader pbrs{ std::string(CONSTANTS::SHADERS_LOCATION) + "pbr.glsl" };
         FrameBuffer fb{ 1800, 900 };
+        Color3DShader cs3d{
+            std::string(CONSTANTS::SHADERS_LOCATION) + "color3D.glsl",
+            {1.f, 1.f, 0.f, 0.5f} //translucent yellow
+        };
 
         while (awin.PollEvents()) {
             //update all system logic
@@ -247,16 +239,17 @@ namespace {
                 glClear(GL_COLOR_BUFFER_BIT);
                 //load frame buffer for texture for final 2d shader
                 fb.Begin();
-                pbrs.Use();
+                //pbrs.Use();
                 {
                     //this portion is where ecs is to be placed
                 }
-                pbrs.UnUse();
+                //pbrs.UnUse();
                 fb.End();
 
                 //display the 2nd passed shader + test color shader onto the window
                 fs.Show(fb.GetTexture());
-                cs.Show();
+                //cs.Show();
+                cs3d.Show();
 
                 glfwSwapBuffers(awin.Window());
             }

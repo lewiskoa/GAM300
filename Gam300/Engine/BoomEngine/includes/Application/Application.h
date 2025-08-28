@@ -29,6 +29,7 @@ namespace Boom
                 m_Context->renderer->Resize(e.width, e.height);
                 }
             );
+
             
         }
 
@@ -70,7 +71,8 @@ namespace Boom
                 quad.Attach<TransformComponent>();
             }
             */
-            auto model = std::make_shared<Model>("Resources/Models/Cube.fbx");
+            Camera3D cam{};
+            auto model = std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "cube.fbx");
             while (m_Context->window->PollEvents())
             {
                 //updates new frame
@@ -78,7 +80,9 @@ namespace Boom
                 {
                     //testing rendering
                     {
-                        m_Context->renderer->Draw(model, Transform3D({ {}, {}, glm::vec3{0.5f} }));
+                        m_Context->renderer->SetCamera(cam, {});
+                        //cube model, (translate,rotate,scale), default material(red, rough, slight metal)
+                        m_Context->renderer->Draw(model, Transform3D({ {0.f, 0.f, -2.f}, {0.f, 30.f, 0.f}, glm::vec3{1.f} }));
                     }
                     /*
                     //set shader cam
@@ -106,6 +110,7 @@ namespace Boom
 
                 //draw the updated frame
                 m_Context->renderer->ShowFrame();
+                //glfwSwapBuffers(m_Context->window->Window());
             }
         }
     };

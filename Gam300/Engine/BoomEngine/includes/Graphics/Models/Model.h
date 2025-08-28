@@ -13,7 +13,7 @@ namespace Boom {
 		//function initializes an assimp importer, reads model file
 		//applies flags for optimization and then parses loaded scene's meshes
 		BOOM_INLINE void Load(std::string const& filename) {
-			Assimp::Importer importer;
+			Assimp::Importer importer{};
 			uint32_t flags{
 				aiProcess_Triangulate | aiProcess_GenSmoothNormals |
 				aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes |
@@ -49,7 +49,7 @@ namespace Boom {
 		}
 
 		BOOM_INLINE void ParseMesh(aiMesh* mesh) {
-			MeshData<ShadedVert> meshData;
+			MeshData<ShadedVert> meshData{};
 
 			//vertex data
 			for (uint32_t i{}; i < mesh->mNumVertices; ++i) {
@@ -70,7 +70,7 @@ namespace Boom {
 
 			meshData.drawMode = GL_TRIANGLES; //default draw mode
 
-			auto ret{ std::make_unique<ShadedMesh>(meshData) };
+			auto ret{ std::make_unique<ShadedMesh>(std::move(meshData)) };
 			meshes.push_back(std::move(ret));
 		}
 	private:

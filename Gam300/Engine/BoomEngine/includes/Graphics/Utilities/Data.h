@@ -20,9 +20,11 @@ namespace Boom {
 	};
 
 	struct Camera3D {
+		//transform here refers to the camera's transformation variables
 		BOOM_INLINE glm::mat4 Frustum(Transform3D const& transform, float ratio) const {
 			return Projection(ratio) * View(transform);
 		}
+		//transform here refers to the camera's transformation variables
 		BOOM_INLINE glm::mat4 View(Transform3D const& transform) const {
 			return glm::lookAt(
 				transform.translate,							//eye
@@ -40,7 +42,7 @@ namespace Boom {
 	};
 
 	struct PbrMaterial {
-		glm::vec3 albedo{ 0.3f, 0.8f, 0.8f };
+		glm::vec3 albedo{ 0.8f, 0.1f, 0.1f };
 		float roughness{ 0.5f };
 		float metallic{ 0.2f };
 	};

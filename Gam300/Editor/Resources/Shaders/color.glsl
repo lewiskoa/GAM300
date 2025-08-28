@@ -1,6 +1,7 @@
 #version 450 core
 
 layout(location = 0) in vec2 pos;
+layout(location = 1) in vec2 in_uv;
 
 layout(location = 1) out vec2 out_uv;
 void main() {

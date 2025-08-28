@@ -35,7 +35,7 @@ namespace Boom {
 		}
 		BOOM_INLINE ~GraphicsRenderer() {}
 
-	public:
+	public: //shader uniforms and draw call
 		BOOM_INLINE void SetCamera(Camera3D& cam, Transform3D const& transform) {
 			pbrShader->SetCamera(cam, transform, frame->Ratio());
 		}
@@ -46,6 +46,17 @@ namespace Boom {
 			pbrShader->Draw(model, transform, material);
 		}
 
+	public: //tester functions
+		BOOM_INLINE void TestPBR(Model3D const& model) {
+			glClear(GL_COLOR_BUFFER_BIT);
+			pbrShader->Show(model);
+		}
+		BOOM_INLINE void TestPBR(Mesh3D const& mesh) {
+			glClear(GL_COLOR_BUFFER_BIT);
+			pbrShader->Show(mesh);
+		}
+
+	public: //helper functions
 		BOOM_INLINE void Resize(int32_t w, int32_t h) {
 			frame->Resize(w, h);
 		}

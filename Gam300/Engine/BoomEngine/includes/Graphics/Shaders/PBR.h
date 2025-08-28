@@ -7,9 +7,10 @@ namespace Boom {
 	struct PBRShader : Shader {
 		BOOM_INLINE PBRShader(std::string const& filename)
 			: Shader{ filename }
-			, modelMat{ GetUniformVar("modelMat.albedo") }
+			, albedoLoc{ GetUniformVar("material.albedo") }
 			, roughLoc{ GetUniformVar("material.roughness") }
 			, metalLoc{ GetUniformVar("material.metallic") }
+			, modelMat{ GetUniformVar("modelMat") }
 			, view{ GetUniformVar("view") }
 			, proj{ GetUniformVar("proj") }
 		{
@@ -28,6 +29,25 @@ namespace Boom {
 			SetUniform(roughLoc, material.roughness);
 			SetUniform(metalLoc, material.metallic);
 			model->Draw();
+		}
+	public: //testers
+		BOOM_INLINE void Show(Model3D const& model) {
+			Use();
+			SetCamera({}, {}, 2.f);
+			SetUniform(modelMat, Transform3D().Matrix());
+			PbrMaterial mat{};
+			SetUniform(albedoLoc, mat.albedo);
+			SetUniform(roughLoc, mat.roughness);
+			SetUniform(metalLoc, mat.metallic);
+			model->Draw();
+			UnUse();
+		}
+		BOOM_INLINE void Show(Mesh3D const& mesh) {
+			Use();
+			SetCamera({}, {}, 2.f);
+			SetUniform(modelMat, Transform3D().Matrix());
+			mesh->Draw();
+			UnUse();
 		}
 
 	private:

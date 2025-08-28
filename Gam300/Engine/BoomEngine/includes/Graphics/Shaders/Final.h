@@ -20,9 +20,7 @@ namespace Boom {
 		}
 		BOOM_INLINE void Show(uint32_t m) {
 			Use();
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, m);
-			SetUniform(map, 0);
+			SetSceneMap(m);
 			SetUniform(colLoc, color);
 			quad->Draw();
 			UnUse();
