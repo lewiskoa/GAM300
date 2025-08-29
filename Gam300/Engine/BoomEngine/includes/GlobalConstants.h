@@ -8,5 +8,6 @@ namespace Boom {
 		constexpr char const* MODELS_LOCAITON = "Resources/Models/";
 		int const WINDOW_WIDTH = 1800;
 		int const WINDOW_HEIGHT = 900;
+		float const PI = 3.14159265358979323846f;
 	}
 }

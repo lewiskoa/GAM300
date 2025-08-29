@@ -35,6 +35,22 @@ namespace Boom {
 		}
 		BOOM_INLINE ~GraphicsRenderer() {}
 
+	public: //lights - the pbr shader will ignore any lights set above the maximum allowed by MAX_LIGHTS defined within shader
+		template <class TYPE>
+		BOOM_INLINE void SetLight(TYPE const& light, Transform3D const& transform, uint32_t index) {
+			pbrShader->SetLight<TYPE>(light, transform, index);
+		}
+		BOOM_INLINE void SetSpotLightCount(int32_t count) {
+			pbrShader->SetSpotLightCount(count);
+		}
+		BOOM_INLINE void SetPointLightCount(int32_t count) {
+			pbrShader->SetPointLightCount(count);
+		}
+		BOOM_INLINE void SetDirectionalLightCount(int32_t count) {
+			pbrShader->SetDirectionalLightCount(count);
+		}
+
+
 	public: //shader uniforms and draw call
 		BOOM_INLINE void SetCamera(Camera3D& cam, Transform3D const& transform) {
 			pbrShader->SetCamera(cam, transform, frame->Ratio());
@@ -44,16 +60,6 @@ namespace Boom {
 		}
 		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material = {}) {
 			pbrShader->Draw(model, transform, material);
-		}
-
-	public: //tester functions
-		BOOM_INLINE void TestPBR(Model3D const& model) {
-			glClear(GL_COLOR_BUFFER_BIT);
-			pbrShader->Show(model);
-		}
-		BOOM_INLINE void TestPBR(Mesh3D const& mesh) {
-			glClear(GL_COLOR_BUFFER_BIT);
-			pbrShader->Show(mesh);
 		}
 
 	public: //helper functions

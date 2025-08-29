@@ -75,8 +75,25 @@ namespace Boom
             }
             */
             Camera3D cam{};
-            auto model = std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "cube.fbx");
-            float testRotCam{}; //TEST VARIABLE: TO BE REMOVED
+            //this .fbx cube's normals is a little janky
+            auto modelCube = std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "cube.fbx");
+            //auto modelSphere = std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "sphere.fbx");
+
+            //lights testers
+            PointLight pl1{};
+            PointLight pl2{};
+            DirectionalLight dl{};
+            SpotLight sl{};
+            {
+                pl1.radiance.b = 0.f;
+                pl1.intensity = 2.f;
+                pl2.radiance.g = 0.f;
+                pl2.intensity = 3.f;
+
+                sl.radiance = { 1.f, 1.f, 1.f };
+            }
+            m_Context->window->camPos.z = 3.f;
+
             while (m_Context->window->PollEvents())
             {
                 //updates new frame
@@ -84,10 +101,34 @@ namespace Boom
                 {
                     //testing rendering
                     {
-                        if ((testRotCam += 0.1f) > 360.f) { testRotCam -= 360.f; }
-                        m_Context->renderer->SetCamera(cam, {m_Context->window->camPos, {0.f, 0.f, testRotCam}, {}});
-                        //cube model, (translate,rotate,scale), default material(red, rough, slight metal)
-                        m_Context->renderer->Draw(model, Transform3D({ {0.f, 0.f, -2.f}, {testRotCam, 30.f, testRotCam}, glm::vec3{1.f} }));
+                        //lights
+                        m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 1.f }, {}, {}), 0);
+                        m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
+                        m_Context->renderer->SetPointLightCount(0);
+
+                        //static float testRot{};
+                        //if ((testRot += 0.1f) > 360.f) { testRot -= 360.f; BOOM_INFO("reseted."); }
+                        m_Context->renderer->SetLight(dl, Transform3D({}, { 0.f, 0.f, -0.5f }, {}), 0);
+                        m_Context->renderer->SetDirectionalLightCount(0);
+
+                        m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
+                        m_Context->renderer->SetSpotLightCount(1);
+                        
+                        //camera
+                        m_Context->renderer->SetCamera(cam, {m_Context->window->camPos, {0.f, 0.f, 0.f}, {}});
+                        
+                        //models
+                        m_Context->renderer->Draw(
+                            modelCube, 
+                            Transform3D({0.f, 0.f, -1.f}, {}, {3.f, 3.f, 1.f})
+                            //,PbrMaterial({ { 0.8f, 0.2f, 0.2f }, { 0.420f }, {0.69f} })
+                        );
+                        /*
+                        m_Context->renderer->Draw(
+                            modelSphere,
+                            Transform3D({}, {}, glm::vec3{1.f}),
+                            PbrMaterial({1.f, 1.f, 1.f}, 0.7f, 0.8f)
+                        );*/
                     }
                     /*
                     //set shader cam

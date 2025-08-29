@@ -21,7 +21,7 @@ namespace Boom {
 			, modePtr{}
 			, dispatcher{ disp }
 
-			, camPos{}
+			, camPos{0.f, 0.f, 2.f}
 		{
 			if (!glfwInit()) {
 				BOOM_FATAL("AppWindow::Init() - glfwInit() failed.");
@@ -274,8 +274,7 @@ namespace Boom {
 		EventDispatcher* dispatcher;
 		//WindowInputs inputs;
 
-		//temporary for testing
-	public:
+	public: //temporary for testing
 		glm::vec3 camPos;
 		
 	};

@@ -120,11 +120,11 @@ namespace Boom {
 			return res;
 		}
 		//uint
-		void SetUniform(int32_t loc, unsigned val) const {
+		void SetUniform(int32_t loc, uint32_t val) const {
 			glUniform1ui(loc, val);
 		}
 		//int
-		void SetUniform(int32_t loc, int val) const {
+		void SetUniform(int32_t loc, int32_t val) const {
 			glUniform1i(loc, val);
 		}
 		//float
