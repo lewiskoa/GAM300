@@ -3,19 +3,25 @@
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 uv;
+layout (location = 3) in vec3 tangent;
+layout (location = 4) in vec3 biTangent;
 
 out Vertex {
     vec3 position;
     vec3 normal;
+    mat3 TBN; //tangent, bitangent, normal
+    vec2 uv;
 } vertex;
 
 uniform mat4 modelMat;
 uniform mat4 frustumMat; //projection * view
 
 void main() {
-    vertex.normal = mat3(modelMat) * normal;
+    vertex.normal = (modelMat * vec4(normal, 1.0)).xyz;
     vec4 worldPos = modelMat * vec4(position, 1.0);
     vertex.position = worldPos.xyz;
+    vertex.uv = uv;
+    vertex.TBN = mat3(modelMat) * mat3(tangent, biTangent, normal);
     gl_Position = frustumMat * worldPos;
 }
 ==VERTEX==
@@ -26,12 +32,30 @@ layout (location = 0) out vec4 fragColor;
 in Vertex {
     vec3 position;
     vec3 normal;
+    mat3 TBN;
+    vec2 uv;
 } vertex;
 
 struct Material {
+    vec3 emissive;
     vec3 albedo;
     float roughness;
     float metallic;
+    float occlusion;
+
+    sampler2D occlusionMap;
+    sampler2D roughnessMap;
+    sampler2D emissiveMap;
+    sampler2D metallicMap;
+    sampler2D albedoMap;
+    sampler2D normalMap;
+
+    bool isOcclusionMap;
+    bool isRoughnessMap;
+    bool isEmissiveMap;
+    bool isMetallicMap;
+    bool isAlbedoMap;
+    bool isNormalMap;
 };
 uniform Material material;
 uniform vec3 viewPos;
@@ -79,19 +103,51 @@ float GeometrySmithGGX(float nDotV, float nDotL, float roughness);
 //Trowbridge-Reitz calculates the probability distribution 
 // of surface normals based on surface roughness
 float DistributionGGX(vec3 N, vec3 H, float roughness);
-vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0);
-vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0);
-vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0);
+vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
+vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
+vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
+
+vec3 ComputeMapOrMatV3(bool isMap, sampler2D map, vec3 mat) {
+    vec3 res = mat;
+    if (isMap) {
+        res = texture(map, vertex.uv).rgb;
+    }
+    return res;
+}
+float ComputeMapOrMatF(bool isMap, sampler2D map, float mat) {
+    float res = mat;
+    if (isMap) {
+        res = texture(map, vertex.uv).r;
+    }
+    return res;
+}
 
 void main() {
-    
-    
-    vec3 N = normalize(vertex.normal);
     vec3 V = normalize(viewPos - vertex.position);
-    vec3 f0 = mix(vec3(0.04), material.albedo, material.metallic);
-    vec3 color = ComputePointLights(N, V, f0) + ComputeDirLights(N, V, f0) + ComputeSpotLights(N, V, f0);
-    //color += 0.03 * material.albedo; // Ambient
+
+    //material or texture maps
+    vec3 N = normalize(vertex.normal);
+    if (material.isNormalMap) {
+        N = 2.0 * texture(material.normalMap, vertex.uv).rgb - 1.0;
+        N = normalize(vertex.TBN * N);
+    }
+    vec3 albedo = ComputeMapOrMatV3(material.isAlbedoMap, material.albedoMap, material.albedo);
+    float roughness = ComputeMapOrMatF(material.isRoughnessMap, material.roughnessMap, material.roughness);
+    float metallic = ComputeMapOrMatF(material.isMetallicMap, material.metallicMap, material.metallic);
+    vec3 emissive = ComputeMapOrMatV3(material.isEmissiveMap, material.emissiveMap, material.emissive);
+    float occlusion = ComputeMapOrMatF(material.isOcclusionMap, material.occlusionMap, material.occlusion);
+
+    //fresnel reflectivity
+    vec3 f0 = mix(vec3(0.04), albedo, metallic);
+
+    //lights
+    vec3 color = ComputePointLights(N, V, f0, albedo, roughness, metallic) + 
+                ComputeDirLights(N, V, f0, albedo, roughness, metallic) + 
+                ComputeSpotLights(N, V, f0, albedo, roughness, metallic);
     
+    //occ and em
+    color = color * occlusion + emissive;
+
     fragColor = vec4(color, 1.0);
     //fragColor = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
 }
@@ -117,7 +173,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float denom = nDotHSq * (aSq - 1.0) + 1.0;
     return aSq / (PI * denom * denom);
 }
-vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0) {
+vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic) {
     vec3 result = vec3(0.0); 
 
     for (int i = 0; i < noPointLight; ++i) {
@@ -132,11 +188,11 @@ vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0) {
         float nDotV = max(dot(N, V), 0.0);
 
         //Cook-Torrance (BRDF)
-        float NDF = DistributionGGX(N, H, material.roughness);
+        float NDF = DistributionGGX(N, H, roughness);
         vec3 FS = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), f0);
-        float GS = GeometrySmithGGX(nDotV, nDotL, material.roughness);
+        float GS = GeometrySmithGGX(nDotV, nDotL, roughness);
 
-        vec3 diffuse = (vec3(1.0) - FS) * (1.0 - material.metallic) * material.albedo / PI;
+        vec3 diffuse = (vec3(1.0) - FS) * (1.0 - metallic) * albedo / PI;
         vec3 specular = (NDF * GS * FS) / max(4.0 * nDotV * nDotL, 0.0001);
         float dist = length(pointLights[i].position - vertex.position);
         float attenuation = pointLights[i].intensity / (dist * dist);
@@ -146,7 +202,7 @@ vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0) {
 
     return result;
 }
-vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0) {
+vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic) {
     vec3 result = vec3(0.0);
 
     for (int i = 0; i < noDirLight; ++i) {
@@ -161,11 +217,11 @@ vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0) {
         vec3 H = normalize(L + V);
 
         //BRDF
-        float NDF = DistributionGGX(N, H, material.roughness);
+        float NDF = DistributionGGX(N, H, roughness);
         vec3 FS = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), f0);
-        float GS = GeometrySmithGGX(nDotV, nDotL, material.roughness);
+        float GS = GeometrySmithGGX(nDotV, nDotL, roughness);
 
-        vec3 diffuse = (vec3(1.0) - FS) * (1.0 - material.metallic) * material.albedo / PI;
+        vec3 diffuse = (vec3(1.0) - FS) * (1.0 - metallic) * albedo / PI;
         vec3 specular = (NDF * GS * FS) / max(4.0 * nDotV * nDotL, 0.0001);
 
         result += (diffuse + specular) * dirLights[i].radiance * dirLights[i].intensity * nDotL;
@@ -173,7 +229,7 @@ vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0) {
 
     return result;
 }
-vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0) {
+vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic) {
     vec3 result = vec3(0.0);
 
     for (int i = 0; i < noSpotLight; ++i) {
@@ -188,11 +244,11 @@ vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0) {
         vec3 H = normalize(L + V);
 
         //BRDF
-        float NDF = DistributionGGX(N, H, material.roughness);
+        float NDF = DistributionGGX(N, H, roughness);
         vec3 FS = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), f0);
-        float GS = GeometrySmithGGX(nDotV, nDotL, material.roughness);
+        float GS = GeometrySmithGGX(nDotV, nDotL, roughness);
 
-        vec3 diffuse = (vec3(1.0) - FS) * (1.0 - material.metallic) ;
+        vec3 diffuse = (vec3(1.0) - FS) * (1.0 - metallic) * albedo / PI;
         vec3 specular = (NDF * GS * FS) / max(4.0 * nDotV * nDotL, 0.0001);
 
         //compute spot
@@ -203,7 +259,7 @@ vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0) {
         float dist = length(spotLights[i].position - vertex.position);
         float attenuation = spotLights[i].intensity / (dist * dist);
 
-        result += (diffuse * material.albedo / PI + specular) * 
+        result += (diffuse + specular) * 
                     spotLights[i].radiance * 
                     spotLights[i].intensity * 
                     attenuation * 

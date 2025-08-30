@@ -54,6 +54,8 @@ namespace Boom {
 				SetAttribute<ShadedVert>(0, 3, (void*)offsetof(ShadedVert, pos));
 				SetAttribute<ShadedVert>(1, 3, (void*)offsetof(ShadedVert, norm));
 				SetAttribute<ShadedVert>(2, 2, (void*)offsetof(ShadedVert, uv));
+				SetAttribute<ShadedVert>(3, 3, (void*)offsetof(ShadedVert, tangent));
+				SetAttribute<ShadedVert>(4, 3, (void*)offsetof(ShadedVert, biTangent));
 			}
 			else if (std::is_same<Vertex, FlatVert>::value) {
 				SetAttribute<FlatVert>(0, 3, (void*)offsetof(FlatVert, pos));

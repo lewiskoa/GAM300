@@ -1,5 +1,6 @@
 #pragma once
 #include "../Buffers/Mesh.h"
+#include "../Textures/Texture.h"
 
 namespace Boom {
 	BOOM_INLINE glm::highp_mat4 GetRotationMatrix(glm::vec3 const& rot) {
@@ -51,14 +52,37 @@ namespace Boom {
 	};
 
 	struct PbrMaterial {
-		BOOM_INLINE PbrMaterial(glm::vec3 alb = { 1.f, 1.f, 1.f }, float rough = 0.5f, float metal = 0.2f)
-			: albedo{ alb }, roughness{ rough }, metallic{ metal } 
+		BOOM_INLINE PbrMaterial()
+			: emissive{}
+			, albedo{ glm::vec3(1.f) }
+			, roughness{ 0.4f }
+			, metallic{ 0.5f }
+			, occlusion{ 1.f }
+			, occlusionMap{}, roughnessMap{}, metallicMap{}, emissiveMap{}, albedoMap{}, normalMap{}
 		{
 		}
-
+		BOOM_INLINE PbrMaterial(PbrMaterial const&) = default;
+		BOOM_INLINE PbrMaterial(glm::vec3 em, glm::vec3 alb, float rough, float metal, float occlu)
+			: emissive{ em }
+			, albedo{ alb }
+			, roughness{ rough }
+			, metallic{ metal }
+			, occlusion{ occlu }
+			, occlusionMap{}, roughnessMap{}, metallicMap{}, emissiveMap{}, albedoMap{}, normalMap{}
+		{
+		}
+		glm::vec3 emissive;
 		glm::vec3 albedo;
 		float roughness;
 		float metallic;
+		float occlusion;
+
+		Texture occlusionMap;
+		Texture roughnessMap;
+		Texture metallicMap;
+		Texture emissiveMap;
+		Texture albedoMap;
+		Texture normalMap;
 	};
 
 	struct PointLight {

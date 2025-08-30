@@ -74,10 +74,11 @@ namespace Boom
                 quad.Attach<TransformComponent>();
             }
             */
+            
             Camera3D cam{};
             //this .fbx cube's normals is a little janky
             auto modelCube = std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "cube.fbx");
-            //auto modelSphere = std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "sphere.fbx");
+            auto modelSphere = std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "sphere.fbx");
 
             //lights testers
             PointLight pl1{};
@@ -85,14 +86,27 @@ namespace Boom
             DirectionalLight dl{};
             SpotLight sl{};
             {
-                pl1.radiance.b = 0.f;
-                pl1.intensity = 2.f;
-                pl2.radiance.g = 0.f;
-                pl2.intensity = 3.f;
+                //pl1.radiance.b = 0.f;
+                //pl1.intensity = 2.f;
+                //pl2.radiance.g = 0.f;
+                //pl2.intensity = 3.f;
 
                 sl.radiance = { 1.f, 1.f, 1.f };
             }
             m_Context->window->camPos.z = 3.f;
+
+            //textures
+            auto roughness = std::make_shared<Texture2D>(std::string(CONSTANTS::TEXTURES_LOCATION) + "Marble/roughness.png");
+            auto albedo = std::make_shared<Texture2D>(std::string(CONSTANTS::TEXTURES_LOCATION) + "Marble/albedo.png");
+            auto normal = std::make_shared<Texture2D>(std::string(CONSTANTS::TEXTURES_LOCATION) + "Marble/normal.png");
+
+            PbrMaterial mat{};
+            {
+                mat.metallic = 0.1f;
+                mat.roughnessMap = roughness;
+                mat.albedoMap = albedo;
+                mat.normalMap = normal;
+            }
 
             while (m_Context->window->PollEvents())
             {
@@ -102,33 +116,33 @@ namespace Boom
                     //testing rendering
                     {
                         //lights
-                        m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 1.f }, {}, {}), 0);
+                        m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, {0.f, 0.f, -1.f}, {}), 0);
                         m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
                         m_Context->renderer->SetPointLightCount(0);
 
                         //static float testRot{};
                         //if ((testRot += 0.1f) > 360.f) { testRot -= 360.f; BOOM_INFO("reseted."); }
-                        m_Context->renderer->SetLight(dl, Transform3D({}, { 0.f, 0.f, -0.5f }, {}), 0);
-                        m_Context->renderer->SetDirectionalLightCount(0);
+                        m_Context->renderer->SetLight(dl, Transform3D({}, { 0.f, 0.f, -1.f }, {}), 0);
+                        m_Context->renderer->SetDirectionalLightCount(1);
 
                         m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                        m_Context->renderer->SetSpotLightCount(1);
+                        m_Context->renderer->SetSpotLightCount(0);
                         
                         //camera
                         m_Context->renderer->SetCamera(cam, {m_Context->window->camPos, {0.f, 0.f, 0.f}, {}});
                         
                         //models
-                        m_Context->renderer->Draw(
-                            modelCube, 
-                            Transform3D({0.f, 0.f, -1.f}, {}, {3.f, 3.f, 1.f})
-                            //,PbrMaterial({ { 0.8f, 0.2f, 0.2f }, { 0.420f }, {0.69f} })
-                        );
                         /*
                         m_Context->renderer->Draw(
-                            modelSphere,
-                            Transform3D({}, {}, glm::vec3{1.f}),
-                            PbrMaterial({1.f, 1.f, 1.f}, 0.7f, 0.8f)
+                            modelCube, 
+                            Transform3D({2.f, 0.f, -1.f}, {}, glm::vec3{1.f})
                         );*/
+                        
+                        m_Context->renderer->Draw(
+                            modelSphere,
+                            Transform3D({}, {}, glm::vec3{2.5f}),
+                            mat //using custom material
+                        );
                     }
                     /*
                     //set shader cam

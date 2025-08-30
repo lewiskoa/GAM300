@@ -1,8 +1,5 @@
 #pragma once
 #include "../Buffers/Mesh.h"
-#include <assimp/quaternion.h>
-#include <assimp/matrix4x4.h>
-#include <assimp/color4.h>
 
 namespace Boom {
 	BOOM_INLINE static glm::vec3 AssimpToVec3(aiVector3D const& vec) {

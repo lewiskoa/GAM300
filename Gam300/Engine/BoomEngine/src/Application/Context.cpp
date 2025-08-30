@@ -1,4 +1,4 @@
-#include"Core.h"
+#include "Core.h"
 #include "Application/Context.h"
 #include "Application/Interface.h"
 

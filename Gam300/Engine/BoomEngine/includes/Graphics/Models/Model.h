@@ -1,7 +1,4 @@
 #pragma once
-#include <assimp/postprocess.h>
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
 #include "Helper.h"
 
 namespace Boom {
@@ -57,6 +54,8 @@ namespace Boom {
 				vert.pos = AssimpToVec3(mesh->mVertices[i]);
 				vert.norm = AssimpToVec3(mesh->mNormals[i]);
 				vert.uv = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y};
+				vert.biTangent = glm::normalize(AssimpToVec3(mesh->mBitangents[i]));
+				vert.tangent = glm::normalize(AssimpToVec3(mesh->mTangents[i]));
 
 				meshData.vtx.push_back(vert);
 			}

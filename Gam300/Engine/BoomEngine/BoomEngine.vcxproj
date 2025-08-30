@@ -182,6 +182,7 @@
     <ClInclude Include="includes\Graphics\Shaders\Final.h" />
     <ClInclude Include="includes\Graphics\Shaders\PBR.h" />
     <ClInclude Include="includes\Graphics\Shaders\Shader.h" />
+    <ClInclude Include="includes\Graphics\Textures\Texture.h" />
     <ClInclude Include="includes\Graphics\Utilities\Data.h" />
     <ClInclude Include="includes\Graphics\Utilities\Quad.h" />
   </ItemGroup>
@@ -191,6 +192,7 @@
     </ClCompile>
     <ClCompile Include="src\BoomEngine.cpp" />
     <ClCompile Include="src\Logger.cpp" />
+    <ClCompile Include="src\Textures\Texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

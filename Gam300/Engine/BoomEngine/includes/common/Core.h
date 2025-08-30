@@ -22,6 +22,14 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #pragma warning(pop)
 
+
+#include <assimp/quaternion.h>
+#include <assimp/matrix4x4.h>
+#include <assimp/color4.h>
+#include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+
 #include <queue>
 #include <vector>
 #include <string>
