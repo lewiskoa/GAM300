@@ -129,5 +129,6 @@ namespace Boom {
 
 	struct Skybox {
 		uint32_t cubeMap{};
+		uint32_t irradMap{};
 	};
 }

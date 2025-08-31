@@ -5,6 +5,7 @@
 #include "Shaders/Final.h"
 #include "Shaders/SkyMap.h"
 #include "Shaders/Skybox.h"
+#include "Shaders/Irradiance.h"
 #include "GlobalConstants.h"
 
 namespace Boom {
@@ -38,6 +39,7 @@ namespace Boom {
 
 			skyMapShader = std::make_unique<SkyMapShader>("skymap.glsl");
 			skyBoxShader = std::make_unique<SkyboxShader>("skybox.glsl");
+			irradShader = std::make_unique<IrradianceShader>("irradiance.glsl");
 			finalShader = std::make_unique<FinalShader>("final.glsl");
 			pbrShader = std::make_unique<PBRShader>("pbr.glsl");
 			frame = std::make_unique<FrameBuffer>(w, h);
@@ -63,9 +65,12 @@ namespace Boom {
 
 	public: //skybox
 		BOOM_INLINE void InitSkybox(Skybox& sky, Texture const& tex, int32_t size) {
+			(void)size; (void)tex;
 			sky.cubeMap = skyMapShader->Generate(tex, skyboxMesh, size);
+			sky.irradMap = irradShader->Generate(sky.cubeMap, skyboxMesh, 32);
 		}
 		BOOM_INLINE void DrawSkybox(Skybox const& sky, Transform3D const& transform) {
+			pbrShader->SetEnvMaps(sky.irradMap);
 			skyBoxShader->Draw(skyboxMesh, sky.cubeMap, transform);
 		}
 
@@ -151,6 +156,7 @@ namespace Boom {
 	private:
 		std::unique_ptr<SkyMapShader> skyMapShader;
 		std::unique_ptr<SkyboxShader> skyBoxShader;
+		std::unique_ptr<IrradianceShader> irradShader;
 		std::unique_ptr<FinalShader> finalShader;
 		std::unique_ptr<PBRShader> pbrShader;
 		std::unique_ptr<FrameBuffer> frame;

@@ -107,6 +107,9 @@ vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, f
 vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
 vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
 
+uniform samplerCube irradMap;
+vec3 ComputeAmbientLight(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
+
 vec3 ComputeMapOrMatV3(bool isMap, sampler2D map, vec3 mat) {
     vec3 res = mat;
     if (isMap) {
@@ -141,14 +144,18 @@ void main() {
     vec3 f0 = mix(vec3(0.04), albedo, metallic);
 
     //lights
-    vec3 color = ComputePointLights(N, V, f0, albedo, roughness, metallic) + 
+    vec3 color = ComputeAmbientLight(N, V, f0, albedo, roughness, metallic) +
+                ComputePointLights(N, V, f0, albedo, roughness, metallic) + 
                 ComputeDirLights(N, V, f0, albedo, roughness, metallic) + 
                 ComputeSpotLights(N, V, f0, albedo, roughness, metallic);
     
     //occ and em
     color = color * occlusion + emissive;
 
-    fragColor = vec4(color, 1.0);
+    //texture(irradMap, N).rgb
+    //fragColor = vec4(texture(irradMap, N).rgb, 1.0);
+    fragColor = vec4(ComputeAmbientLight(N, V, f0, albedo, roughness, metallic), 1.0);
+    //fragColor = vec4(color, 1.0);
     //fragColor = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
 }
 
@@ -268,5 +275,17 @@ vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, fl
     }
 
     return result;
+}
+vec3 ComputeAmbientLight(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic) {
+    float cosTheta = max(0.0, dot(N, V));
+    vec3 F = FresnelSchlick(cosTheta, f0);
+    vec3 kd = mix(vec3(1.0) - F, vec3(0.0), metallic);
+    vec3 diffuse = kd * albedo * texture(irradMap, N).rgb;
+
+    //return kd * texture(irradMap, N).rgb;     //shows nothing
+    //return kd;                                //shows white sphere with grayed near the edge
+    //return kd * albedo;                       //shows original textured sphere
+    //return albedo * texture(irradMap, N).rgb; //shows original textured sphere with skybox background plastered on it
+    return diffuse;                             //ideal but shows nothing 
 }
 ==FRAGMENT==

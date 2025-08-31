@@ -93,6 +93,9 @@
     <ClInclude Include="includes\Graphics\Shaders\Skybox.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Graphics\Shaders\Irradiance.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">

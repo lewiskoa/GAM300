@@ -104,13 +104,13 @@ namespace Boom
 
             PbrMaterial mat{};
             {
-                mat.metallic = 0.15f;
+                mat.metallic = 0.0f;
                 mat.roughnessMap = roughness;
                 mat.albedoMap = albedo;
                 mat.normalMap = normal;
             }
 
-            auto skymap = std::make_shared<Texture2D>("HDR/sky.hdr", true);
+            auto skymap = std::make_shared<Texture2D>("HDR/sky.hdr", true, true);
             Skybox skybox{};
             m_Context->renderer->InitSkybox(skybox, skymap, 2048);
 
@@ -129,7 +129,8 @@ namespace Boom
                         m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
                         m_Context->renderer->SetPointLightCount(0);
 
-                        m_Context->renderer->SetLight(dl, Transform3D({}, { -cosf(glm::radians(testRot)), -.3f, sinf(glm::radians(testRot)) }, {}), 0);
+                        //m_Context->renderer->SetLight(dl, Transform3D({}, { -cosf(glm::radians(testRot)), -.3f, sinf(glm::radians(testRot)) }, {}), 0);
+                        m_Context->renderer->SetLight(dl, Transform3D({}, {0.f, 0.f, -1.f}, {}), 0);
                         m_Context->renderer->SetDirectionalLightCount(1);
 
                         m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
@@ -145,15 +146,13 @@ namespace Boom
                             Transform3D({2.f, 0.f, -1.f}, {}, glm::vec3{1.f})
                         );*/
 
-
-
                         m_Context->renderer->Draw(
                             modelSphere,
                             Transform3D({}, {}, glm::vec3{2.f}),
                             mat //using custom material
                         );
 
-                        //skybox should be drawn at the end
+                        //skybox at the end
                         m_Context->renderer->DrawSkybox(skybox, Transform3D({}, { 0.f, testRot, 0.f }, {}));
                     }
                     /*

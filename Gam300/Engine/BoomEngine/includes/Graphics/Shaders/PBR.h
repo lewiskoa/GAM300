@@ -34,6 +34,8 @@ namespace Boom {
 			, viewPosLoc{ GetUniformVar("viewPos") }
 			, frustumMatLoc{ GetUniformVar("frustumMat") }
 			, modelMatLoc{ GetUniformVar("modelMat") }
+
+			, irradMapLoc{ GetUniformVar("irradMap") }
 		{
 		}
 
@@ -93,6 +95,15 @@ namespace Boom {
 			SetUniform(noPointLightLoc, count);
 		}
 
+		BOOM_INLINE void SetEnvMaps(int32_t irrad) {
+			Use();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, irrad);
+			SetUniform(irrad, 0);
+
+
+		}
+
 	public:
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
 			SetUniform(frustumMatLoc, cam.Frustum(transform, ratio));
@@ -112,7 +123,7 @@ namespace Boom {
 
 			//material texture maps
 			{
-				int32_t unit{};
+				int32_t unit{1}; //accounting for irradance sampling
 				bool isMap{};
 
 				isMap = material.albedoMap != nullptr;
@@ -183,5 +194,7 @@ namespace Boom {
 		int32_t viewPosLoc;
 		int32_t frustumMatLoc;
 		int32_t modelMatLoc;
+
+		int32_t irradMapLoc;
 	};
 }
