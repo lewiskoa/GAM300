@@ -182,9 +182,12 @@
     <ClInclude Include="includes\Graphics\Shaders\Final.h" />
     <ClInclude Include="includes\Graphics\Shaders\PBR.h" />
     <ClInclude Include="includes\Graphics\Shaders\Shader.h" />
+    <ClInclude Include="includes\Graphics\Shaders\Skybox.h" />
+    <ClInclude Include="includes\Graphics\Shaders\SkyMap.h" />
     <ClInclude Include="includes\Graphics\Textures\Texture.h" />
     <ClInclude Include="includes\Graphics\Utilities\Data.h" />
     <ClInclude Include="includes\Graphics\Utilities\Quad.h" />
+    <ClInclude Include="includes\Graphics\Utilities\Skybox.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Application\Context.cpp">

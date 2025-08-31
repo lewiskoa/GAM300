@@ -1,15 +1,17 @@
 #pragma once
 #include "Helper.h"
+#include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
 
 namespace Boom {
 	struct Model {
 		BOOM_INLINE Model() = default;
-		BOOM_INLINE Model(std::string const& filename) {
-			Load(filename);
-		}
-		//function initializes an assimp importer, reads model file
+		//initializes an assimp importer, reads model file
 		//applies flags for optimization and then parses loaded scene's meshes
-		BOOM_INLINE void Load(std::string const& filename) {
+		BOOM_INLINE Model(std::string filename) {
+			filename = CONSTANTS::MODELS_LOCAITON + filename;
+
 			Assimp::Importer importer{};
 			uint32_t flags{
 				aiProcess_Triangulate | aiProcess_GenSmoothNormals |

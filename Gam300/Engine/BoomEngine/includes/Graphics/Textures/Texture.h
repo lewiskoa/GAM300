@@ -2,10 +2,8 @@
 namespace Boom {
 	struct Texture2D {
 		Texture2D() = default;
-		Texture2D(std::string const& filename);
+		Texture2D(std::string filename, bool isFlipY = true, bool isHDR = false);
 		~Texture2D();
-
-		bool Load(std::string const& filename);
 
 		void Use(int32_t uniform, int32_t unit);
 		void Bind();

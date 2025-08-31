@@ -1,12 +1,14 @@
 #pragma once
 #include "Core.h"
 #include <iostream>
+
 namespace Boom {
 	int32_t const BITS = 512;
+
 	class Shader {
 	public:
 		BOOM_INLINE Shader(std::string const& filename) 
-			: shaderId{ Load(filename) } 
+			: shaderId{ Load(CONSTANTS::SHADERS_LOCATION + filename) } 
 		{ }
 		BOOM_INLINE virtual ~Shader() {
 			glDeleteProgram(shaderId);

@@ -3,6 +3,8 @@
 #include "Graphics/Buffers/Frame.h"
 #include "Shaders/PBR.h"
 #include "Shaders/Final.h"
+#include "Shaders/SkyMap.h"
+#include "Shaders/Skybox.h"
 #include "GlobalConstants.h"
 
 namespace Boom {
@@ -10,9 +12,13 @@ namespace Boom {
 	public:
 		GraphicsRenderer() = delete;
 
-		BOOM_INLINE GraphicsRenderer(int32_t w, int32_t h) {
+		BOOM_INLINE GraphicsRenderer(int32_t w, int32_t h)
+		{
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+			glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); //smooth skybox
+
 			GLenum err = glewInit();
 #ifdef BOOM_ENABLE_LOG
 			if (GLEW_OK != err) {
@@ -29,9 +35,14 @@ namespace Boom {
 #else
 			(void)err;
 #endif
-			finalShader = std::make_unique<FinalShader>(std::string(CONSTANTS::SHADERS_LOCATION) + "final.glsl");
-			pbrShader = std::make_unique<PBRShader>(std::string(CONSTANTS::SHADERS_LOCATION) + "pbr.glsl");
+
+			skyMapShader = std::make_unique<SkyMapShader>("skymap.glsl");
+			skyBoxShader = std::make_unique<SkyboxShader>("skybox.glsl");
+			finalShader = std::make_unique<FinalShader>("final.glsl");
+			pbrShader = std::make_unique<PBRShader>("pbr.glsl");
 			frame = std::make_unique<FrameBuffer>(w, h);
+
+			skyboxMesh = CreateSkyboxMesh();
 		}
 		BOOM_INLINE ~GraphicsRenderer() {}
 
@@ -50,10 +61,21 @@ namespace Boom {
 			pbrShader->SetDirectionalLightCount(count);
 		}
 
+	public: //skybox
+		BOOM_INLINE void InitSkybox(Skybox& sky, Texture const& tex, int32_t size) {
+			sky.cubeMap = skyMapShader->Generate(tex, skyboxMesh, size);
+		}
+		BOOM_INLINE void DrawSkybox(Skybox const& sky, Transform3D const& transform) {
+			skyBoxShader->Draw(skyboxMesh, sky.cubeMap, transform);
+		}
 
 	public: //shader uniforms and draw call
 		BOOM_INLINE void SetCamera(Camera3D& cam, Transform3D const& transform) {
-			pbrShader->SetCamera(cam, transform, frame->Ratio());
+			float aspect{ frame->Ratio() };
+			pbrShader->SetCamera(cam, transform, aspect);
+			skyBoxShader->SetCamera(cam, transform, aspect);
+
+			pbrShader->Use();
 		}
 		BOOM_INLINE void Draw(Mesh3D const& mesh, Transform3D const& transform) {
 			pbrShader->Draw(mesh, transform);
@@ -127,8 +149,11 @@ namespace Boom {
 			}
 		}
 	private:
-		std::unique_ptr<FrameBuffer> frame;
+		std::unique_ptr<SkyMapShader> skyMapShader;
+		std::unique_ptr<SkyboxShader> skyBoxShader;
 		std::unique_ptr<FinalShader> finalShader;
 		std::unique_ptr<PBRShader> pbrShader;
+		std::unique_ptr<FrameBuffer> frame;
+		SkyboxMesh skyboxMesh;
 	};
 }

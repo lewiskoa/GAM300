@@ -126,4 +126,8 @@ namespace Boom {
 		float fallOff;
 		float cutOff;
 	};
+
+	struct Skybox {
+		uint32_t cubeMap{};
+	};
 }

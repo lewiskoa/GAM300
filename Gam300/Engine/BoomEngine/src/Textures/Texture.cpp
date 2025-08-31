@@ -1,5 +1,6 @@
 #include "Core.h"
 #include "Graphics/Textures/Texture.h"
+#include "GlobalConstants.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4244 4267) //stb_image's int to short, int to unsigned char warnings
@@ -8,30 +9,37 @@
 #pragma warning(pop)
 
 namespace Boom {
-	Texture2D::Texture2D(std::string const& filename)
-		: Texture2D()
+	Texture2D::Texture2D(std::string filename, bool isFlipY, bool isHDR)
+		: height{}, width{}, id{}
 	{
-		Load(filename);
-	}
-	Texture2D::~Texture2D() {
-		glDeleteTextures(1, &id);
-	}
+		filename = CONSTANTS::TEXTURES_LOCATION + filename;
 
-	bool Texture2D::Load(std::string const& filename) {
 		//flip y axis (needed operation for many image types)
-		stbi_set_flip_vertically_on_load(true);
+		stbi_set_flip_vertically_on_load(isFlipY);
 
 		//texture data
-		uint8_t* pixels{ stbi_load(filename.c_str(), &width, &height, nullptr, 4) };
+		void* pixels{};
+		if (isHDR) {
+			int32_t channels{};
+			pixels = stbi_loadf(filename.c_str(), &width, &height, &channels, 0);
+		}
+		else {
+			pixels = stbi_load(filename.c_str(), &width, &height, nullptr, 4);
+		}
 		if (pixels == nullptr) {
 			BOOM_ERROR("failed Texture2D::Load({})", filename);
-			return false;
+			return;
 		}
 
 		//texture buffers
 		glGenTextures(1, &id);
 		glBindTexture(GL_TEXTURE_2D, id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+		if (isHDR) {
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, (float*)pixels);
+		}
+		else {
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (uint32_t*)pixels);
+		}
 		stbi_image_free(pixels);
 
 		//options and optimization
@@ -42,8 +50,11 @@ namespace Boom {
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
-		return true;
 	}
+	Texture2D::~Texture2D() {
+		glDeleteTextures(1, &id);
+	}
+
 	//set's texture's active unit and uniform to graphics
 	void Texture2D::Use(int32_t uniform, int32_t unit) {
 		glActiveTexture(GL_TEXTURE0 + unit);

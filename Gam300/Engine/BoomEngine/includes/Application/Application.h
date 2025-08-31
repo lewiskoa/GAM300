@@ -77,8 +77,8 @@ namespace Boom
             
             Camera3D cam{};
             //this .fbx cube's normals is a little janky
-            auto modelCube = std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "cube.fbx");
-            auto modelSphere = std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "sphere.fbx");
+            auto modelCube = std::make_shared<Model>("cube.fbx");
+            auto modelSphere = std::make_shared<Model>("sphere.fbx");
 
             //lights testers
             PointLight pl1{};
@@ -92,21 +92,27 @@ namespace Boom
                 //pl2.intensity = 3.f;
 
                 sl.radiance = { 1.f, 1.f, 1.f };
+
+                dl.intensity = 10.f;
             }
             m_Context->window->camPos.z = 3.f;
 
             //textures
-            auto roughness = std::make_shared<Texture2D>(std::string(CONSTANTS::TEXTURES_LOCATION) + "Marble/roughness.png");
-            auto albedo = std::make_shared<Texture2D>(std::string(CONSTANTS::TEXTURES_LOCATION) + "Marble/albedo.png");
-            auto normal = std::make_shared<Texture2D>(std::string(CONSTANTS::TEXTURES_LOCATION) + "Marble/normal.png");
+            auto roughness = std::make_shared<Texture2D>("Marble/roughness.png");
+            auto albedo = std::make_shared<Texture2D>("Marble/albedo.png");
+            auto normal = std::make_shared<Texture2D>("Marble/normal.png");
 
             PbrMaterial mat{};
             {
-                mat.metallic = 0.1f;
+                mat.metallic = 0.15f;
                 mat.roughnessMap = roughness;
                 mat.albedoMap = albedo;
                 mat.normalMap = normal;
             }
+
+            auto skymap = std::make_shared<Texture2D>("HDR/sky.hdr", true);
+            Skybox skybox{};
+            m_Context->renderer->InitSkybox(skybox, skymap, 2048);
 
             while (m_Context->window->PollEvents())
             {
@@ -115,14 +121,15 @@ namespace Boom
                 {
                     //testing rendering
                     {
+                        static float testRot{};
+                        if ((testRot += 0.1f) > 360.f) { testRot -= 360.f; }
+
                         //lights
                         m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, {0.f, 0.f, -1.f}, {}), 0);
                         m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
                         m_Context->renderer->SetPointLightCount(0);
 
-                        //static float testRot{};
-                        //if ((testRot += 0.1f) > 360.f) { testRot -= 360.f; BOOM_INFO("reseted."); }
-                        m_Context->renderer->SetLight(dl, Transform3D({}, { 0.f, 0.f, -1.f }, {}), 0);
+                        m_Context->renderer->SetLight(dl, Transform3D({}, { -cosf(glm::radians(testRot)), -.3f, sinf(glm::radians(testRot)) }, {}), 0);
                         m_Context->renderer->SetDirectionalLightCount(1);
 
                         m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
@@ -137,12 +144,17 @@ namespace Boom
                             modelCube, 
                             Transform3D({2.f, 0.f, -1.f}, {}, glm::vec3{1.f})
                         );*/
-                        
+
+
+
                         m_Context->renderer->Draw(
                             modelSphere,
-                            Transform3D({}, {}, glm::vec3{2.5f}),
+                            Transform3D({}, {}, glm::vec3{2.f}),
                             mat //using custom material
                         );
+
+                        //skybox should be drawn at the end
+                        m_Context->renderer->DrawSkybox(skybox, Transform3D({}, { 0.f, testRot, 0.f }, {}));
                     }
                     /*
                     //set shader cam

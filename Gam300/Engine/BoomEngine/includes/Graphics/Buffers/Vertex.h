@@ -18,6 +18,9 @@ namespace Boom {
 		glm::vec3 tangent{};
 		glm::vec3 biTangent{};
 	};
+	struct SkyboxVert {
+		glm::vec3 pos{};
+	};
 
 	template <class Vertex>
 	struct MeshData {

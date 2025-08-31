@@ -65,6 +65,9 @@ namespace Boom {
 				SetAttribute<QuadVert>(0, 2, (void*)offsetof(QuadVert, pos));
 				SetAttribute<QuadVert>(1, 2, (void*)offsetof(QuadVert, uv));
 			}
+			else if (std::is_same<Vertex, SkyboxVert>::value) {
+				SetAttribute<SkyboxVert>(0, 3, (void*)offsetof(SkyboxVert, pos));
+			}
 			else {
 				BOOM_ERROR(false && "Mesh() - invalid vertex type.");
 			}

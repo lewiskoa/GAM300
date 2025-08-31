@@ -186,7 +186,7 @@ namespace {
 
         //store mesh buffer data
         ColorShader s{
-            std::string(CONSTANTS::SHADERS_LOCATION) + "color.glsl",
+            "color.glsl",
             {1.f, 0.f, 0.f, 1.f}
         };
 
@@ -214,17 +214,17 @@ namespace {
         Boom::GraphicsRenderer g{ CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT };
         //color shader uses a test quad that only covers a portion of the screen
         ColorShader cs{
-                std::string(CONSTANTS::SHADERS_LOCATION) + "color.glsl",
+                "color.glsl",
                 {1.f, 1.f, 0.f, .5f} //translucent yellow
         };
         FinalShader fs{
-            std::string(CONSTANTS::SHADERS_LOCATION) + "final.glsl",
+            "final.glsl",
             {1.f, 0.f, 0.f, 1.f} //red
         };
-        //PBRShader pbrs{ std::string(CONSTANTS::SHADERS_LOCATION) + "pbr.glsl" };
+        //PBRShader pbrs{ "pbr.glsl" };
         FrameBuffer fb{ 1800, 900 };
         Color3DShader cs3d{
-            std::string(CONSTANTS::SHADERS_LOCATION) + "color3D.glsl",
+            "color3D.glsl",
             {1.f, 1.f, 0.f, 0.5f} //translucent yellow
         };
 

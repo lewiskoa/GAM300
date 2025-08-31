@@ -21,7 +21,7 @@ namespace Boom {
 			, modePtr{}
 			, dispatcher{ disp }
 
-			, camPos{0.f, 0.f, 2.f}
+			, camPos{0.f, 0.f, 3.f}
 		{
 			if (!glfwInit()) {
 				BOOM_FATAL("AppWindow::Init() - glfwInit() failed.");
