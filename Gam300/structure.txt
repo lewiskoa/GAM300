@@ -1,114 +1,89 @@
-Folder PATH listing for volume OS
-Volume serial number is 64F7-917A
+Folder PATH listing
+Volume serial number is 2CEE-B71D
 C:.
 ¦   conanfile.txt
 ¦   Directory.Build.props
 ¦   Gam300.sln
-¦   main.cpp
-¦   Project1.vcxproj
-¦   Project1.vcxproj.filters
-¦   Project1.vcxproj.user
-¦   python-3.13.3-amd64.exe
 ¦   setup.bat
 ¦   structure.txt
 ¦   
-+---conanbuild
-¦       cmakedeps_macros.cmake
-¦       CMakePresets.json
-¦       conanbuild.bat
-¦       conanbuildenv-debug-x86_64.bat
-¦       conanbuildenv-release-x86_64.bat
-¦       conandeps.props
-¦       conandeps_legacy.cmake
-¦       conanrun.bat
-¦       conanrunenv-debug-x86_64.bat
-¦       conanrunenv-release-x86_64.bat
-¦       conan_glew.props
-¦       conan_glew_glewlib.props
-¦       conan_glew_glewlib_debug_x64.props
-¦       conan_glew_glewlib_release_x64.props
-¦       conan_glew_glewlib_vars_debug_x64.props
-¦       conan_glew_glewlib_vars_release_x64.props
-¦       conan_glfw.props
-¦       conan_glfw_debug_x64.props
-¦       conan_glfw_release_x64.props
-¦       conan_glfw_vars_debug_x64.props
-¦       conan_glfw_vars_release_x64.props
-¦       conan_glm.props
-¦       conan_glm_debug_x64.props
-¦       conan_glm_release_x64.props
-¦       conan_glm_vars_debug_x64.props
-¦       conan_glm_vars_release_x64.props
-¦       conan_glu.props
-¦       conan_glu_debug_x64.props
-¦       conan_glu_release_x64.props
-¦       conan_glu_vars_debug_x64.props
-¦       conan_glu_vars_release_x64.props
-¦       conan_imgui.props
-¦       conan_imgui_debug_x64.props
-¦       conan_imgui_release_x64.props
-¦       conan_imgui_vars_debug_x64.props
-¦       conan_imgui_vars_release_x64.props
-¦       conan_opengl.props
-¦       conan_opengl_debug_x64.props
-¦       conan_opengl_release_x64.props
-¦       conan_opengl_vars_debug_x64.props
-¦       conan_opengl_vars_release_x64.props
-¦       conan_toolchain.cmake
-¦       deactivate_conanbuild.bat
-¦       deactivate_conanrun.bat
-¦       FindGLEW.cmake
-¦       glew-config-version.cmake
-¦       glew-config.cmake
-¦       glew-debug-x86_64-data.cmake
-¦       glew-release-x86_64-data.cmake
-¦       glew-Target-debug.cmake
-¦       glew-Target-release.cmake
-¦       glewTargets.cmake
-¦       glfw3-config-version.cmake
-¦       glfw3-config.cmake
-¦       glfw3-debug-x86_64-data.cmake
-¦       glfw3-release-x86_64-data.cmake
-¦       glfw3-Target-debug.cmake
-¦       glfw3-Target-release.cmake
-¦       glfw3Targets.cmake
-¦       glm-config-version.cmake
-¦       glm-config.cmake
-¦       glm-debug-x86_64-data.cmake
-¦       glm-release-x86_64-data.cmake
-¦       glm-Target-debug.cmake
-¦       glm-Target-release.cmake
-¦       glmTargets.cmake
-¦       glu-config-version.cmake
-¦       glu-config.cmake
-¦       glu-debug-x86_64-data.cmake
-¦       glu-release-x86_64-data.cmake
-¦       glu-Target-debug.cmake
-¦       glu-Target-release.cmake
-¦       gluTargets.cmake
-¦       imgui-config-version.cmake
-¦       imgui-config.cmake
-¦       imgui-debug-x86_64-data.cmake
-¦       imgui-release-x86_64-data.cmake
-¦       imgui-Target-debug.cmake
-¦       imgui-Target-release.cmake
-¦       imguiTargets.cmake
-¦       module-GLEW-debug-x86_64-data.cmake
-¦       module-GLEW-release-x86_64-data.cmake
-¦       module-GLEW-Target-debug.cmake
-¦       module-GLEW-Target-release.cmake
-¦       module-GLEWTargets.cmake
-¦       opengl_system-config-version.cmake
-¦       opengl_system-config.cmake
-¦       opengl_system-debug-x86_64-data.cmake
-¦       opengl_system-release-x86_64-data.cmake
-¦       opengl_system-Target-debug.cmake
-¦       opengl_system-Target-release.cmake
-¦       opengl_systemTargets.cmake
-¦       
-+---Debug
-¦       Gam300.pdb
-¦       
+¦           
++---Editor
+¦   ¦   Editor.filters
+¦   ¦   Editor.user
+¦   ¦   Editor.vcxproj
+¦   ¦   Editor.vcxproj.user
+¦   ¦   
+¦   +---Resources
+¦   ¦   +---Models
+¦   ¦   ¦       Cube.FBX
+¦   ¦   ¦       sphere.fbx
+¦   ¦   ¦       
+¦   ¦   +---Shaders
+¦   ¦   ¦       color.glsl
+¦   ¦   ¦       color3D.glsl
+¦   ¦   ¦       final.glsl
+¦   ¦   ¦       pbr.glsl
+¦   ¦   ¦       skybox.glsl
+¦   ¦   ¦       skymap.glsl
+¦   ¦   ¦       
+¦   ¦   +---Textures
+¦   ¦       +---HDR
+¦   ¦       ¦       sky.hdr
+¦   ¦       ¦       
+¦   ¦       +---Marble
+¦   ¦               albedo.png
+¦   ¦               height.png
+¦   ¦               Marble022.png
+¦   ¦               normal.png
+¦   ¦               roughness.png
+¦   ¦               
+¦   +---src
+¦   ¦       Editor.cpp
+¦   ¦       
+¦   +---x64
+¦       +---Debug
+¦       ¦   ¦   Editor.Build.CppClean.log
+¦       ¦   ¦   Editor.exe.recipe
+¦       ¦   ¦   Editor.ilk
+¦       ¦   ¦   Editor.log
+¦       ¦   ¦   Editor.obj
+¦       ¦   ¦   Editor.vcxproj.FileListAbsolute.txt
+¦       ¦   ¦   vc143.idb
+¦       ¦   ¦   vc143.pdb
+¦       ¦   ¦   
+¦       ¦   +---Editor.tlog
+¦       ¦           CL.command.1.tlog
+¦       ¦           Cl.items.tlog
+¦       ¦           CL.read.1.tlog
+¦       ¦           CL.write.1.tlog
+¦       ¦           Editor.lastbuildstate
+¦       ¦           link.command.1.tlog
+¦       ¦           link.read.1.tlog
+¦       ¦           link.secondary.1.tlog
+¦       ¦           link.write.1.tlog
+¦       ¦           
+¦       +---Release
+¦           ¦   Editor.Build.CppClean.log
+¦           ¦   Editor.exe.recipe
+¦           ¦   Editor.iobj
+¦           ¦   Editor.ipdb
+¦           ¦   Editor.log
+¦           ¦   Editor.obj
+¦           ¦   Editor.vcxproj.FileListAbsolute.txt
+¦           ¦   vc143.pdb
+¦           ¦   
+¦           +---Editor.tlog
+¦                   CL.command.1.tlog
+¦                   Cl.items.tlog
+¦                   CL.read.1.tlog
+¦                   CL.write.1.tlog
+¦                   Editor.lastbuildstate
+¦                   link.command.1.tlog
+¦                   link.read.1.tlog
+¦                   link.secondary.1.tlog
+¦                   link.write.1.tlog
+¦                   
 +---Engine
 ¦   +---BoomEngine
 ¦       ¦   BoomEngine.vcxproj
@@ -116,21 +91,59 @@ C:.
 ¦       ¦   BoomEngine.vcxproj.user
 ¦       ¦   CMakeLists.txt
 ¦       ¦   
-¦       +---Debug
-¦       ¦       BoomEngine.Build.CppClean.log
-¦       ¦       BoomEngine.vcxproj.FileListAbsolute.txt
-¦       ¦       
 ¦       +---includes
+¦       ¦   ¦   AppWindow.h
 ¦       ¦   ¦   BoomEngine.h
+¦       ¦   ¦   GlobalConstants.h
 ¦       ¦   ¦   
+¦       ¦   +---Application
+¦       ¦   ¦       Application.h
+¦       ¦   ¦       Context.h
+¦       ¦   ¦       Interface.h
+¦       ¦   ¦       
 ¦       ¦   +---common
-¦       ¦           Core.h
-¦       ¦           framework.h
-¦       ¦           
+¦       ¦   ¦       Core.h
+¦       ¦   ¦       Events.h
+¦       ¦   ¦       framework.h
+¦       ¦   ¦       
+¦       ¦   +---Graphics
+¦       ¦       ¦   Renderer.h
+¦       ¦       ¦   
+¦       ¦       +---Buffers
+¦       ¦       ¦       Frame.h
+¦       ¦       ¦       Mesh.h
+¦       ¦       ¦       Vertex.h
+¦       ¦       ¦       
+¦       ¦       +---Models
+¦       ¦       ¦       Helper.h
+¦       ¦       ¦       Model.h
+¦       ¦       ¦       
+¦       ¦       +---Shaders
+¦       ¦       ¦       Color.h
+¦       ¦       ¦       Final.h
+¦       ¦       ¦       PBR.h
+¦       ¦       ¦       Shader.h
+¦       ¦       ¦       Skybox.h
+¦       ¦       ¦       SkyMap.h
+¦       ¦       ¦       
+¦       ¦       +---Textures
+¦       ¦       ¦       Texture.h
+¦       ¦       ¦       
+¦       ¦       +---Utilities
+¦       ¦               Data.h
+¦       ¦               Quad.h
+¦       ¦               Skybox.h
+¦       ¦               
 ¦       +---src
-¦       ¦       BoomEngine.cpp
-¦       ¦       pch.cpp
-¦       ¦       
+¦       ¦   ¦   BoomEngine.cpp
+¦       ¦   ¦   Logger.cpp
+¦       ¦   ¦   
+¦       ¦   +---Application
+¦       ¦   ¦       Context.cpp
+¦       ¦   ¦       
+¦       ¦   +---Textures
+¦       ¦           Texture.cpp
+¦       ¦           
 ¦       +---x64
 ¦           +---Debug
 ¦           ¦   ¦   BoomEngine.Build.CppClean.log
@@ -139,14 +152,13 @@ C:.
 ¦           ¦   ¦   BoomEngine.log
 ¦           ¦   ¦   BoomEngine.obj
 ¦           ¦   ¦   BoomEngine.vcxproj.FileListAbsolute.txt
+¦           ¦   ¦   Logger.obj
 ¦           ¦   ¦   vc143.idb
 ¦           ¦   ¦   vc143.pdb
 ¦           ¦   ¦   
 ¦           ¦   +---BoomEngine
-¦           ¦   ¦   ¦   Core.pch
-¦           ¦   ¦   ¦   
-¦           ¦   ¦   +---includes
-¦           ¦   ¦       +---common
+¦           ¦   ¦       Core.pch
+¦           ¦   ¦       
 ¦           ¦   +---BoomEngine.tlog
 ¦           ¦           BoomEngine.lastbuildstate
 ¦           ¦           CL.command.1.tlog
@@ -159,11 +171,18 @@ C:.
 ¦           ¦           link.write.1.tlog
 ¦           ¦           
 ¦           +---Release
+¦               ¦   AppWindow.obj
 ¦               ¦   BoomEngine.Build.CppClean.log
-¦               ¦   BoomEngine.lib.recipe
+¦               ¦   BoomEngine.dll.recipe
+¦               ¦   BoomEngine.iobj
+¦               ¦   BoomEngine.ipdb
 ¦               ¦   BoomEngine.log
 ¦               ¦   BoomEngine.obj
 ¦               ¦   BoomEngine.vcxproj.FileListAbsolute.txt
+¦               ¦   Context.obj
+¦               ¦   Logger.obj
+¦               ¦   Renderer.obj
+¦               ¦   vc143.pdb
 ¦               ¦   
 ¦               +---BoomEngine
 ¦               ¦       Core.pch
@@ -174,79 +193,28 @@ C:.
 ¦                       Cl.items.tlog
 ¦                       CL.read.1.tlog
 ¦                       CL.write.1.tlog
-¦                       Lib-link.read.1.tlog
-¦                       Lib-link.write.1.tlog
-¦                       Lib.command.1.tlog
+¦                       link.command.1.tlog
+¦                       link.read.1.tlog
+¦                       link.secondary.1.tlog
+¦                       link.write.1.tlog
 ¦                       
-+---Gam300
-¦   +---Debug
-¦   ¦   ¦   main.obj
-¦   ¦   ¦   vc143.idb
-¦   ¦   ¦   vc143.pdb
-¦   ¦   ¦   
-¦   ¦   +---Gam300.tlog
-¦   ¦           CL.command.1.tlog
-¦   ¦           CL.read.1.tlog
-¦   ¦           CL.write.1.tlog
-¦   ¦           Gam300.lastbuildstate
-¦   ¦           link-cvtres.read.1.tlog
-¦   ¦           link-cvtres.write.1.tlog
-¦   ¦           link-rc.read.1.tlog
-¦   ¦           link-rc.write.1.tlog
-¦   ¦           link.command.1.tlog
-¦   ¦           link.read.1.tlog
-¦   ¦           link.write.1.tlog
-¦   ¦           unsuccessfulbuild
-¦   ¦           
-¦   +---x64
-¦       +---Debug
-¦       ¦   ¦   Gam300.Build.CppClean.log
-¦       ¦   ¦   Gam300.exe.recipe
-¦       ¦   ¦   Gam300.ilk
-¦       ¦   ¦   main.obj
-¦       ¦   ¦   Project1.log
-¦       ¦   ¦   Project1.vcxproj.FileListAbsolute.txt
-¦       ¦   ¦   vc143.idb
-¦       ¦   ¦   vc143.pdb
-¦       ¦   ¦   
-¦       ¦   +---Gam300.tlog
-¦       ¦           CL.command.1.tlog
-¦       ¦           Cl.items.tlog
-¦       ¦           CL.read.1.tlog
-¦       ¦           CL.write.1.tlog
-¦       ¦           Gam300.lastbuildstate
-¦       ¦           link.command.1.tlog
-¦       ¦           link.read.1.tlog
-¦       ¦           link.secondary.1.tlog
-¦       ¦           link.write.1.tlog
-¦       ¦           
-¦       +---Release
-¦           ¦   Gam300.Build.CppClean.log
-¦           ¦   main.obj
-¦           ¦   Project1.log
-¦           ¦   Project1.vcxproj.FileListAbsolute.txt
-¦           ¦   vc143.pdb
-¦           ¦   
-¦           +---Gam300.tlog
-¦                   CL.command.1.tlog
-¦                   CL.read.1.tlog
-¦                   CL.write.1.tlog
-¦                   Gam300.lastbuildstate
-¦                   link.command.1.tlog
-¦                   link.read.1.tlog
-¦                   link.write.1.tlog
-¦                   unsuccessfulbuild
-¦                   
++---profiles
+¦       msvc17
+¦       
 +---x64
     +---Debug
     ¦       BoomEngine.dll
     ¦       BoomEngine.exp
     ¦       BoomEngine.lib
     ¦       BoomEngine.pdb
-    ¦       Gam300.exe
-    ¦       Gam300.pdb
+    ¦       Editor.exe
+    ¦       Editor.pdb
     ¦       
     +---Release
+            BoomEngine.dll
+            BoomEngine.exp
             BoomEngine.lib
             BoomEngine.pdb
+            Editor.exe
+            Editor.pdb
             
