@@ -30,6 +30,10 @@ if errorlevel 1 (
   echo [INFO] Conan already available in PATH.
 )
 
+
+conan remove "bzip2/*" -f
+
+
 REM ------------------------------------------------------------------------
 REM 4) Locate conan.exe and put it on PATH for this session
 REM ------------------------------------------------------------------------
@@ -74,7 +78,7 @@ if errorlevel 1 (
 )
 
 REM ------------------------------------------------------------------------
-REM 5.5) Ensure our custom msvc17 profile exists
+REM 5.5) Ensure our custom msvc17 profile exists (graph-wide tool_requires)
 REM ------------------------------------------------------------------------
 if not exist profiles mkdir profiles
 (
@@ -86,7 +90,20 @@ if not exist profiles mkdir profiles
   echo compiler.runtime=dynamic
   echo compiler.cppstd=17
   echo build_type=Release
+
+  echo.
+  echo [tool_requires]
+  echo *: cmake/3.27.9
+  echo *: ninja/1.11.1
+
+  echo.
+  echo [conf]
+  echo tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
 ) > profiles\msvc17
+
+REM Make sure the ConanCenter remote exists so cmake/ninja can be fetched
+conan remote list | findstr /I "conancenter" >nul || conan remote add conancenter https://center.conan.io
+
 
 REM ------------------------------------------------------------------------
 REM 6) Install Debug and Release (MSBuildDeps only)
