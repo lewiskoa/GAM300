@@ -77,8 +77,7 @@ if errorlevel 1 (
 )
 
 REM ------------------------------------------------------------------------
-REM 5.5) Ensure our custom msvc17 profile exists (tools for the whole graph,
-REM       but EXCLUDING the tool packages themselves to avoid cycles)
+REM 5.5) Create build profile WITH cmake tool requirement
 REM ------------------------------------------------------------------------
 if not exist profiles mkdir profiles
 (
@@ -93,26 +92,47 @@ if not exist profiles mkdir profiles
 
   echo.
   echo [tool_requires]
-  echo ^!cmake/*: cmake/[>=3.25 <4]
+  echo cmake/[^>=3.25]
 
   echo.
   echo [conf]
-  REM Use VS 2022 generator because some recipes (e.g. bzip2) request it
   echo tools.cmake.cmaketoolchain:generator="Visual Studio 17 2022"
 ) > profiles\msvc17
+
+REM Create a host profile without tool_requires to avoid conflicts
+(
+  echo [settings]
+  echo os=Windows
+  echo arch=x86_64
+  echo compiler=msvc
+  echo compiler.version=193
+  echo compiler.runtime=dynamic
+  echo compiler.cppstd=17
+  echo build_type=Release
+
+  echo.
+  echo [conf]
+  echo tools.cmake.cmaketoolchain:generator="Visual Studio 17 2022"
+) > profiles\msvc17_host
 
 REM Make sure the ConanCenter remote exists so cmake can be fetched
 conan remote list | findstr /I "conancenter" >nul || conan remote add conancenter https://center.conan.io
 
 REM ------------------------------------------------------------------------
-REM 6) Install Debug and Release (MSBuildDeps only; project stays MSBuild)
+REM 6) Install build requirements first (including CMake)
+REM ------------------------------------------------------------------------
+echo [STEP] Installing CMake and other build tools...
+conan install --tool-requires=cmake/[^>=3.25] -pr:b profiles\msvc17 --build=missing
+
+REM ------------------------------------------------------------------------
+REM 7) Install Debug and Release (MSBuildDeps only; project stays MSBuild)
 REM ------------------------------------------------------------------------
 echo [STEP] Installing Conan packages for Release (MSBuildDeps)...
-conan install . -of conanbuild\Release -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
+conan install . -of conanbuild\Release -pr:h profiles\msvc17_host -pr:b profiles\msvc17 ^
   -s build_type=Release -g MSBuildDeps --build=missing
 
 echo [STEP] Installing Conan packages for Debug (MSBuildDeps)...
-conan install . -of conanbuild\Debug -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
+conan install . -of conanbuild\Debug -pr:h profiles\msvc17_host -pr:b profiles\msvc17 ^
   -s build_type=Debug -g MSBuildDeps --build=missing
 
 echo.
