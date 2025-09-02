@@ -30,9 +30,8 @@ if errorlevel 1 (
   echo [INFO] Conan already available in PATH.
 )
 
-
+REM (Optional) Clear any half-built bzip2 to avoid stale errors
 conan remove "bzip2/*" -f
-
 
 REM ------------------------------------------------------------------------
 REM 4) Locate conan.exe and put it on PATH for this session
@@ -68,7 +67,7 @@ set "PATH=%CONAN_PATH%;%PATH%"
 echo [INFO] Using Conan from: "%CONAN_PATH%\conan.exe"
 
 REM ------------------------------------------------------------------------
-REM 5) Detect default profile
+REM 5) Detect default profile (not used directly, but helpful on clean boxes)
 REM ------------------------------------------------------------------------
 echo [STEP] Detecting Conan default profile...
 conan profile detect --force
@@ -78,7 +77,8 @@ if errorlevel 1 (
 )
 
 REM ------------------------------------------------------------------------
-REM 5.5) Ensure our custom msvc17 profile exists (graph-wide tool_requires)
+REM 5.5) Ensure our custom msvc17 profile exists (tools for the whole graph,
+REM       but EXCLUDING the tool packages themselves to avoid cycles)
 REM ------------------------------------------------------------------------
 if not exist profiles mkdir profiles
 (
@@ -93,20 +93,19 @@ if not exist profiles mkdir profiles
 
   echo.
   echo [tool_requires]
-  echo *: cmake/3.27.9
-  echo *: ninja/1.11.1
+  echo ^!cmake/*: cmake/[>=3.25 <4]
 
   echo.
   echo [conf]
-  echo tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
+  REM Use VS 2022 generator because some recipes (e.g. bzip2) request it
+  echo tools.cmake.cmaketoolchain:generator="Visual Studio 17 2022"
 ) > profiles\msvc17
 
-REM Make sure the ConanCenter remote exists so cmake/ninja can be fetched
+REM Make sure the ConanCenter remote exists so cmake can be fetched
 conan remote list | findstr /I "conancenter" >nul || conan remote add conancenter https://center.conan.io
 
-
 REM ------------------------------------------------------------------------
-REM 6) Install Debug and Release (MSBuildDeps only)
+REM 6) Install Debug and Release (MSBuildDeps only; project stays MSBuild)
 REM ------------------------------------------------------------------------
 echo [STEP] Installing Conan packages for Release (MSBuildDeps)...
 conan install . -of conanbuild\Release -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
@@ -117,6 +116,6 @@ conan install . -of conanbuild\Debug -pr:h profiles\msvc17 -pr:b profiles\msvc17
   -s build_type=Debug -g MSBuildDeps --build=missing
 
 echo.
-echo ==== Done! Props are inside conanbuild\<Config>\conandeps.props ====
+echo ==== Done! Props are inside conanbuild\^<Config^>\conandeps.props ====
 pause
 exit /b 0
