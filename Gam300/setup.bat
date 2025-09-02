@@ -86,6 +86,14 @@ if not exist profiles mkdir profiles
   echo compiler.runtime=dynamic
   echo compiler.cppstd=17
   echo build_type=Release
+
+  echo.
+  echo [tool_requires]
+  echo cmake/3.27.7
+
+  echo.
+  echo [conf]
+  echo tools.cmake.cmaketoolchain:generator="Visual Studio 17 2022"
 ) > profiles\msvc17
 
 REM ------------------------------------------------------------------------
