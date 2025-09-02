@@ -7,7 +7,7 @@ glm/1.0.1
 imgui/1.89.7
 stb/cci.20230920
 assimp/5.4.3
-
+entt/3.12.2
 
 [generators]
 MSBuildDeps

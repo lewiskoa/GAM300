@@ -2,7 +2,7 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 #include "Interface.h"
-
+#include "ECS/ECS.hpp"
 namespace Boom
 {
     /**
@@ -55,25 +55,36 @@ namespace Boom
          */
         BOOM_INLINE void RunContext()
         {
-            /*
+            //to do aqif check code and implement entt here
+          
             //create scene cam
-            auto cam{ CreateEntt<Entity>() };
-            camera.Attach<TransformComponent>().Transform.Translate.z = 2.f;
-            camera.Attach<CameraComponent>();
+   /*         auto cam{ createentt<entity>() };
+            camera.attach<transformcomponent>().transform.translate.z = 2.f;
+            camera.attach<cameracomponent>();*/
 
-            { //chose one example entity to render by simply commenting out the other one.
-                //create cube entity (.fbx file reading)
-                auto model = std::make_shared<Model>("Resources/Models/{filename}.fbx");
-                auto cube = CreateEntt<Entity>();
-                cube.Attach<TransformComponent>().Transform.Rotation.y = 30.f;
-                cube.Attach<ModelComponent>().Model = model;
+            //{ //chose one example entity to render by simply commenting out the other one.
+            //    //create cube entity (.fbx file reading)
+            //    auto model = std::make_shared<model>("sphere.fbx");
+            //    auto cube = createentt<entity>();
+            //    cube.attach<transformcomponent>().transform.rotation.y = 30.f;
+            //    cube.attach<modelcomponent>().model = model;
 
-                //create quad
-                auto quad{ CreateEntt<Entity>() };
-                quad.Attach<MeshComponent>().Mesh = CreateQuad3D();
-                quad.Attach<TransformComponent>();
+            //    //create quad
+            //    auto quad{ createentt<entity>() };
+            //    quad.attach<meshcomponent>().mesh = createquad3d();
+            //    quad.attach<transformcomponent>();
+            //}
+            //use of ecs
+            EntityRegistry registry;
+
+            Entity sphere{ &registry };
+            {
+                auto& t = sphere.Attach<TransformComponent>().Transform;
+                t.rotate.y = 30.f;  
+
+                auto& mc = sphere.Attach<ModelComponent>();
+                mc.model = std::make_shared<Model>("sphere.fbx");
             }
-            */
             
             Camera3D cam{};
             //this .fbx cube's normals is a little janky
@@ -144,9 +155,23 @@ namespace Boom
                             modelCube, 
                             Transform3D({2.f, 0.f, -1.f}, {}, glm::vec3{1.f})
                         );*/
+                        //testing ecs,uncomment for ecs
+                        {
+                            auto view = registry.view<TransformComponent, ModelComponent>();
+                            for (auto ent : view) {
+                                auto& xf = view.get<TransformComponent>(ent).Transform;
+                                auto& mc = view.get<ModelComponent>(ent);
 
+                                if (mc.material) {
+                                    m_Context->renderer->Draw(mc.model, xf, *mc.material);
+                                }
+                                else {
+                                    m_Context->renderer->Draw(mc.model, xf);
+                                }
+                            }
+                        }
 
-
+						//comment this out/remove if using ecs
                         m_Context->renderer->Draw(
                             modelSphere,
                             Transform3D({}, {}, glm::vec3{2.f}),

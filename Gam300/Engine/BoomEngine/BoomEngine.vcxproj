@@ -171,6 +171,7 @@
     <ClInclude Include="includes\common\Events.h" />
     <ClInclude Include="includes\common\framework.h" />
     <ClInclude Include="includes\common\Core.h" />
+    <ClInclude Include="includes\ECS\ECS.hpp" />
     <ClInclude Include="includes\GlobalConstants.h" />
     <ClInclude Include="includes\Graphics\Buffers\Frame.h" />
     <ClInclude Include="includes\Graphics\Buffers\Mesh.h" />

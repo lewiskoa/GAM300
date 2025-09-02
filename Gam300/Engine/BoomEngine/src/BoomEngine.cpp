@@ -10,7 +10,7 @@
 #include "Graphics/Renderer.h"
 #include "Graphics/Shaders/Color.h"
 #include "Graphics/Buffers/Frame.h"
-
+#include "ECS/ECS.hpp"
 #include <iostream>
 
 #include <imgui.h>
