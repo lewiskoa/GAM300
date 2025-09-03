@@ -96,6 +96,18 @@
     <ClInclude Include="includes\ECS\ECS.hpp">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Physics\Callback.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Physics\Helpers.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Physics\Context.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Physics\Utilities.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">
