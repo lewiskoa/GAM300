@@ -31,7 +31,7 @@ namespace Boom {
 			, color{ col }
 			, colLoc{ GetUniformVar("color") }
 			, modelLoc{ GetUniformVar("mat") }
-			, model{ std::make_shared<Model>(std::string(CONSTANTS::MODELS_LOCAITON) + "cube.fbx") }
+			, model{ std::make_shared<StaticModel>(std::string(CONSTANTS::MODELS_LOCAITON) + "cube.fbx") }
 		{
 		}
 		BOOM_INLINE void Show() {

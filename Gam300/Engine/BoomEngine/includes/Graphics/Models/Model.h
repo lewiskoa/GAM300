@@ -5,29 +5,51 @@
 #include <assimp/scene.h>
 
 namespace Boom {
-	struct Model {
-		BOOM_INLINE Model() = default;
+	struct Model
+	{
+		BOOM_INLINE virtual bool HasJoint() { return false; }
+		BOOM_INLINE virtual void Load(std::string) {}
+		BOOM_INLINE virtual void Draw() {}
+	};
+
+	struct StaticModel : Model {
+		BOOM_INLINE StaticModel() = default;
+
+		BOOM_INLINE StaticModel(const std::string& path)
+		{
+			Load(path);
+		}
+
 		//initializes an assimp importer, reads model file
 		//applies flags for optimization and then parses loaded scene's meshes
-		BOOM_INLINE Model(std::string filename) {
-			filename = CONSTANTS::MODELS_LOCAITON + filename;
+		void Load(std::string path)
+			override final
+		{
 
-			Assimp::Importer importer{};
-			uint32_t flags{
-				aiProcess_Triangulate | aiProcess_GenSmoothNormals |
-				aiProcess_CalcTangentSpace | aiProcess_OptimizeMeshes |
+			path = CONSTANTS::MODELS_LOCAITON + path;
+
+			uint32_t flags = aiProcess_Triangulate |
+				aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
+				aiProcess_OptimizeMeshes |
 				aiProcess_OptimizeGraph | aiProcess_ValidateDataStructure |
-				aiProcess_ImproveCacheLocality | aiProcess_FixInfacingNormals |
-				aiProcess_GenUVCoords | aiProcess_FlipUVs
-			};
+				aiProcess_ImproveCacheLocality |
+				aiProcess_FixInfacingNormals |
+				aiProcess_GenUVCoords | aiProcess_FlipUVs;
 
-			aiScene const* scene{ importer.ReadFile(filename, flags) };
-			if (!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-				BOOM_ERROR("failed: Model::Load('{}'): {}", filename, importer.GetErrorString());
+			Assimp::Importer importer;
+			const aiScene* ai_scene = importer.ReadFile(path,
+				flags);
+
+			if (!ai_scene || ai_scene->mFlags ==
+				AI_SCENE_FLAGS_INCOMPLETE || !ai_scene->mRootNode)
+			{
+				BOOM_ERROR("failed to load model-{}",
+					importer.GetErrorString());
 				return;
 			}
 
-			ParseNode(scene, scene->mRootNode);
+			// parse all meshes
+			ParseNode(ai_scene, ai_scene->mRootNode);
 		}
 
 		BOOM_INLINE void Draw() {

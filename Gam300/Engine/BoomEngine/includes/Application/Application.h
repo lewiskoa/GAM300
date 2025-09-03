@@ -83,13 +83,13 @@ namespace Boom
                 t.rotate.y = 30.f;  
 
                 auto& mc = sphere.Attach<ModelComponent>();
-                mc.model = std::make_shared<Model>("sphere.fbx");
+                mc.model = std::make_shared<StaticModel>("sphere.fbx");
             }
             
             Camera3D cam{};
             //this .fbx cube's normals is a little janky
-            auto modelCube = std::make_shared<Model>("cube.fbx");
-            auto modelSphere = std::make_shared<Model>("sphere.fbx");
+            auto modelCube = std::make_shared<StaticModel>("cube.fbx");
+            auto modelSphere = std::make_shared<StaticModel>("sphere.fbx");
 
             //lights testers
             PointLight pl1{};
