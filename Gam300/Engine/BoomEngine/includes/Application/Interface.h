@@ -122,8 +122,8 @@ namespace Boom
         // Allow Application to set up layers
         friend struct Application;
 
-        AppContext* m_Context;   ///< Pointer to shared application context
-        uint32_t    m_LayerID;   ///< Unique identifier for this layer
+        AppContext* m_Context{};   ///< Pointer to shared application context
+        uint32_t    m_LayerID{};   ///< Unique identifier for this layer
     };
 
 } // namespace Boom

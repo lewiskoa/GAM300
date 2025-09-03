@@ -96,6 +96,12 @@
     <ClInclude Include="includes\ECS\ECS.hpp">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Graphics\Models\Animator.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Graphics\Models\Animation.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">

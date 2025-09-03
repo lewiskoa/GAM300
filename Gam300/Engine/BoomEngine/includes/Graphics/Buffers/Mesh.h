@@ -68,6 +68,16 @@ namespace Boom {
 			else if (std::is_same<Vertex, SkyboxVert>::value) {
 				SetAttribute<SkyboxVert>(0, 3, (void*)offsetof(SkyboxVert, pos));
 			}
+			//Skeletal - AMOS <3
+			else if(std::is_same<Vertex, SkeletalVertex>::value) {
+				SetAttribute<SkeletalVertex>(0, 3,	(void*)offsetof(SkeletalVertex, Position));
+				SetAttribute<SkeletalVertex>(1, 3,	(void*)offsetof(SkeletalVertex, Normal));
+				SetAttribute<SkeletalVertex>(2, 2,	(void*)offsetof(SkeletalVertex, UVs));
+				SetAttribute<SkeletalVertex>(3, 3,	(void*)offsetof(SkeletalVertex, Tangent));
+				SetAttribute<SkeletalVertex>(4, 3,	(void*)offsetof(SkeletalVertex, Bitangent));
+				SetAttribute<SkeletalVertex>(5, 4,	(void*)offsetof(SkeletalVertex, Joints));
+				SetAttribute<SkeletalVertex>(6, 4,	(void*)offsetof(SkeletalVertex, Weights));
+			}
 			else {
 				BOOM_ERROR(false && "Mesh() - invalid vertex type.");
 			}

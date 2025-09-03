@@ -176,6 +176,8 @@
     <ClInclude Include="includes\Graphics\Buffers\Frame.h" />
     <ClInclude Include="includes\Graphics\Buffers\Mesh.h" />
     <ClInclude Include="includes\Graphics\Buffers\Vertex.h" />
+    <ClInclude Include="includes\Graphics\Models\Animation.h" />
+    <ClInclude Include="includes\Graphics\Models\Animator.h" />
     <ClInclude Include="includes\Graphics\Models\Helper.h" />
     <ClInclude Include="includes\Graphics\Models\Model.h" />
     <ClInclude Include="includes\Graphics\Renderer.h" />
@@ -195,7 +197,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\BoomEngine.cpp" />
-    <ClCompile Include="src\Logger.cpp" />
+    <ClCompile Include="src\Logger.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Textures\Texture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
