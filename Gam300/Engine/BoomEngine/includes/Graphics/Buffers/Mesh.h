@@ -70,13 +70,13 @@ namespace Boom {
 			}
 			//Skeletal - AMOS <3
 			else if(std::is_same<Vertex, SkeletalVertex>::value) {
-				SetAttribute<SkeletalVertex>(0, 3,	(void*)offsetof(SkeletalVertex, Position));
-				SetAttribute<SkeletalVertex>(1, 3,	(void*)offsetof(SkeletalVertex, Normal));
-				SetAttribute<SkeletalVertex>(2, 2,	(void*)offsetof(SkeletalVertex, UVs));
-				SetAttribute<SkeletalVertex>(3, 3,	(void*)offsetof(SkeletalVertex, Tangent));
-				SetAttribute<SkeletalVertex>(4, 3,	(void*)offsetof(SkeletalVertex, Bitangent));
-				SetAttribute<SkeletalVertex>(5, 4,	(void*)offsetof(SkeletalVertex, Joints));
-				SetAttribute<SkeletalVertex>(6, 4,	(void*)offsetof(SkeletalVertex, Weights));
+				SetAttribute<SkeletalVertex>(0, 3,	(void*)offsetof(SkeletalVertex, pos));
+				SetAttribute<SkeletalVertex>(1, 3,	(void*)offsetof(SkeletalVertex, norm));
+				SetAttribute<SkeletalVertex>(2, 2,	(void*)offsetof(SkeletalVertex, uv));
+				SetAttribute<SkeletalVertex>(3, 3,	(void*)offsetof(SkeletalVertex, tangent));
+				SetAttribute<SkeletalVertex>(4, 3,	(void*)offsetof(SkeletalVertex, biTangent));
+				SetAttribute<SkeletalVertex>(5, 4,	(void*)offsetof(SkeletalVertex, joints));
+				SetAttribute<SkeletalVertex>(6, 4,	(void*)offsetof(SkeletalVertex, weights));
 			}
 			else {
 				BOOM_ERROR(false && "Mesh() - invalid vertex type.");
@@ -117,5 +117,6 @@ namespace Boom {
 
 	//3d Mesh
 	using ShadedMesh = Mesh<ShadedVert>;
+	using SkeletalMesh = Mesh<SkeletalVertex>;
 	using Mesh3D = std::shared_ptr<ShadedMesh>;
 }
