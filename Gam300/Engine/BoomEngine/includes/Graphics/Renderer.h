@@ -12,6 +12,11 @@ namespace Boom {
 	public:
 		GraphicsRenderer() = delete;
 
+		BOOM_INLINE void SetJoints(std::vector<glm::mat4>& transforms)
+		{
+			pbrShader->SetJoints(transforms);
+		}
+
 		BOOM_INLINE GraphicsRenderer(int32_t w, int32_t h)
 		{
 			glEnable(GL_BLEND);

@@ -5,6 +5,11 @@ layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 uv;
 layout (location = 3) in vec3 tangent;
 layout (location = 4) in vec3 biTangent;
+layout (location = 5) in ivec4 joints;
+layout (location = 6) in vec4 weights;
+
+#define MAX_WEIGHTS 4
+#define MAX_JOINTS 100
 
 out Vertex {
     vec3 position;
@@ -16,13 +21,34 @@ out Vertex {
 uniform mat4 modelMat;
 uniform mat4 frustumMat; //projection * view
 
+uniform mat4 jointsMat[MAX_JOINTS];
+uniform bool hasJoints = false;
+
 void main() {
-    vertex.normal = (modelMat * vec4(normal, 1.0)).xyz;
-    vec4 worldPos = modelMat * vec4(position, 1.0);
-    vertex.position = worldPos.xyz;
+    mat4 transform = mat4(1.0);
+
+    if(hasJoints)
+    {
+        transform = mat4(0.0);
+        for(int i = 0; i < MAX_WEIGHTS && joints[i] > -1; i++)
+        {
+            transform += jointsMat[joints[i]] * weights[i];
+        }
+    }
+
     vertex.uv = uv;
-    vertex.TBN = mat3(modelMat) * mat3(tangent, biTangent, normal);
-    gl_Position = frustumMat * worldPos;
+    transform = modelMat * transform;
+    vertex.normal = mat3(transform) * normal;
+    vertex.position = (transform * vec4(position, 1.0)).xyz;
+    gl_Position = frustumMat * transform * vec4(position, 1.0);
+    vertex.TBN = mat3(transform) * mat3(tangent, biTangent, normal);
+
+    //vertex.normal = (modelMat * vec4(normal, 1.0)).xyz;
+    //vec4 worldPos = modelMat * vec4(position, 1.0);
+    //vertex.position = worldPos.xyz;
+    //vertex.uv = uv;
+    //vertex.TBN = mat3(modelMat) * mat3(tangent, biTangent, normal);
+    //gl_Position = frustumMat * worldPos;
 }
 ==VERTEX==
 

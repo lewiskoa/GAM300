@@ -74,22 +74,32 @@ namespace Boom
             //    quad.attach<meshcomponent>().mesh = createquad3d();
             //    quad.attach<transformcomponent>();
             //}
+            
             //use of ecs
             EntityRegistry registry;
+
+			auto walking = std::make_shared<SkeletalModel>("walking.fbx");
 
             Entity sphere{ &registry };
             {
                 auto& t = sphere.Attach<TransformComponent>().Transform;
-                t.rotate.y = 30.f;  
+                //t.rotate.y = 30.f;  
+                t.translate = glm::vec3(1.5f, -2.5f, -5.0f);
+                t.scale = glm::vec3(0.03f);
 
                 auto& mc = sphere.Attach<ModelComponent>();
-                mc.model = std::make_shared<StaticModel>("sphere.fbx");
+                //mc.model = std::make_shared<StaticModel>("sphere.fbx");
+                mc.model = std::make_shared<SkeletalModel>("walking.fbx");
+
+                //animation stuff
+				sphere.Attach<AnimatorComponent>().Animator = walking->GetAnimator();
             }
             
             Camera3D cam{};
             //this .fbx cube's normals is a little janky
             auto modelCube = std::make_shared<StaticModel>("cube.fbx");
             auto modelSphere = std::make_shared<StaticModel>("sphere.fbx");
+			auto modelRobot = std::make_shared<StaticModel>("walking.fbx");
 
             //lights testers
             PointLight pl1{};
@@ -149,6 +159,7 @@ namespace Boom
                         //camera
                         m_Context->renderer->SetCamera(cam, {m_Context->window->camPos, {0.f, 0.f, 0.f}, {}});
                         
+
                         //models
                         /*
                         m_Context->renderer->Draw(
@@ -162,7 +173,17 @@ namespace Boom
                                 auto& xf = view.get<TransformComponent>(ent).Transform;
                                 auto& mc = view.get<ModelComponent>(ent);
 
-                                if (mc.material) {
+                                if (auto an = registry.try_get<AnimatorComponent>(ent)) {
+                                    // an is a pointer; Animator likely holds a shared_ptr<Animator>
+                                    auto& joints = an->Animator->Animate(0.016f); // or your real dt
+                                    m_Context->renderer->SetJoints(joints);
+                                    m_Context->renderer->Draw(mc.model, xf);
+                                }
+
+                                
+
+
+                                else if (mc.material) {
                                     m_Context->renderer->Draw(mc.model, xf, *mc.material);
                                 }
                                 else {
@@ -172,11 +193,11 @@ namespace Boom
                         }
 
 						//comment this out/remove if using ecs
-                        m_Context->renderer->Draw(
-                            modelSphere,
-                            Transform3D({}, {}, glm::vec3{2.f}),
-                            mat //using custom material
-                        );
+                        //m_Context->renderer->Draw(
+                        //    modelSphere,
+                        //    Transform3D({}, {}, glm::vec3{2.f}),
+                        //    mat //using custom material
+                        //);
 
                         //skybox should be drawn at the end
                         m_Context->renderer->DrawSkybox(skybox, Transform3D({}, { 0.f, testRot, 0.f }, {}));
