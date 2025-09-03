@@ -78,12 +78,13 @@ namespace Boom
             //use of ecs
             EntityRegistry registry;
 
-			auto walking = std::make_shared<SkeletalModel>("walking.fbx");
+            auto walking = std::make_shared<SkeletalModel>("walking.fbx");
+			auto dance = std::make_shared<SkeletalModel>("dance.fbx");
 
             Entity sphere{ &registry };
             {
                 auto& t = sphere.Attach<TransformComponent>().Transform;
-                //t.rotate.y = 30.f;  
+                t.rotate.y = 45.f;  
                 t.translate = glm::vec3(1.5f, -2.5f, -5.0f);
                 t.scale = glm::vec3(0.03f);
 
@@ -92,7 +93,8 @@ namespace Boom
                 mc.model = std::make_shared<SkeletalModel>("walking.fbx");
 
                 //animation stuff
-				sphere.Attach<AnimatorComponent>().Animator = walking->GetAnimator();
+				//sphere.Attach<AnimatorComponent>().Animator = walking->GetAnimator();
+				sphere.Attach<AnimatorComponent>().Animator = dance->GetAnimator();
             }
             
             Camera3D cam{};
@@ -116,7 +118,8 @@ namespace Boom
 
                 dl.intensity = 10.f;
             }
-            m_Context->window->camPos.z = 3.f;
+            m_Context->window->camPos.z = 4.f;
+			m_Context->window->camPos.r = 0.f;
 
             //textures
             auto roughness = std::make_shared<Texture2D>("Marble/roughness.png");
@@ -175,7 +178,7 @@ namespace Boom
 
                                 if (auto an = registry.try_get<AnimatorComponent>(ent)) {
                                     // an is a pointer; Animator likely holds a shared_ptr<Animator>
-                                    auto& joints = an->Animator->Animate(0.016f); // or your real dt
+                                    auto& joints = an->Animator->Animate(0.01f); // or your real dt
                                     m_Context->renderer->SetJoints(joints);
                                     m_Context->renderer->Draw(mc.model, xf);
                                 }

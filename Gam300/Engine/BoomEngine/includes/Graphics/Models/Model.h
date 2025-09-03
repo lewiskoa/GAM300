@@ -303,6 +303,7 @@ namespace Boom {
 				}
 			}
 
+			data.drawMode = GL_TRIANGLES;   // <-- ADD THIS LINE
 			// create new mesh instance
 			meshes.push_back(std::make_unique<SkeletalMesh>(std::move(data)));
 
