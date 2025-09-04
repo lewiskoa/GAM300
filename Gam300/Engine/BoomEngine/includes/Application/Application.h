@@ -14,12 +14,20 @@ namespace Boom
      */
     struct Application : AppInterface
     {
+        template<typename EntityType, typename... Components, typename Fn>
+        BOOM_INLINE void EnttView(Fn&& fn) {
+            auto view = registry.view<Components...>();
+            for (auto e : view) {
+                fn(EntityType{ &registry, e }, registry.get<Components>(e)...);
+            }
+        }
         /**
          * @brief Constructs the Application, assigns its unique ID, and allocates the AppContext.
          *
          * BOOM_INLINE hints to the compiler to inline this small constructor
          * to avoid function-call overhead during startup.
          */
+       
         BOOM_INLINE Application()
         {
             m_LayerID = TypeID<Application>();
@@ -76,7 +84,7 @@ namespace Boom
             //}
             
             //use of ecs
-            EntityRegistry registry;
+           
 
             auto walking = std::make_shared<SkeletalModel>("walking.fbx");
 			auto dance = std::make_shared<SkeletalModel>("dance.fbx");
@@ -85,7 +93,7 @@ namespace Boom
             {
                 auto& t = sphere.Attach<TransformComponent>().Transform;
                 t.rotate.y = 45.f;  
-                t.translate = glm::vec3(1.5f, -2.5f, -5.0f);
+                t.translate = glm::vec3(1.5f, -1.5f, -3.0f);
                 t.scale = glm::vec3(0.03f);
 
                 auto& mc = sphere.Attach<ModelComponent>();
@@ -96,7 +104,51 @@ namespace Boom
 				//sphere.Attach<AnimatorComponent>().Animator = walking->GetAnimator();
 				sphere.Attach<AnimatorComponent>().Animator = dance->GetAnimator();
             }
+        /*    auto light1 = CreateEntt<Entity>;
+            light1.Attach<DirectLightComponent>().Light.intensity = 0.f;
+            auto& sp = light1.Attach<TransformComponent>().Transform;
+            sp.rotate = glm::vec3(0.f, 1.5f, -2.f);*/
             
+            Entity light1{ &registry };                    
+            {
+                auto& dlc = light1.Attach<DirectLightComponent>();
+                dlc.Light.radiance = { 1.f, 1.f, 1.f };
+                dlc.Light.intensity = 8.f;
+
+               
+                auto& lxf = light1.Attach<TransformComponent>().Transform;
+               
+                lxf.rotate = glm::vec3(0.1f,1.5f,-2.f);        
+
+
+
+            }
+            // attach a directional light component
+          
+
+			Entity plane{ &registry };
+			{
+				auto& t = plane.Attach<TransformComponent>().Transform;
+				t.translate = glm::vec3(0.f, -3.f, -4.f);
+				t.scale = glm::vec3(10, 0.1,10);
+				auto& mc = plane.Attach<ModelComponent>();
+				mc.model = std::make_shared<StaticModel>("cube.fbx");
+				//auto roughness = std::make_shared<Texture2D>("Marble/roughness.png");
+				//auto albedo = std::make_shared<Texture2D>("Marble/albedo.png");
+				//auto normal = std::make_shared<Texture2D>("Marble/normal.png");
+				//PbrMaterial mat{};
+				//{
+				//	mat.metallic = 0.15f;
+				//	mat.roughnessMap = roughness;
+				//	mat.albedoMap = albedo;
+				//	mat.normalMap = normal;
+				//}
+				//mc.material = &mat; //assigning custom material
+			}
+
+
+
+
             Camera3D cam{};
             //this .fbx cube's normals is a little janky
             auto modelCube = std::make_shared<StaticModel>("cube.fbx");
@@ -141,6 +193,7 @@ namespace Boom
             while (m_Context->window->PollEvents())
             {
                 //updates new frame
+                RenderSceneDepth();
                 m_Context->renderer->NewFrame();
                 {
                     //testing rendering
@@ -148,20 +201,29 @@ namespace Boom
                         static float testRot{};
                         if ((testRot += 0.1f) > 360.f) { testRot -= 360.f; }
 
-                        //lights
-                        m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, {0.f, 0.f, -1.f}, {}), 0);
-                        m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
+                        ////lights
+                        //m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, {0.f, 0.f, -1.f}, {}), 0);
+                        //m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
+                        //m_Context->renderer->SetPointLightCount(0);
+
+                        //m_Context->renderer->SetLight(dl, Transform3D({}, { -cosf(glm::radians(testRot)), -.3f, sinf(glm::radians(testRot)) }, {}), 0);
+                        //m_Context->renderer->SetDirectionalLightCount(1);
+
+                        //m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
+                        //m_Context->renderer->SetSpotLightCount(0);
+                        int dirCount = 0;
+                        auto dirView = registry.view<DirectLightComponent, TransformComponent>();
+                        for (auto e : dirView) {
+                            auto& d = dirView.get<DirectLightComponent>(e).Light;
+                            auto& xf = dirView.get<TransformComponent>(e).Transform;
+                            m_Context->renderer->SetLight(d, xf, dirCount++);
+                        }
+                        m_Context->renderer->SetDirectionalLightCount(dirCount);
                         m_Context->renderer->SetPointLightCount(0);
-
-                        m_Context->renderer->SetLight(dl, Transform3D({}, { -cosf(glm::radians(testRot)), -.3f, sinf(glm::radians(testRot)) }, {}), 0);
-                        m_Context->renderer->SetDirectionalLightCount(1);
-
-                        m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
                         m_Context->renderer->SetSpotLightCount(0);
-                        
                         //camera
                         m_Context->renderer->SetCamera(cam, {m_Context->window->camPos, {0.f, 0.f, 0.f}, {}});
-                        
+						m_Context->renderer->BindShadow(3);
 
                         //models
                         /*
@@ -194,7 +256,7 @@ namespace Boom
                                 }
                             }
                         }
-
+                        
 						//comment this out/remove if using ecs
                         //m_Context->renderer->Draw(
                         //    modelSphere,
@@ -242,6 +304,27 @@ namespace Boom
                 //glfwSwapBuffers(m_Context->window->Window());
             }
         }
+
+        private:
+            EntityRegistry registry;
+            BOOM_INLINE void RenderSceneDepth()
+            {
+                EnttView<Entity, DirectLightComponent>([this](auto light, DirectLightComponent&) {
+                    auto& lightDir = light.Get<TransformComponent>().Transform.rotate;
+
+                    // begin rendering
+                    m_Context->renderer->BeginShadowPass(lightDir);
+
+                    // render depth
+                    EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
+                        auto& transform = entity.Get<TransformComponent>().Transform;
+                        m_Context->renderer->DrawDepth(comp.model, transform);
+                        });
+
+                    // finalize frame
+                    m_Context->renderer->EndShadowPass();
+                    });
+            }
     };
 
 }

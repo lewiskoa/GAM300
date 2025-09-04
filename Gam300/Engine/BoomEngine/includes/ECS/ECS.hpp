@@ -53,7 +53,12 @@ namespace Boom {
 		BOOM_INLINE AnimatorComponent() = default;
 		Animator3D Animator;
     };
-   
+    struct DirectLightComponent
+    {
+        BOOM_INLINE DirectLightComponent(const DirectLightComponent&) = default;
+        BOOM_INLINE DirectLightComponent() = default;
+        DirectionalLight Light;
+    };
     struct Entity
     {
         BOOM_INLINE Entity(EntityRegistry* registry, EntityID entity) :
@@ -120,10 +125,10 @@ namespace Boom {
         {
             return m_Registry->get<T>(m_EnttID);
         }
-
+    
     protected:
         EntityRegistry* m_Registry = nullptr;
         EntityID m_EnttID = NENTT;
     };
-
+   
 }
