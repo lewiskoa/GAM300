@@ -5,6 +5,23 @@
 namespace Boom {
     struct PhysicsContext {
         BOOM_INLINE PhysicsContext() {
+            // sinitialize physX SDK
+            m_Foundation = PxCreateFoundation(PX_PHYSICS_VERSION, m_AllocatorCallback, m_ErrorCallback);
+            if (!m_Foundation)
+            {
+                BOOM_ERROR("Error initializing PhysX m_Foundation");
+                return;
+            }
+            // create context instance
+            m_Physics = PxCreatePhysics(PX_PHYSICS_VERSION,
+                *m_Foundation, PxTolerancesScale());
+            if (!m_Physics)
+            {
+                BOOM_ERROR("Error initializing PhysX m_Physics");
+                m_Foundation->release();
+                return;
+            }
+
             // create worker threads
             m_Dispatcher = PxDefaultCpuDispatcherCreate(2);
 
@@ -37,12 +54,9 @@ namespace Boom {
 
         // Rigid Body
         BOOM_INLINE void AddRigidBody(Entity& entity) {
-            auto& transform = entity.template
-                Get<TransformComponent>().Transform;
-            auto& body = entity.template
-                Get<RigidBodyComponent>().RigidBody;
-            bool hasCollider = entity.template
-                Has<ColliderComponent>();
+            auto& transform = entity.Get<TransformComponent>().Transform;
+            auto& body = entity.Get<RigidBodyComponent>().RigidBody;
+            //bool hasCollider = entity.Has<ColliderComponent>();
 
 
 
@@ -56,8 +70,7 @@ namespace Boom {
             {
                 // create collider shape
 
-                auto& collider = entity.template
-                    Get<ColliderComponent>().Collider;
+                auto& collider = entity.Get<ColliderComponent>().Collider;
 
                 // create collider material
                 collider.Material = m_Physics -> createMaterial(collider.StaticFriction,
@@ -149,10 +162,10 @@ namespace Boom {
             // vertices
             meshDesc.points.data = vertices.data();
             meshDesc.points.stride = sizeof(PxVec3);
-            meshDesc.points.count = vertices.size();
+            meshDesc.points.count = static_cast<PxU32>(vertices.size());
             // indices
             meshDesc.indices.data = data.idx.data();
-            meshDesc.indices.count = data.idx.size();
+            meshDesc.indices.count = static_cast<PxU32>(data.idx.size());
             // flags
             meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
 
@@ -174,7 +187,7 @@ namespace Boom {
 
         BOOM_INLINE void Simulate(uint32_t step, float dt)
         {
-            for (int i = 0; i < step; ++i)
+            for (uint32_t i = 0; i < step; ++i)
             {
                 // simulate m_Physics for a time step
                 m_Scene->simulate(dt);
@@ -186,19 +199,28 @@ namespace Boom {
             }
         }
 
+        BOOM_INLINE void SetEventCallback(PxCallbackFunction&& callback)
+        {
+            m_EventCallback.m_Callback = callback;
+        }
+
+
 
     private:
         // custom collision filter shader callback
         static PxFilterFlags CustomFilterShader
         (
-            PxFilterObjectAttributes attributes0,
-            PxFilterData filterData0,
-            PxFilterObjectAttributes attributes1,
-            PxFilterData filterData1,
-            PxPairFlags& pairFlags, const void*
-            constantBlock, PxU32 constantBlockSize
+            [[maybe_unused]] PxFilterObjectAttributes attributes0,
+            [[maybe_unused]] PxFilterData filterData0,
+            [[maybe_unused]] PxFilterObjectAttributes attributes1,
+            [[maybe_unused]] PxFilterData filterData1,
+            [[maybe_unused]] PxPairFlags& pairFlags, 
+            [[maybe_unused]] const void* constantBlock, 
+            [[maybe_unused]] PxU32 constantBlockSize
         )
         {
+            (void)constantBlock;
+            (void)constantBlockSize;
             // generate contacts and triggers for actors
             pairFlags |= PxPairFlag::eCONTACT_DEFAULT |
                 PxPairFlag::eTRIGGER_DEFAULT;

@@ -111,6 +111,39 @@ namespace Boom
             m_Context->dispatcher.DetachCallback<Event>(m_LayerID);
         }
 
+        // create entity
+        template <typename Entt, typename... Args>
+        BOOM_INLINE Entt CreateEntt(Args&&... args)
+        {
+            BOOM_STATIC_ASSERT(std::is_base_of<Entity,
+                Entt>::value);
+            return std::move(Entt(&m_Context->Scene,
+                std::forward<Args>(args)...));
+        }
+        // convert id to entity
+        template<typename Entt>
+        BOOM_INLINE Entt ToEntt(EntityID entity)
+        {
+            BOOM_STATIC_ASSERT(std::is_base_of<Entity,
+                Entt>::value);
+            return std::move(Entt(&m_Context->Scene,entity));
+        }
+        // loop through entities
+        template<typename Entt, typename Comp, typename Task>
+        BOOM_INLINE void EnttView(Task&& task)
+        {
+            BOOM_STATIC_ASSERT(std::is_base_of<Entity,
+                Entt>::value);
+            m_Context->Scene.view<Comp>().each([this, &task]
+            (auto entity, auto& comp)
+                {
+                    task(std::move(Entt(&m_Context->Scene,
+                        entity)), comp);
+                });
+        }
+
+
+
     protected:
         /** @brief  Called once when the layer is attached. Override to initialize. */
         BOOM_INLINE virtual void OnStart() {}

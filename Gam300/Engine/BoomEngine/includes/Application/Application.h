@@ -3,6 +3,7 @@
 #define APPLICATION_H
 #include "Interface.h"
 #include "ECS/ECS.hpp"
+#include "Physics/Context.h"
 namespace Boom
 {
     /**
@@ -26,12 +27,12 @@ namespace Boom
             m_Context = new AppContext();
 
             AttachCallback<WindowResizeEvent>([this](auto e) {
-                    m_Context->renderer->Resize(e.width, e.height);
+                m_Context->renderer->Resize(e.width, e.height);
                 }
             );
 
             AttachCallback<WindowTitleRenameEvent>([this](auto e) {
-                    m_Context->window->SetWindowTitle(e.title);
+                m_Context->window->SetWindowTitle(e.title);
                 }
             );
         }
@@ -56,7 +57,7 @@ namespace Boom
         BOOM_INLINE void RunContext()
         {
             //to do aqif check code and implement entt here
-          
+
             //create scene cam
    /*         auto cam{ createentt<entity>() };
             camera.attach<transformcomponent>().transform.translate.z = 2.f;
@@ -80,12 +81,12 @@ namespace Boom
             Entity sphere{ &registry };
             {
                 auto& t = sphere.Attach<TransformComponent>().Transform;
-                t.rotate.y = 30.f;  
+                t.rotate.y = 30.f;
 
                 auto& mc = sphere.Attach<ModelComponent>();
                 mc.model = std::make_shared<Model>("sphere.fbx");
             }
-            
+
             Camera3D cam{};
             //this .fbx cube's normals is a little janky
             auto modelCube = std::make_shared<Model>("cube.fbx");
@@ -136,7 +137,7 @@ namespace Boom
                         if ((testRot += 0.1f) > 360.f) { testRot -= 360.f; }
 
                         //lights
-                        m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, {0.f, 0.f, -1.f}, {}), 0);
+                        m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
                         m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
                         m_Context->renderer->SetPointLightCount(0);
 
@@ -145,14 +146,14 @@ namespace Boom
 
                         m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
                         m_Context->renderer->SetSpotLightCount(0);
-                        
+
                         //camera
-                        m_Context->renderer->SetCamera(cam, {m_Context->window->camPos, {0.f, 0.f, 0.f}, {}});
-                        
+                        m_Context->renderer->SetCamera(cam, { m_Context->window->camPos, {0.f, 0.f, 0.f}, {} });
+
                         //models
                         /*
                         m_Context->renderer->Draw(
-                            modelCube, 
+                            modelCube,
                             Transform3D({2.f, 0.f, -1.f}, {}, glm::vec3{1.f})
                         );*/
                         //testing ecs,uncomment for ecs
@@ -171,10 +172,10 @@ namespace Boom
                             }
                         }
 
-						//comment this out/remove if using ecs
+                        //comment this out/remove if using ecs
                         m_Context->renderer->Draw(
                             modelSphere,
-                            Transform3D({}, {}, glm::vec3{2.f}),
+                            Transform3D({}, {}, glm::vec3{ 2.f }),
                             mat //using custom material
                         );
 
@@ -220,6 +221,135 @@ namespace Boom
         }
     };
 
+    //    struct Application : AppInterface
+    //    {
+    //        // creates application context
+    //        BOOM_INLINE Application()
+    //        {
+    //            // initialize app context
+    //            m_LayerID = TypeID<Application>();
+    //            m_Context = new AppContext();
+    //            // register event callbacks
+    //            RegisterEventCallbacks();
+    //            // create scene entities
+    //            //CreateSceneEntities();
+    //            // create physics actors
+    //            CreatePhysicsActors();
+    //            // create environm. maps
+    //            CreateSkyboxEnvMaps();
+    //        }
+    //        // destroy application context
+    //        BOOM_INLINE ~Application()
+    //        {
+    //            // release physics actors
+    //            DestroyPhysicsActors();
+    //            BOOM_DELETE(m_Context);
+    //        }
+    //        // runs application main loop
+    //        BOOM_INLINE void RunContext()
+    //        {
+    //            // application main loop
+    //		    while (m_Context->window->PollEvents())
+    //            {
+    //                // compute delta time value
+    //                ComputeFrameDeltaTime();
+    //                // run physics simulation
+    //                RunPhysicsSimulation();
+    //                // render scene shadow map
+    //                RenderSceneDepthMap();
+    //                // render scene to buffer
+    //                //RenderSceneToFBO();
+    //                // update all layers
+    //                UpdateAppLayers();
+    //            }
+    //        }
+    //    private:
+    //        BOOM_INLINE void RegisterEventCallbacks()
+    //        {
+    //            // set physics event callback
+    //            m_Context->Physics->SetEventCallback([this](auto [[maybe_unused]] e)
+    //                {
+    //                    // coming later with scripting
+    //                });
+    //            // attach window resize event callback
+    //            AttachCallback<WindowResizeEvent>([this](auto e)
+    //                {
+    //                    m_Context->renderer->Resize(e.width, e.height);
+    //                });
+    //        }
+    //
+    //        BOOM_INLINE void ComputeFrameDeltaTime()
+    //        {
+    //            static double sLastTime = glfwGetTime();
+    //            double currentTime = glfwGetTime();
+    //            m_Context->DeltaTime = (currentTime - sLastTime);
+    //            sLastTime = currentTime;
+    //        }
+    //
+    //        BOOM_INLINE void RunPhysicsSimulation()
+    //        {
+    //            // compute physx
+    //            m_Context->Physics->Simulate(1, m_Context->DeltaTime);
+    //            // start physics
+    //            EnttView<Entity, RigidBodyComponent>([this](auto entity,
+    //                auto& comp)
+    //                {
+    //                    auto& transform = entity.template
+    //                        Get<TransformComponent>().Transform;
+    //                    auto pose = comp.RigidBody.Actor->getGlobalPose();
+    //                    glm::quat rot(pose.q.x, pose.q.y, pose.q.z,
+    //                        pose.q.w);
+    //                    transform.rotate =
+    //                        glm::degrees(glm::eulerAngles(rot));
+    //                    transform.translate = PxToVec3(pose.p);
+    //                });
+    //        }
+    //
+    //        BOOM_INLINE void DestroyPhysicsActors()
+    //        {
+    //            EnttView<Entity, RigidBodyComponent>([this](auto entity,
+    //                auto& comp)
+    //                {
+    //                    if (entity.template Has<ColliderComponent>())
+    //                    {
+    //                        auto& collider = entity.template
+    //                            Get<ColliderComponent>().Collider;
+    //                        collider.Material->release();
+    //                        collider.Shape->release();
+    //                    }
+    //                    // destroy actor user data
+    //                    EntityID* owner = static_cast<EntityID*>
+    //                        (comp.RigidBody.Actor->userData);
+    //                    BOOM_DELETE(owner);
+    //                    // destroy actor instance
+    //                    comp.RigidBody.Actor->release();
+    //                });
+    //        }
+    //        BOOM_INLINE void CreateSkyboxEnvMaps() {/* ... */ }
+    //        BOOM_INLINE void RenderSceneDepthMap() {/* ... */ }
+    //        BOOM_INLINE void CreatePhysicsActors() {
+    //            EnttView<Entity, RigidBodyComponent>([this](auto entity,
+    //                auto& comp)
+    //                {
+    //                    m_Context->Physics->AddRigidBody(entity);
+    //                });
+    //        }
+    //
+    //
+    //
+    //        BOOM_INLINE void UpdateAppLayers() {
+    //            for (auto layer : m_Context->Layers)
+    //            {
+    //                layer->OnUpdate();
+    //            }
+    //            // show scene to screen
+    //            m_Context->renderer->ShowFrame();
+    //        }
+    //
+    //
+    //
+    //    };
+    
 }
 
 #endif // !APPLICATION_H

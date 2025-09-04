@@ -115,7 +115,7 @@ namespace Boom {
         }
 
         template<typename T>
-        BOOM_INLINE bool Has()
+        BOOM_INLINE bool Has() const
         {
             return m_Registry != nullptr &&
                 m_Registry->all_of<T>(m_EnttID);
