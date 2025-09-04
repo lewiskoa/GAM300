@@ -71,10 +71,10 @@ namespace Boom
     */
     struct Joint
     {
-        std::vector<Joint> Children;
-        std::vector<KeyFrame> Keys;
-        std::string Name;
-        glm::mat4 Offset; // <- inverse transform mtx
-        int32_t Index;
+        std::vector<Joint> Children{};
+        std::vector<KeyFrame> Keys{};
+        std::string Name{};
+        glm::mat4 Offset{}; // <- inverse transform mtx
+        int32_t Index{};
     };
 }

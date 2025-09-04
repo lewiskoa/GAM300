@@ -151,9 +151,9 @@ namespace Boom
         }
 
     private:
-        std::vector<Animation> m_Animations;   //!< Animation clips (durations, speeds, joint keys).
-        std::vector<glm::mat4> m_Transforms;   //!< Final per-joint transforms (skinning matrices).
-        glm::mat4 m_GlobalTransform;           //!< Global/model transform applied to all joints.
+        std::vector<Animation> m_Animations{};   //!< Animation clips (durations, speeds, joint keys).
+        std::vector<glm::mat4> m_Transforms{};   //!< Final per-joint transforms (skinning matrices).
+        glm::mat4 m_GlobalTransform{};           //!< Global/model transform applied to all joints.
         friend struct SkeletalModel;           //!< Grants SkeletalModel access to internals.
         int32_t m_Sequence = 0;                //!< Index of the active animation clip.
         float m_Time = 0.0f;                   //!< Local time within the active clip (seconds, wrapped).
