@@ -78,19 +78,19 @@ namespace Boom
             //use of ecs
             EntityRegistry registry;
 
-            auto walking = std::make_shared<SkeletalModel>("walking.fbx");
+           // auto walking = std::make_shared<SkeletalModel>("walking.fbx");
 			auto dance = std::make_shared<SkeletalModel>("dance.fbx");
 
             Entity sphere{ &registry };
             {
                 auto& t = sphere.Attach<TransformComponent>().Transform;
                 t.rotate.y = 45.f;  
-                t.translate = glm::vec3(1.5f, -2.5f, -5.0f);
+                t.translate = glm::vec3(0.f, -2.5f, 0.f);
                 t.scale = glm::vec3(0.03f);
 
                 auto& mc = sphere.Attach<ModelComponent>();
                 //mc.model = std::make_shared<StaticModel>("sphere.fbx");
-                mc.model = std::make_shared<SkeletalModel>("walking.fbx");
+                mc.model = dance;
 
                 //animation stuff
 				//sphere.Attach<AnimatorComponent>().Animator = walking->GetAnimator();
@@ -118,8 +118,7 @@ namespace Boom
 
                 dl.intensity = 10.f;
             }
-            m_Context->window->camPos.z = 4.f;
-			m_Context->window->camPos.r = 0.f;
+            m_Context->window->camPos.z = 6.f;
 
             //textures
             auto roughness = std::make_shared<Texture2D>("Marble/roughness.png");
@@ -153,22 +152,15 @@ namespace Boom
                         m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
                         m_Context->renderer->SetPointLightCount(0);
 
-                        m_Context->renderer->SetLight(dl, Transform3D({}, { -cosf(glm::radians(testRot)), -.3f, sinf(glm::radians(testRot)) }, {}), 0);
+                        m_Context->renderer->SetLight(dl, Transform3D({}, { -.7f, -.3f, .3f }, {}), 0);
                         m_Context->renderer->SetDirectionalLightCount(1);
 
                         m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
                         m_Context->renderer->SetSpotLightCount(0);
                         
                         //camera
-                        m_Context->renderer->SetCamera(cam, {m_Context->window->camPos, {0.f, 0.f, 0.f}, {}});
+                        m_Context->renderer->SetCamera(cam, { m_Context->window->camPos, {0.f, testRot, 0.f}, {} });
                         
-
-                        //models
-                        /*
-                        m_Context->renderer->Draw(
-                            modelCube, 
-                            Transform3D({2.f, 0.f, -1.f}, {}, glm::vec3{1.f})
-                        );*/
                         //testing ecs,uncomment for ecs
                         {
                             auto view = registry.view<TransformComponent, ModelComponent>();
@@ -182,10 +174,6 @@ namespace Boom
                                     m_Context->renderer->SetJoints(joints);
                                     m_Context->renderer->Draw(mc.model, xf);
                                 }
-
-                                
-
-
                                 else if (mc.material) {
                                     m_Context->renderer->Draw(mc.model, xf, *mc.material);
                                 }
@@ -195,39 +183,9 @@ namespace Boom
                             }
                         }
 
-						//comment this out/remove if using ecs
-                        //m_Context->renderer->Draw(
-                        //    modelSphere,
-                        //    Transform3D({}, {}, glm::vec3{2.f}),
-                        //    mat //using custom material
-                        //);
-
                         //skybox should be drawn at the end
-                        m_Context->renderer->DrawSkybox(skybox, Transform3D({}, { 0.f, testRot, 0.f }, {}));
+                        m_Context->renderer->DrawSkybox(skybox, Transform3D());
                     }
-                    /*
-                    //set shader cam
-                    EnttView<Entity, CameraComponent>([this](auto entity, auto& comp) {
-                            auto& transform{entity.templateGet<TransformComponent>().Transform};
-                            m_Context->renderer->SetCamera(comp.camera, transform);
-                        }
-                    );
-
-                    { //like before, comment out/remove non used code
-                        //render mesh
-                        EnttView<Entity, MeshComponent>([this](auto entity, auto& comp) {
-                                auto& transform{entity.templateGet<TransformComponent>().Transform};
-                                m_Context->renderer->Draw(comp.mesh, transform);
-                            }
-                        );
-                        //or render model
-                        EnttView<Entity, ModelCOmponent>([this](auto entity, auto& comp) {
-                                auto& transform{entity.templateGet<TransformComponent>().Transform};
-                                m_Context->renderer->Draw(comp.model, transform, comp.material);
-                            }
-                        );
-                    }
-                    */
                 }
                 m_Context->renderer->EndFrame();
 

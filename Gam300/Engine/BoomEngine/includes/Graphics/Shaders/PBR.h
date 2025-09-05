@@ -34,8 +34,8 @@ namespace Boom {
 			, viewPosLoc{ GetUniformVar("viewPos") }
 			, frustumMatLoc{ GetUniformVar("frustumMat") }
 			, modelMatLoc{ GetUniformVar("modelMat") }
+			, jointsLoc{ GetUniformVar("hasJoints") }
 		{
-			HasJoints = GetUniformVar("hasJoints");
 		}
 
 	public: //lights
@@ -113,8 +113,6 @@ namespace Boom {
 
 			//material texture maps
 			{
-				//glUniform1i(HasJoints, model->HasJoint());
-				SetUniform(HasJoints, model->HasJoint());
 				int32_t unit{};
 				bool isMap{};
 
@@ -155,6 +153,7 @@ namespace Boom {
 				}
 			}
 
+			SetUniform(jointsLoc, model->HasJoint());
 			model->Draw();
 		}
 		//Animation 
@@ -163,9 +162,7 @@ namespace Boom {
 			for (size_t i = 0; i < transforms.size() && i < 100; ++i)
 			{
 				std::string uniform = "jointsMat[" + std::to_string(i) + "]";
-				uint32_t u_joint = GetUniformVar(uniform.c_str());
-				SetUniform(u_joint, transforms[i]);
-				//glUniformMatrix4fv(u_joint, 1, GL_FALSE, glm::value_ptr(transforms[i]));
+				SetUniform(GetUniformVar(uniform.c_str()), transforms[i]);
 			}
 		}
 
@@ -198,6 +195,6 @@ namespace Boom {
 		int32_t frustumMatLoc;
 		int32_t modelMatLoc;
 
-		uint32_t HasJoints = 0u;
+		int32_t jointsLoc;
 	};
 }

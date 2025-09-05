@@ -102,6 +102,9 @@
     <ClInclude Include="includes\Graphics\Models\Animation.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Auxiliaries\Assets.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">

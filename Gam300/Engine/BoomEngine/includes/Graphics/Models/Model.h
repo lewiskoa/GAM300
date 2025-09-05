@@ -6,35 +6,24 @@
 #include "Animator.h"
 
 namespace Boom {
-
-
-
 	struct Model
 	{
+		BOOM_INLINE Model() = default;
+		BOOM_INLINE Model(std::string) {};
 		BOOM_INLINE virtual bool HasJoint() { return false; }
-		BOOM_INLINE virtual void Load(std::string) {}
 		BOOM_INLINE virtual void Draw() {}
 	};
 
-
 	//---------------------------Static Model------------------------------
-	struct StaticModel : Model 
+	struct StaticModel : Model
 	{
-		BOOM_INLINE StaticModel() = default;
-
-		BOOM_INLINE StaticModel(const std::string& path)
-		{
-			Load(path);
-		}
-
-		
 		/**
-		 * @brief Load meshes from a static (non-skeletal) model file via Assimp.
+		 * @brief Loads meshes from a static (non-skeletal) model file via Assimp.
 		 * @param path File path relative to CONSTANTS::MODELS_LOCAITON.
 		 * @details Applies a set of Assimp post-process flags for real-time rendering.
 		 *          On failure, logs an error and leaves the model empty.
 		 */
-		void Load(std::string path) override final
+		BOOM_INLINE StaticModel(std::string path)
 		{
 			//Cheeky
 			path = CONSTANTS::MODELS_LOCAITON + path;
@@ -48,7 +37,7 @@ namespace Boom {
 				aiProcess_GenUVCoords | aiProcess_FlipUVs;
 
 			Assimp::Importer importer;
-			const aiScene* ai_scene = importer.ReadFile(path,flags);
+			const aiScene* ai_scene = importer.ReadFile(path, flags);
 
 			if (!ai_scene || ai_scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !ai_scene->mRootNode)
 			{
@@ -60,18 +49,14 @@ namespace Boom {
 			ParseNode(ai_scene, ai_scene->mRootNode);
 		}
 
-
-
-		BOOM_INLINE void Draw() 
+		BOOM_INLINE void Draw() override
 		{
 			for (auto& mesh : meshes) {
 				mesh->Draw();
 			}
 		}
-
-
+	
 	private:
-
 		/**
 		* @brief Recursively parse a scene node and its children to collect meshes.
 		* @param scene Assimp scene.
@@ -120,11 +105,9 @@ namespace Boom {
 			auto ret{ std::make_unique<ShadedMesh>(std::move(meshData)) };
 			meshes.push_back(std::move(ret));
 		}
-
+	
 	private:
-
 		std::vector<Mesh3D> meshes;
-		std::vector<std::unique_ptr<ShadedMesh>> m_Meshes;
 	};
 
 	//---------------------------Skeletal Model------------------------------
@@ -132,14 +115,6 @@ namespace Boom {
 	struct SkeletalModel : Model
 	{
 		using JointMap = std::unordered_map<std::string, Joint>;
-		BOOM_INLINE SkeletalModel() = default;
-		BOOM_INLINE SkeletalModel(const std::string& path)
-		{
-			Load(path);
-		}
-
-		BOOM_INLINE bool HasJoint() override final { return m_JointCount; }
-
 
 		/**
 		* @brief Load meshes, skeleton, and animation clips via Assimp.
@@ -148,33 +123,33 @@ namespace Boom {
 		*          and parses available animation channels into the Animator.
 		*          On failure, logs an error and leaves the model empty.
 		*/
-		BOOM_INLINE void Load(std::string path) override final
+		BOOM_INLINE SkeletalModel(std::string path)
 		{
 			//Cheeky
 			path = CONSTANTS::MODELS_LOCAITON + path;
 
-			uint32_t flags =	aiProcess_Triangulate |
-								aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
-								aiProcess_OptimizeMeshes |
-								aiProcess_OptimizeGraph | aiProcess_ValidateDataStructure |
-								aiProcess_ImproveCacheLocality |
-								aiProcess_FixInfacingNormals |
-								aiProcess_SortByPType |
-								aiProcess_JoinIdenticalVertices |
-								aiProcess_FlipUVs | aiProcess_GenUVCoords |
-								aiProcess_LimitBoneWeights;
+			uint32_t flags = aiProcess_Triangulate |
+				aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
+				aiProcess_OptimizeMeshes |
+				aiProcess_OptimizeGraph | aiProcess_ValidateDataStructure |
+				aiProcess_ImproveCacheLocality |
+				aiProcess_FixInfacingNormals |
+				aiProcess_SortByPType |
+				aiProcess_JoinIdenticalVertices |
+				aiProcess_FlipUVs | aiProcess_GenUVCoords |
+				aiProcess_LimitBoneWeights;
 
 			Assimp::Importer importer;
 			const aiScene* ai_scene = importer.ReadFile(path,
 				flags);
-			if (!ai_scene || ai_scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !ai_scene-> mRootNode)
+			if (!ai_scene || ai_scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !ai_scene->mRootNode)
 			{
 				BOOM_ERROR("failed to load model: ’{}’", importer.GetErrorString());
 				return;
 			}
 
 			m_Animator = std::make_shared<Animator>();
-			m_Animator->m_GlobalTransform = glm::inverse(AssimpToMat4(ai_scene->mRootNode-> mTransformation));
+			m_Animator->m_GlobalTransform = glm::inverse(AssimpToMat4(ai_scene->mRootNode->mTransformation));
 
 			// temp joints map
 			JointMap jointMap = {};
@@ -200,6 +175,8 @@ namespace Boom {
 		* @return Shared pointer to the Animator (non-null after successful Load()).
 		*/
 		BOOM_INLINE auto GetAnimator() { return m_Animator; }
+
+		BOOM_INLINE bool HasJoint() override final { return m_JointCount > 0; }
 	private:
 
 		/**
@@ -336,7 +313,6 @@ namespace Boom {
 			ParseHierarchy(ai_scene->mRootNode, m_Animator->m_Root, jointMap);
 			m_Animator->m_Transforms.resize(m_JointCount);
 		}
-
 
 		/**
 		* @brief Convert an Assimp mesh into a skinned mesh, collecting vertices, indices, and bone weights.

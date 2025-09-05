@@ -40,7 +40,6 @@ namespace Boom {
     
 
     ////Model Component
-
     struct ModelComponent {
         std::shared_ptr<Model> model;   
         PbrMaterial* material = nullptr; 
