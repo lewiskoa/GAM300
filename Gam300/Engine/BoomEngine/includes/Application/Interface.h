@@ -115,10 +115,8 @@ namespace Boom
         template <typename Entt, typename... Args>
         BOOM_INLINE Entt CreateEntt(Args&&... args)
         {
-            BOOM_STATIC_ASSERT(std::is_base_of<Entity,
-                Entt>::value);
-            return std::move(Entt(&m_Context->Scene,
-                std::forward<Args>(args)...));
+            BOOM_STATIC_ASSERT(std::is_base_of<Entity, Entt>::value);
+            return std::move(Entt(&m_Context->Scene, std::forward<Args>(args)...));
         }
         // convert id to entity
         template<typename Entt>

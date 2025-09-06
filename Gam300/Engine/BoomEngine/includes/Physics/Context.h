@@ -83,16 +83,12 @@ namespace Boom {
                         box(ToPxVec3(transform.scale / 2.0f));
                     collider.Shape = m_Physics -> createShape(box, *collider.Material);
                 }
-                else if (collider.Type == Collider3D::SPHERE)
-                {
+                else if (collider.Type == Collider3D::SPHERE) {
                     PxSphereGeometry
                         sphere(transform.scale.x / 2.0f);
                     collider.Shape = m_Physics -> createShape(sphere, *collider.Material);
                 }
-                else if (collider.Type == Collider3D::MESH)
-
-
-                {
+                else if (collider.Type == Collider3D::MESH) {
                     // coming next!
                 }
                 else
@@ -105,9 +101,15 @@ namespace Boom {
 
                 if (body.Type == RigidBody3D::DYNAMIC)
                 {
-                    body.Actor = PxCreateDynamic(*m_Physics,
-                        pose, *collider.Shape, body.Density);
-                    body.Actor -> setActorFlag(PxActorFlag::eSEND_SLEEP_NOTIFIES, true);
+                    body.Actor = PxCreateDynamic(*m_Physics, pose, *collider.Shape, body.Density);
+                    body.Actor->setActorFlag(PxActorFlag::eSEND_SLEEP_NOTIFIES, true);
+                    
+                    PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(body.Actor);
+                    if (dyn) {
+                        dyn->setMass(body.Mass);
+                        dyn->setLinearVelocity(PxVec3(body.InitialVelocity.x, body.InitialVelocity.y, body.InitialVelocity.z));
+                        dyn->wakeUp(); // <-- Ensure the actor is awake!
+                    }
                 }
                 else if (body.Type == RigidBody3D::STATIC)
                 {

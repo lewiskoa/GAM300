@@ -14,6 +14,8 @@ namespace Boom {
         // body density
         float Density = 1.0f;
 
+        float Mass = 1.0f;
+        glm::vec3 InitialVelocity = glm::vec3(0.0f); // Default to zero
         // rigidbody type
         enum {
             DYNAMIC = 0,
