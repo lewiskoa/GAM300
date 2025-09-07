@@ -36,6 +36,8 @@ namespace Boom {
 			, modelMatLoc{ GetUniformVar("modelMat") }
 			, jointsLoc{ GetUniformVar("hasJoints") }
 		{
+			u_lightSpace = GetUniformVar("u_lightSpace");
+			u_depthMap = GetUniformVar("u_depthMap");
 		}
 
 	public: //lights
@@ -93,7 +95,11 @@ namespace Boom {
 		BOOM_INLINE void SetPointLightCount(int32_t count) {
 			SetUniform(noPointLightLoc, count);
 		}
-
+		BOOM_INLINE void SetLightSpaceMatrix(const glm::mat4& lightSpaceMtx)
+		{
+			// set view projection matrix
+			glUniformMatrix4fv(u_lightSpace, 1, GL_FALSE, glm::value_ptr(lightSpaceMtx));
+		}
 	public:
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
 			SetUniform(frustumMatLoc, cam.Frustum(transform, ratio));
@@ -103,6 +109,8 @@ namespace Boom {
 			SetUniform(modelMatLoc, transform.Matrix());
 			mesh->Draw();
 		}
+
+	
 		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material) {
 			SetUniform(modelMatLoc, transform.Matrix());
 			SetUniform(albedoLoc, material.albedo);
@@ -114,6 +122,7 @@ namespace Boom {
 			//material texture maps
 			{
 				int32_t unit{};
+				//int32_t unit=4;
 				bool isMap{};
 
 				isMap = material.albedoMap != nullptr;
@@ -165,11 +174,20 @@ namespace Boom {
 				SetUniform(GetUniformVar(uniform.c_str()), transforms[i]);
 			}
 		}
-
+	//shadow
+	public:
+		BOOM_INLINE void BindShadow(uint32_t depthTex, int unit, const glm::mat4& lightSpace) {
+			glUseProgram(shaderId);
+			glActiveTexture(GL_TEXTURE0 + unit);
+			glBindTexture(GL_TEXTURE_2D, depthTex);
+			glUniform1i(u_depthMap, unit);          // int = texture unit index, not GL enum
+			glUniformMatrix4fv(u_lightSpace, 1, GL_FALSE, glm::value_ptr(lightSpace));
+		}
 	private:
 		int32_t noSpotLightLoc;
 		int32_t noDirLightLoc;
 		int32_t noPointLightLoc;
+		
 
 		int32_t roughnessMapLoc;
 		int32_t occlusionMapLoc;
@@ -196,5 +214,7 @@ namespace Boom {
 		int32_t modelMatLoc;
 
 		int32_t jointsLoc;
+		uint32_t u_lightSpace = 0u;
+		uint32_t u_depthMap = 0u;
 	};
 }

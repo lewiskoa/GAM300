@@ -66,7 +66,12 @@ namespace Boom {
         std::string name{ "Entity" };
         AssetID uid{ RandomU64() };
     };
-   
+    struct DirectLightComponent
+    {
+        BOOM_INLINE DirectLightComponent(const DirectLightComponent&) = default;
+        BOOM_INLINE DirectLightComponent() = default;
+        DirectionalLight Light;
+    };
     struct Entity
     {
         BOOM_INLINE Entity(EntityRegistry* registry, EntityID entity) :
@@ -133,10 +138,10 @@ namespace Boom {
         {
             return m_Registry->get<T>(m_EnttID);
         }
-
+    
     protected:
         EntityRegistry* m_Registry = nullptr;
         EntityID m_EnttID = NENTT;
     };
-
+   
 }

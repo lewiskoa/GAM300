@@ -2,6 +2,7 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 #include "Interface.h"
+#include "ECS/ECS.hpp"
 
 namespace Boom
 {
@@ -14,12 +15,20 @@ namespace Boom
      */
     struct Application : AppInterface
     {
+        template<typename EntityType, typename... Components, typename Fn>
+        BOOM_INLINE void EnttView(Fn&& fn) {
+            auto view = registry.view<Components...>();
+            for (auto e : view) {
+                fn(EntityType{ &registry, e }, registry.get<Components>(e)...);
+            }
+        }
         /**
          * @brief Constructs the Application, assigns its unique ID, and allocates the AppContext.
          *
          * BOOM_INLINE hints to the compiler to inline this small constructor
          * to avoid function-call overhead during startup.
          */
+       
         BOOM_INLINE Application()
         {
             m_LayerID = TypeID<Application>();
@@ -122,6 +131,7 @@ namespace Boom
             while (m_Context->window->PollEvents())
             {
                 //updates new frame
+                //RenderSceneDepth();
                 m_Context->renderer->NewFrame();
                 {
                     //testing rendering
@@ -258,6 +268,26 @@ namespace Boom
             rt.translate = glm::vec3(0.f, -2.5f, 0.f);
             rt.scale = glm::vec3(0.1f);
         }
+    private:
+            EntityRegistry registry;
+            BOOM_INLINE void RenderSceneDepth()
+            {
+                EnttView<Entity, DirectLightComponent>([this](auto light, DirectLightComponent&) {
+                    auto& lightDir = light.Get<TransformComponent>().Transform.rotate;
+
+                    // begin rendering
+                    m_Context->renderer->BeginShadowPass(lightDir);
+
+                    // render depth
+                    EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
+                        auto& transform = entity.Get<TransformComponent>().Transform;
+                        m_Context->renderer->DrawDepth(comp.model, transform);
+                        });
+
+                    // finalize frame
+                    m_Context->renderer->EndShadowPass();
+                    });
+            }
     };
 
 }

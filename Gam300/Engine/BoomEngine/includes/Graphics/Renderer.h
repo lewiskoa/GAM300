@@ -6,7 +6,7 @@
 #include "Shaders/SkyMap.h"
 #include "Shaders/Skybox.h"
 #include "GlobalConstants.h"
-
+#include "Shaders/Shadow.h"
 namespace Boom {
 	struct GraphicsRenderer {
 	public:
@@ -39,6 +39,8 @@ namespace Boom {
 			skyBoxShader = std::make_unique<SkyboxShader>("skybox.glsl");
 			finalShader = std::make_unique<FinalShader>("final.glsl");
 			pbrShader = std::make_unique<PBRShader>("pbr.glsl");
+			shadow = std::make_unique<ShadowShader>("shadow.glsl");
+
 			frame = std::make_unique<FrameBuffer>(w, h);
 
 			skyboxMesh = CreateSkyboxMesh();
@@ -67,7 +69,28 @@ namespace Boom {
 		BOOM_INLINE void DrawSkybox(Skybox const& sky, Transform3D const& transform) {
 			skyBoxShader->Draw(skyboxMesh, sky.cubeMap, transform);
 		}
+	public: //shadow
+		BOOM_INLINE void DrawDepth(Model3D& model, Transform3D& transform) {
+			shadow->Draw(model, transform);
+		}
+		BOOM_INLINE void BeginShadowPass(const glm::vec3& lightDir) {
+			static auto proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f);
+			auto view = glm::lookAt(lightDir, glm::vec3(0.0f, 0.0f, 0.0f),
+				glm::vec3(0.0f, 1.0f, 0.0f));
 
+			// compute light space
+			auto lightSpaceMtx = (proj * view);
+
+			// set pbr shader light space mtx and depth map
+			pbrShader->Use();
+			pbrShader->SetLightSpaceMatrix(lightSpaceMtx);
+
+			// begin depth rendering
+			shadow->BeginFrame(lightSpaceMtx);
+		}
+		BOOM_INLINE void EndShadowPass() {
+			shadow->EndFrame();
+		}
 	public: //animator
 		BOOM_INLINE void SetJoints(std::vector<glm::mat4>& transforms)
 		{
@@ -106,6 +129,11 @@ namespace Boom {
 		}
 		BOOM_INLINE void ShowFrame() {
 			finalShader->Show(frame->GetTexture());
+		}
+		BOOM_INLINE void BindShadow(int unit = 3) {
+			// unit must NOT collide with your material textures (you start those at 4),
+			// so 3 is a safe default
+			pbrShader->BindShadow(shadow->GetDepthMap(), unit, 1);
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
@@ -158,6 +186,7 @@ namespace Boom {
 		std::unique_ptr<FinalShader> finalShader;
 		std::unique_ptr<PBRShader> pbrShader;
 		std::unique_ptr<FrameBuffer> frame;
+		std::unique_ptr<ShadowShader> shadow;
 		SkyboxMesh skyboxMesh;
 	};
 }
