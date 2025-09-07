@@ -1,26 +1,40 @@
+
 #version 450 core
+layout(location = 0) in vec2 pos;     // matches QuadVert.pos
+layout(location = 1) in vec2 in_uv;   // matches QuadVert.uv
 
-layout (location = 0) in vec2 pos;
-layout (location = 1) in vec2 in_uv;
-
-layout (location = 1) out vec2 out_uv;
+out vec2 uvs;
 
 void main() {
-    out_uv = in_uv;
+    uvs = in_uv;
     gl_Position = vec4(pos, 0.0, 1.0);
 }
+
 ==VERTEX==
 
 #version 450 core
+out vec4 out_fragment;
+in vec2 uvs;
 
-layout (location = 1) in vec2 uv;
+const float GAMMA = 2.5;
+const float EXPOSURE = 1.6;
+const float MIN_GAMMA = 0.000001;
 
-out vec4 fragColor;
 uniform sampler2D map;
-uniform vec4 color;
+uniform sampler2D u_bloom;
 
-void main() {
-    //red texture
-    fragColor = texture(map, uv) * color;
+void main() 
+{ 
+  // sample color from map
+  vec3 result = texture(map, uvs).rgb + texture(u_bloom, uvs).rgb;
+
+  // gamma correction
+  result = pow(result, vec3(GAMMA));
+  result = vec3(1.0) - exp(-result * EXPOSURE); 
+  result = pow(result, vec3(1.0 / max(GAMMA, MIN_GAMMA)));
+
+  // fragment color
+  out_fragment = vec4(result, 1.0); 
 }
+
 ==FRAGMENT==

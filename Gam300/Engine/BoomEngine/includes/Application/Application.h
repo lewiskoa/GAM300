@@ -80,7 +80,19 @@ namespace Boom
 
             auto walking = std::make_shared<SkeletalModel>("walking.fbx");
 			auto dance = std::make_shared<SkeletalModel>("dance.fbx");
-
+			Entity sphere2{ &registry };
+            {
+                auto& t = sphere2.Attach<TransformComponent>().Transform;
+                t.rotate.y = -45.f;
+                t.translate = glm::vec3(-1.5f, -2.5f, -5.0f);
+                t.scale = glm::vec3(5.f);
+                auto& mc = sphere2.Attach<ModelComponent>();
+                mc.model = std::make_shared<StaticModel>("sphere.fbx");
+                mc.material = std::make_shared<PbrMaterial>();
+                mc.material->albedo = glm::vec3(0.8, 0.1f, 0.8f);
+                mc.material->emissive = glm::vec3(1.f);
+            }
+				//animation stuff
             Entity sphere{ &registry };
             {
                 auto& t = sphere.Attach<TransformComponent>().Transform;
@@ -96,7 +108,12 @@ namespace Boom
 				//sphere.Attach<AnimatorComponent>().Animator = walking->GetAnimator();
 				sphere.Attach<AnimatorComponent>().Animator = dance->GetAnimator();
             }
-            
+            Entity pointlight{ &registry };
+            {
+                pointlight.Attach<DirectLightComponent>().Light.intensity = 5.0f;
+				auto& stp = pointlight.Attach<TransformComponent>().Transform;
+                stp.rotate = glm::vec3(0.f,0.f,-1.f);
+            }
             Camera3D cam{};
             //this .fbx cube's normals is a little janky
             auto modelCube = std::make_shared<StaticModel>("cube.fbx");
@@ -148,7 +165,7 @@ namespace Boom
                         static float testRot{};
                         if ((testRot += 0.1f) > 360.f) { testRot -= 360.f; }
 
-                        //lights
+                        ////lights
                         m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, {0.f, 0.f, -1.f}, {}), 0);
                         m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
                         m_Context->renderer->SetPointLightCount(0);

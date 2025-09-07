@@ -5,6 +5,7 @@
 #include "Shaders/Final.h"
 #include "Shaders/SkyMap.h"
 #include "Shaders/Skybox.h"
+#include "Shaders/Bloom.h"
 #include "GlobalConstants.h"
 
 namespace Boom {
@@ -45,6 +46,7 @@ namespace Boom {
 			skyBoxShader = std::make_unique<SkyboxShader>("skybox.glsl");
 			finalShader = std::make_unique<FinalShader>("final.glsl");
 			pbrShader = std::make_unique<PBRShader>("pbr.glsl");
+			bloom = std::make_unique<BloomShader>("bloom.glsl", w, h);	
 			frame = std::make_unique<FrameBuffer>(w, h);
 
 			skyboxMesh = CreateSkyboxMesh();
@@ -104,9 +106,11 @@ namespace Boom {
 		BOOM_INLINE void EndFrame() {
 			pbrShader->UnUse();
 			frame->End();
+			bloom->Compute(frame->GetBrightnessMap(),10);
 		}
 		BOOM_INLINE void ShowFrame() {
-			finalShader->Show(frame->GetTexture());
+			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
+			finalShader->Show(frame->GetTexture(),bloom->GetMap());
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
@@ -159,6 +163,7 @@ namespace Boom {
 		std::unique_ptr<FinalShader> finalShader;
 		std::unique_ptr<PBRShader> pbrShader;
 		std::unique_ptr<FrameBuffer> frame;
+		std::unique_ptr<BloomShader> bloom;
 		SkyboxMesh skyboxMesh;
 	};
 }

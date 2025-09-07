@@ -53,7 +53,7 @@ void main() {
 ==VERTEX==
 
 #version 450 core
-layout (location = 0) out vec4 fragColor;
+//layout (location = 0) out vec4 fragColor;
 
 in Vertex {
     vec3 position;
@@ -88,6 +88,9 @@ uniform vec3 viewPos;
 
 const float PI = 3.14159265358979323846;
 const int MAX_LIGHTS = 10; //this number has to be redefined here due to glsl constrains
+layout (location=0) out vec4 out_fragment;
+layout(location=1) out vec4 out_brightness; //for bloom
+const vec3 BLOOM_THRESHOLD =vec3(0.2126,0.7152, 0.0722) ;
 
 struct PointLight {
     vec3 position;
@@ -173,8 +176,14 @@ void main() {
     
     //occ and em
     color = color * occlusion + emissive;
-
-    fragColor = vec4(color, 1.0);
+    if(dot(color,BLOOM_THRESHOLD)>1.0){
+        out_brightness=vec4(color,1.0);
+        }
+    else{
+        out_brightness=vec4(0.0,0.0,0.0,1.0);
+        }
+    out_fragment = vec4(color, 1.0);
+    
     //fragColor = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
 }
 

@@ -9,28 +9,35 @@ namespace Boom {
 			: Shader{ filename }
 			, map{ GetUniformVar("map") }
 			, quad{ CreateQuad2D() }
-			, colLoc{ GetUniformVar("color") }
+			// colLoc{ GetUniformVar("color") }
+			, bloom{ GetUniformVar("u_bloom") }
 			, color{col}
 		{
 		}
-		BOOM_INLINE void SetSceneMap(uint32_t m) {
+		BOOM_INLINE void SetSceneMap(uint32_t m,uint32_t blm) {
+			//set color map
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, m);
 			SetUniform(map, 0);
+			//set bloom map
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, blm);
+			SetUniform(bloom, 1);
 		}
-		BOOM_INLINE void Show(uint32_t m) {
+		BOOM_INLINE void Show(uint32_t m,uint32_t blm) {
 			Use();
-			SetSceneMap(m);
-			SetUniform(colLoc, color);
+			SetSceneMap(m,blm);
+			//SetUniform(colLoc, color);
 			quad->Draw();
 			UnUse();
 		}
 
 	private:
-		int32_t map;
+		
 		Quad2D quad;
-
-		int32_t colLoc;
+		int32_t bloom = 0u;
+		int32_t map = 0u;
+		//int32_t colLoc;
 		glm::vec4 color;
 	};
 }

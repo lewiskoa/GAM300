@@ -43,7 +43,7 @@ namespace Boom {
 
     struct ModelComponent {
         std::shared_ptr<Model> model;   
-        PbrMaterial* material = nullptr; 
+        std::shared_ptr<PbrMaterial> material;
     };
 
 	//Animator Component
@@ -53,7 +53,13 @@ namespace Boom {
 		BOOM_INLINE AnimatorComponent() = default;
 		Animator3D Animator;
     };
-   
+    struct DirectLightComponent
+    {
+        BOOM_INLINE DirectLightComponent(const
+            DirectLightComponent&) = default;
+        BOOM_INLINE DirectLightComponent() = default;
+        DirectionalLight Light;
+    };
     struct Entity
     {
         BOOM_INLINE Entity(EntityRegistry* registry, EntityID entity) :

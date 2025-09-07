@@ -14,13 +14,15 @@ namespace Boom {
 			glBindFramebuffer(GL_FRAMEBUFFER, buffId);
 
 			CreateColorAttachment();
+			CreateBrightnessAttachment();
 			CreateRenderBuffer();
 
-			uint32_t attachments[1] {
-				GL_COLOR_ATTACHMENT0
+			uint32_t attachments[2] {
+				GL_COLOR_ATTACHMENT0,
+				GL_COLOR_ATTACHMENT1,
 			};
 
-			glDrawBuffers(1, attachments);
+			glDrawBuffers(2, attachments);
 
 			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 				BOOM_ERROR("FrameBuffer() - frame buffer status failed.");
@@ -30,6 +32,7 @@ namespace Boom {
 		}
 		BOOM_INLINE ~FrameBuffer() {
 			glDeleteTextures(1, &color);
+			glDeleteTextures(1, &brightness);
 			glDeleteRenderbuffers(1, &render);
 			glDeleteFramebuffers(1, &buffId);
 		}
@@ -50,6 +53,18 @@ namespace Boom {
 			glBindRenderbuffer(GL_RENDERBUFFER, render);
 			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 			glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+			//resize brightness attachment
+			glBindTexture(GL_TEXTURE_2D, brightness);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,
+				width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+
+			//resize render buffer
+			glBindRenderbuffer(GL_RENDERBUFFER, render);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+
+			glBindRenderbuffer(GL_RENDERBUFFER, 0);
+			glBindTexture(GL_TEXTURE_2D, 0);
 		}
 		[[nodiscard]] BOOM_INLINE uint32_t GetTexture() const {
 			return color;
@@ -69,6 +84,17 @@ namespace Boom {
 			glDisable(GL_SAMPLES);
 			glDisable(GL_DEPTH_TEST);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		}
+		BOOM_INLINE uint32_t GetBrightnessMap()
+		{
+			return brightness;
+		}
+		BOOM_INLINE int32_t GetWidth() const {
+			return width;
+		}
+		BOOM_INLINE int32_t GetHeight() const {
+			return height;
 		}
 
 	private:
@@ -88,8 +114,19 @@ namespace Boom {
 			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
 			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render);
 		}
+		BOOM_INLINE void CreateBrightnessAttachment() {
+			glGenTextures(1, &brightness);
+			glBindTexture(GL_TEXTURE_2D, brightness);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, brightness, 0);
+		}
 
 	private:
+		uint32_t brightness;
 		uint32_t buffId;
 		uint32_t render;
 		uint32_t color;

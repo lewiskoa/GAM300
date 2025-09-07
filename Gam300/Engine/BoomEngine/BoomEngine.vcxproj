@@ -181,6 +181,7 @@
     <ClInclude Include="includes\Graphics\Models\Helper.h" />
     <ClInclude Include="includes\Graphics\Models\Model.h" />
     <ClInclude Include="includes\Graphics\Renderer.h" />
+    <ClInclude Include="includes\Graphics\Shaders\Bloom.h" />
     <ClInclude Include="includes\Graphics\Shaders\Color.h" />
     <ClInclude Include="includes\Graphics\Shaders\Final.h" />
     <ClInclude Include="includes\Graphics\Shaders\PBR.h" />
