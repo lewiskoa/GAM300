@@ -9,16 +9,9 @@
 #pragma warning(pop)
 
 namespace Boom {
-	Texture2D::Texture2D(std::string const& filename, bool isFlipY, bool isHDR)
+	Texture2D::Texture2D(std::string filename, bool isFlipY, bool isHDR)
 		: height{}, width{}, id{}
 	{
-		Load(filename, isFlipY, isHDR);
-	}
-	Texture2D::~Texture2D() {
-		glDeleteTextures(1, &id);
-	}
-
-	void Texture2D::Load(std::string filename, bool isFlipY, bool isHDR) {
 		filename = CONSTANTS::TEXTURES_LOCATION + filename;
 
 		//flip y axis (needed operation for many image types)
@@ -57,6 +50,9 @@ namespace Boom {
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+	Texture2D::~Texture2D() {
+		glDeleteTextures(1, &id);
 	}
 
 	//set's texture's active unit and uniform to graphics

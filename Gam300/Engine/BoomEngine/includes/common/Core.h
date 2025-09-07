@@ -128,10 +128,10 @@ BOOM_INLINE constexpr uint32_t TypeID()
 #define BOOM_DELETE(ptr) if (ptr != nullptr) { delete (ptr); ptr = nullptr; }
 
 namespace Boom {
-	std::random_device rd;
 	BOOM_INLINE uint64_t RandomU64() {
+		static std::random_device rd{};
 		static std::mt19937_64 gen{ rd() };
-		std::uniform_int_distribution<uint64_t> dis{}; //default covers all range
+		static std::uniform_int_distribution<uint64_t> dis{}; //default covers all range
 		return dis(gen);
 	}
 }

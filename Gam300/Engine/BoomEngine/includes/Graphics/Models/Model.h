@@ -12,7 +12,6 @@ namespace Boom {
 	{
 		BOOM_INLINE Model() = default;
 		BOOM_INLINE Model(std::string const&) {};
-		BOOM_INLINE virtual void Load(std::string) = 0;
 		BOOM_INLINE virtual bool HasJoint() { return false; }
 		BOOM_INLINE virtual void Draw() = 0;
 	};
@@ -20,18 +19,14 @@ namespace Boom {
 	//---------------------------Static Model------------------------------
 	struct StaticModel : Model
 	{
-		BOOM_INLINE StaticModel(std::string const& filename)
-		{
-			Load(filename);
-		}
 		/**
 		 * @brief Loads meshes from a static (non-skeletal) model file via Assimp.
 		 * @param filename File name relative to CONSTANTS::MODELS_LOCAITON.
 		 * @details Applies a set of Assimp post-process flags for real-time rendering.
 		 *          On failure, logs an error and leaves the model empty.
 		 */
-		BOOM_INLINE void Load(std::string filename) override {
-			//Cheeky
+		BOOM_INLINE StaticModel(std::string filename)
+		{
 			filename = CONSTANTS::MODELS_LOCAITON + filename;
 
 			uint32_t flags = aiProcess_Triangulate |
@@ -54,6 +49,7 @@ namespace Boom {
 			// parse all meshes
 			ParseNode(ai_scene, ai_scene->mRootNode);
 		}
+		
 		BOOM_INLINE void Draw() override
 		{
 			for (auto& mesh : meshes) {
@@ -128,12 +124,8 @@ namespace Boom {
 		*          and parses available animation channels into the Animator.
 		*          On failure, logs an error and leaves the model empty.
 		*/
-		BOOM_INLINE SkeletalModel(std::string const& filename)
+		BOOM_INLINE SkeletalModel(std::string filename)
 		{
-			Load(filename);
-		}
-		BOOM_INLINE void Load(std::string filename) override final {
-			//Cheeky
 			filename = CONSTANTS::MODELS_LOCAITON + filename;
 
 			uint32_t flags = aiProcess_Triangulate |

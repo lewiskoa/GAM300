@@ -27,33 +27,33 @@ namespace Boom {
 	};
 
 	struct MaterialAsset : Asset {
-		AssetID RoughnessMap{ EMPTY_ASSET };
-		AssetID OcclusionMap{ EMPTY_ASSET };
-		AssetID MetallicMap{ EMPTY_ASSET };
-		AssetID EmissiveMap{ EMPTY_ASSET };
-		AssetID AlbedoMap{ EMPTY_ASSET };
-		AssetID NormalMap{ EMPTY_ASSET };
-		PbrMaterial data;
+		PbrMaterial data{};
+		AssetID roughnessMapID{ EMPTY_ASSET };
+		AssetID occlusionMapID{ EMPTY_ASSET };
+		AssetID metallicMapID{ EMPTY_ASSET };
+		AssetID emissiveMapID{ EMPTY_ASSET };
+		AssetID albedoMapID{ EMPTY_ASSET };
+		AssetID normalMapID{ EMPTY_ASSET };
 	};
 
 	struct TextureAsset : Asset {
+		Texture data{};
 		bool isHDR{};
 		bool isFlipY{true};
-		Texture2D data;
 	};
 
 	struct SkyboxAsset : Asset
 	{
+		Skybox data{};
+		Texture envMap{};
 		int32_t size{ 2048 };
 		bool isHDR{ true };
 		bool isFlipY{ true };
-		Texture envMap;
-		Skybox data;
 	};
 
 	struct ModelAsset : Asset {
+		Model3D data{};
 		bool hasJoints{};
-		Model3D data;
 	};
 
 	//TODO(other uncompleted/custom types):
@@ -122,8 +122,8 @@ namespace Boom {
 			bool isFlipY = true)
 		{
 			auto asset{ std::make_shared<SkyboxAsset>() };
-			asset->envMap = std::make_shared<Texture2D>(path, isFlipY, isHDR);
 			asset->type = AssetType::SKYBOX;
+			asset->envMap = std::make_shared<Texture2D>(path, isFlipY, isHDR);
 			asset->isHDR = isHDR;
 			asset->isFlipY = isFlipY;
 			asset->size = size;
@@ -138,8 +138,8 @@ namespace Boom {
 			bool isFlipY = true)
 		{
 			auto asset{ std::make_shared<TextureAsset>() };
-			asset->data.Load(path, isFlipY, isHDR);
 			asset->type = AssetType::TEXTURE;
+			asset->data = std::make_shared<Texture2D>(path, isFlipY, isHDR);
 			asset->isFlipY = isFlipY;
 			asset->isHDR = isHDR;
 			Add(uid, path, asset);
@@ -151,8 +151,8 @@ namespace Boom {
 			bool hasJoints = false)
 		{
 			auto asset{ std::make_shared<ModelAsset>() };
-			asset->hasJoints = hasJoints;
 			asset->type = AssetType::MODEL;
+			asset->hasJoints = hasJoints;
 			if (hasJoints) {
 				asset->data = std::make_shared<SkeletalModel>(path);
 			}
