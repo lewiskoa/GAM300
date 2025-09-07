@@ -1,6 +1,8 @@
 #pragma once
 #include <entt/entt.hpp>
 #include "Graphics/Utilities/Data.h"
+#include "Auxiliaries/Assets.h"
+
 namespace Boom {
 	using EntityRegistry = entt::registry;  
 	using EntityID = entt::entity;
@@ -13,7 +15,7 @@ namespace Boom {
     {
         BOOM_INLINE TransformComponent(const TransformComponent&) = default;
         BOOM_INLINE TransformComponent() = default;
-        Transform3D Transform;
+        Transform3D transform;
     };
 
    
@@ -22,7 +24,7 @@ namespace Boom {
     {
         BOOM_INLINE CameraComponent(const CameraComponent&) = default;
         BOOM_INLINE CameraComponent() = default;
-        Camera3D Camera;
+        Camera3D camera;
     };
 
     struct EnttComponent {
@@ -35,14 +37,14 @@ namespace Boom {
 	{
 		BOOM_INLINE MeshComponent(const MeshComponent&) = default;
 		BOOM_INLINE MeshComponent() = default;
-		Mesh3D Mesh;
+		Mesh3D mesh;
 	};
     
 
     ////Model Component
     struct ModelComponent {
-        std::shared_ptr<Model> model;   
-        PbrMaterial* material = nullptr; 
+        AssetID materialID{ EMPTY_ASSET };
+        AssetID modelID{ EMPTY_ASSET };
     };
 
 	//Animator Component
@@ -50,7 +52,19 @@ namespace Boom {
     {
 		BOOM_INLINE AnimatorComponent(const AnimatorComponent&) = default;
 		BOOM_INLINE AnimatorComponent() = default;
-		Animator3D Animator;
+		Animator3D animator;
+    };
+
+    struct SkyboxComponent {
+        AssetID skyboxID{ EMPTY_ASSET };
+    };
+
+    //helpful for encapsulating information about an entity
+    //can be used for entity hierarchies (linked-list)
+    struct InfoComponent {
+        AssetID parent{ EMPTY_ASSET };
+        std::string name{ "Entity" };
+        AssetID uid{ RandomU64() };
     };
    
     struct Entity

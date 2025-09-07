@@ -11,12 +11,6 @@ namespace Boom {
 	struct GraphicsRenderer {
 	public:
 		GraphicsRenderer() = delete;
-
-		BOOM_INLINE void SetJoints(std::vector<glm::mat4>& transforms)
-		{
-			pbrShader->SetJoints(transforms);
-		}
-
 		BOOM_INLINE GraphicsRenderer(int32_t w, int32_t h)
 		{
 			glEnable(GL_BLEND);
@@ -74,6 +68,11 @@ namespace Boom {
 			skyBoxShader->Draw(skyboxMesh, sky.cubeMap, transform);
 		}
 
+	public: //animator
+		BOOM_INLINE void SetJoints(std::vector<glm::mat4>& transforms)
+		{
+			pbrShader->SetJoints(transforms);
+		}
 	public: //shader uniforms and draw call
 		BOOM_INLINE void SetCamera(Camera3D& cam, Transform3D const& transform) {
 			float aspect{ frame->Ratio() };

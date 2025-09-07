@@ -34,6 +34,7 @@
 #include <functional>
 #include <filesystem>
 #include <unordered_map>
+#include <random>
 
 
 // include spdlog
@@ -126,5 +127,13 @@ BOOM_INLINE constexpr uint32_t TypeID()
 //To improve pointer safety within engine context
 #define BOOM_DELETE(ptr) if (ptr != nullptr) { delete (ptr); ptr = nullptr; }
 
+namespace Boom {
+	std::random_device rd;
+	BOOM_INLINE uint64_t RandomU64() {
+		static std::mt19937_64 gen{ rd() };
+		std::uniform_int_distribution<uint64_t> dis{}; //default covers all range
+		return dis(gen);
+	}
+}
 
 #endif //CORE_H
