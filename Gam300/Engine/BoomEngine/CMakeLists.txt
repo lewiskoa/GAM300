@@ -34,6 +34,7 @@ find_package(glm      REQUIRED)
 find_package(imgui    REQUIRED)
 find_package(OpenGL   REQUIRED)
 find_package(assimp   REQUIRED)
+find_package(physx    REQUIRED)
 
 # 2e) Link libraries + any extra .lib you manually had
 target_link_libraries(BoomEngine
@@ -44,6 +45,7 @@ target_link_libraries(BoomEngine
     imgui::imgui
     OpenGL::GL
     assimp::assimp
+    PhysX::PhysX
     $<$<CONFIG:Debug>:MyExtraDebugOnly.lib>
 )
 
@@ -61,4 +63,18 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/Resources)
     )
 else()
     message(WARNING "[WARNING] no resource directory!")
+endif()
+
+if (MSVC)
+    foreach(directory ${CONAN_BIN_DIRS})
+        file(GLOB dllfiles ${directory}/*.dll)
+        foreach(dllfile ${dllfiles})
+            if (EXISTS ${dllfile})
+                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        ${dllfile} ${EXECUTABLE_OUTPUT_PATH}
+                )
+            endif()
+        endforeach()
+    endforeach()
 endif()

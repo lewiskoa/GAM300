@@ -4,6 +4,8 @@
 #include "AppWindow.h"
 #include "Graphics/Renderer.h"
 #include "GlobalConstants.h"
+#include "ECS/ECS.hpp"
+#include "Physics/Context.h"
 //include ecs
 
 namespace Boom
@@ -23,6 +25,7 @@ namespace Boom
 			: dispatcher{}
 			, window{ std::make_unique<AppWindow>(&dispatcher, CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT, "Boom Engine") }
 			, renderer{ std::make_unique<GraphicsRenderer>(CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT) }
+			, Physics{ std::make_unique<PhysicsContext>() }
 		{
 		}
 
@@ -48,6 +51,9 @@ namespace Boom
 		EventDispatcher dispatcher;
 		std::unique_ptr<AppWindow> window;
 		std::unique_ptr<GraphicsRenderer> renderer;
+		std::unique_ptr<PhysicsContext> Physics; //physics context
+		double DeltaTime;
+		EntityRegistry Scene;
 		//scene
 	};
 
