@@ -43,19 +43,21 @@ namespace Boom
                 // Set initial position above the cube
                 auto& t = sphere.Attach<TransformComponent>().Transform;
                 t.translate = glm::vec3(0.0f, 5.0f, 0.0f);
-                t.scale = glm::vec3(1.0f); // <-- Ensure scale is set!
+                t.scale = glm::vec3(1.0f); 
                 // Attach rigidbody (dynamic)
                 auto& rb = sphere.Attach<RigidBodyComponent>().RigidBody;
                 rb.Type = RigidBody3D::DYNAMIC;
                 rb.Mass = 2.0f;
                 rb.Density = 1.0f;
-                rb.InitialVelocity = glm::vec3(1.0f, 0.0f, 0.0f); // <-- Add this line for a small velocity in X
+
+                // Small velocity to check for movement
+                rb.InitialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
 
                 // Attach collider (sphere)
                 auto& col = sphere.Attach<ColliderComponent>().Collider;
                 col.Type = Collider3D::SPHERE;
 
-                // Attach model (optional, for rendering)
+                // Attach model
                 auto& mc = sphere.Attach<ModelComponent>();
                 mc.model = std::make_shared<Model>("sphere.fbx");
             }
@@ -66,7 +68,7 @@ namespace Boom
                 // Set initial position at the origin
                 auto& t = cube.Attach<TransformComponent>().Transform;
                 t.translate = glm::vec3(0.0f, 0.0f, 0.0f);
-                t.scale = glm::vec3(2.0f); // Make it large enough for the sphere to hit
+                t.scale = glm::vec3(2.0f);
 
                 // Attach rigidbody (static)
                 auto& rb = cube.Attach<RigidBodyComponent>().RigidBody;
@@ -76,7 +78,7 @@ namespace Boom
                 auto& col = cube.Attach<ColliderComponent>().Collider;
                 col.Type = Collider3D::BOX;
 
-                // Attach model (optional, for rendering)
+                // Attach model 
                 auto& mc = cube.Attach<ModelComponent>();
                 mc.model = std::make_shared<Model>("cube.fbx");
             }
@@ -289,7 +291,7 @@ namespace Boom
             // Set physics event callback (mark unused param to avoid warnings)
             m_Context->Physics->SetEventCallback([this](auto e)
                 {
-                    (void)e; // Silence unused parameter warning
+                    (void)e; 
                     // Scripting/event logic can be added here
                 });
 
@@ -342,136 +344,6 @@ namespace Boom
         }
 
     };
-
-    //    struct Application : AppInterface
-    //    {
-    //        // creates application context
-    //        BOOM_INLINE Application()
-    //        {
-    //            // initialize app context
-    //            m_LayerID = TypeID<Application>();
-    //            m_Context = new AppContext();
-    //            // register event callbacks
-    //            RegisterEventCallbacks();
-    //            // create scene entities
-    //            //CreateSceneEntities();
-    //            // create physics actors
-    //            CreatePhysicsActors();
-    //            // create environm. maps
-    //            CreateSkyboxEnvMaps();
-    //        }
-    //        // destroy application context
-    //        BOOM_INLINE ~Application()
-    //        {
-    //            // release physics actors
-    //            DestroyPhysicsActors();
-    //            BOOM_DELETE(m_Context);
-    //        }
-    //        // runs application main loop
-    //        BOOM_INLINE void RunContext()
-    //        {
-    //            // application main loop
-    //		    while (m_Context->window->PollEvents())
-    //            {
-    //                // compute delta time value
-    //                ComputeFrameDeltaTime();
-    //                // run physics simulation
-    //                RunPhysicsSimulation();
-    //                // render scene shadow map
-    //                RenderSceneDepthMap();
-    //                // render scene to buffer
-    //                //RenderSceneToFBO();
-    //                // update all layers
-    //                UpdateAppLayers();
-    //            }
-    //        }
-    //    private:
-    //        BOOM_INLINE void RegisterEventCallbacks()
-    //        {
-    //            // set physics event callback
-    //            m_Context->Physics->SetEventCallback([this](auto [[maybe_unused]] e)
-    //                {
-    //                    // coming later with scripting
-    //                });
-    //            // attach window resize event callback
-    //            AttachCallback<WindowResizeEvent>([this](auto e)
-    //                {
-    //                    m_Context->renderer->Resize(e.width, e.height);
-    //                });
-    //        }
-    //
-    //        BOOM_INLINE void ComputeFrameDeltaTime()
-    //        {
-    //            static double sLastTime = glfwGetTime();
-    //            double currentTime = glfwGetTime();
-    //            m_Context->DeltaTime = (currentTime - sLastTime);
-    //            sLastTime = currentTime;
-    //        }
-    //
-    //        BOOM_INLINE void RunPhysicsSimulation()
-    //        {
-    //            // compute physx
-    //            m_Context->Physics->Simulate(1, m_Context->DeltaTime);
-    //            // start physics
-    //            EnttView<Entity, RigidBodyComponent>([this](auto entity,
-    //                auto& comp)
-    //                {
-    //                    auto& transform = entity.template
-    //                        Get<TransformComponent>().Transform;
-    //                    auto pose = comp.RigidBody.Actor->getGlobalPose();
-    //                    glm::quat rot(pose.q.x, pose.q.y, pose.q.z,
-    //                        pose.q.w);
-    //                    transform.rotate =
-    //                        glm::degrees(glm::eulerAngles(rot));
-    //                    transform.translate = PxToVec3(pose.p);
-    //                });
-    //        }
-    //
-    //        BOOM_INLINE void DestroyPhysicsActors()
-    //        {
-    //            EnttView<Entity, RigidBodyComponent>([this](auto entity,
-    //                auto& comp)
-    //                {
-    //                    if (entity.template Has<ColliderComponent>())
-    //                    {
-    //                        auto& collider = entity.template
-    //                            Get<ColliderComponent>().Collider;
-    //                        collider.Material->release();
-    //                        collider.Shape->release();
-    //                    }
-    //                    // destroy actor user data
-    //                    EntityID* owner = static_cast<EntityID*>
-    //                        (comp.RigidBody.Actor->userData);
-    //                    BOOM_DELETE(owner);
-    //                    // destroy actor instance
-    //                    comp.RigidBody.Actor->release();
-    //                });
-    //        }
-    //        BOOM_INLINE void CreateSkyboxEnvMaps() {/* ... */ }
-    //        BOOM_INLINE void RenderSceneDepthMap() {/* ... */ }
-    //        BOOM_INLINE void CreatePhysicsActors() {
-    //            EnttView<Entity, RigidBodyComponent>([this](auto entity,
-    //                auto& comp)
-    //                {
-    //                    m_Context->Physics->AddRigidBody(entity);
-    //                });
-    //        }
-    //
-    //
-    //
-    //        BOOM_INLINE void UpdateAppLayers() {
-    //            for (auto layer : m_Context->Layers)
-    //            {
-    //                layer->OnUpdate();
-    //            }
-    //            // show scene to screen
-    //            m_Context->renderer->ShowFrame();
-    //        }
-    //
-    //
-    //
-    //    };
-    
 }
 
 #endif // !APPLICATION_H
