@@ -100,6 +100,17 @@ REM Create optimized MSVC profile
     echo build_type=Release
 ) > profiles\msvc17
 
+REM ---- FMOD Studio API in repo root ----
+for %%i in ("%~dp0..") do set "REPO_ROOT=%%~fi"
+set "FMOD_DIR=%REPO_ROOT%\FMOD Studio API Windows\api"
+
+if not exist "%FMOD_DIR%\core\lib\x64\fmod_vc.lib" (
+  echo [ERROR] FMOD API not found at: "%FMOD_DIR%"
+  echo         Expect: core\inc, core\lib\x64\fmod_vc.lib, studio\inc, studio\lib\x64\fmodstudio_vc.lib
+  pause & exit /b 1
+)
+echo [INFO] FMOD_DIR = "%FMOD_DIR%"
+
 REM ------------------------------------------------------------------------
 REM 6) Install dependencies for both configurations
 REM ------------------------------------------------------------------------
