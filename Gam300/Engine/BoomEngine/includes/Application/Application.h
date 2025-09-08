@@ -59,7 +59,7 @@ namespace Boom
 
                 // Attach model
                 auto& mc = sphere.Attach<ModelComponent>();
-                mc.model = std::make_shared<Model>("sphere.fbx");
+                mc.model = std::make_shared<StaticModel>("sphere.fbx");
             }
 
             // Create a static cube entity (ground)
@@ -80,7 +80,7 @@ namespace Boom
 
                 // Attach model 
                 auto& mc = cube.Attach<ModelComponent>();
-                mc.model = std::make_shared<Model>("cube.fbx");
+                mc.model = std::make_shared<StaticModel>("cube.fbx");
             }
             // Register both with the physics system
             m_Context->Physics->AddRigidBody(sphere);
