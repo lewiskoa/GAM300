@@ -17,16 +17,20 @@ out vec4 out_fragment;
 in vec2 uvs;
 
 const float GAMMA = 2.5;
-const float EXPOSURE = 1.6;
+const float EXPOSURE = 4;
 const float MIN_GAMMA = 0.000001;
 
 uniform sampler2D map;
 uniform sampler2D u_bloom;
+uniform bool u_enableBloom;
 
 void main() 
 { 
+    vec3 result = texture(map, uvs).rgb;
   // sample color from map
-  vec3 result = texture(map, uvs).rgb + texture(u_bloom, uvs).rgb;
+    if (u_enableBloom) {
+        result += texture(u_bloom, uvs).rgb;
+    }
 
   // gamma correction
   result = pow(result, vec3(GAMMA));

@@ -11,6 +11,7 @@ namespace Boom {
 			, quad{ CreateQuad2D() }
 			// colLoc{ GetUniformVar("color") }
 			, bloom{ GetUniformVar("u_bloom") }
+			, bloomEnabled{ GetUniformVar("u_enableBloom") }
 			, color{col}
 		{
 		}
@@ -24,9 +25,10 @@ namespace Boom {
 			glBindTexture(GL_TEXTURE_2D, blm);
 			SetUniform(bloom, 1);
 		}
-		BOOM_INLINE void Show(uint32_t m,uint32_t blm) {
+		BOOM_INLINE void Show(uint32_t m,uint32_t blm,bool enabled) {
 			Use();
 			SetSceneMap(m,blm);
+			glUniform1i(bloomEnabled, enabled ? 1 : 0);
 			//SetUniform(colLoc, color);
 			quad->Draw();
 			UnUse();
@@ -38,6 +40,7 @@ namespace Boom {
 		int32_t bloom = 0u;
 		int32_t map = 0u;
 		//int32_t colLoc;
+		int32_t bloomEnabled;
 		glm::vec4 color;
 	};
 }

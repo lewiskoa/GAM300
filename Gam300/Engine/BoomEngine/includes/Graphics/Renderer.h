@@ -110,7 +110,7 @@ namespace Boom {
 		}
 		BOOM_INLINE void ShowFrame() {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Show(frame->GetTexture(),bloom->GetMap());
+			finalShader->Show(frame->GetTexture(),bloom->GetMap(),false);
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
