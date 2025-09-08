@@ -21,6 +21,12 @@ namespace Boom
          * BOOM_INLINE hints to the compiler to inline this small constructor
          * to avoid function-call overhead during startup.
          */
+
+        double m_SphereTimer = 0.0;
+        glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
+        Entity m_SphereEntity; // <-- Add this
+
+
         BOOM_INLINE Application()
         {
             m_LayerID = TypeID<Application>();
@@ -42,7 +48,7 @@ namespace Boom
             {
                 // Set initial position above the cube
                 auto& t = sphere.Attach<TransformComponent>().Transform;
-                t.translate = glm::vec3(0.0f, 5.0f, 0.0f);
+                t.translate = m_SphereStartPos;
                 t.scale = glm::vec3(1.0f); 
                 // Attach rigidbody (dynamic)
                 auto& rb = sphere.Attach<RigidBodyComponent>().RigidBody;
@@ -61,6 +67,7 @@ namespace Boom
                 auto& mc = sphere.Attach<ModelComponent>();
                 mc.model = std::make_shared<StaticModel>("sphere.fbx");
             }
+
 
             // Create a static cube entity (ground)
             Entity cube = CreateEntt<Entity>();
@@ -82,6 +89,8 @@ namespace Boom
                 auto& mc = cube.Attach<ModelComponent>();
                 mc.model = std::make_shared<StaticModel>("cube.fbx");
             }
+
+            m_SphereEntity = sphere;
             // Register both with the physics system
             m_Context->Physics->AddRigidBody(sphere);
             m_Context->Physics->AddRigidBody(cube);
@@ -149,6 +158,24 @@ namespace Boom
             auto modelSphere = std::make_shared<StaticModel>("sphere.fbx");
 			auto modelRobot = std::make_shared<StaticModel>("walking.fbx");
 
+
+            auto walking = std::make_shared<SkeletalModel>("walking.fbx");
+            auto dance = std::make_shared<SkeletalModel>("dance.fbx");
+
+
+            Entity danceModel{ &registry };
+            {
+                auto& t = danceModel.Attach<TransformComponent>().Transform;
+                t.rotate.y = 0.f;
+                t.translate = glm::vec3(-10.f, -2.5f, -5.0f); // Centered
+                t.scale = glm::vec3(0.03f);
+
+                auto& mc = danceModel.Attach<ModelComponent>();
+                mc.model = dance; // Use SkeletalModel for animation
+
+                danceModel.Attach<AnimatorComponent>().Animator = dance->GetAnimator();
+            }
+
             //lights testers
             PointLight pl1{};
             PointLight pl2{};
@@ -178,7 +205,6 @@ namespace Boom
                 mat.albedoMap = albedo;
                 mat.normalMap = normal;
             }
-
             auto skymap = std::make_shared<Texture2D>("HDR/sky.hdr", true);
             Skybox skybox{};
             m_Context->renderer->InitSkybox(skybox, skymap, 2048);
@@ -186,6 +212,37 @@ namespace Boom
             while (m_Context->window->PollEvents())
             {
                 ComputeFrameDeltaTime();
+
+                m_SphereTimer += m_Context->DeltaTime;
+
+                // Reset sphere after 5 seconds
+                if (m_SphereTimer >= 5.0)
+                {
+                    m_SphereTimer = 0.0;
+
+                    // Reset position and velocity
+                    auto& transform = m_SphereEntity.Get<TransformComponent>().Transform;
+                    transform.translate = m_SphereStartPos;
+
+                    auto& rb = m_SphereEntity.Get<RigidBodyComponent>().RigidBody;
+                    if (rb.Actor)
+                    {
+                        // Reset PhysX actor pose and velocity
+                        PxTransform pose(ToPxVec3(m_SphereStartPos));
+                        rb.Actor->setGlobalPose(pose);
+
+                        PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(rb.Actor);
+                        if (dyn)
+                        {
+                            dyn->setLinearVelocity(PxVec3(1.0f, 0.0f, 0.0f)); // initial velocity
+                            dyn->setAngularVelocity(PxVec3(0.0f)); // stop rotation
+                            dyn->clearForce();
+                            dyn->clearTorque();
+                            dyn->wakeUp();
+                        }
+                    }
+                }
+
                 RunPhysicsSimulation();
                 //updates new frame
                 m_Context->renderer->NewFrame();
