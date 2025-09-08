@@ -108,7 +108,6 @@ namespace Boom {
                     if (dyn) {
                         dyn->setMass(body.Mass);
                         dyn->setLinearVelocity(PxVec3(body.InitialVelocity.x, body.InitialVelocity.y, body.InitialVelocity.z));
-                        dyn->wakeUp();
                     }
                 }
                 else if (body.Type == RigidBody3D::STATIC)
