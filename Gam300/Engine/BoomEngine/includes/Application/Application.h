@@ -80,7 +80,8 @@ namespace Boom
 
             auto walking = std::make_shared<SkeletalModel>("walking.fbx");
 			auto dance = std::make_shared<SkeletalModel>("dance.fbx");
-			Entity sphere2{ &registry };
+
+		/*	Entity sphere2{ &registry };
             {
                 auto& t = sphere2.Attach<TransformComponent>().Transform;
                 t.rotate.y = -45.f;
@@ -91,7 +92,7 @@ namespace Boom
                 mc.material = std::make_shared<PbrMaterial>();
                 mc.material->albedo = glm::vec3(0.8, 0.1f, 0.8f);
                 mc.material->emissive = glm::vec3(1.f);
-            }
+            }*/
 				//animation stuff
             Entity sphere{ &registry };
             {
