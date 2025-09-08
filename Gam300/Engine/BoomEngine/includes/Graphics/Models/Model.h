@@ -21,13 +21,13 @@ namespace Boom {
 	{
 		/**
 		 * @brief Loads meshes from a static (non-skeletal) model file via Assimp.
-		 * @param filename File name relative to CONSTANTS::MODELS_LOCAITON.
+		 * @param filename File name relative to CONSTANTS::MODELS_LOCATION.
 		 * @details Applies a set of Assimp post-process flags for real-time rendering.
 		 *          On failure, logs an error and leaves the model empty.
 		 */
 		BOOM_INLINE StaticModel(std::string filename)
 		{
-			filename = CONSTANTS::MODELS_LOCAITON + filename;
+			filename = CONSTANTS::MODELS_LOCATION + filename;
 
 			uint32_t flags = aiProcess_Triangulate |
 				aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
@@ -119,14 +119,14 @@ namespace Boom {
 
 		/**
 		* @brief Load meshes, skeleton, and animation clips via Assimp.
-		* @param path File path relative to CONSTANTS::MODELS_LOCAITON.
+		* @param path File path relative to CONSTANTS::MODELS_LOCATION.
 		* @details Builds mesh data with per-vertex joint weights, constructs the joint hierarchy,
 		*          and parses available animation channels into the Animator.
 		*          On failure, logs an error and leaves the model empty.
 		*/
 		BOOM_INLINE SkeletalModel(std::string filename)
 		{
-			filename = CONSTANTS::MODELS_LOCAITON + filename;
+			filename = CONSTANTS::MODELS_LOCATION + filename;
 
 			uint32_t flags = aiProcess_Triangulate |
 				aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |

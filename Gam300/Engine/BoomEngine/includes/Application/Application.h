@@ -191,10 +191,15 @@ namespace Boom
             auto albedoTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/albedo.png") };
             auto normalTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/normal.png") };
             auto roughnessTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/roughness.png") };
-            auto mat1Asset{ m_Context->assets->AddMaterial(RandomU64(), "Marble") };
-            mat1Asset->albedoMapID = albedoTexAsset->uid;
-            mat1Asset->normalMapID = normalTexAsset->uid;
-            mat1Asset->roughnessMapID = roughnessTexAsset->uid;
+            std::array<AssetID, 6> marbleMat{
+                albedoTexAsset->uid,
+                normalTexAsset->uid,
+                roughnessTexAsset->uid,
+                EMPTY_ASSET,
+                EMPTY_ASSET,
+                EMPTY_ASSET,
+            };
+            auto mat1Asset{ m_Context->assets->AddMaterial(RandomU64(), "Marble", marbleMat) };
 
             //camera
             Entity camera{ &m_Context->scene };

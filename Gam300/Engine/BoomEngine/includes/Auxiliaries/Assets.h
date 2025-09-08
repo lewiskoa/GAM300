@@ -28,12 +28,12 @@ namespace Boom {
 
 	struct MaterialAsset : Asset {
 		PbrMaterial data{};
-		AssetID roughnessMapID{ EMPTY_ASSET };
-		AssetID occlusionMapID{ EMPTY_ASSET };
-		AssetID metallicMapID{ EMPTY_ASSET };
-		AssetID emissiveMapID{ EMPTY_ASSET };
 		AssetID albedoMapID{ EMPTY_ASSET };
 		AssetID normalMapID{ EMPTY_ASSET };
+		AssetID roughnessMapID{ EMPTY_ASSET };
+		AssetID metallicMapID{ EMPTY_ASSET };
+		AssetID occlusionMapID{ EMPTY_ASSET };
+		AssetID emissiveMapID{ EMPTY_ASSET };
 	};
 
 	struct TextureAsset : Asset {
@@ -160,14 +160,20 @@ namespace Boom {
 			else {
 				asset->data = std::make_shared<StaticModel>(path);
 			}
-			std::string fullPath{ CONSTANTS::MODELS_LOCAITON + path };
+			std::string fullPath{ CONSTANTS::MODELS_LOCATION + path };
 			Add(uid, fullPath, asset);
 			return asset;
 		}
-		BOOM_INLINE auto AddMaterial(AssetID uid, std::string const& path) {
+		BOOM_INLINE auto AddMaterial(AssetID uid, std::string const& path, std::array<AssetID, 6> uidMaps) {
 			std::string fullPath{ CONSTANTS::TEXTURES_LOCATION + path };
 			auto asset{ std::make_shared<MaterialAsset>() };
 			asset->type = AssetType::MATERIAL;
+			asset->albedoMapID = uidMaps[0];
+			asset->normalMapID = uidMaps[1];
+			asset->roughnessMapID = uidMaps[2];
+			asset->metallicMapID = uidMaps[3];
+			asset->occlusionMapID = uidMaps[4];
+			asset->emissiveMapID = uidMaps[5];
 			Add(uid, fullPath, asset);
 			return asset;
 		}
