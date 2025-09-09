@@ -272,9 +272,9 @@ namespace Boom
                                 //draw model with material if it has one
                                 if (comp.materialID != EMPTY_ASSET) {
                                     auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
-									//material.data.albedoMap = m_Context->assets->Get<TextureAsset>(material.albedoMapID).data;
-                                    //material.data.normalMap = m_Context->assets->Get<TextureAsset>(material.normalMapID).data;
-                                    //material.data.roughnessMap = m_Context->assets->Get<TextureAsset>(material.roughnessMapID).data;
+									material.data.albedoMap = m_Context->assets->Get<TextureAsset>(material.albedoMapID).data;
+                                    material.data.normalMap = m_Context->assets->Get<TextureAsset>(material.normalMapID).data;
+                                    material.data.roughnessMap = m_Context->assets->Get<TextureAsset>(material.roughnessMapID).data;
                                     m_Context->renderer->Draw(model.data, transform, material.data);
                                 }
                                 else {

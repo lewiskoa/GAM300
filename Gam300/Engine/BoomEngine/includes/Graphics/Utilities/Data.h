@@ -58,7 +58,7 @@ namespace Boom {
 
 	struct PbrMaterial {
 		BOOM_INLINE PbrMaterial()
-			: emissive{}
+			: emissive{0.4f}
 			, albedo{ glm::vec3(1.f) }
 			, roughness{ 0.4f }
 			, metallic{ 0.5f }
