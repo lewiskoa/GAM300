@@ -27,7 +27,7 @@ namespace Boom {
 		 */
 		BOOM_INLINE StaticModel(std::string filename)
 		{
-			filename = CONSTANTS::MODELS_LOCATION + filename;
+			filename = CONSTANTS::MODELS_LOCATION.data() + filename;
 
 			uint32_t flags = aiProcess_Triangulate |
 				aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
@@ -126,7 +126,7 @@ namespace Boom {
 		*/
 		BOOM_INLINE SkeletalModel(std::string filename)
 		{
-			filename = CONSTANTS::MODELS_LOCATION + filename;
+			filename = CONSTANTS::MODELS_LOCATION.data() + filename;
 
 			uint32_t flags = aiProcess_Triangulate |
 				aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |

@@ -12,7 +12,7 @@ namespace Boom {
 	Texture2D::Texture2D(std::string filename, bool isFlipY, bool isHDR)
 		: height{}, width{}, id{}
 	{
-		filename = CONSTANTS::TEXTURES_LOCATION + filename;
+		filename = CONSTANTS::TEXTURES_LOCATION.data() + filename;
 
 		//flip y axis (needed operation for many image types)
 		stbi_set_flip_vertically_on_load(isFlipY);

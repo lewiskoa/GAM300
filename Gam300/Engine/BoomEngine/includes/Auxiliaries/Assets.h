@@ -142,8 +142,7 @@ namespace Boom {
 			asset->data = std::make_shared<Texture2D>(path, isFlipY, isHDR);
 			asset->isFlipY = isFlipY;
 			asset->isHDR = isHDR;
-			std::string fullPath{ CONSTANTS::TEXTURES_LOCATION + path };
-			Add(uid, fullPath, asset);
+			Add(uid, path, asset);
 			return asset;
 		}
 		BOOM_INLINE auto AddModel(
@@ -160,12 +159,10 @@ namespace Boom {
 			else {
 				asset->data = std::make_shared<StaticModel>(path);
 			}
-			std::string fullPath{ CONSTANTS::MODELS_LOCATION + path };
-			Add(uid, fullPath, asset);
+			Add(uid, path, asset);
 			return asset;
 		}
 		BOOM_INLINE auto AddMaterial(AssetID uid, std::string const& path, std::array<AssetID, 6> uidMaps) {
-			std::string fullPath{ CONSTANTS::TEXTURES_LOCATION + path };
 			auto asset{ std::make_shared<MaterialAsset>() };
 			asset->type = AssetType::MATERIAL;
 			asset->albedoMapID = uidMaps[0];
@@ -174,11 +171,11 @@ namespace Boom {
 			asset->metallicMapID = uidMaps[3];
 			asset->occlusionMapID = uidMaps[4];
 			asset->emissiveMapID = uidMaps[5];
-			Add(uid, fullPath, asset);
+			Add(uid, path, asset);
 			return asset;
 		}
 		BOOM_INLINE auto AddScript(AssetID uid, std::string const& path) {
-			//std::string fullPath{ CONSTANTS::TEXTURES_LOCATION + path };
+			//std::string fullPath{ CONSTANTS::TEXTURES_LOCATION.data() + path };
 			auto asset{ std::make_shared<ScriptAsset>() };
 			asset->type = AssetType::SCRIPT;
 			Add(uid, path, asset);

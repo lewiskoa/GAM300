@@ -8,7 +8,7 @@ namespace Boom {
 	class Shader {
 	public:
 		BOOM_INLINE Shader(std::string const& filename) 
-			: shaderId{ Load(CONSTANTS::SHADERS_LOCATION + filename) } 
+			: shaderId{ Load(CONSTANTS::SHADERS_LOCATION.data() + filename)}
 		{ }
 		BOOM_INLINE virtual ~Shader() {
 			glDeleteProgram(shaderId);

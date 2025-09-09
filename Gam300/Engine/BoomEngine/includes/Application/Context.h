@@ -25,6 +25,7 @@ namespace Boom
 			, window{ std::make_unique<AppWindow>(&dispatcher, CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT, "Boom Engine") }
 			, renderer{ std::make_unique<GraphicsRenderer>(CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT) }
 			, assets{ std::make_unique<AssetRegistry>() }
+			, scene{}
 		{
 		}
 

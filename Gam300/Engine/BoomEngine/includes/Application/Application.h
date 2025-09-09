@@ -17,9 +17,9 @@ namespace Boom
     {
         template<typename EntityType, typename... Components, typename Fn>
         BOOM_INLINE void EnttView(Fn&& fn) {
-            auto view = registry.view<Components...>();
+            auto view = m_Context->scene.view<Components...>();
             for (auto e : view) {
-                fn(EntityType{ &registry, e }, registry.get<Components>(e)...);
+                fn(EntityType{ &m_Context->scene, e }, m_Context->scene.get<Components>(e)...);
             }
         }
         /**
@@ -148,6 +148,9 @@ namespace Boom
                                 //draw model with material if it has one
                                 if (comp.materialID != EMPTY_ASSET) {
                                     auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
+									material.data.albedoMap = m_Context->assets->Get<TextureAsset>(material.albedoMapID).data;
+                                    material.data.normalMap = m_Context->assets->Get<TextureAsset>(material.normalMapID).data;
+                                    material.data.roughnessMap = m_Context->assets->Get<TextureAsset>(material.roughnessMapID).data;
                                     m_Context->renderer->Draw(model.data, transform, material.data);
                                 }
                                 else {
@@ -182,7 +185,7 @@ namespace Boom
         //loads assets and initialize the starting entities
         BOOM_INLINE void CreateEntities() {
             auto skyboxAsset{ m_Context->assets->AddSkybox(RandomU64(), "Skybox/sky.hdr", 2048) };
-            auto robotAsset{ m_Context->assets->AddModel(RandomU64(), "walking.fbx", true) };
+            auto robotAsset{ m_Context->assets->AddModel(RandomU64(), "dance.fbx", true) };
             //script asset ...
             auto sphereAsset{ m_Context->assets->AddModel(RandomU64(), "sphere.fbx") };
             auto cubeAsset{ m_Context->assets->AddModel(RandomU64(), "cube.fbx") };
@@ -220,10 +223,10 @@ namespace Boom
             robotModel.modelID = robotAsset->uid;
             auto& rt { robot.Attach<TransformComponent>().transform };
             rt.translate = glm::vec3(0.f, -2.5f, 0.f);
-            rt.scale = glm::vec3(0.1f);
+            rt.scale = glm::vec3(0.03f);
+            robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
         }
     private:
-            EntityRegistry registry;
             BOOM_INLINE void RenderSceneDepth()
             {
                 EnttView<Entity, DirectLightComponent>([this](auto light, DirectLightComponent&) {
