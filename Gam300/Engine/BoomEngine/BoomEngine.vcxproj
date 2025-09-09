@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -182,6 +182,7 @@
     <ClInclude Include="includes\Graphics\Models\Helper.h" />
     <ClInclude Include="includes\Graphics\Models\Model.h" />
     <ClInclude Include="includes\Graphics\Renderer.h" />
+    <ClInclude Include="includes\Graphics\Shaders\Bloom.h" />
     <ClInclude Include="includes\Graphics\Shaders\Color.h" />
     <ClInclude Include="includes\Graphics\Shaders\Final.h" />
     <ClInclude Include="includes\Graphics\Shaders\PBR.h" />
@@ -193,6 +194,10 @@
     <ClInclude Include="includes\Graphics\Utilities\Data.h" />
     <ClInclude Include="includes\Graphics\Utilities\Quad.h" />
     <ClInclude Include="includes\Graphics\Utilities\Skybox.h" />
+    <ClInclude Include="includes\Physics\Callback.h" />
+    <ClInclude Include="includes\Physics\Context.h" />
+    <ClInclude Include="includes\Physics\Helpers.h" />
+    <ClInclude Include="includes\Physics\Utilities.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Application\Context.cpp">

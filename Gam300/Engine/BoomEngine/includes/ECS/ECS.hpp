@@ -2,7 +2,7 @@
 #include <entt/entt.hpp>
 #include "Graphics/Utilities/Data.h"
 #include "Auxiliaries/Assets.h"
-
+#include "Physics/Utilities.h"  
 namespace Boom {
 	using EntityRegistry = entt::registry;  
 	using EntityID = entt::entity;
@@ -40,6 +40,19 @@ namespace Boom {
 		Mesh3D mesh;
 	};
     
+    struct RigidBodyComponent
+    {
+        BOOM_INLINE RigidBodyComponent(const RigidBodyComponent&) = default;
+        BOOM_INLINE RigidBodyComponent() = default;
+        RigidBody3D RigidBody;
+	};
+
+    struct ColliderComponent
+    {
+        BOOM_INLINE ColliderComponent(const ColliderComponent&) = default;
+        BOOM_INLINE ColliderComponent() = default;
+        Collider3D Collider;
+	};
 
     ////Model Component
     struct ModelComponent {
@@ -127,7 +140,7 @@ namespace Boom {
         }
 
         template<typename T>
-        BOOM_INLINE bool Has()
+        BOOM_INLINE bool Has() const
         {
             return m_Registry != nullptr &&
                 m_Registry->all_of<T>(m_EnttID);

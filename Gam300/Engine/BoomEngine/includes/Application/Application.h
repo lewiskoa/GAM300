@@ -3,7 +3,7 @@
 #define APPLICATION_H
 #include "Interface.h"
 #include "ECS/ECS.hpp"
-
+#include "Physics/Context.h"
 namespace Boom
 {
     /**
@@ -28,21 +28,80 @@ namespace Boom
          * BOOM_INLINE hints to the compiler to inline this small constructor
          * to avoid function-call overhead during startup.
          */
-       
+
+        double m_SphereTimer = 0.0;
+        glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
+        Entity m_SphereEntity; // <-- Add this
+
+
         BOOM_INLINE Application()
         {
             m_LayerID = TypeID<Application>();
             m_Context = new AppContext();
+            RegisterEventCallbacks();
 
             AttachCallback<WindowResizeEvent>([this](auto e) {
-                    m_Context->renderer->Resize(e.width, e.height);
+                m_Context->renderer->Resize(e.width, e.height);
                 }
             );
 
             AttachCallback<WindowTitleRenameEvent>([this](auto e) {
-                    m_Context->window->SetWindowTitle(e.title);
+                m_Context->window->SetWindowTitle(e.title);
                 }
             );
+/*
+            // Create a dynamic sphere entity
+            Entity sphere = CreateEntt<Entity>();
+            {
+                // Set initial position above the cube
+                auto& t = sphere.Attach<TransformComponent>().Transform;
+                t.translate = m_SphereStartPos;
+                t.scale = glm::vec3(1.0f); 
+                // Attach rigidbody (dynamic)
+                auto& rb = sphere.Attach<RigidBodyComponent>().RigidBody;
+                rb.Type = RigidBody3D::DYNAMIC;
+                rb.Mass = 2.0f;
+                rb.Density = 1.0f;
+
+                // Small velocity to check for movement
+                rb.InitialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
+
+                // Attach collider (sphere)
+                auto& col = sphere.Attach<ColliderComponent>().Collider;
+                col.Type = Collider3D::SPHERE;
+
+                // Attach model
+                auto& mc = sphere.Attach<ModelComponent>();
+                mc.model = std::make_shared<StaticModel>("sphere.fbx");
+            }
+
+
+            // Create a static cube entity (ground)
+            Entity cube = CreateEntt<Entity>();
+            {
+                // Set initial position at the origin
+                auto& t = cube.Attach<TransformComponent>().Transform;
+                t.translate = glm::vec3(0.0f, 0.0f, 0.0f);
+                t.scale = glm::vec3(2.0f);
+
+                // Attach rigidbody (static)
+                auto& rb = cube.Attach<RigidBodyComponent>().RigidBody;
+                rb.Type = RigidBody3D::STATIC;
+
+                // Attach collider (box)
+                auto& col = cube.Attach<ColliderComponent>().Collider;
+                col.Type = Collider3D::BOX;
+
+                // Attach model 
+                auto& mc = cube.Attach<ModelComponent>();
+                mc.model = std::make_shared<StaticModel>("cube.fbx");
+            }
+
+            m_SphereEntity = sphere;
+            // Register both with the physics system
+            m_Context->Physics->AddRigidBody(sphere);
+            m_Context->Physics->AddRigidBody(cube);
+*/
         }
 
         /**
@@ -53,6 +112,7 @@ namespace Boom
          */
         BOOM_INLINE ~Application()
         {
+            DestroyPhysicsActors();
             BOOM_DELETE(m_Context);
         }
 
@@ -64,6 +124,26 @@ namespace Boom
          */
         BOOM_INLINE void RunContext()
         {
+            //to do aqif check code and implement entt here
+          
+            //create scene cam
+   /*         auto cam{ createentt<entity>() };
+            camera.attach<transformcomponent>().transform.translate.z = 2.f;
+            camera.attach<cameracomponent>();*/
+
+            //{ //chose one example entity to render by simply commenting out the other one.
+            //    //create cube entity (.fbx file reading)
+            //    auto model = std::make_shared<model>("sphere.fbx");
+            //    auto cube = createentt<entity>();
+            //    cube.attach<transformcomponent>().transform.rotation.y = 30.f;
+            //    cube.attach<modelcomponent>().model = model;
+
+            //    //create quad
+            //    auto quad{ createentt<entity>() };
+            //    quad.attach<meshcomponent>().mesh = createquad3d();
+            //    quad.attach<transformcomponent>();
+            //}
+            
             //use of ecs
             CreateEntities();
 
@@ -72,6 +152,7 @@ namespace Boom
             PointLight pl2{};
             DirectionalLight dl{};
             SpotLight sl{};
+            glm::vec3 testDir{ -.7f, -.3f, .3f };
             {
                 pl1.radiance.b = 0.f;
                 pl1.intensity = 2.f;
@@ -81,8 +162,8 @@ namespace Boom
                 sl.radiance = { 1.f, 1.f, 1.f };
 
                 dl.intensity = 10.f;
+                testDir = glm::normalize(testDir);
             }
-            m_Context->window->camPos.z = 6.f;
 
             //init skybox
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
@@ -102,24 +183,67 @@ namespace Boom
                 }
             );
             */
+            
 
             while (m_Context->window->PollEvents())
             {
+                /*
+                ComputeFrameDeltaTime();
+
+                m_SphereTimer += m_Context->DeltaTime;
+
+                // Reset sphere after 5 seconds
+                if (m_SphereTimer >= 5.0)
+                {
+                    m_SphereTimer = 0.0;
+
+                    // Reset position and velocity
+                    auto& transform = m_SphereEntity.Get<TransformComponent>().Transform;
+                    transform.translate = m_SphereStartPos;
+
+                    auto& rb = m_SphereEntity.Get<RigidBodyComponent>().RigidBody;
+                    if (rb.Actor)
+                    {
+                        // Reset PhysX actor pose and velocity
+                        PxTransform pose(ToPxVec3(m_SphereStartPos));
+                        rb.Actor->setGlobalPose(pose);
+
+                        PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(rb.Actor);
+                        if (dyn)
+                        {
+                            dyn->setLinearVelocity(PxVec3(1.0f, 0.0f, 0.0f)); // initial velocity
+                            dyn->setAngularVelocity(PxVec3(0.0f)); // stop rotation
+                            dyn->clearForce();
+                            dyn->clearTorque();
+                            dyn->wakeUp();
+                        }
+                    }
+                }
+
+                RunPhysicsSimulation();
+                */
                 //updates new frame
                 //RenderSceneDepth();
                 m_Context->renderer->NewFrame();
                 {
                     //testing rendering
                     {
+                        // Draw all entities with both ModelComponent and TransformComponent
+                        /*
+                        EnttView<Entity, ModelComponent>([this](auto entity, auto& mc) {
+                            auto& xf = entity.Get<TransformComponent>().transform;
+                            m_Context->renderer->Draw(mc.model, xf);
+                            });
+                        */
                         static float testRot{};
-                        if ((testRot += 0.1f) > 360.f) { testRot -= 360.f; }
+                        if ((testRot += 0.25f) > 360.f) { testRot -= 360.f; }
 
                         //lights
-                        m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, {0.f, 0.f, -1.f}, {}), 0);
+                        m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
                         m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
                         m_Context->renderer->SetPointLightCount(0);
 
-                        m_Context->renderer->SetLight(dl, Transform3D({}, { -.7f, -.3f, .3f }, {}), 0);
+                        m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
                         m_Context->renderer->SetDirectionalLightCount(1);
 
                         m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
@@ -139,7 +263,7 @@ namespace Boom
                                 //set animator uniform if model has one
                                 if (entity.template Has<AnimatorComponent>()) {
                                     AnimatorComponent& an{ entity.template Get<AnimatorComponent>() };
-                                    auto& joints{ an.animator->Animate(0.01f) }; // or your real dt
+                                    auto& joints{ an.animator->Animate(0.001f) }; // or your real dt
                                     m_Context->renderer->SetJoints(joints);
                                 }
 
@@ -148,9 +272,9 @@ namespace Boom
                                 //draw model with material if it has one
                                 if (comp.materialID != EMPTY_ASSET) {
                                     auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
-									material.data.albedoMap = m_Context->assets->Get<TextureAsset>(material.albedoMapID).data;
-                                    material.data.normalMap = m_Context->assets->Get<TextureAsset>(material.normalMapID).data;
-                                    material.data.roughnessMap = m_Context->assets->Get<TextureAsset>(material.roughnessMapID).data;
+									//material.data.albedoMap = m_Context->assets->Get<TextureAsset>(material.albedoMapID).data;
+                                    //material.data.normalMap = m_Context->assets->Get<TextureAsset>(material.normalMapID).data;
+                                    //material.data.roughnessMap = m_Context->assets->Get<TextureAsset>(material.roughnessMapID).data;
                                     m_Context->renderer->Draw(model.data, transform, material.data);
                                 }
                                 else {
@@ -203,6 +327,7 @@ namespace Boom
                 EMPTY_ASSET,
             };
             auto mat1Asset{ m_Context->assets->AddMaterial(RandomU64(), "Marble", marbleMat) };
+            auto mat2Asset{ m_Context->assets->AddMaterial(RandomU64(), "TempSphere", {}) };
 
             //camera
             Entity camera{ &m_Context->scene };
@@ -216,36 +341,79 @@ namespace Boom
             skybox.Attach<SkyboxComponent>().skyboxID = skyboxAsset->uid;
             skybox.Attach<TransformComponent>();
 
+            //dance boi
             Entity robot{ &m_Context->scene };
             robot.Attach<InfoComponent>();
             auto& robotModel{ robot.Attach<ModelComponent>() };
             robotModel.materialID = mat1Asset->uid;
             robotModel.modelID = robotAsset->uid;
             auto& rt { robot.Attach<TransformComponent>().transform };
-            rt.translate = glm::vec3(0.f, -2.5f, 0.f);
-            rt.scale = glm::vec3(0.03f);
+            rt.translate = glm::vec3(0.f, -1.5f, 0.f);
+            rt.scale = glm::vec3(0.01f);
             robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
+        
+            //sphere 
+			Entity sphereEn{ &m_Context->scene };
+			sphereEn.Attach<InfoComponent>();
+			auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
+			sphereModel.modelID = sphereAsset->uid;
+			sphereModel.materialID = mat2Asset->uid;
+			sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
         }
-    private:
-            BOOM_INLINE void RenderSceneDepth()
-            {
-                EnttView<Entity, DirectLightComponent>([this](auto light, DirectLightComponent&) {
-                    auto& lightDir = light.Get<TransformComponent>().transform.rotate;
+private:
+        BOOM_INLINE void RegisterEventCallbacks()
+        {
+            // Set physics event callback (mark unused param to avoid warnings)
+            m_Context->Physics->SetEventCallback([this](auto e)
+                {
+                    (void)e; 
+                    // Scripting/event logic can be added here
+                });
 
-                    // begin rendering
-                    m_Context->renderer->BeginShadowPass(lightDir);
+            // Attach window resize event callback
+            AttachCallback<WindowResizeEvent>([this](auto e)
+                {
+                    m_Context->renderer->Resize(e.width, e.height);
+                });
+        }
+BOOM_INLINE void ComputeFrameDeltaTime()
+        {
+            static double sLastTime = glfwGetTime();
+            double currentTime = glfwGetTime();
+            m_Context->DeltaTime = (currentTime - sLastTime);
+            sLastTime = currentTime;
+        }
 
-                    // render depth
-                    EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
-                        auto& transform = entity.Get<TransformComponent>().transform;
-                        ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
-                        m_Context->renderer->DrawDepth(model.data, transform);
-                        });
+        BOOM_INLINE void DestroyPhysicsActors()
+        {
+            EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
+                {
+                    if (entity.template Has<ColliderComponent>())
+                    {
+                        auto& collider = entity.template Get<ColliderComponent>().Collider;
+                        collider.Material->release();
+                        collider.Shape->release();
+                    }
+                    // Destroy actor user data
+                    EntityID* owner = static_cast<EntityID*>(comp.RigidBody.Actor->userData);
+                    BOOM_DELETE(owner);
+                    // Destroy actor instance
+                    comp.RigidBody.Actor->release();
+                });
+        }
 
-                    // finalize frame
-                    m_Context->renderer->EndShadowPass();
-                    });
-            }
+        BOOM_INLINE void RunPhysicsSimulation()
+        {
+            m_Context->Physics->Simulate(1, static_cast<float>(m_Context->DeltaTime));
+            EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
+                {
+                    auto& transform = entity.template Get<TransformComponent>().transform;
+                    auto pose = comp.RigidBody.Actor->getGlobalPose();
+                    glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
+                    transform.rotate = glm::degrees(glm::eulerAngles(rot));
+                    transform.translate = PxToVec3(pose.p);
+                });
+        }
     };
 
 }

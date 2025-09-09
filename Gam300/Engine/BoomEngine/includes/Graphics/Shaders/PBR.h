@@ -36,8 +36,6 @@ namespace Boom {
 			, modelMatLoc{ GetUniformVar("modelMat") }
 			, jointsLoc{ GetUniformVar("hasJoints") }
 		{
-			u_lightSpace = GetUniformVar("u_lightSpace");
-			u_depthMap = GetUniformVar("u_depthMap");
 		}
 
 	public: //lights
@@ -94,11 +92,6 @@ namespace Boom {
 		}
 		BOOM_INLINE void SetPointLightCount(int32_t count) {
 			SetUniform(noPointLightLoc, count);
-		}
-		BOOM_INLINE void SetLightSpaceMatrix(const glm::mat4& lightSpaceMtx)
-		{
-			// set view projection matrix
-			glUniformMatrix4fv(u_lightSpace, 1, GL_FALSE, glm::value_ptr(lightSpaceMtx));
 		}
 	public:
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
@@ -174,15 +167,6 @@ namespace Boom {
 				SetUniform(GetUniformVar(uniform.c_str()), transforms[i]);
 			}
 		}
-	//shadow
-	public:
-		BOOM_INLINE void BindShadow(uint32_t depthTex, int unit, const glm::mat4& lightSpace) {
-			glUseProgram(shaderId);
-			glActiveTexture(GL_TEXTURE0 + unit);
-			glBindTexture(GL_TEXTURE_2D, depthTex);
-			glUniform1i(u_depthMap, unit);          // int = texture unit index, not GL enum
-			glUniformMatrix4fv(u_lightSpace, 1, GL_FALSE, glm::value_ptr(lightSpace));
-		}
 	private:
 		int32_t noSpotLightLoc;
 		int32_t noDirLightLoc;
@@ -214,7 +198,5 @@ namespace Boom {
 		int32_t modelMatLoc;
 
 		int32_t jointsLoc;
-		uint32_t u_lightSpace = 0u;
-		uint32_t u_depthMap = 0u;
 	};
 }
