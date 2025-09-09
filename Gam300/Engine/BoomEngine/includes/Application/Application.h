@@ -124,26 +124,6 @@ namespace Boom
          */
         BOOM_INLINE void RunContext()
         {
-            //to do aqif check code and implement entt here
-          
-            //create scene cam
-   /*         auto cam{ createentt<entity>() };
-            camera.attach<transformcomponent>().transform.translate.z = 2.f;
-            camera.attach<cameracomponent>();*/
-
-            //{ //chose one example entity to render by simply commenting out the other one.
-            //    //create cube entity (.fbx file reading)
-            //    auto model = std::make_shared<model>("sphere.fbx");
-            //    auto cube = createentt<entity>();
-            //    cube.attach<transformcomponent>().transform.rotation.y = 30.f;
-            //    cube.attach<modelcomponent>().model = model;
-
-            //    //create quad
-            //    auto quad{ createentt<entity>() };
-            //    quad.attach<meshcomponent>().mesh = createquad3d();
-            //    quad.attach<transformcomponent>();
-            //}
-            
             //use of ecs
             CreateEntities();
 
@@ -152,7 +132,6 @@ namespace Boom
             PointLight pl2{};
             DirectionalLight dl{};
             SpotLight sl{};
-            glm::vec3 testDir{ -0.f, -.3f, 0.f };
             {
                 pl1.radiance.b = 0.f;
                 pl1.intensity = 2.f;
@@ -162,7 +141,6 @@ namespace Boom
                 sl.radiance = { 1.f, 1.f, 1.f };
 
                 dl.intensity = 10.f;
-                testDir = glm::normalize(testDir);
             }
 
             //init skybox
@@ -236,6 +214,8 @@ namespace Boom
                         m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
                         m_Context->renderer->SetPointLightCount(0);
 
+                        //glm::vec3 testDir{ -glm::cos(glm::radians(testRot)), .3f, glm::sin(glm::radians(testRot)) };
+						glm::vec3 testDir{ .7f, -.3f, -.3f };
                         m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
                         m_Context->renderer->SetDirectionalLightCount(1);
 
@@ -320,12 +300,11 @@ namespace Boom
                 EMPTY_ASSET,
             };
             auto mat1Asset{ m_Context->assets->AddMaterial(RandomU64(), "Marble", marbleMat) };
-            auto mat2Asset{ m_Context->assets->AddMaterial(RandomU64(), "TempSphere", {}) };
 
             //camera
             Entity camera{ &m_Context->scene };
             camera.Attach<InfoComponent>();
-            camera.Attach<TransformComponent>().transform.translate.z = 20.f;
+            camera.Attach<TransformComponent>();
             camera.Attach<CameraComponent>();
 
             //skybox
@@ -350,7 +329,6 @@ namespace Boom
 			sphereEn.Attach<InfoComponent>();
 			auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
 			sphereModel.modelID = sphereAsset->uid;
-			sphereModel.materialID = mat2Asset->uid;
 			sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
         }
 private:

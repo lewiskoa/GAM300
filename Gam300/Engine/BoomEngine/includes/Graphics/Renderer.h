@@ -104,11 +104,11 @@ namespace Boom {
 		BOOM_INLINE void EndFrame() {
 			pbrShader->UnUse();
 			frame->End();
-			bloom->Compute(frame->GetBrightnessMap(),10);
+			//bloom->Compute(frame->GetBrightnessMap(), 10);
 		}
 		BOOM_INLINE void ShowFrame() {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Show(frame->GetTexture(), bloom->GetMap(), true);
+			finalShader->Show(frame->GetTexture(), bloom->GetMap(), false);
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
