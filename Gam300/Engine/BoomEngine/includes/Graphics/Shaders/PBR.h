@@ -31,9 +31,9 @@ namespace Boom {
 			, occlusionLoc{ GetUniformVar("material.occlusion") }
 			, emissiveLoc{ GetUniformVar("material.emissive") }
 
-			, viewPosLoc{ GetUniformVar("viewPos") }
-			, frustumMatLoc{ GetUniformVar("frustumMat") }
 			, modelMatLoc{ GetUniformVar("modelMat") }
+			, projMatLoc{ GetUniformVar("projMat") }
+			, viewMatLoc{ GetUniformVar("viewMat") }
 			, jointsLoc{ GetUniformVar("hasJoints") }
 		{
 		}
@@ -95,8 +95,8 @@ namespace Boom {
 		}
 	public:
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
-			SetUniform(frustumMatLoc, cam.Frustum(transform, ratio));
-			SetUniform(viewPosLoc, transform.translate);
+			SetUniform(projMatLoc, cam.Projection(ratio));
+			SetUniform(viewMatLoc, cam.View(transform));
 		}
 		BOOM_INLINE void Draw(Mesh3D const& mesh, Transform3D const& transform) {
 			SetUniform(modelMatLoc, transform.Matrix());
@@ -172,7 +172,6 @@ namespace Boom {
 		int32_t noDirLightLoc;
 		int32_t noPointLightLoc;
 		
-
 		int32_t roughnessMapLoc;
 		int32_t occlusionMapLoc;
 		int32_t emissiveMapLoc;
@@ -193,8 +192,8 @@ namespace Boom {
 		int32_t occlusionLoc;
 		int32_t emissiveLoc;
 
-		int32_t viewPosLoc;
-		int32_t frustumMatLoc;
+		int32_t projMatLoc;
+		int32_t viewMatLoc;
 		int32_t modelMatLoc;
 
 		int32_t jointsLoc;

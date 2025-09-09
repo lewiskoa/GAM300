@@ -17,9 +17,11 @@ out Vertex {
     mat3 TBN; //tangent, bitangent, normal
     vec2 uv;
 } vertex;
+layout (location = 1) out vec3 viewPos;
 
 uniform mat4 modelMat;
-uniform mat4 frustumMat; //projection * view
+uniform mat4 projMat;
+uniform mat4 viewMat;
 
 uniform mat4 jointsMat[MAX_JOINTS];
 uniform bool hasJoints = false;
@@ -40,8 +42,9 @@ void main() {
     transform = modelMat * transform;
     vertex.normal = mat3(transform) * normal;
     vertex.position = (transform * vec4(position, 1.0)).xyz;
-    gl_Position = frustumMat * transform * vec4(position, 1.0);
+    gl_Position = projMat * viewMat * transform * vec4(position, 1.0);
     vertex.TBN = mat3(transform) * mat3(tangent, biTangent, normal);
+    viewPos = vec3(viewMat[3]);
 
     //vertex.normal = (modelMat * vec4(normal, 1.0)).xyz;
     //vec4 worldPos = modelMat * vec4(position, 1.0);
@@ -83,13 +86,12 @@ struct Material {
     bool isNormalMap;
 };
 uniform Material material;
-uniform vec3 viewPos;
 
 const float PI = 3.14159265358979323846;
 const int MAX_LIGHTS = 10; //this number has to be redefined here due to glsl constrains
 layout (location=0) out vec4 out_fragment;
 layout(location=1) out vec4 out_brightness; //for bloom
-const vec3 BLOOM_THRESHOLD =vec3(0.2126,0.7152, 0.0722) ;
+const vec3 BLOOM_THRESHOLD = vec3(0.2126, 0.7152, 0.0722) ;
 
 struct PointLight {
     vec3 position;
@@ -117,6 +119,8 @@ struct SpotLight {
 };
 uniform SpotLight spotLights[MAX_LIGHTS];
 uniform int noSpotLight;
+
+layout(location = 1) in vec3 viewPos;
 
 //this effect influences the appearance of surfaces
 // for example, higher reflectivity at grazing angles than dielectrics
@@ -151,7 +155,7 @@ float ComputeMapOrMatF(bool isMap, sampler2D map, float mat) {
 }
 
 void main() {
-    vec3 V = normalize(viewPos - vertex.position);
+    vec3 V = normalize(vertex.position - viewPos);
 
     //material or texture maps
     vec3 N = normalize(vertex.normal);
@@ -175,12 +179,12 @@ void main() {
     
     //occ and em
     color = color * occlusion + emissive;
-    if(dot(color,BLOOM_THRESHOLD)>1.0){
+    if (dot(color,BLOOM_THRESHOLD)>1.0) {
         out_brightness=vec4(color,1.0);
-        }
-    else{
+    }
+    else {
         out_brightness=vec4(0.0,0.0,0.0,1.0);
-        }
+    }
     out_fragment = vec4(color, 1.0);
     
     //fragColor = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
@@ -251,12 +255,15 @@ vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, flo
         vec3 H = normalize(L + V);
 
         //BRDF
-        float NDF = DistributionGGX(N, H, roughness);
+        //float NDF = DistributionGGX(N, H, roughness);
         vec3 FS = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), f0);
         float GS = GeometrySmithGGX(nDotV, nDotL, roughness);
 
         vec3 diffuse = (vec3(1.0) - FS) * (1.0 - metallic) * albedo / PI;
-        vec3 specular = (NDF * GS * FS) / max(4.0 * nDotV * nDotL, 0.0001);
+        //vec3 specular = (NDF * GS * FS) / max(4.0 * nDotV * nDotL, 0.0001);
+        //vec3 specular = (NDF * FS) / max(4.0 * nDotV * nDotL, 0.0001);
+        vec3 specular = (GS * FS) / max(4.0 * nDotV * nDotL, 0.0001);
+        //vec3 specular = FS / max(4.0 * nDotV * nDotL, 0.0001);
 
         result += (diffuse + specular) * dirLights[i].radiance * dirLights[i].intensity * nDotL;
     }

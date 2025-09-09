@@ -215,7 +215,7 @@ namespace Boom
                         m_Context->renderer->SetPointLightCount(0);
 
                         //glm::vec3 testDir{ -glm::cos(glm::radians(testRot)), .3f, glm::sin(glm::radians(testRot)) };
-						glm::vec3 testDir{ .7f, -.3f, -.3f };
+						glm::vec3 testDir{ -.7f, -.3f, .3f };
                         m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
                         m_Context->renderer->SetDirectionalLightCount(1);
 
@@ -226,7 +226,7 @@ namespace Boom
                         EnttView<Entity, CameraComponent>([this](auto entity, CameraComponent& comp) {
                                 Transform3D& transform{ entity.template Get<TransformComponent>().transform };
                                 transform.translate = m_Context->window->camPos;
-                                transform.rotate = { 0.f, testRot, 0.f };
+								transform.rotate = { 0.f, testRot, 0.f };
                                 m_Context->renderer->SetCamera(comp.camera, transform);
                             }
                         );
