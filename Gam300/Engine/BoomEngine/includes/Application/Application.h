@@ -152,7 +152,7 @@ namespace Boom
             PointLight pl2{};
             DirectionalLight dl{};
             SpotLight sl{};
-            glm::vec3 testDir{ -.7f, -.3f, .3f };
+            glm::vec3 testDir{ -0.f, -.3f, 0.f };
             {
                 pl1.radiance.b = 0.f;
                 pl1.intensity = 2.f;
@@ -228,13 +228,6 @@ namespace Boom
                 {
                     //testing rendering
                     {
-                        // Draw all entities with both ModelComponent and TransformComponent
-                        /*
-                        EnttView<Entity, ModelComponent>([this](auto entity, auto& mc) {
-                            auto& xf = entity.Get<TransformComponent>().transform;
-                            m_Context->renderer->Draw(mc.model, xf);
-                            });
-                        */
                         static float testRot{};
                         if ((testRot += 0.25f) > 360.f) { testRot -= 360.f; }
 
