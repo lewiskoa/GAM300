@@ -4,6 +4,8 @@
 #include "Interface.h"
 #include "ECS/ECS.hpp"
 #include "Physics/Context.h"
+#include "Audio/Audio.hpp"   
+
 namespace Boom
 {
     /**
@@ -187,6 +189,7 @@ namespace Boom
             {
                 ComputeFrameDeltaTime();
                 RunPhysicsSimulation();
+                SoundEngine::Instance().Update();
                 //updates new frame
                 m_Context->renderer->NewFrame();
                 {

@@ -146,4 +146,12 @@ namespace Boom {
         EntityID m_EnttID = NENTT;
     };
 
+    struct SoundComponent
+    {
+        std::string name;      // logical name ("bgm", "jump", etc.)
+        std::string filePath;  // actual sound file path
+        bool loop = false;
+        float volume = 1.0f;
+        bool playOnStart = false;
+    };
 }

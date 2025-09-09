@@ -117,6 +117,9 @@
     <ClInclude Include="includes\Graphics\Shaders\Bloom.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Audio\Audio.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">
@@ -129,6 +132,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Textures\Texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="includes\Audio\Audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

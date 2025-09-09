@@ -12,7 +12,7 @@
 #include "Graphics/Buffers/Frame.h"
 #include "ECS/ECS.hpp"
 #include <iostream>
-
+#include "Audio/Audio.hpp"
 #include <imgui.h>
 using namespace std;
 using namespace Boom;
@@ -75,13 +75,26 @@ void MyEngineClass::whatup() {
         std::cout << "Dispatcher smoketest finished inside MyEngineClass::whatup().\n";
 
         {
-            std::cout << std::endl;
+            auto& se = SoundEngine::Instance();
+            if (se.Init()) {
+                se.PlaySound("fish", "Editor/Resources/Audio/FISH.wav", true);
+
+                // Simple loop to update FMOD for 2 seconds
+                auto start = std::chrono::high_resolution_clock::now();
+                while (std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - start).count() < 2.0f) {
+                    se.Update();
+                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                }
+            }
+
             
             //TestShaders(dispatcher);
             //actual application code to run
             auto app{ std::make_unique<Application>() };
             app->PostEvent<WindowTitleRenameEvent>("Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
             app->RunContext();
+
+            SoundEngine::Instance().Shutdown();
         }
 }
 
