@@ -29,6 +29,35 @@ namespace YAML
 		}
 	};
 
+	template <typename Enum>
+	BOOM_INLINE Enum deserializeEnum(const YAML::Node& node, Enum fallback) {
+		if (!node) return fallback;
+
+		// Try string form
+		if (node.IsScalar()) {
+			try {
+				auto str = node.as<std::string>();
+				if (auto e = magic_enum::enum_cast<Enum>(str))
+					return *e;
+			}
+			catch (...) {
+				// not a string, ignore
+			}
+
+			// Try integer form
+			try {
+				int val = node.as<int>();
+				if (auto e = magic_enum::enum_cast<Enum>(val))
+					return *e;
+			}
+			catch (...) {
+				// not an int, ignore
+			}
+		}
+		return fallback;
+	}
+
+
 	//stream operator
 	BOOM_INLINE Emitter& operator<<(Emitter& out, const glm::vec3& v)
 	{

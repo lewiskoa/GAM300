@@ -17,7 +17,7 @@ namespace Boom {
         float mass = 1.0f;
         glm::vec3 initialVelocity = glm::vec3(0.0f); // Default to zero
         // rigidbody type
-        enum {
+        enum Type{
             DYNAMIC = 0,
             STATIC,
         } type;
@@ -45,7 +45,7 @@ namespace Boom {
         PxShape* Shape = nullptr;
 
         // collider shape type
-        enum {
+        enum Type{
             BOX = 0,
             SPHERE,
             MESH

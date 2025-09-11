@@ -62,7 +62,7 @@ namespace Boom
 									emitter << YAML::Key << "RigidBodyComponent" << YAML::Value << YAML::BeginMap;
 									{
 										emitter << YAML::Key << "Density" << YAML::Value << rb.density;
-										emitter << YAML::Key << "Type" << YAML::Value << rb.type;
+										emitter << YAML::Key << "Type" << YAML::Value << std::string(magic_enum::enum_name(rb.type));
 									}
 									emitter << YAML::EndMap;
 								}
@@ -76,7 +76,7 @@ namespace Boom
 										emitter << YAML::Key << "DynamicFriction" << YAML::Value << col.dynamicFriction;
 										emitter << YAML::Key << "StaticFriction" << YAML::Value << col.staticFriction;
 										emitter << YAML::Key << "Restitution" << YAML::Value << col.restitution;
-										emitter << YAML::Key << "Type" << YAML::Value << col.type;
+										emitter << YAML::Key << "Type" << YAML::Value << std::string(magic_enum::enum_name(col.type));
 									}
 									emitter << YAML::EndMap;
 								}
@@ -155,7 +155,84 @@ namespace Boom
 
 		BOOM_INLINE void Serialize(AssetRegistry& registry, const std::string& path)
 		{
+			YAML::Emitter emitter;
 
+			emitter << YAML::BeginMap;
+			{
+				emitter << YAML::Key << "ASSETS" << YAML::Value << YAML::BeginSeq;
+				{
+					registry.View([&](Asset* asset)
+					{
+						//asset type to string
+						std::string typeName(magic_enum::enum_name(asset->type));
+						emitter << YAML::BeginMap;
+						{
+							emitter << YAML::Key << "Type" << YAML::Value << typeName;
+							emitter << YAML::Key << "UID" << YAML::Value << asset->uid;
+							emitter << YAML::Key << "Source" << YAML::Value << asset->source;
+
+							if(asset->type == AssetType::MATERIAL)
+							{
+								auto mtl = static_cast<MaterialAsset*>(asset);
+								emitter << "Properties" << YAML::BeginMap;
+								{
+									//texture assets
+									emitter << YAML::Key << "AlbedoMap" << YAML::Value << mtl->albedoMapID;
+									emitter << YAML::Key << "NormalMap" << YAML::Value << mtl->normalMapID;
+									emitter << YAML::Key << "RoughnessMap" << YAML::Value << mtl->roughnessMapID;
+									emitter << YAML::Key << "MetallicMap" << YAML::Value << mtl->metallicMapID;
+									emitter << YAML::Key << "OcclusionMap" << YAML::Value << mtl->occlusionMapID;
+									emitter << YAML::Key << "EmissiveMap" << YAML::Value << mtl->emissiveMapID;
+
+									//properties
+									emitter << YAML::Key << "Albedo" << YAML::Value << mtl->data.albedo;
+									emitter << YAML::Key << "Metallic" << YAML::Value << mtl->data.metallic;
+									emitter << YAML::Key << "Roughness" << YAML::Value << mtl->data.roughness;
+									emitter << YAML::Key << "Occlusion" << YAML::Value << mtl->data.occlusion;
+									emitter << YAML::Key << "Emissive" << YAML::Value << mtl->data.emissive;
+								}
+								emitter << YAML::EndMap;
+							}
+							else if (asset->type == AssetType::TEXTURE)
+							{
+								auto tex = static_cast<TextureAsset*>(asset);
+								emitter << "Properties" << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "IsHDR" << YAML::Value << tex->isHDR;
+									emitter << YAML::Key << "IsFlipY" << YAML::Value << tex->isFlipY;
+								}
+								emitter << YAML::EndMap;
+							}
+							else if (asset->type == AssetType::SKYBOX)
+							{
+								auto skybox = static_cast<SkyboxAsset*>(asset);
+								emitter << "Properties" << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "Size" << YAML::Value << skybox->size;
+									emitter << YAML::Key << "IsHDR" << YAML::Value << skybox->isHDR;
+									emitter << YAML::Key << "IsFlipY" << YAML::Value << skybox->isFlipY;
+								}
+								emitter << YAML::EndMap;
+							}
+							else if (asset->type == AssetType::MODEL)
+							{
+								auto model = static_cast<ModelAsset*>(asset);
+								emitter << "Properties" << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "HasJoints" << YAML::Value << model->hasJoints;
+								}
+								emitter << YAML::EndMap;
+							}
+							
+						}
+
+					});
+				}
+				emitter << YAML::EndSeq;
+			}
+			emitter << YAML::EndMap;
+			std::ofstream filepath(path);
+			filepath << emitter.c_str();
 		}
 
 
@@ -204,7 +281,52 @@ namespace Boom
 					{
 						auto& rb = scene.emplace<RigidBodyComponent>(entity).RigidBody;
 						rb.density = data["Density"].as<float>();
-						rb.type = data["Type"].as<>();
+						rb.type = YAML::deserializeEnum<RigidBody3D::Type>(data["Type"], RigidBody3D::DYNAMIC);
+					}
+
+					//deserialize collider
+					if(auto& data = node["ColliderComponent"])
+					{
+						auto& col = scene.emplace<ColliderComponent>(entity).Collider;
+						col.dynamicFriction = data["DynamicFriction"].as<float>();
+						col.staticFriction = data["StaticFriction"].as<float>();
+						col.restitution = data["Restitution"].as<float>();
+						col.type = YAML::deserializeEnum<Collider3D::Type>(data["Type"], Collider3D::BOX);
+					}
+
+					//deserialize model
+					if (auto& data = node["ModelComponent"])
+					{
+						auto& comp = scene.emplace<ModelComponent>(entity);
+						comp.materialID = data["MaterialID"].as<AssetID>();
+						comp.modelID = data["ModelID"].as<AssetID>();
+					}
+
+					//deserialize directlight
+					if(auto& data = node["DirectLightComponent"])
+					{
+						auto& light = scene.emplace<DirectLightComponent>(entity).light;
+						light.intensity = data["Intensity"].as<float>();
+						light.radiance = data["Radiance"].as<glm::vec3>();
+						//light.shadowBias = data["Bias"].as<float>();
+					}
+
+					//deserialize pointlight
+					if(auto& data = node["PointLightComponent"])
+					{
+						auto& light = scene.emplace<PointLightComponent>(entity).light;
+						light.intensity = data["Intensity"].as<float>();
+						light.radiance = data["Radiance"].as<glm::vec3>();
+					}
+
+					//deserialize spotlight
+					if(auto& data = node["SpotLightComponent"])
+					{
+						auto& light = scene.emplace<SpotLightComponent>(entity).light;
+						light.intensity = data["Intensity"].as<float>();
+						light.radiance = data["Radiance"].as<glm::vec3>();
+						light.fallOff = data["Falloff"].as<float>();
+						light.cutOff = data["Cutoff"].as<float>();
 					}
 				}
 
