@@ -77,7 +77,7 @@ void MyEngineClass::whatup() {
         {
             auto& se = SoundEngine::Instance();
             if (se.Init()) {
-                se.PlaySound("fish", "Editor/Resources/Audio/FISH.wav", true);
+                se.PlaySound("startup", "Resources/Audio/vboom.wav", false);
 
                 // Simple loop to update FMOD for 2 seconds
                 auto start = std::chrono::high_resolution_clock::now();

@@ -1,6 +1,7 @@
 #include "Core.h"
 #include "Audio.hpp"
 #include <iostream>
+#include <filesystem>
 
 SoundEngine& SoundEngine::Instance() {
     static SoundEngine instance;
@@ -37,20 +38,47 @@ void SoundEngine::Shutdown() {
     }
 }
 
-void SoundEngine::PlaySound(const std::string& name, const std::string& filePath, bool loop) {
-    if (!mSystem) return;
+void SoundEngine::PlaySound(const std::string& name, const std::string& filePath, bool loop) 
+{
+    if (!mSystem) {
+        std::cerr << "FMOD system not initialized!\n";
+        return;
+    }
+
+    std::cout << "[SoundEngine] Current working directory: "
+        << std::filesystem::current_path().string() << std::endl;
+
+    if (!std::filesystem::exists(filePath)) {
+        std::cerr << "[SoundEngine] File does NOT exist: " << filePath << std::endl;
+    }
+    else {
+        std::cout << "[SoundEngine] File found: " << filePath << std::endl;
+    }
 
     if (mSounds.find(name) == mSounds.end()) {
-        FMOD_MODE mode = loop ? FMOD_LOOP_NORMAL : FMOD_DEFAULT;
+        FMOD_MODE mode = loop ? FMOD_LOOP_NORMAL : FMOD_DEFAULT | FMOD_2D;
         FMOD::Sound* sound = nullptr;
-        mSystem->createSound(filePath.c_str(), mode, nullptr, &sound);
+
+        FMOD_RESULT result = mSystem->createSound(filePath.c_str(), mode, nullptr, &sound);
+        if (result != FMOD_OK) {
+            std::cerr << "FMOD failed to load " << filePath << " error: " << result << std::endl;
+            return;
+        }
+
         mSounds[name] = sound;
     }
 
     FMOD::Channel* channel = nullptr;
-    mSystem->playSound(mSounds[name], nullptr, false, &channel);
+    FMOD_RESULT result = mSystem->playSound(mSounds[name], nullptr, false, &channel);
+    if (result != FMOD_OK) {
+        std::cerr << "FMOD failed to play " << name << " error: " << result << std::endl;
+        return;
+    }
+
+    channel->setVolume(1.0f);
     mChannels[name] = channel;
 }
+
 
 void SoundEngine::StopSound(const std::string& name) {
     if (mChannels.find(name) != mChannels.end()) {
