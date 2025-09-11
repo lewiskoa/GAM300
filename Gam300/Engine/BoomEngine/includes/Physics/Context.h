@@ -73,22 +73,22 @@ namespace Boom {
                 auto& collider = entity.Get<ColliderComponent>().Collider;
 
                 // create collider material
-                collider.Material = m_Physics -> createMaterial(collider.StaticFriction,
-                collider.DynamicFriction,
-                collider.Restitution);
+                collider.material = m_Physics -> createMaterial(collider.staticFriction,
+                collider.dynamicFriction,
+                collider.restitution);
 
-                if (collider.Type == Collider3D::BOX)
+                if (collider.type == Collider3D::BOX)
                 {
                     PxBoxGeometry
                         box(ToPxVec3(transform.scale / 2.0f));
-                    collider.Shape = m_Physics -> createShape(box, *collider.Material);
+                    collider.Shape = m_Physics -> createShape(box, *collider.material);
                 }
-                else if (collider.Type == Collider3D::SPHERE) {
+                else if (collider.type == Collider3D::SPHERE) {
                     PxSphereGeometry
                         sphere(transform.scale.x / 2.0f);
-                    collider.Shape = m_Physics -> createShape(sphere, *collider.Material);
+                    collider.Shape = m_Physics -> createShape(sphere, *collider.material);
                 }
-                else if (collider.Type == Collider3D::MESH) {
+                else if (collider.type == Collider3D::MESH) {
                     // coming next!
                 }
                 else
@@ -99,49 +99,49 @@ namespace Boom {
 
                 // create actor instanace
 
-                if (body.Type == RigidBody3D::DYNAMIC)
+                if (body.type == RigidBody3D::DYNAMIC)
                 {
-                    body.Actor = PxCreateDynamic(*m_Physics, pose, *collider.Shape, body.Density);
-                    body.Actor->setActorFlag(PxActorFlag::eSEND_SLEEP_NOTIFIES, true);
+                    body.actor = PxCreateDynamic(*m_Physics, pose, *collider.Shape, body.density);
+                    body.actor->setActorFlag(PxActorFlag::eSEND_SLEEP_NOTIFIES, true);
                     
-                    PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(body.Actor);
+                    PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(body.actor);
                     if (dyn) {
-                        dyn->setMass(body.Mass);
-                        dyn->setLinearVelocity(PxVec3(body.InitialVelocity.x, body.InitialVelocity.y, body.InitialVelocity.z));
+                        dyn->setMass(body.mass);
+                        dyn->setLinearVelocity(PxVec3(body.initialVelocity.x, body.initialVelocity.y, body.initialVelocity.z));
                     }
                 }
-                else if (body.Type == RigidBody3D::STATIC)
+                else if (body.type == RigidBody3D::STATIC)
                 {
-                    body.Actor = PxCreateStatic(*m_Physics,
+                    body.actor = PxCreateStatic(*m_Physics,
                         pose, *collider.Shape);
                 }
             }
             else
             {
-                if (body.Type == RigidBody3D::DYNAMIC)
+                if (body.type == RigidBody3D::DYNAMIC)
                 {
-                    body.Actor = m_Physics -> createRigidDynamic(pose);
+                    body.actor = m_Physics -> createRigidDynamic(pose);
                 }
-                else if (body.Type == RigidBody3D::STATIC)
+                else if (body.type == RigidBody3D::STATIC)
                 {
-                    body.Actor = m_Physics -> createRigidStatic(pose);
+                    body.actor = m_Physics -> createRigidStatic(pose);
 
 
                 }
             }
 
             // check actor
-            if (!body.Actor)
+            if (!body.actor)
             {
                 BOOM_ERROR("Error creating dynamic actor");
                 return;
             }
 
             // set user data to entt id
-            body.Actor->userData = new EntityID(entity.ID());
+            body.actor->userData = new EntityID(entity.ID());
 
             // add actor to the m_Scene
-            m_Scene->addActor(*body.Actor);
+            m_Scene->addActor(*body.actor);
         }
     
         

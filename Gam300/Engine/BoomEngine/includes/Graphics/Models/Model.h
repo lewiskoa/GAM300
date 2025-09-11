@@ -235,7 +235,7 @@ namespace Boom {
 				{
 					Joint child;
 					ParseHierarchy(ai_node->mChildren[i], child, jointMap);
-					joint.Children.push_back(std::move(child));
+					joint.children.push_back(std::move(child));
 				}
 			}
 			else
@@ -251,7 +251,7 @@ namespace Boom {
 		 * @brief Parse animation clips and fill per-joint key tracks, then finalize hierarchy and animator buffers.
 		 * @param ai_scene Assimp scene containing animations.
 		 * @param jointMap Joint lookup built during mesh parsing.
-		 * @note Animation.Duration uses Assimp's duration; Animation.Speed uses ticks-per-second (tps).
+		 * @note Animation.duration uses Assimp's duration; Animation.speed uses ticks-per-second (tps).
 		 *       Callers may convert timestamps to seconds via (time / tps) during sampling.
 		 */
 		BOOM_INLINE void ParseAnimations(const aiScene* ai_scene, JointMap& jointMap)
@@ -262,9 +262,9 @@ namespace Boom {
 			{
 				auto ai_anim = ai_scene->mAnimations[i];
 				Animation animation;
-				animation.Name = ai_anim->mName.C_Str();
-				animation.Duration = (float)ai_anim->mDuration;
-				animation.Speed = (float)ai_anim->mTicksPerSecond;
+				animation.name = ai_anim->mName.C_Str();
+				animation.duration = (float)ai_anim->mDuration;
+				animation.speed = (float)ai_anim->mTicksPerSecond;
 
 				for (uint32_t j = 0; j < ai_anim->mNumChannels; j++)
 				{
@@ -273,7 +273,7 @@ namespace Boom {
 					auto jointIt = jointMap.find(ai_channel->mNodeName.C_Str());
 					if (jointIt == jointMap.end()) continue;
 
-					auto& keys = jointIt->second.Keys;
+					auto& keys = jointIt->second.keys;
 					keys.reserve(ai_channel->mNumPositionKeys); // Or max of all key counts
 
 					// Handle mismatched key counts properly
@@ -288,16 +288,16 @@ namespace Boom {
 						// Sample or interpolate from available keys
 						if (k < ai_channel->mNumPositionKeys) 
 						{
-							key.Position = AssimpToVec3(ai_channel->mPositionKeys[k].mValue);
-							key.TimeStamp = (float)ai_channel->mPositionKeys[k].mTime;
+							key.position = AssimpToVec3(ai_channel->mPositionKeys[k].mValue);
+							key.timeStamp = (float)ai_channel->mPositionKeys[k].mTime;
 						}
 						if (k < ai_channel->mNumRotationKeys) 
 						{
-							key.Rotation = AssimpToQuat(ai_channel->mRotationKeys[k].mValue);
+							key.rotation = AssimpToQuat(ai_channel->mRotationKeys[k].mValue);
 						}
 						if (k < ai_channel->mNumScalingKeys) 
 						{
-							key.Scale = AssimpToVec3(ai_channel->mScalingKeys[k].mValue);
+							key.scale = AssimpToVec3(ai_channel->mScalingKeys[k].mValue);
 						}
 
 						keys.push_back(key);
@@ -356,15 +356,15 @@ namespace Boom {
 				// add joint if not found
 				if (jointMap.count(jointName) == 0)
 				{
-					jointMap[jointName].Offset = AssimpToMat4(ai_bone->mOffsetMatrix);
-					jointMap[jointName].Index = m_JointCount++;
-					jointMap[jointName].Name = jointName;
+					jointMap[jointName].offset = AssimpToMat4(ai_bone->mOffsetMatrix);
+					jointMap[jointName].index = m_JointCount++;
+					jointMap[jointName].name = jointName;
 				}
 
 				// set vertex joint weights
 				for (uint32_t j = 0; j < ai_bone->mNumWeights; j++)
 				{
-					SetVertexJoint(data.vtx[ai_bone->mWeights[j].mVertexId], jointMap[jointName].Index, ai_bone->mWeights[j].mWeight);
+					SetVertexJoint(data.vtx[ai_bone->mWeights[j].mVertexId], jointMap[jointName].index, ai_bone->mWeights[j].mWeight);
 				}
 			}
 

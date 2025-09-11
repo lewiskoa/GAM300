@@ -9,18 +9,18 @@ namespace Boom {
         BOOM_INLINE RigidBody3D() = default;
 
         // body actor pointer
-        PxRigidActor* Actor = nullptr;
+        PxRigidActor* actor = nullptr;
 
         // body density
-        float Density = 1.0f;
+        float density = 1.0f;
 
-        float Mass = 1.0f;
-        glm::vec3 InitialVelocity = glm::vec3(0.0f); // Default to zero
+        float mass = 1.0f;
+        glm::vec3 initialVelocity = glm::vec3(0.0f); // Default to zero
         // rigidbody type
         enum {
             DYNAMIC = 0,
             STATIC,
-        } Type;
+        } type;
     };
 
     struct Collider3D
@@ -31,15 +31,15 @@ namespace Boom {
 
 
         // collider matrial pointer
-        PxMaterial* Material = nullptr;
+        PxMaterial* material = nullptr;
 
         // collider material data
-        float DynamicFriction = 0.5f;
-        float StaticFriction = 0.0f;
-        float Restitution = 0.1f;
+        float dynamicFriction = 0.5f;
+        float staticFriction = 0.0f;
+        float restitution = 0.1f;
 
         // mesh for custom shape
-        PxConvexMeshGeometry Mesh;
+        PxConvexMeshGeometry mesh;
 
         // collider geometry shape
         PxShape* Shape = nullptr;
@@ -49,6 +49,6 @@ namespace Boom {
             BOX = 0,
             SPHERE,
             MESH
-        } Type;
+        } type;
     };
 }

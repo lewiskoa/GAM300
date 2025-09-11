@@ -168,10 +168,12 @@
     <ClInclude Include="includes\Application\Interface.h" />
     <ClInclude Include="includes\AppWindow.h" />
     <ClInclude Include="includes\Auxiliaries\Assets.h" />
+    <ClInclude Include="includes\Auxiliaries\Serializer.h" />
     <ClInclude Include="includes\BoomEngine.h" />
-    <ClInclude Include="includes\common\Events.h" />
-    <ClInclude Include="includes\common\framework.h" />
-    <ClInclude Include="includes\common\Core.h" />
+    <ClInclude Include="includes\Common\Events.h" />
+    <ClInclude Include="includes\Common\framework.h" />
+    <ClInclude Include="includes\Common\Core.h" />
+    <ClInclude Include="includes\Common\YAML.h" />
     <ClInclude Include="includes\ECS\ECS.hpp" />
     <ClInclude Include="includes\GlobalConstants.h" />
     <ClInclude Include="includes\Graphics\Buffers\Frame.h" />

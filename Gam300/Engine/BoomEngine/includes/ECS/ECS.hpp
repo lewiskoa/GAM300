@@ -83,7 +83,13 @@ namespace Boom {
     {
         BOOM_INLINE DirectLightComponent(const DirectLightComponent&) = default;
         BOOM_INLINE DirectLightComponent() = default;
-        DirectionalLight Light;
+        DirectionalLight light;
+    };
+    struct PointLightComponent
+    {
+        BOOM_INLINE PointLightComponent(const PointLightComponent&) = default;
+        BOOM_INLINE PointLightComponent() = default;
+        PointLight light;
     };
     struct Entity
     {

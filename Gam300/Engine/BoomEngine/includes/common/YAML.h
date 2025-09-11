@@ -4,6 +4,8 @@
 
 namespace YAML
 {
+	//Change this to whatever data type we need to serialize/deserialize (SINCE GLM NOT ALLOWED OUTSIDE JRAFICS)
+	//DONT YOU DARE SAY WE CANT USE GLM HERE AS WE ALSO NEED TO SERIALIZE GRAPHICS DATA RAAAAAAAAAAAAAAAH
 	template<>
 	struct convert<glm::vec3>
 	{

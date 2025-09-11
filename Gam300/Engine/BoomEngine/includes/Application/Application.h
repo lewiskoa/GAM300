@@ -59,16 +59,16 @@ namespace Boom
                 t.scale = glm::vec3(1.0f); 
                 // Attach rigidbody (dynamic)
                 auto& rb = sphere.Attach<RigidBodyComponent>().RigidBody;
-                rb.Type = RigidBody3D::DYNAMIC;
-                rb.Mass = 2.0f;
-                rb.Density = 1.0f;
+                rb.type = RigidBody3D::DYNAMIC;
+                rb.mass = 2.0f;
+                rb.density = 1.0f;
 
                 // Small velocity to check for movement
-                rb.InitialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
+                rb.initialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
 
                 // Attach collider (sphere)
                 auto& col = sphere.Attach<ColliderComponent>().Collider;
-                col.Type = Collider3D::SPHERE;
+                col.type = Collider3D::SPHERE;
 
                 // Attach model
                 auto& mc = sphere.Attach<ModelComponent>();
@@ -86,11 +86,11 @@ namespace Boom
 
                 // Attach rigidbody (static)
                 auto& rb = cube.Attach<RigidBodyComponent>().RigidBody;
-                rb.Type = RigidBody3D::STATIC;
+                rb.type = RigidBody3D::STATIC;
 
                 // Attach collider (box)
                 auto& col = cube.Attach<ColliderComponent>().Collider;
-                col.Type = Collider3D::BOX;
+                col.type = Collider3D::BOX;
 
                 // Attach model 
                 auto& mc = cube.Attach<ModelComponent>();
@@ -180,13 +180,13 @@ namespace Boom
                     transform.translate = m_SphereStartPos;
 
                     auto& rb = m_SphereEntity.Get<RigidBodyComponent>().RigidBody;
-                    if (rb.Actor)
+                    if (rb.actor)
                     {
                         // Reset PhysX actor pose and velocity
                         PxTransform pose(ToPxVec3(m_SphereStartPos));
-                        rb.Actor->setGlobalPose(pose);
+                        rb.actor->setGlobalPose(pose);
 
-                        PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(rb.Actor);
+                        PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(rb.actor);
                         if (dyn)
                         {
                             dyn->setLinearVelocity(PxVec3(1.0f, 0.0f, 0.0f)); // initial velocity
@@ -362,14 +362,14 @@ BOOM_INLINE void ComputeFrameDeltaTime()
                     if (entity.template Has<ColliderComponent>())
                     {
                         auto& collider = entity.template Get<ColliderComponent>().Collider;
-                        collider.Material->release();
+                        collider.material->release();
                         collider.Shape->release();
                     }
                     // Destroy actor user data
-                    EntityID* owner = static_cast<EntityID*>(comp.RigidBody.Actor->userData);
+                    EntityID* owner = static_cast<EntityID*>(comp.RigidBody.actor->userData);
                     BOOM_DELETE(owner);
                     // Destroy actor instance
-                    comp.RigidBody.Actor->release();
+                    comp.RigidBody.actor->release();
                 });
         }
 
@@ -379,7 +379,7 @@ BOOM_INLINE void ComputeFrameDeltaTime()
             EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
                 {
                     auto& transform = entity.template Get<TransformComponent>().transform;
-                    auto pose = comp.RigidBody.Actor->getGlobalPose();
+                    auto pose = comp.RigidBody.actor->getGlobalPose();
                     glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
                     transform.rotate = glm::degrees(glm::eulerAngles(rot));
                     transform.translate = PxToVec3(pose.p);
