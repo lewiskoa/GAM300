@@ -340,6 +340,24 @@ namespace Boom
 		BOOM_INLINE void Deserialize(AssetRegistry& registry, const std::string& path)
 		{
 			//deserialize assets
+			try
+			{
+				auto root = YAML::LoadFile(path);
+				const auto& nodes = root["ASSETS"];
+
+				for (auto& node : nodes)
+				{
+					Asset* asset = nullptr;
+					auto props = node["Properties"];
+					auto uid = node["UID"].as<AssetID>();
+					auto name = node["Name"].as<std::string>();
+					auto source = node["Source"].as<std::string>();
+				}
+			}
+			catch (YAML::ParserException& e)
+			{
+				BOOM_ERROR("Failed to deserialize assets!");
+			}
 		}
 	};
 }
