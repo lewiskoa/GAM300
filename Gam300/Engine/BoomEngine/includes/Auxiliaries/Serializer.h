@@ -62,7 +62,7 @@ namespace Boom
 									emitter << YAML::Key << "RigidBodyComponent" << YAML::Value << YAML::BeginMap;
 									{
 										emitter << YAML::Key << "Density" << YAML::Value << rb.density;
-										emitter << YAML::Key << "Dynamic" << YAML::Value << rb.type;
+										emitter << YAML::Key << "Type" << YAML::Value << rb.type;
 									}
 									emitter << YAML::EndMap;
 								}
@@ -105,6 +105,43 @@ namespace Boom
 									}
 									emitter << YAML::EndMap;
 								}
+
+								//serialize spotlight
+								if(entity.Has<SpotLightComponent>())
+								{
+									auto& light = entity.Get<SpotLightComponent>().light;
+									emitter << YAML::Key << "SpotLightComponent" << YAML::Value << YAML::BeginMap;
+									{
+										emitter << YAML::Key << "Intensity" << YAML::Value << light.intensity;
+										emitter << YAML::Key << "Radiance" << YAML::Value << light.radiance;
+										emitter << YAML::Key << "Falloff" << YAML::Value << light.fallOff;
+										emitter << YAML::Key << "Cutoff" << YAML::Value << light.cutOff;
+										
+									}
+									emitter << YAML::EndMap;
+								}
+
+								if (entity.Has<SkyboxComponent>())
+								{
+									auto& skybox = entity.Get<SkyboxComponent>().skyboxID;
+									emitter << YAML::Key << "SkyboxComponent" << YAML::Value << YAML::BeginMap;
+									{
+
+										emitter << YAML::Key << "SkyboxID" << YAML::Value << skybox;
+									}
+									emitter << YAML::EndMap;
+								}
+
+								if(entity.Has<ModelComponent>())
+								{
+									auto& modelComp = entity.Get<ModelComponent>();
+									emitter << YAML::Key << "ModelComponent" << YAML::Value << YAML::BeginMap;
+									{
+										emitter << YAML::Key << "ModelID" << YAML::Value << modelComp.modelID;
+										emitter << YAML::Key << "MaterialID" << YAML::Value << modelComp.materialID;
+									}
+									emitter << YAML::EndMap;
+								}
 							}
 							emitter << YAML::EndMap;
 						});
@@ -118,12 +155,64 @@ namespace Boom
 
 		BOOM_INLINE void Serialize(AssetRegistry& registry, const std::string& path)
 		{
-			//serialize assets
+
 		}
+
 
 		BOOM_INLINE void Deserialize(EntityRegistry& scene, const std::string& path)
 		{
 			//deserialize scene
+			try
+			{
+				auto root = YAML::LoadFile(path);
+				const auto& nodes = root["ENTITIES"];
+				scene.clear();
+
+				for (auto& node : nodes)
+				{
+					EntityID entity = scene.create();
+
+					//deserialize entt infos
+					if(auto& data = node["InfoComponent"])
+					{
+						auto& info = scene.emplace<InfoComponent>(entity);
+						info.uid = data["UID"].as<AssetID>();
+						info.name = data["Name"].as<std::string>();
+						info.parent = data["Parent"].as<AssetID>();
+					}
+
+					//deserialize Camera
+					if(auto& data = node["CameraComponent"])
+					{
+						auto& camera = scene.emplace<CameraComponent>(entity).camera;
+						camera.nearPlane = data["NearPlane"].as<float>();
+						camera.farPlane = data["FarPlane"].as<float>();
+						camera.FOV = data["FOV"].as<float>();
+					}
+
+					//deserialize Transform
+					if(auto& data = node["TransformComponent"])
+					{
+						auto& transform = scene.emplace<TransformComponent>(entity).transform;
+						transform.translate = data["Translate"].as<glm::vec3>();
+						transform.rotate = data["Rotate"].as<glm::vec3>();
+						transform.scale = data["Scale"].as<glm::vec3>();
+					}
+
+					//deserialize rigidbody
+					if(auto& data = node["RigidBodyComponent"])
+					{
+						auto& rb = scene.emplace<RigidBodyComponent>(entity).RigidBody;
+						rb.density = data["Density"].as<float>();
+						rb.type = data["Type"].as<>();
+					}
+				}
+
+			}
+			catch(YAML::ParserException& e)
+			{
+				BOOM_ERROR("Failed to deserialize scene!");
+			}
 		}
 
 		BOOM_INLINE void Deserialize(AssetRegistry& registry, const std::string& path)

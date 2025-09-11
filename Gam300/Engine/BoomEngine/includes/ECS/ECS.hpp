@@ -91,6 +91,12 @@ namespace Boom {
         BOOM_INLINE PointLightComponent() = default;
         PointLight light;
     };
+    struct SpotLightComponent
+    {
+        BOOM_INLINE SpotLightComponent(const SpotLightComponent&) = default;
+        BOOM_INLINE SpotLightComponent() = default;
+        SpotLight light;
+	};
     struct Entity
     {
         BOOM_INLINE Entity(EntityRegistry* registry, EntityID entity) :

@@ -10,6 +10,7 @@ assimp/5.4.3
 physx/4.1.1
 entt/3.12.2
 yaml-cpp/0.8.0
+magic_enum/0.9.6
 
 [generators]
 MSBuildDeps
