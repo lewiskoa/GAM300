@@ -4,6 +4,8 @@
 #include "Interface.h"
 #include "ECS/ECS.hpp"
 #include "Physics/Context.h"
+#include "Audio/Audio.hpp"   
+
 namespace Boom
 {
     /**
@@ -199,6 +201,7 @@ namespace Boom
                 }
 
                 RunPhysicsSimulation();
+                SoundEngine::Instance().Update();
                 */
                 //updates new frame
                 //RenderSceneDepth();

@@ -97,6 +97,17 @@ namespace Boom {
         BOOM_INLINE SpotLightComponent() = default;
         SpotLight light;
 	};
+
+    //Chris I have no idea how your sound component works
+    struct SoundComponent
+    {
+        std::string name;      // logical name ("bgm", "jump", etc.)
+        std::string filePath;  // actual sound file path
+        bool loop = false;
+        float volume = 1.0f;
+        bool playOnStart = false;
+    };
+
     struct Entity
     {
         BOOM_INLINE Entity(EntityRegistry* registry, EntityID entity) :
@@ -168,5 +179,6 @@ namespace Boom {
         EntityRegistry* m_Registry = nullptr;
         EntityID m_EnttID = NENTT;
     };
-   
+
+
 }
