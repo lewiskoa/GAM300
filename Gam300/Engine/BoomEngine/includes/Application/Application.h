@@ -373,7 +373,8 @@ namespace Boom
                 }
                 catch (const std::exception& e) 
                 {
-                    [[maybe_unused]] auto _ = BOOM_ERROR(std::string("[Serializer] Deserialization failed: ") + e.what());
+
+                    (void)BOOM_ERROR(std::string("[Serializer] Deserialization failed: ") + e.what());
                     //return; // Skip the rest of the test
                 }
 

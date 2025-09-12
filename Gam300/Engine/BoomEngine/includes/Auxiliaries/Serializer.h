@@ -377,8 +377,11 @@ namespace Boom
 			}
 			catch(YAML::ParserException& e)
 			{
-				//BOOM_ERROR(std::string("Failed to deserialize scene! ") + e.what());
-                [[maybe_unused]] auto _ = BOOM_ERROR(std::string("Failed to deserialize scene! ") + e.what());
+			#if BOOM_ENABLE_LOG
+				BOOM_ERROR(std::string("Failed to deserialize scene! ") + e.what());
+			#else
+				(void)e;
+			#endif
 			}
 		}
 
@@ -467,7 +470,11 @@ namespace Boom
 			}
 			catch (YAML::ParserException& e)
 			{
-				[[maybe_unused]] auto _ = BOOM_ERROR(std::string("Failed to deserialize scene! ") + e.what());
+				#if BOOM_ENABLE_LOG
+					BOOM_ERROR("Failed to deserialize scene! {}", e.what());
+				#else
+					(void)e;
+				#endif
 			}
 		}
 	};
