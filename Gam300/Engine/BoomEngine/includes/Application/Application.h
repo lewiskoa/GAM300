@@ -358,7 +358,8 @@ namespace Boom
                 *m_Context->assets = AssetRegistry();
                 BOOM_INFO("[Serializer] Cleared registries");
 
-                try {
+                try 
+                {
                     BOOM_INFO("[Serializer] Starting asset deserialization...");
                     ser.Deserialize(*m_Context->assets, assetsPath);
                     BOOM_INFO("[Serializer] Asset deserialization complete");
@@ -367,8 +368,9 @@ namespace Boom
                     ser.Deserialize(m_Context->scene, *m_Context->assets, scenePath);
                     BOOM_INFO("[Serializer] Scene deserialization complete");
                 }
-                catch (const std::exception& e) {
-                    BOOM_ERROR("[Serializer] Deserialization failed: {}", e.what());
+                catch (const std::exception& e) 
+                {
+                    [[maybe_unused]] auto _ = BOOM_ERROR(std::string("[Serializer] Deserialization failed: ") + e.what());
                     //return; // Skip the rest of the test
                 }
 

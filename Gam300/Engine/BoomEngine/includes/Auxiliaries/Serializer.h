@@ -255,7 +255,9 @@ namespace Boom
 			{
 				auto root = YAML::LoadFile(path);
 				const auto& nodes = root["ENTITIES"];
-				scene.clear();
+				
+				//scene.create();
+                [[maybe_unused]] auto _ = scene.create();
 
 				for (auto& node : nodes)
 				{
@@ -375,7 +377,8 @@ namespace Boom
 			}
 			catch(YAML::ParserException& e)
 			{
-				BOOM_ERROR("Failed to deserialize scene!", e.what());
+				//BOOM_ERROR(std::string("Failed to deserialize scene! ") + e.what());
+                [[maybe_unused]] auto _ = BOOM_ERROR(std::string("Failed to deserialize scene! ") + e.what());
 			}
 		}
 
@@ -464,7 +467,7 @@ namespace Boom
 			}
 			catch (YAML::ParserException& e)
 			{
-				BOOM_ERROR("Failed to deserialize assets!", e.what());
+				[[maybe_unused]] auto _ = BOOM_ERROR(std::string("Failed to deserialize scene! ") + e.what());
 			}
 		}
 	};
