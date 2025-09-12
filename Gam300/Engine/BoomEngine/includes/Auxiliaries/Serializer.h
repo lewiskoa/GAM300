@@ -14,137 +14,138 @@ namespace Boom
 			{
 				emitter << YAML::Key << "ENTITIES" << YAML::Value << YAML::BeginSeq;
 				{
-					scene.each([&](EntityID entt)
+					// Replace the deprecated .each() call with .view()
+					auto view = scene.view<entt::entity>();
+					for (auto entt : view)
+					{
+						Entity entity{ &scene, entt };
+						emitter << YAML::BeginMap;
 						{
-							Entity entity{ &scene, entt };
-							emitter << YAML::BeginMap;
+							if (entity.Has<InfoComponent>())
 							{
-								if (entity.Has<InfoComponent>())
+								auto& info = entity.Get<InfoComponent>();
+								emitter << YAML::Key << "InfoComponent" << YAML::Value << YAML::BeginMap;
 								{
-									auto& info = entity.Get<InfoComponent>();
-									emitter << YAML::Key << "InfoComponent" << YAML::Value << YAML::BeginMap;
-									{
-										emitter << YAML::Key << "UID" << YAML::Value << info.uid;
-										emitter << YAML::Key << "Name" << YAML::Value << info.name;
-										emitter << YAML::Key << "Parent" << YAML::Value << info.parent;
-									}
-									emitter << YAML::EndMap;
+									emitter << YAML::Key << "UID" << YAML::Value << info.uid;
+									emitter << YAML::Key << "Name" << YAML::Value << info.name;
+									emitter << YAML::Key << "Parent" << YAML::Value << info.parent;
 								}
-
-								if (entity.Has<CameraComponent>())
-								{
-									auto& camera = entity.Get<CameraComponent>().camera;
-									emitter << YAML::Key << "CameraComponent" << YAML::Value << YAML::BeginMap;
-									{
-										emitter << YAML::Key << "NearPlane" << YAML::Value << camera.nearPlane;
-										emitter << YAML::Key << "FarPlane" << YAML::Value << camera.farPlane;
-										emitter << YAML::Key << "FOV" << YAML::Value << camera.FOV;
-									}
-									emitter << YAML::EndMap;
-								}
-
-								if (entity.Has<TransformComponent>())
-								{
-									auto& transform = entity.Get<TransformComponent>().transform;
-									emitter << YAML::Key << "TransformComponent" << YAML::Value << YAML::BeginMap;
-									{
-										emitter << YAML::Key << "Translate" << YAML::Value << transform.translate;
-										emitter << YAML::Key << "Rotate" << YAML::Value << transform.rotate;
-										emitter << YAML::Key << "Scale" << YAML::Value << transform.scale;
-									}
-									emitter << YAML::EndMap;
-								}
-
-								//serialize rigidbody
-								if(entity.Has<RigidBodyComponent>())
-								{
-									auto& rb = entity.Get<RigidBodyComponent>().RigidBody;
-									emitter << YAML::Key << "RigidBodyComponent" << YAML::Value << YAML::BeginMap;
-									{
-										emitter << YAML::Key << "Density" << YAML::Value << rb.density;
-										emitter << YAML::Key << "Type" << YAML::Value << std::string(magic_enum::enum_name(rb.type));
-									}
-									emitter << YAML::EndMap;
-								}
-								
-								//serialize collider
-								if(entity.Has<ColliderComponent>())
-								{
-									auto& col = entity.Get<ColliderComponent>().Collider;
-									emitter << YAML::Key << "ColliderComponent" << YAML::Value << YAML::BeginMap;
-									{
-										emitter << YAML::Key << "DynamicFriction" << YAML::Value << col.dynamicFriction;
-										emitter << YAML::Key << "StaticFriction" << YAML::Value << col.staticFriction;
-										emitter << YAML::Key << "Restitution" << YAML::Value << col.restitution;
-										emitter << YAML::Key << "Type" << YAML::Value << std::string(magic_enum::enum_name(col.type));
-									}
-									emitter << YAML::EndMap;
-								}
-
-								//serialize Directlight
-								if (entity.Has<DirectLightComponent>())
-								{
-									auto& light = entity.Get<DirectLightComponent>().light;
-									emitter << YAML::Key << "DirectLightComponent" << YAML::Value << YAML::BeginMap;
-									{
-										emitter << YAML::Key << "Intensity" << YAML::Value << light.intensity;
-										emitter << YAML::Key << "Radiance" << YAML::Value << light.radiance;
-										//emitter << YAML::Key << "Bias" << YAML::Value << light.shadowBias;
-									}
-									emitter << YAML::EndMap;
-								}
-
-								//serialize pointlight
-								if(entity.Has<PointLightComponent>())
-								{
-									auto& light = entity.Get<PointLightComponent>().light;
-									emitter << YAML::Key << "PointLightComponent" << YAML::Value << YAML::BeginMap;
-									{
-										emitter << YAML::Key << "Intensity" << YAML::Value << light.intensity;
-										emitter << YAML::Key << "Radiance" << YAML::Value << light.radiance;
-									}
-									emitter << YAML::EndMap;
-								}
-
-								//serialize spotlight
-								if(entity.Has<SpotLightComponent>())
-								{
-									auto& light = entity.Get<SpotLightComponent>().light;
-									emitter << YAML::Key << "SpotLightComponent" << YAML::Value << YAML::BeginMap;
-									{
-										emitter << YAML::Key << "Intensity" << YAML::Value << light.intensity;
-										emitter << YAML::Key << "Radiance" << YAML::Value << light.radiance;
-										emitter << YAML::Key << "Falloff" << YAML::Value << light.fallOff;
-										emitter << YAML::Key << "Cutoff" << YAML::Value << light.cutOff;
-										
-									}
-									emitter << YAML::EndMap;
-								}
-
-								if (entity.Has<SkyboxComponent>())
-								{
-									auto& skybox = entity.Get<SkyboxComponent>().skyboxID;
-									emitter << YAML::Key << "SkyboxComponent" << YAML::Value << YAML::BeginMap;
-									{
-
-										emitter << YAML::Key << "SkyboxID" << YAML::Value << skybox;
-									}
-									emitter << YAML::EndMap;
-								}
-
-								if(entity.Has<ModelComponent>())
-								{
-									auto& modelComp = entity.Get<ModelComponent>();
-									emitter << YAML::Key << "ModelComponent" << YAML::Value << YAML::BeginMap;
-									{
-										emitter << YAML::Key << "ModelID" << YAML::Value << modelComp.modelID;
-										emitter << YAML::Key << "MaterialID" << YAML::Value << modelComp.materialID;
-									}
-									emitter << YAML::EndMap;
-								}
+								emitter << YAML::EndMap;
 							}
-							emitter << YAML::EndMap;
-						});
+
+							if (entity.Has<CameraComponent>())
+							{
+								auto& camera = entity.Get<CameraComponent>().camera;
+								emitter << YAML::Key << "CameraComponent" << YAML::Value << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "NearPlane" << YAML::Value << camera.nearPlane;
+									emitter << YAML::Key << "FarPlane" << YAML::Value << camera.farPlane;
+									emitter << YAML::Key << "FOV" << YAML::Value << camera.FOV;
+								}
+								emitter << YAML::EndMap;
+							}
+
+							if (entity.Has<TransformComponent>())
+							{
+								auto& transform = entity.Get<TransformComponent>().transform;
+								emitter << YAML::Key << "TransformComponent" << YAML::Value << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "Translate" << YAML::Value << transform.translate;
+									emitter << YAML::Key << "Rotate" << YAML::Value << transform.rotate;
+									emitter << YAML::Key << "Scale" << YAML::Value << transform.scale;
+								}
+								emitter << YAML::EndMap;
+							}
+
+							//serialize rigidbody
+							if (entity.Has<RigidBodyComponent>())
+							{
+								auto& rb = entity.Get<RigidBodyComponent>().RigidBody;
+								emitter << YAML::Key << "RigidBodyComponent" << YAML::Value << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "Density" << YAML::Value << rb.density;
+									emitter << YAML::Key << "Type" << YAML::Value << std::string(magic_enum::enum_name(rb.type));
+								}
+								emitter << YAML::EndMap;
+							}
+
+							//serialize collider
+							if (entity.Has<ColliderComponent>())
+							{
+								auto& col = entity.Get<ColliderComponent>().Collider;
+								emitter << YAML::Key << "ColliderComponent" << YAML::Value << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "DynamicFriction" << YAML::Value << col.dynamicFriction;
+									emitter << YAML::Key << "StaticFriction" << YAML::Value << col.staticFriction;
+									emitter << YAML::Key << "Restitution" << YAML::Value << col.restitution;
+									emitter << YAML::Key << "Type" << YAML::Value << std::string(magic_enum::enum_name(col.type));
+								}
+								emitter << YAML::EndMap;
+							}
+
+							//serialize Directlight
+							if (entity.Has<DirectLightComponent>())
+							{
+								auto& light = entity.Get<DirectLightComponent>().light;
+								emitter << YAML::Key << "DirectLightComponent" << YAML::Value << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "Intensity" << YAML::Value << light.intensity;
+									emitter << YAML::Key << "Radiance" << YAML::Value << light.radiance;
+									//emitter << YAML::Key << "Bias" << YAML::Value << light.shadowBias;
+								}
+								emitter << YAML::EndMap;
+							}
+
+							//serialize pointlight
+							if (entity.Has<PointLightComponent>())
+							{
+								auto& light = entity.Get<PointLightComponent>().light;
+								emitter << YAML::Key << "PointLightComponent" << YAML::Value << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "Intensity" << YAML::Value << light.intensity;
+									emitter << YAML::Key << "Radiance" << YAML::Value << light.radiance;
+								}
+								emitter << YAML::EndMap;
+							}
+
+							//serialize spotlight
+							if (entity.Has<SpotLightComponent>())
+							{
+								auto& light = entity.Get<SpotLightComponent>().light;
+								emitter << YAML::Key << "SpotLightComponent" << YAML::Value << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "Intensity" << YAML::Value << light.intensity;
+									emitter << YAML::Key << "Radiance" << YAML::Value << light.radiance;
+									emitter << YAML::Key << "Falloff" << YAML::Value << light.fallOff;
+									emitter << YAML::Key << "Cutoff" << YAML::Value << light.cutOff;
+
+								}
+								emitter << YAML::EndMap;
+							}
+
+							if (entity.Has<SkyboxComponent>())
+							{
+								auto& skybox = entity.Get<SkyboxComponent>().skyboxID;
+								emitter << YAML::Key << "SkyboxComponent" << YAML::Value << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "SkyboxID" << YAML::Value << skybox;
+								}
+								emitter << YAML::EndMap;
+							}
+
+							if (entity.Has<ModelComponent>())
+							{
+								auto& modelComp = entity.Get<ModelComponent>();
+								emitter << YAML::Key << "ModelComponent" << YAML::Value << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "ModelID" << YAML::Value << modelComp.modelID;
+									emitter << YAML::Key << "MaterialID" << YAML::Value << modelComp.materialID;
+								}
+								emitter << YAML::EndMap;
+							}
+						}
+						emitter << YAML::EndMap;
+					}
 				}
 				emitter << YAML::EndSeq;
 			}
@@ -169,6 +170,7 @@ namespace Boom
 						{
 							emitter << YAML::Key << "Type" << YAML::Value << typeName;
 							emitter << YAML::Key << "UID" << YAML::Value << asset->uid;
+							emitter << YAML::Key << "Name" << YAML::Value << asset->name;
 							emitter << YAML::Key << "Source" << YAML::Value << asset->source;
 
 							if(asset->type == AssetType::MATERIAL)
@@ -223,9 +225,8 @@ namespace Boom
 								}
 								emitter << YAML::EndMap;
 							}
-							
 						}
-
+						emitter << YAML::EndMap;
 					});
 				}
 				emitter << YAML::EndSeq;
@@ -328,12 +329,18 @@ namespace Boom
 						light.fallOff = data["Falloff"].as<float>();
 						light.cutOff = data["Cutoff"].as<float>();
 					}
+					//deserialize skybox
+					if (auto& data = node["SkyboxComponent"])
+					{
+						auto& skybox = scene.emplace<SkyboxComponent>(entity).skyboxID;
+						skybox = data["SkyboxID"].as<AssetID>();
+					}
 				}
 
 			}
 			catch(YAML::ParserException& e)
 			{
-				BOOM_ERROR("Failed to deserialize scene!");
+				BOOM_ERROR("Failed to deserialize scene!", e.what());
 			}
 		}
 
@@ -357,6 +364,8 @@ namespace Boom
 					auto typeName	=	node["Type"].as<std::string>();
 					auto opt		=	magic_enum::enum_cast<AssetType>(typeName);
 					auto type		=	(opt.has_value()) ? opt.value() : AssetType::UNKNOWN;
+
+					BOOM_INFO("[Deserialize] Processing asset UID={}, Type={}", uid, typeName);
 
 					//create instance
 					if (type == AssetType::MATERIAL && props)
@@ -410,7 +419,7 @@ namespace Boom
 					else
 					{
 						BOOM_ERROR("Failed to deserialize asset: invalid type!");
-						return;
+						continue;
 					}
 
 					//set common properties
@@ -420,7 +429,7 @@ namespace Boom
 			}
 			catch (YAML::ParserException& e)
 			{
-				BOOM_ERROR("Failed to deserialize assets!");
+				BOOM_ERROR("Failed to deserialize assets!", e.what());
 			}
 		}
 	};

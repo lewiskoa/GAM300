@@ -1,0 +1,45 @@
+ENTITIES:
+  - InfoComponent:
+      UID: 17235197781771507097
+      Name: Entity
+      Parent: 0
+    TransformComponent:
+      Translate: [0, 1, 0]
+      Rotate: [0, 0, 0]
+      Scale: [1, 1, 1]
+    ModelComponent:
+      ModelID: 8001450542031391255
+      MaterialID: 0
+  - InfoComponent:
+      UID: 1487000145424296282
+      Name: Entity
+      Parent: 0
+    TransformComponent:
+      Translate: [0, -1.5, 0]
+      Rotate: [0, 0, 0]
+      Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+    ModelComponent:
+      ModelID: 3256146127158412370
+      MaterialID: 18404504464585822882
+  - InfoComponent:
+      UID: 13306747790896032198
+      Name: Entity
+      Parent: 0
+    TransformComponent:
+      Translate: [0, 0, 0]
+      Rotate: [0, 0, 0]
+      Scale: [1, 1, 1]
+    SkyboxComponent:
+      SkyboxID: 1100651913038855481
+  - InfoComponent:
+      UID: 4119636643111650894
+      Name: Entity
+      Parent: 0
+    CameraComponent:
+      NearPlane: 0.300000012
+      FarPlane: 1000
+      FOV: 45
+    TransformComponent:
+      Translate: [0, 0, 0]
+      Rotate: [0, 0, 0]
+      Scale: [1, 1, 1]
