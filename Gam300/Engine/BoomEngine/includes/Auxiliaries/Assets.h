@@ -162,7 +162,7 @@ namespace Boom {
 			Add(uid, path, asset);
 			return asset;
 		}
-		BOOM_INLINE auto AddMaterial(AssetID uid, std::string const& path, std::array<AssetID, 6> uidMaps) {
+		BOOM_INLINE auto AddMaterial(AssetID uid, std::string const& path, std::array<AssetID, 6> uidMaps = {}) {
 			auto asset{ std::make_shared<MaterialAsset>() };
 			asset->type = AssetType::MATERIAL;
 			asset->albedoMapID = uidMaps[0];

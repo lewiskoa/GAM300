@@ -177,19 +177,19 @@ namespace Boom
 								emitter << "Properties" << YAML::BeginMap;
 								{
 									//texture assets
-									emitter << YAML::Key << "AlbedoMap" << YAML::Value << mtl->albedoMapID;
-									emitter << YAML::Key << "NormalMap" << YAML::Value << mtl->normalMapID;
-									emitter << YAML::Key << "RoughnessMap" << YAML::Value << mtl->roughnessMapID;
-									emitter << YAML::Key << "MetallicMap" << YAML::Value << mtl->metallicMapID;
-									emitter << YAML::Key << "OcclusionMap" << YAML::Value << mtl->occlusionMapID;
-									emitter << YAML::Key << "EmissiveMap" << YAML::Value << mtl->emissiveMapID;
+									emitter << YAML::Key << "AlbedoMap"		<< YAML::Value << mtl->albedoMapID;
+									emitter << YAML::Key << "NormalMap"		<< YAML::Value << mtl->normalMapID;
+									emitter << YAML::Key << "RoughnessMap"	<< YAML::Value << mtl->roughnessMapID;
+									emitter << YAML::Key << "MetallicMap"	<< YAML::Value << mtl->metallicMapID;
+									emitter << YAML::Key << "OcclusionMap"	<< YAML::Value << mtl->occlusionMapID;
+									emitter << YAML::Key << "EmissiveMap"	<< YAML::Value << mtl->emissiveMapID;
 
 									//properties
-									emitter << YAML::Key << "Albedo" << YAML::Value << mtl->data.albedo;
-									emitter << YAML::Key << "Metallic" << YAML::Value << mtl->data.metallic;
+									emitter << YAML::Key << "Albedo"	<< YAML::Value << mtl->data.albedo;
+									emitter << YAML::Key << "Metallic"	<< YAML::Value << mtl->data.metallic;
 									emitter << YAML::Key << "Roughness" << YAML::Value << mtl->data.roughness;
 									emitter << YAML::Key << "Occlusion" << YAML::Value << mtl->data.occlusion;
-									emitter << YAML::Key << "Emissive" << YAML::Value << mtl->data.emissive;
+									emitter << YAML::Key << "Emissive"	<< YAML::Value << mtl->data.emissive;
 								}
 								emitter << YAML::EndMap;
 							}
@@ -198,8 +198,8 @@ namespace Boom
 								auto tex = static_cast<TextureAsset*>(asset);
 								emitter << "Properties" << YAML::BeginMap;
 								{
-									emitter << YAML::Key << "IsHDR" << YAML::Value << tex->isHDR;
-									emitter << YAML::Key << "IsFlipY" << YAML::Value << tex->isFlipY;
+									emitter << YAML::Key << "IsHDR"		<<	YAML::Value << tex->isHDR;
+									emitter << YAML::Key << "IsFlipY"	<<	YAML::Value << tex->isFlipY;
 								}
 								emitter << YAML::EndMap;
 							}
@@ -208,9 +208,9 @@ namespace Boom
 								auto skybox = static_cast<SkyboxAsset*>(asset);
 								emitter << "Properties" << YAML::BeginMap;
 								{
-									emitter << YAML::Key << "Size" << YAML::Value << skybox->size;
-									emitter << YAML::Key << "IsHDR" << YAML::Value << skybox->isHDR;
-									emitter << YAML::Key << "IsFlipY" << YAML::Value << skybox->isFlipY;
+									emitter << YAML::Key << "Size"		<<	YAML::Value << skybox->size;
+									emitter << YAML::Key << "IsHDR"		<<	YAML::Value << skybox->isHDR;
+									emitter << YAML::Key << "IsFlipY"	<<	YAML::Value << skybox->isFlipY;
 								}
 								emitter << YAML::EndMap;
 							}
@@ -347,11 +347,75 @@ namespace Boom
 
 				for (auto& node : nodes)
 				{
-					Asset* asset = nullptr;
-					auto props = node["Properties"];
-					auto uid = node["UID"].as<AssetID>();
-					auto name = node["Name"].as<std::string>();
-					auto source = node["Source"].as<std::string>();
+					Asset* asset	=	nullptr;
+					auto props		=	node["Properties"];
+					auto uid		=	node["UID"].as<AssetID>();
+					auto name		=	node["Name"].as<std::string>();
+					auto source		=	node["Source"].as<std::string>();
+
+					//get asset type
+					auto typeName	=	node["Type"].as<std::string>();
+					auto opt		=	magic_enum::enum_cast<AssetType>(typeName);
+					auto type		=	(opt.has_value()) ? opt.value() : AssetType::UNKNOWN;
+
+					//create instance
+					if (type == AssetType::MATERIAL && props)
+					{
+						auto mtlAssest = registry.AddMaterial(uid, source);
+
+						//set material textures
+						mtlAssest->albedoMapID		=	props["AlbedoMap"].as<AssetID>();
+						mtlAssest->normalMapID		=	props["NormalMap"].as<AssetID>();
+						mtlAssest->roughnessMapID	=	props["RoughnessMap"].as<AssetID>();
+						mtlAssest->metallicMapID	=	props["MetallicMap"].as<AssetID>();
+						mtlAssest->occlusionMapID	=	props["OcclusionMap"].as<AssetID>();
+						mtlAssest->emissiveMapID	=	props["EmissiveMap"].as<AssetID>();
+
+						//SET MATERIAL PROPERTIES
+						mtlAssest->data.albedo		=	props["Albedo"].as<glm::vec3>();
+						mtlAssest->data.roughness	=	props["Roughness"].as<float>();
+						mtlAssest->data.metallic	=	props["Metallic"].as<float>();
+						mtlAssest->data.occlusion	=	props["Occlusion"].as<float>();
+						mtlAssest->data.emissive	=	props["Emissive"].as<glm::vec3>();
+
+						//cast asset
+						asset = static_cast<Asset*>(mtlAssest.get());
+					}
+					else if (type == AssetType::TEXTURE && props)
+					{
+						bool isHDR	 = props["IsHDR"].as<bool>();
+						bool isFlipY = props["IsFlipY"].as<bool>();
+						asset = (Asset*)registry.AddTexture(uid, source, isHDR, isFlipY).get();
+					}
+					else if (type == AssetType::SKYBOX && props)
+					{
+						int32_t size	= props["Size"].as<int32_t>();
+						bool isHDR		= props["IsHDR"].as<bool>();
+						bool isFlipY	= props["IsFlipY"].as<bool>();
+						asset = (Asset*)registry.AddSkybox(uid, source, size, isHDR, isFlipY).get();
+					}
+					else if (type == AssetType::MODEL && props)
+					{
+						bool hasJoints = props["HasJoints"].as<bool>();
+						asset = (Asset*)registry.AddModel(uid, source, hasJoints).get();
+					}
+					/*else if (type == AssetType::SCRIPT)
+					{
+						asset = (Asset*)registry.AddScript(uid, source).get();
+					}*/
+					else if (type == AssetType::SCENE)
+					{
+						asset = (Asset*)registry.AddScene(uid, source).get();
+					}
+					else
+					{
+						BOOM_ERROR("Failed to deserialize asset: invalid type!");
+						return;
+					}
+
+					//set common properties
+					asset->source = source;
+					asset->name = name;
 				}
 			}
 			catch (YAML::ParserException& e)
