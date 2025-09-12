@@ -1,6 +1,7 @@
 #pragma once
 #include <entt/entt.hpp>
 #include "Graphics/Utilities/Data.h"
+#include "Auxiliaries/Assets.h"
 #include "Physics/Utilities.h"  
 namespace Boom {
 	using EntityRegistry = entt::registry;  
@@ -14,7 +15,7 @@ namespace Boom {
     {
         BOOM_INLINE TransformComponent(const TransformComponent&) = default;
         BOOM_INLINE TransformComponent() = default;
-        Transform3D Transform;
+        Transform3D transform;
     };
 
    
@@ -23,7 +24,7 @@ namespace Boom {
     {
         BOOM_INLINE CameraComponent(const CameraComponent&) = default;
         BOOM_INLINE CameraComponent() = default;
-        Camera3D Camera;
+        Camera3D camera;
     };
 
     struct EnttComponent {
@@ -36,7 +37,7 @@ namespace Boom {
 	{
 		BOOM_INLINE MeshComponent(const MeshComponent&) = default;
 		BOOM_INLINE MeshComponent() = default;
-		Mesh3D Mesh;
+		Mesh3D mesh;
 	};
     
     struct RigidBodyComponent
@@ -54,10 +55,9 @@ namespace Boom {
 	};
 
     ////Model Component
-
     struct ModelComponent {
-        std::shared_ptr<Model> model;   
-        std::shared_ptr<PbrMaterial> material;
+        AssetID materialID{ EMPTY_ASSET };
+        AssetID modelID{ EMPTY_ASSET };
     };
 
 	//Animator Component
@@ -65,15 +65,37 @@ namespace Boom {
     {
 		BOOM_INLINE AnimatorComponent(const AnimatorComponent&) = default;
 		BOOM_INLINE AnimatorComponent() = default;
-		Animator3D Animator;
+		Animator3D animator;
+    };
+
+    struct SkyboxComponent {
+        AssetID skyboxID{ EMPTY_ASSET };
+    };
+
+    //helpful for encapsulating information about an entity
+    //can be used for entity hierarchies (linked-list)
+    struct InfoComponent {
+        AssetID parent{ EMPTY_ASSET };
+        std::string name{ "Entity" };
+        AssetID uid{ RandomU64() };
     };
     struct DirectLightComponent
     {
-        BOOM_INLINE DirectLightComponent(const
-            DirectLightComponent&) = default;
+        BOOM_INLINE DirectLightComponent(const DirectLightComponent&) = default;
         BOOM_INLINE DirectLightComponent() = default;
         DirectionalLight Light;
     };
+
+    //Chris I have no idea how your sound component works
+    struct SoundComponent
+    {
+        std::string name;      // logical name ("bgm", "jump", etc.)
+        std::string filePath;  // actual sound file path
+        bool loop = false;
+        float volume = 1.0f;
+        bool playOnStart = false;
+    };
+
     struct Entity
     {
         BOOM_INLINE Entity(EntityRegistry* registry, EntityID entity) :
@@ -140,18 +162,11 @@ namespace Boom {
         {
             return m_Registry->get<T>(m_EnttID);
         }
-
+    
     protected:
         EntityRegistry* m_Registry = nullptr;
         EntityID m_EnttID = NENTT;
     };
 
-    struct SoundComponent
-    {
-        std::string name;      // logical name ("bgm", "jump", etc.)
-        std::string filePath;  // actual sound file path
-        bool loop = false;
-        float volume = 1.0f;
-        bool playOnStart = false;
-    };
+
 }

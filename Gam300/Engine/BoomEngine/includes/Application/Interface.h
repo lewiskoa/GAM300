@@ -116,7 +116,7 @@ namespace Boom
         BOOM_INLINE Entt CreateEntt(Args&&... args)
         {
             BOOM_STATIC_ASSERT(std::is_base_of<Entity, Entt>::value);
-            return std::move(Entt(&m_Context->Scene, std::forward<Args>(args)...));
+            return std::move(Entt(&m_Context->scene, std::forward<Args>(args)...));
         }
         // convert id to entity
         template<typename Entt>
@@ -124,7 +124,7 @@ namespace Boom
         {
             BOOM_STATIC_ASSERT(std::is_base_of<Entity,
                 Entt>::value);
-            return std::move(Entt(&m_Context->Scene,entity));
+            return std::move(Entt(&m_Context->scene,entity));
         }
         // loop through entities
         template<typename Entt, typename Comp, typename Task>
@@ -132,10 +132,10 @@ namespace Boom
         {
             BOOM_STATIC_ASSERT(std::is_base_of<Entity,
                 Entt>::value);
-            m_Context->Scene.view<Comp>().each([this, &task]
+            m_Context->scene.view<Comp>().each([this, &task]
             (auto entity, auto& comp)
                 {
-                    task(std::move(Entt(&m_Context->Scene,
+                    task(std::move(Entt(&m_Context->scene,
                         entity)), comp);
                 });
         }

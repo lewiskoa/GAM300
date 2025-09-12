@@ -34,8 +34,8 @@ namespace Boom {
 			, viewPosLoc{ GetUniformVar("viewPos") }
 			, frustumMatLoc{ GetUniformVar("frustumMat") }
 			, modelMatLoc{ GetUniformVar("modelMat") }
+			, jointsLoc{ GetUniformVar("hasJoints") }
 		{
-			HasJoints = GetUniformVar("hasJoints");
 		}
 
 	public: //lights
@@ -93,7 +93,6 @@ namespace Boom {
 		BOOM_INLINE void SetPointLightCount(int32_t count) {
 			SetUniform(noPointLightLoc, count);
 		}
-
 	public:
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
 			SetUniform(frustumMatLoc, cam.Frustum(transform, ratio));
@@ -103,6 +102,8 @@ namespace Boom {
 			SetUniform(modelMatLoc, transform.Matrix());
 			mesh->Draw();
 		}
+
+	
 		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material) {
 			SetUniform(modelMatLoc, transform.Matrix());
 			SetUniform(albedoLoc, material.albedo);
@@ -113,9 +114,8 @@ namespace Boom {
 
 			//material texture maps
 			{
-				//glUniform1i(HasJoints, model->HasJoint());
-				SetUniform(HasJoints, model->HasJoint());
 				int32_t unit{};
+				//int32_t unit=4;
 				bool isMap{};
 
 				isMap = material.albedoMap != nullptr;
@@ -155,6 +155,7 @@ namespace Boom {
 				}
 			}
 
+			SetUniform(jointsLoc, model->HasJoint());
 			model->Draw();
 		}
 		//Animation 
@@ -163,16 +164,14 @@ namespace Boom {
 			for (size_t i = 0; i < transforms.size() && i < 100; ++i)
 			{
 				std::string uniform = "jointsMat[" + std::to_string(i) + "]";
-				uint32_t u_joint = GetUniformVar(uniform.c_str());
-				SetUniform(u_joint, transforms[i]);
-				//glUniformMatrix4fv(u_joint, 1, GL_FALSE, glm::value_ptr(transforms[i]));
+				SetUniform(GetUniformVar(uniform.c_str()), transforms[i]);
 			}
 		}
-
 	private:
 		int32_t noSpotLightLoc;
 		int32_t noDirLightLoc;
 		int32_t noPointLightLoc;
+		
 
 		int32_t roughnessMapLoc;
 		int32_t occlusionMapLoc;
@@ -198,6 +197,6 @@ namespace Boom {
 		int32_t frustumMatLoc;
 		int32_t modelMatLoc;
 
-		uint32_t HasJoints = 0u;
+		int32_t jointsLoc;
 	};
 }

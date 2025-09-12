@@ -54,7 +54,7 @@ namespace Boom {
 
         // Rigid Body
         BOOM_INLINE void AddRigidBody(Entity& entity) {
-            auto& transform = entity.Get<TransformComponent>().Transform;
+            auto& transform = entity.Get<TransformComponent>().transform;
             auto& body = entity.Get<RigidBodyComponent>().RigidBody;
             //bool hasCollider = entity.Has<ColliderComponent>();
 

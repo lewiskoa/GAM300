@@ -2,10 +2,15 @@
 #include "../Buffers/Mesh.h"
 #include "../Textures/Texture.h"
 
+//helper functions
 namespace Boom {
 	BOOM_INLINE glm::highp_mat4 GetRotationMatrix(glm::vec3 const& rot) {
 		return glm::toMat4(glm::quat(glm::radians(rot)));
 	}
+}
+
+namespace Boom {
+	
 
 	struct Transform3D {
 		BOOM_INLINE Transform3D() : translate{}, rotate{}, scale{ 1.f } {}
@@ -53,7 +58,7 @@ namespace Boom {
 
 	struct PbrMaterial {
 		BOOM_INLINE PbrMaterial()
-			: emissive{}
+			: emissive{0.f}
 			, albedo{ glm::vec3(1.f) }
 			, roughness{ 0.4f }
 			, metallic{ 0.5f }

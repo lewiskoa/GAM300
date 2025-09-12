@@ -114,10 +114,16 @@
     <ClInclude Include="includes\Graphics\Models\Animation.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Graphics\Shaders\Shadow.h">
+      <Filter>includes</Filter>
+    </ClInclude>
     <ClInclude Include="includes\Graphics\Shaders\Bloom.h">
       <Filter>includes</Filter>
     </ClInclude>
     <ClInclude Include="includes\Audio\Audio.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Auxiliaries\Assets.h">
       <Filter>includes</Filter>
     </ClInclude>
   </ItemGroup>

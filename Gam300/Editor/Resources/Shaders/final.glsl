@@ -16,7 +16,7 @@ void main() {
 out vec4 out_fragment;
 in vec2 uvs;
 
-const float GAMMA = 2.5;
+const float GAMMA = 1;
 const float EXPOSURE = 4;
 const float MIN_GAMMA = 0.000001;
 

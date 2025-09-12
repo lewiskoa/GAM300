@@ -7,17 +7,11 @@
 #include "Shaders/Skybox.h"
 #include "Shaders/Bloom.h"
 #include "GlobalConstants.h"
-
+#include "Shaders/Shadow.h"
 namespace Boom {
 	struct GraphicsRenderer {
 	public:
 		GraphicsRenderer() = delete;
-
-		BOOM_INLINE void SetJoints(std::vector<glm::mat4>& transforms)
-		{
-			pbrShader->SetJoints(transforms);
-		}
-
 		BOOM_INLINE GraphicsRenderer(int32_t w, int32_t h)
 		{
 			glEnable(GL_BLEND);
@@ -75,7 +69,11 @@ namespace Boom {
 		BOOM_INLINE void DrawSkybox(Skybox const& sky, Transform3D const& transform) {
 			skyBoxShader->Draw(skyboxMesh, sky.cubeMap, transform);
 		}
-
+	public: //animator
+		BOOM_INLINE void SetJoints(std::vector<glm::mat4>& transforms)
+		{
+			pbrShader->SetJoints(transforms);
+		}
 	public: //shader uniforms and draw call
 		BOOM_INLINE void SetCamera(Camera3D& cam, Transform3D const& transform) {
 			float aspect{ frame->Ratio() };
@@ -106,11 +104,11 @@ namespace Boom {
 		BOOM_INLINE void EndFrame() {
 			pbrShader->UnUse();
 			frame->End();
-			bloom->Compute(frame->GetBrightnessMap(),10);
+			//bloom->Compute(frame->GetBrightnessMap(), 10);
 		}
 		BOOM_INLINE void ShowFrame() {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Show(frame->GetTexture(),bloom->GetMap(),false);
+			finalShader->Show(frame->GetTexture(), bloom->GetMap(), false);
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {

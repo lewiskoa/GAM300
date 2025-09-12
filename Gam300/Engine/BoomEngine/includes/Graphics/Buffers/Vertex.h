@@ -26,21 +26,13 @@ namespace Boom {
 	struct MeshData {
 		std::vector<uint32_t> idx;
 		std::vector<Vertex> vtx;
-		uint32_t drawMode{};
+		uint32_t drawMode{GL_TRIANGLES};
 	};
 
-	struct SkeletalVertex //hehe sorry darius - Amos
+	struct SkeletalVertex : ShadedVert
 	{
-		glm::vec3 pos = glm::vec3(0.0f);
-		glm::vec3 norm = glm::vec3(0.0f);
-		glm::vec2 uv = glm::vec2(0.0f);
-
-		// for lighting
-		glm::vec3 tangent = glm::vec3(0.0f);
-		glm::vec3 biTangent = glm::vec3(0.0f);
-
 		// for animation
-		glm::ivec4 joints = glm::ivec4(-1);
-		glm::vec4 weights = glm::vec4(0.0f);
+		glm::ivec4 joints{ -1 };
+		glm::vec4 weights{};
 	};
 }
