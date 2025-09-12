@@ -206,8 +206,10 @@ namespace Boom
                 {
                     //testing rendering
                     {
+                        //[0, 360] range
                         static float testRot{};
-                        if ((testRot += 0.25f) > 360.f) { testRot -= 360.f; }
+                        testRot += 0.25f;
+                        testRot = glm::mod(testRot, 360.f);
 
                         //lights
                         m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
@@ -225,8 +227,9 @@ namespace Boom
                         //camera
                         EnttView<Entity, CameraComponent>([this](auto entity, CameraComponent& comp) {
                                 Transform3D& transform{ entity.template Get<TransformComponent>().transform };
-                                transform.translate = m_Context->window->camPos;
-								transform.rotate = { 0.f, testRot, 0.f };
+                                glm::vec3 rotOffset{ glm::cos(glm::radians(testRot)), 0.f, glm::sin(glm::radians(testRot)) };
+                                transform.translate = m_Context->window->camPos.z * rotOffset;
+								transform.rotate = { 0.f, -testRot + 90.f, 0.f };
                                 m_Context->renderer->SetCamera(comp.camera, transform);
                             }
                         );

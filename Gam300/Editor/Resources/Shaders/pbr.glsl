@@ -20,8 +20,7 @@ out Vertex {
 layout (location = 1) out vec3 viewPos;
 
 uniform mat4 modelMat;
-uniform mat4 projMat;
-uniform mat4 viewMat;
+uniform mat4 frustumMat; // proj * view
 
 uniform mat4 jointsMat[MAX_JOINTS];
 uniform bool hasJoints = false;
@@ -42,16 +41,8 @@ void main() {
     transform = modelMat * transform;
     vertex.normal = mat3(transform) * normal;
     vertex.position = (transform * vec4(position, 1.0)).xyz;
-    gl_Position = projMat * viewMat * transform * vec4(position, 1.0);
+    gl_Position = frustumMat * transform * vec4(position, 1.0);
     vertex.TBN = mat3(transform) * mat3(tangent, biTangent, normal);
-    viewPos = vec3(viewMat[3]);
-
-    //vertex.normal = (modelMat * vec4(normal, 1.0)).xyz;
-    //vec4 worldPos = modelMat * vec4(position, 1.0);
-    //vertex.position = worldPos.xyz;
-    //vertex.uv = uv;
-    //vertex.TBN = mat3(modelMat) * mat3(tangent, biTangent, normal);
-    //gl_Position = frustumMat * worldPos;
 }
 ==VERTEX==
 
@@ -120,7 +111,7 @@ struct SpotLight {
 uniform SpotLight spotLights[MAX_LIGHTS];
 uniform int noSpotLight;
 
-layout(location = 1) in vec3 viewPos;
+uniform vec3 viewPos;
 
 //this effect influences the appearance of surfaces
 // for example, higher reflectivity at grazing angles than dielectrics
@@ -255,15 +246,12 @@ vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, flo
         vec3 H = normalize(L + V);
 
         //BRDF
-        //float NDF = DistributionGGX(N, H, roughness);
+        float NDF = DistributionGGX(N, H, roughness);
         vec3 FS = FresnelSchlick(clamp(dot(H, V), 0.0, 1.0), f0);
         float GS = GeometrySmithGGX(nDotV, nDotL, roughness);
 
         vec3 diffuse = (vec3(1.0) - FS) * (1.0 - metallic) * albedo / PI;
-        //vec3 specular = (NDF * GS * FS) / max(4.0 * nDotV * nDotL, 0.0001);
-        //vec3 specular = (NDF * FS) / max(4.0 * nDotV * nDotL, 0.0001);
-        vec3 specular = (GS * FS) / max(4.0 * nDotV * nDotL, 0.0001);
-        //vec3 specular = FS / max(4.0 * nDotV * nDotL, 0.0001);
+        vec3 specular = (NDF * GS * FS) / max(4.0 * nDotV * nDotL, 0.0001);
 
         result += (diffuse + specular) * dirLights[i].radiance * dirLights[i].intensity * nDotL;
     }
