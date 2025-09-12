@@ -364,7 +364,7 @@ namespace Boom
                     BOOM_INFO("[Serializer] Asset deserialization complete");
 
                     BOOM_INFO("[Serializer] Starting scene deserialization...");
-                    ser.Deserialize(m_Context->scene, scenePath);
+                    ser.Deserialize(m_Context->scene, *m_Context->assets, scenePath);
                     BOOM_INFO("[Serializer] Scene deserialization complete");
                 }
                 catch (const std::exception& e) {

@@ -51,6 +51,13 @@ namespace Boom
             return m_Transforms;
         }
 
+		// Getters and setters
+    public:
+        BOOM_INLINE int32_t GetSequence() const { return m_Sequence; }
+        BOOM_INLINE float GetTime() const { return m_Time; }
+        BOOM_INLINE void SetSequence(int32_t sequence) { m_Sequence = sequence; }
+        BOOM_INLINE void SetTime(float time) { m_Time = time; }
+
     private:
         /**
         * @brief Interpolate between two keyframes to produce a local joint matrix.

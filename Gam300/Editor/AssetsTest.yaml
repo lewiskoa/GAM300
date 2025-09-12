@@ -1,12 +1,41 @@
 ASSETS:
+  - Type: SKYBOX
+    UID: 1474623878112162682
+    Name: sky
+    Source: Skybox/sky.hdr
+    Properties:
+      Size: 2048
+      IsHDR: true
+      IsFlipY: true
+  - Type: TEXTURE
+    UID: 4341888613580305912
+    Name: roughness
+    Source: Marble/roughness.png
+    Properties:
+      IsHDR: false
+      IsFlipY: true
+  - Type: TEXTURE
+    UID: 15853344083040861654
+    Name: normal
+    Source: Marble/normal.png
+    Properties:
+      IsHDR: false
+      IsFlipY: true
+  - Type: TEXTURE
+    UID: 8506708207926234476
+    Name: albedo
+    Source: Marble/albedo.png
+    Properties:
+      IsHDR: false
+      IsFlipY: true
   - Type: MATERIAL
-    UID: 18404504464585822882
+    UID: 2380385853699630527
     Name: Marble
     Source: Marble
     Properties:
-      AlbedoMap: 17387952110589421466
-      NormalMap: 4261769797114212126
-      RoughnessMap: 3376019303602677601
+      AlbedoMap: 8506708207926234476
+      NormalMap: 15853344083040861654
+      RoughnessMap: 4341888613580305912
       MetallicMap: 0
       OcclusionMap: 0
       EmissiveMap: 0
@@ -16,49 +45,20 @@ ASSETS:
       Occlusion: 1
       Emissive: [0, 0, 0]
   - Type: MODEL
-    UID: 3256146127158412370
+    UID: 5966533665567746135
+    Name: cube
+    Source: cube.fbx
+    Properties:
+      HasJoints: false
+  - Type: MODEL
+    UID: 11449901319161743517
     Name: dance
     Source: dance.fbx
     Properties:
       HasJoints: true
   - Type: MODEL
-    UID: 8001450542031391255
+    UID: 15993682052541333744
     Name: sphere
     Source: sphere.fbx
     Properties:
       HasJoints: false
-  - Type: MODEL
-    UID: 8994968851588450563
-    Name: cube
-    Source: cube.fbx
-    Properties:
-      HasJoints: false
-  - Type: SKYBOX
-    UID: 1100651913038855481
-    Name: sky
-    Source: Skybox/sky.hdr
-    Properties:
-      Size: 2048
-      IsHDR: true
-      IsFlipY: true
-  - Type: TEXTURE
-    UID: 4261769797114212126
-    Name: normal
-    Source: Marble/normal.png
-    Properties:
-      IsHDR: false
-      IsFlipY: true
-  - Type: TEXTURE
-    UID: 17387952110589421466
-    Name: albedo
-    Source: Marble/albedo.png
-    Properties:
-      IsHDR: false
-      IsFlipY: true
-  - Type: TEXTURE
-    UID: 3376019303602677601
-    Name: roughness
-    Source: Marble/roughness.png
-    Properties:
-      IsHDR: false
-      IsFlipY: true

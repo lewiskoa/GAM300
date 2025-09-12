@@ -143,6 +143,17 @@ namespace Boom
 								}
 								emitter << YAML::EndMap;
 							}
+
+							if (entity.Has<AnimatorComponent>())
+							{
+								auto& animatorComp = entity.Get<AnimatorComponent>();
+								emitter << YAML::Key << "AnimatorComponent" << YAML::Value << YAML::BeginMap;
+								{
+									emitter << YAML::Key << "Sequence" << YAML::Value << animatorComp.animator->GetSequence();
+									emitter << YAML::Key << "Time" << YAML::Value << animatorComp.animator->GetTime();
+								}
+								emitter << YAML::EndMap;
+							}
 						}
 						emitter << YAML::EndMap;
 					}
@@ -237,7 +248,7 @@ namespace Boom
 		}
 
 
-		BOOM_INLINE void Deserialize(EntityRegistry& scene, const std::string& path)
+		BOOM_INLINE void Deserialize(EntityRegistry& scene, AssetRegistry& assets, const std::string& path)
 		{
 			//deserialize scene
 			try
@@ -301,6 +312,30 @@ namespace Boom
 						auto& comp = scene.emplace<ModelComponent>(entity);
 						comp.materialID = data["MaterialID"].as<AssetID>();
 						comp.modelID = data["ModelID"].as<AssetID>();
+					}
+
+					//deserialize animator
+					if (auto& data = node["AnimatorComponent"])
+					{
+						// Only add animator if the entity has a model component
+						if (scene.all_of<ModelComponent>(entity))
+						{
+							auto& modelComp = scene.get<ModelComponent>(entity);
+							ModelAsset& modelAsset = assets.Get<ModelAsset>(modelComp.modelID);
+
+							// Only skeletal models have animators
+							if (modelAsset.hasJoints)
+							{
+								auto& animatorComp = scene.emplace<AnimatorComponent>(entity);
+								animatorComp.animator = std::dynamic_pointer_cast<SkeletalModel>(modelAsset.data)->GetAnimator();
+
+								// Restore animation state
+								int32_t sequence = data["Sequence"].as<int32_t>();
+								float time = data["Time"].as<float>();
+								animatorComp.animator->SetSequence(sequence);
+								animatorComp.animator->SetTime(time);
+							}
+						}
 					}
 
 					//deserialize directlight
