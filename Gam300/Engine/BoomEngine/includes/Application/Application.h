@@ -4,6 +4,8 @@
 #include "Interface.h"
 #include "ECS/ECS.hpp"
 #include "Physics/Context.h"
+#include "Audio/Audio.hpp"   
+
 namespace Boom
 {
     /**
@@ -59,16 +61,16 @@ namespace Boom
                 t.scale = glm::vec3(1.0f); 
                 // Attach rigidbody (dynamic)
                 auto& rb = sphere.Attach<RigidBodyComponent>().RigidBody;
-                rb.Type = RigidBody3D::DYNAMIC;
-                rb.Mass = 2.0f;
-                rb.Density = 1.0f;
+                rb.type = RigidBody3D::DYNAMIC;
+                rb.mass = 2.0f;
+                rb.density = 1.0f;
 
                 // Small velocity to check for movement
-                rb.InitialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
+                rb.initialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
 
                 // Attach collider (sphere)
                 auto& col = sphere.Attach<ColliderComponent>().Collider;
-                col.Type = Collider3D::SPHERE;
+                col.type = Collider3D::SPHERE;
 
                 // Attach model
                 auto& mc = sphere.Attach<ModelComponent>();
@@ -86,11 +88,11 @@ namespace Boom
 
                 // Attach rigidbody (static)
                 auto& rb = cube.Attach<RigidBodyComponent>().RigidBody;
-                rb.Type = RigidBody3D::STATIC;
+                rb.type = RigidBody3D::STATIC;
 
                 // Attach collider (box)
                 auto& col = cube.Attach<ColliderComponent>().Collider;
-                col.Type = Collider3D::BOX;
+                col.type = Collider3D::BOX;
 
                 // Attach model 
                 auto& mc = cube.Attach<ModelComponent>();
@@ -180,13 +182,13 @@ namespace Boom
                     transform.translate = m_SphereStartPos;
 
                     auto& rb = m_SphereEntity.Get<RigidBodyComponent>().RigidBody;
-                    if (rb.Actor)
+                    if (rb.actor)
                     {
                         // Reset PhysX actor pose and velocity
                         PxTransform pose(ToPxVec3(m_SphereStartPos));
-                        rb.Actor->setGlobalPose(pose);
+                        rb.actor->setGlobalPose(pose);
 
-                        PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(rb.Actor);
+                        PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(rb.actor);
                         if (dyn)
                         {
                             dyn->setLinearVelocity(PxVec3(1.0f, 0.0f, 0.0f)); // initial velocity
@@ -199,6 +201,7 @@ namespace Boom
                 }
 
                 RunPhysicsSimulation();
+                SoundEngine::Instance().Update();
                 */
                 //updates new frame
                 //RenderSceneDepth();
@@ -333,6 +336,99 @@ namespace Boom
 			auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
 			sphereModel.modelID = sphereAsset->uid;
 			sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
+
+            // -------- Serializer round-trip smoke test --------
+            {
+                DataSerializer ser;
+
+                const std::string scenePath = "SceneTest.yaml";
+                const std::string assetsPath = "AssetsTest.yaml";
+
+                // Count entities before serialize
+                size_t countBefore = 0;
+                auto viewBefore = m_Context->scene.view<entt::entity>();
+                for (auto entity : viewBefore) 
+                {
+                    (void)entity; // Suppress unused variable warning
+                    ++countBefore;
+                }
+
+                // 1) Serialize scene + assets
+                ser.Serialize(m_Context->scene, scenePath);
+                ser.Serialize(*m_Context->assets, assetsPath);
+                BOOM_INFO("[Serializer] Wrote scene -> {} and assets -> {}", scenePath, assetsPath);
+
+                // 2) Clear everything
+                m_Context->scene.clear();
+                // Re-init assets to restore EMPTY_ASSET sentinels
+                *m_Context->assets = AssetRegistry();
+                BOOM_INFO("[Serializer] Cleared registries");
+
+                try 
+                {
+                    BOOM_INFO("[Serializer] Starting asset deserialization...");
+                    ser.Deserialize(*m_Context->assets, assetsPath);
+                    BOOM_INFO("[Serializer] Asset deserialization complete");
+
+                    BOOM_INFO("[Serializer] Starting scene deserialization...");
+                    ser.Deserialize(m_Context->scene, *m_Context->assets, scenePath);
+                    BOOM_INFO("[Serializer] Scene deserialization complete");
+                }
+                catch (const std::exception& e) 
+                {
+
+                    (void)BOOM_ERROR(std::string("[Serializer] Deserialization failed: ") + e.what());
+                    //return; // Skip the rest of the test
+                }
+
+                // 3) Deserialize back
+                BOOM_INFO("[Serializer] Reloaded scene + assets from YAML");
+
+                // 4) Verify a few expectations
+                size_t countAfter = 0;
+                auto viewAfter = m_Context->scene.view<entt::entity>();
+                for (auto entity : viewAfter) {
+                    (void)entity; // Suppress unused variable warning
+                    ++countAfter;
+                }
+
+
+                bool hasCamera = false, hasSkyboxEnt = false, hasModelEnt = false;
+                EnttView<Entity, CameraComponent, TransformComponent>([&](auto, auto&, auto&) { hasCamera = true; });
+                EnttView<Entity, SkyboxComponent>([&](auto, auto&) { hasSkyboxEnt = true; });
+                EnttView<Entity, ModelComponent>([&](auto, auto&) { hasModelEnt = true; });
+
+                bool hasSkyboxAsset = false, hasDanceModel = false, hasMarbleMat = false;
+                m_Context->assets->View([&](Asset* a) {
+                    BOOM_INFO("[Verify] Asset: type={}, name='{}', checking...", (int)a->type, a->name);
+                    if (a->type == AssetType::SKYBOX) {
+                        BOOM_INFO("[Verify] Found skybox asset!");
+                        hasSkyboxAsset = true;
+                    }
+                    if (a->type == AssetType::MODEL && a->name == "dance") {
+                        BOOM_INFO("[Verify] Found dance model!");
+                        hasDanceModel = true;
+                    }
+                    if (a->type == AssetType::MATERIAL && a->name == "Marble") {
+                        BOOM_INFO("[Verify] Found marble material!");
+                        hasMarbleMat = true;
+                    }
+                    });
+
+                BOOM_INFO("[Serializer] Entities before: {}, after: {}", (int)countBefore, (int)countAfter);
+                BOOM_INFO("[Serializer] hasCamera={}, hasSkyboxEnt={}, hasModelEnt={}",
+                    hasCamera, hasSkyboxEnt, hasModelEnt);
+                BOOM_INFO("[Serializer] hasSkyboxAsset={}, hasDanceModel={}, hasMarbleMat={}",
+                    hasSkyboxAsset, hasDanceModel, hasMarbleMat);
+
+                // Optional: assert-ish checks (convert to your engine’s assert/log style)
+                if (!hasCamera || !hasSkyboxEnt || !hasModelEnt)
+                    BOOM_ERROR("[Serializer] Missing expected entity after reload.");
+                if (!hasSkyboxAsset || !hasDanceModel || !hasMarbleMat)
+                    BOOM_ERROR("[Serializer] Missing expected asset after reload.");
+            }
+            // -------- End serializer round-trip test --------
+
         }
 private:
         BOOM_INLINE void RegisterEventCallbacks()
@@ -365,14 +461,14 @@ BOOM_INLINE void ComputeFrameDeltaTime()
                     if (entity.template Has<ColliderComponent>())
                     {
                         auto& collider = entity.template Get<ColliderComponent>().Collider;
-                        collider.Material->release();
+                        collider.material->release();
                         collider.Shape->release();
                     }
                     // Destroy actor user data
-                    EntityID* owner = static_cast<EntityID*>(comp.RigidBody.Actor->userData);
+                    EntityID* owner = static_cast<EntityID*>(comp.RigidBody.actor->userData);
                     BOOM_DELETE(owner);
                     // Destroy actor instance
-                    comp.RigidBody.Actor->release();
+                    comp.RigidBody.actor->release();
                 });
         }
 
@@ -382,7 +478,7 @@ BOOM_INLINE void ComputeFrameDeltaTime()
             EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
                 {
                     auto& transform = entity.template Get<TransformComponent>().transform;
-                    auto pose = comp.RigidBody.Actor->getGlobalPose();
+                    auto pose = comp.RigidBody.actor->getGlobalPose();
                     glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
                     transform.rotate = glm::degrees(glm::eulerAngles(rot));
                     transform.translate = PxToVec3(pose.p);

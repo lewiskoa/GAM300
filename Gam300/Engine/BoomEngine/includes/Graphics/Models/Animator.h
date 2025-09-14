@@ -21,7 +21,7 @@ namespace Boom
          * @brief Advance the active animation and update all joint transforms.
          *
          * If @c m_Sequence is a valid index into @c m_Animations, the internal clock
-         * @c m_Time is advanced by @c Speed * deltaTime and wrapped into the clip
+         * @c m_Time is advanced by @c speed * deltaTime and wrapped into the clip
          * duration (looping). Then the skeleton is updated via @ref UpdateJoints.
          * If the sequence is invalid, no work is performed and the current transform
          * buffer is returned unchanged.
@@ -41,24 +41,31 @@ namespace Boom
 		{
             if (m_Sequence < m_Animations.size())
             {
-                m_Time += m_Animations[m_Sequence].Speed *
+                m_Time += m_Animations[m_Sequence].speed *
                     deltaTime;
                 m_Time = fmod(m_Time,
-                    m_Animations[m_Sequence].Duration);
+                    m_Animations[m_Sequence].duration);
                 UpdateJoints(m_Root, glm::identity<glm::mat4>
                     ());
             }
             return m_Transforms;
         }
 
+		// Getters and setters
+    public:
+        BOOM_INLINE int32_t GetSequence() const { return m_Sequence; }
+        BOOM_INLINE float GetTime() const { return m_Time; }
+        BOOM_INLINE void SetSequence(int32_t sequence) { m_Sequence = sequence; }
+        BOOM_INLINE void SetTime(float time) { m_Time = time; }
+
     private:
         /**
         * @brief Interpolate between two keyframes to produce a local joint matrix.
         *
         * Performs standard TRS interpolation:
-        *  - Position: linear interpolation (lerp)
-        *  - Rotation: normalized spherical linear interpolation (slerp)
-        *  - Scale:    linear interpolation (lerp)
+        *  - position: linear interpolation (lerp)
+        *  - rotation: normalized spherical linear interpolation (slerp)
+        *  - scale:    linear interpolation (lerp)
         *
         * @param[in] prev        Previous keyframe (t0).
         * @param[in] next        Next keyframe (t1), with t1 > t0.
@@ -72,12 +79,12 @@ namespace Boom
         BOOM_INLINE glm::mat4 Interpolate(const KeyFrame& prev, const KeyFrame& next, float progression)
         {
             return (glm::translate(glm::mat4(1.0f),
-                glm::mix(prev.Position, next.Position, progression)) *
+                glm::mix(prev.position, next.position, progression)) *
 
-                glm::toMat4(glm::normalize(glm::slerp(prev.Rotation
-                    , next.Rotation, progression))) *
-                glm::scale(glm::mat4(1.0f), glm::mix(prev.Scale,
-                    next.Scale, progression)));
+                glm::toMat4(glm::normalize(glm::slerp(prev.rotation
+                    , next.rotation, progression))) *
+                glm::scale(glm::mat4(1.0f), glm::mix(prev.scale,
+                    next.scale, progression)));
         }
 
         /**
@@ -86,11 +93,11 @@ namespace Boom
          * Scans the joint's sorted key list and returns the last key with timestamp
          * <= @c m_Time as @p prev and the first key with timestamp > @c m_Time as @p next.
          *
-         * @param[in]  joint Joint whose keyframes are queried (expects sorted @c Keys).
+         * @param[in]  joint Joint whose keyframes are queried (expects sorted @c keys).
          * @param[out] prev  Output previous keyframe.
          * @param[out] next  Output next keyframe.
          *
-         * @pre @c joint.Keys.size() >= 2 and timestamps are strictly increasing and
+         * @pre @c joint.keys.size() >= 2 and timestamps are strictly increasing and
          *      cover the clip range. @c m_Time is wrapped into the clip duration.
          * @warning No explicit fallback is provided if @c m_Time is beyond the last key
          *          (should not happen because @c Animate() wraps time with @c fmod).
@@ -98,12 +105,12 @@ namespace Boom
         BOOM_INLINE void GetPreviousAndNextFrames(Joint&
             joint, KeyFrame& prev, KeyFrame& next)
         {
-            for (uint32_t i = 1u; i < joint.Keys.size(); i++)
+            for (uint32_t i = 1u; i < joint.keys.size(); i++)
             {
-                if (m_Time < joint.Keys[i].TimeStamp)
+                if (m_Time < joint.keys[i].timeStamp)
                 {
-                    prev = joint.Keys[i - 1];
-                    next = joint.Keys[i];
+                    prev = joint.keys[i - 1];
+                    next = joint.keys[i];
                     return;
                 }
             }
@@ -114,9 +121,9 @@ namespace Boom
         *
         * Builds the current joint's local transform by interpolating between the
         * bracketing keyframes, composes it with the parent's transform, then writes
-        * the final skinned matrix into @c m_Transforms at @c joint.Index:
+        * the final skinned matrix into @c m_Transforms at @c joint.index:
         *
-        * final = parent * local * m_GlobalTransform * joint.Offset
+        * final = parent * local * m_GlobalTransform * joint.offset
         *
         * After updating the current joint, the function recurses into each child.
         *
@@ -124,7 +131,7 @@ namespace Boom
         * @param[in] parentTransform  The accumulated transform from the parent chain.
         *
         * @pre @c m_Transforms has size >= max joint index + 1.
-        * @post @c m_Transforms[joint.Index] holds the current frame's final matrix.
+        * @post @c m_Transforms[joint.index] holds the current frame's final matrix.
         *
         * @remarks Depth-first traversal; each joint visited once.
         */
@@ -136,16 +143,16 @@ namespace Boom
             GetPreviousAndNextFrames(joint, prev, next);
 
             // compute interpolation factor
-            float progression = (m_Time - prev.TimeStamp) / (next.TimeStamp - prev.TimeStamp);
+            float progression = (m_Time - prev.timeStamp) / (next.timeStamp - prev.timeStamp);
 
             // compute joint new transform
             glm::mat4 transform = parentTransform * Interpolate(prev, next, progression);
 
             // update joint transform
-            m_Transforms[joint.Index] = (transform * m_GlobalTransform * joint.Offset);
+            m_Transforms[joint.index] = (transform * m_GlobalTransform * joint.offset);
 
             // update children joints
-            for (auto& child : joint.Children) {
+            for (auto& child : joint.children) {
                 UpdateJoints(child, transform);
             }
         }
@@ -155,7 +162,7 @@ namespace Boom
         std::vector<glm::mat4> m_Transforms{};   //!< Final per-joint transforms (skinning matrices).
         glm::mat4 m_GlobalTransform{};           //!< Global/model transform applied to all joints.
         friend struct SkeletalModel;           //!< Grants SkeletalModel access to internals.
-        int32_t m_Sequence = 0;                //!< Index of the active animation clip.
+        int32_t m_Sequence = 0;                //!< index of the active animation clip.
         float m_Time = 0.0f;                   //!< Local time within the active clip (seconds, wrapped).
         Joint m_Root;                          //!< Skeleton root joint.
 	};

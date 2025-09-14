@@ -21,10 +21,10 @@
     <ClInclude Include="includes\BoomEngine.h">
       <Filter>includes</Filter>
     </ClInclude>
-    <ClInclude Include="includes\common\framework.h">
+    <ClInclude Include="includes\Common\framework.h">
       <Filter>includes\common</Filter>
     </ClInclude>
-    <ClInclude Include="includes\common\Core.h">
+    <ClInclude Include="includes\Common\Core.h">
       <Filter>includes\common</Filter>
     </ClInclude>
     <ClInclude Include="includes\Application\Context.h">
@@ -36,7 +36,7 @@
     <ClInclude Include="includes\Application\Application.h">
       <Filter>includes</Filter>
     </ClInclude>
-    <ClInclude Include="includes\common\Events.h">
+    <ClInclude Include="includes\Common\Events.h">
       <Filter>includes</Filter>
     </ClInclude>
     <ClInclude Include="includes\AppWindow.h">
@@ -120,7 +120,16 @@
     <ClInclude Include="includes\Graphics\Shaders\Bloom.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Audio\Audio.hpp">
+      <Filter>includes</Filter>
+    </ClInclude>
     <ClInclude Include="includes\Auxiliaries\Assets.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Common\YAML.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Auxiliaries\Serializer.h">
       <Filter>includes</Filter>
     </ClInclude>
   </ItemGroup>
@@ -135,6 +144,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Textures\Texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="includes\Audio\Audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

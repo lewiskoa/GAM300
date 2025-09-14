@@ -1,5 +1,5 @@
-Folder PATH listing
-Volume serial number is 2CEE-B71D
+Folder PATH listing for volume Windows-SSD
+Volume serial number is 02E6-3638
 C:.
 ¦   conanfile.txt
 ¦   Directory.Build.props
@@ -7,6 +7,448 @@ C:.
 ¦   setup.bat
 ¦   structure.txt
 ¦   
++---conanbuild
+¦   +---Debug
+¦   ¦       assimp-config-version.cmake
+¦   ¦       assimp-config.cmake
+¦   ¦       assimp-debug-x86_64-data.cmake
+¦   ¦       assimp-Target-debug.cmake
+¦   ¦       assimpTargets.cmake
+¦   ¦       BZip2-debug-x86_64-data.cmake
+¦   ¦       BZip2-Target-debug.cmake
+¦   ¦       BZip2Config.cmake
+¦   ¦       BZip2ConfigVersion.cmake
+¦   ¦       BZip2Targets.cmake
+¦   ¦       clipper-config-version.cmake
+¦   ¦       clipper-config.cmake
+¦   ¦       clipper-debug-x86_64-data.cmake
+¦   ¦       clipper-Target-debug.cmake
+¦   ¦       clipperTargets.cmake
+¦   ¦       cmakedeps_macros.cmake
+¦   ¦       CMakePresets.json
+¦   ¦       conanbuild.bat
+¦   ¦       conanbuildenv-debug-x86_64.bat
+¦   ¦       conandeps.props
+¦   ¦       conandeps_legacy.cmake
+¦   ¦       conanrun.bat
+¦   ¦       conanrunenv-debug-x86_64.bat
+¦   ¦       conan_assimp.props
+¦   ¦       conan_assimp_debug_x64.props
+¦   ¦       conan_assimp_vars_debug_x64.props
+¦   ¦       conan_bzip2.props
+¦   ¦       conan_bzip2_debug_x64.props
+¦   ¦       conan_bzip2_vars_debug_x64.props
+¦   ¦       conan_clipper.props
+¦   ¦       conan_clipper_debug_x64.props
+¦   ¦       conan_clipper_vars_debug_x64.props
+¦   ¦       conan_draco.props
+¦   ¦       conan_draco_debug_x64.props
+¦   ¦       conan_draco_vars_debug_x64.props
+¦   ¦       conan_entt.props
+¦   ¦       conan_entt_debug_x64.props
+¦   ¦       conan_entt_vars_debug_x64.props
+¦   ¦       conan_fmt.props
+¦   ¦       conan_fmt__fmt.props
+¦   ¦       conan_fmt__fmt_debug_x64.props
+¦   ¦       conan_fmt__fmt_vars_debug_x64.props
+¦   ¦       conan_glew.props
+¦   ¦       conan_glew_glewlib.props
+¦   ¦       conan_glew_glewlib_debug_x64.props
+¦   ¦       conan_glew_glewlib_vars_debug_x64.props
+¦   ¦       conan_glfw.props
+¦   ¦       conan_glfw_debug_x64.props
+¦   ¦       conan_glfw_vars_debug_x64.props
+¦   ¦       conan_glm.props
+¦   ¦       conan_glm_debug_x64.props
+¦   ¦       conan_glm_vars_debug_x64.props
+¦   ¦       conan_glu.props
+¦   ¦       conan_glu_debug_x64.props
+¦   ¦       conan_glu_vars_debug_x64.props
+¦   ¦       conan_imgui.props
+¦   ¦       conan_imgui_debug_x64.props
+¦   ¦       conan_imgui_vars_debug_x64.props
+¦   ¦       conan_kuba-zip.props
+¦   ¦       conan_kuba-zip_debug_x64.props
+¦   ¦       conan_kuba-zip_vars_debug_x64.props
+¦   ¦       conan_minizip.props
+¦   ¦       conan_minizip_debug_x64.props
+¦   ¦       conan_minizip_vars_debug_x64.props
+¦   ¦       conan_openddl-parser.props
+¦   ¦       conan_openddl-parser_debug_x64.props
+¦   ¦       conan_openddl-parser_vars_debug_x64.props
+¦   ¦       conan_opengl.props
+¦   ¦       conan_opengl_debug_x64.props
+¦   ¦       conan_opengl_vars_debug_x64.props
+¦   ¦       conan_physx.props
+¦   ¦       conan_physx_physxcharacterkinematic.props
+¦   ¦       conan_physx_physxcharacterkinematic_debug_x64.props
+¦   ¦       conan_physx_physxcharacterkinematic_vars_debug_x64.props
+¦   ¦       conan_physx_physxcommon.props
+¦   ¦       conan_physx_physxcommon_debug_x64.props
+¦   ¦       conan_physx_physxcommon_vars_debug_x64.props
+¦   ¦       conan_physx_physxcooking.props
+¦   ¦       conan_physx_physxcooking_debug_x64.props
+¦   ¦       conan_physx_physxcooking_vars_debug_x64.props
+¦   ¦       conan_physx_physxextensions.props
+¦   ¦       conan_physx_physxextensions_debug_x64.props
+¦   ¦       conan_physx_physxextensions_vars_debug_x64.props
+¦   ¦       conan_physx_physxfoundation.props
+¦   ¦       conan_physx_physxfoundation_debug_x64.props
+¦   ¦       conan_physx_physxfoundation_vars_debug_x64.props
+¦   ¦       conan_physx_physxmain.props
+¦   ¦       conan_physx_physxmain_debug_x64.props
+¦   ¦       conan_physx_physxmain_vars_debug_x64.props
+¦   ¦       conan_physx_physxpvdsdk.props
+¦   ¦       conan_physx_physxpvdsdk_debug_x64.props
+¦   ¦       conan_physx_physxpvdsdk_vars_debug_x64.props
+¦   ¦       conan_physx_physxtask.props
+¦   ¦       conan_physx_physxtask_debug_x64.props
+¦   ¦       conan_physx_physxtask_vars_debug_x64.props
+¦   ¦       conan_physx_physxvehicle.props
+¦   ¦       conan_physx_physxvehicle_debug_x64.props
+¦   ¦       conan_physx_physxvehicle_vars_debug_x64.props
+¦   ¦       conan_poly2tri.props
+¦   ¦       conan_poly2tri_debug_x64.props
+¦   ¦       conan_poly2tri_vars_debug_x64.props
+¦   ¦       conan_pugixml.props
+¦   ¦       conan_pugixml_debug_x64.props
+¦   ¦       conan_pugixml_vars_debug_x64.props
+¦   ¦       conan_spdlog.props
+¦   ¦       conan_spdlog_libspdlog.props
+¦   ¦       conan_spdlog_libspdlog_debug_x64.props
+¦   ¦       conan_spdlog_libspdlog_vars_debug_x64.props
+¦   ¦       conan_stb.props
+¦   ¦       conan_stb_debug_x64.props
+¦   ¦       conan_stb_vars_debug_x64.props
+¦   ¦       conan_toolchain.cmake
+¦   ¦       conan_zlib.props
+¦   ¦       conan_zlib_debug_x64.props
+¦   ¦       conan_zlib_vars_debug_x64.props
+¦   ¦       deactivate_conanbuild.bat
+¦   ¦       deactivate_conanrun.bat
+¦   ¦       draco-config-version.cmake
+¦   ¦       draco-config.cmake
+¦   ¦       draco-debug-x86_64-data.cmake
+¦   ¦       draco-Target-debug.cmake
+¦   ¦       dracoTargets.cmake
+¦   ¦       EnTT-debug-x86_64-data.cmake
+¦   ¦       EnTT-Target-debug.cmake
+¦   ¦       EnTTConfig.cmake
+¦   ¦       EnTTConfigVersion.cmake
+¦   ¦       EnTTTargets.cmake
+¦   ¦       FindBZip2.cmake
+¦   ¦       FindGLEW.cmake
+¦   ¦       FindZLIB.cmake
+¦   ¦       fmt-config-version.cmake
+¦   ¦       fmt-config.cmake
+¦   ¦       fmt-debug-x86_64-data.cmake
+¦   ¦       fmt-Target-debug.cmake
+¦   ¦       fmtTargets.cmake
+¦   ¦       glew-config-version.cmake
+¦   ¦       glew-config.cmake
+¦   ¦       glew-debug-x86_64-data.cmake
+¦   ¦       glew-Target-debug.cmake
+¦   ¦       glewTargets.cmake
+¦   ¦       glfw3-config-version.cmake
+¦   ¦       glfw3-config.cmake
+¦   ¦       glfw3-debug-x86_64-data.cmake
+¦   ¦       glfw3-Target-debug.cmake
+¦   ¦       glfw3Targets.cmake
+¦   ¦       glm-config-version.cmake
+¦   ¦       glm-config.cmake
+¦   ¦       glm-debug-x86_64-data.cmake
+¦   ¦       glm-Target-debug.cmake
+¦   ¦       glmTargets.cmake
+¦   ¦       glu-config-version.cmake
+¦   ¦       glu-config.cmake
+¦   ¦       glu-debug-x86_64-data.cmake
+¦   ¦       glu-Target-debug.cmake
+¦   ¦       gluTargets.cmake
+¦   ¦       imgui-config-version.cmake
+¦   ¦       imgui-config.cmake
+¦   ¦       imgui-debug-x86_64-data.cmake
+¦   ¦       imgui-Target-debug.cmake
+¦   ¦       imguiTargets.cmake
+¦   ¦       minizip-config-version.cmake
+¦   ¦       minizip-config.cmake
+¦   ¦       minizip-debug-x86_64-data.cmake
+¦   ¦       minizip-Target-debug.cmake
+¦   ¦       minizipTargets.cmake
+¦   ¦       module-BZip2-debug-x86_64-data.cmake
+¦   ¦       module-BZip2-Target-debug.cmake
+¦   ¦       module-BZip2Targets.cmake
+¦   ¦       module-GLEW-debug-x86_64-data.cmake
+¦   ¦       module-GLEW-Target-debug.cmake
+¦   ¦       module-GLEWTargets.cmake
+¦   ¦       module-ZLIB-debug-x86_64-data.cmake
+¦   ¦       module-ZLIB-Target-debug.cmake
+¦   ¦       module-ZLIBTargets.cmake
+¦   ¦       openddlparser-config-version.cmake
+¦   ¦       openddlparser-config.cmake
+¦   ¦       openddlparser-debug-x86_64-data.cmake
+¦   ¦       openddlparser-Target-debug.cmake
+¦   ¦       openddlparserTargets.cmake
+¦   ¦       opengl_system-config-version.cmake
+¦   ¦       opengl_system-config.cmake
+¦   ¦       opengl_system-debug-x86_64-data.cmake
+¦   ¦       opengl_system-Target-debug.cmake
+¦   ¦       opengl_systemTargets.cmake
+¦   ¦       PhysX-debug-x86_64-data.cmake
+¦   ¦       PhysX-Target-debug.cmake
+¦   ¦       PhysXConfig.cmake
+¦   ¦       PhysXConfigVersion.cmake
+¦   ¦       PhysXTargets.cmake
+¦   ¦       poly2tri-config-version.cmake
+¦   ¦       poly2tri-config.cmake
+¦   ¦       poly2tri-debug-x86_64-data.cmake
+¦   ¦       poly2tri-Target-debug.cmake
+¦   ¦       poly2triTargets.cmake
+¦   ¦       pugixml-config-version.cmake
+¦   ¦       pugixml-config.cmake
+¦   ¦       pugixml-debug-x86_64-data.cmake
+¦   ¦       pugixml-Target-debug.cmake
+¦   ¦       pugixmlTargets.cmake
+¦   ¦       spdlog-config-version.cmake
+¦   ¦       spdlog-config.cmake
+¦   ¦       spdlog-debug-x86_64-data.cmake
+¦   ¦       spdlog-Target-debug.cmake
+¦   ¦       spdlogTargets.cmake
+¦   ¦       stb-config-version.cmake
+¦   ¦       stb-config.cmake
+¦   ¦       stb-debug-x86_64-data.cmake
+¦   ¦       stb-Target-debug.cmake
+¦   ¦       stbTargets.cmake
+¦   ¦       zip-config-version.cmake
+¦   ¦       zip-config.cmake
+¦   ¦       zip-debug-x86_64-data.cmake
+¦   ¦       zip-Target-debug.cmake
+¦   ¦       zipTargets.cmake
+¦   ¦       ZLIB-debug-x86_64-data.cmake
+¦   ¦       ZLIB-Target-debug.cmake
+¦   ¦       ZLIBConfig.cmake
+¦   ¦       ZLIBConfigVersion.cmake
+¦   ¦       ZLIBTargets.cmake
+¦   ¦       
+¦   +---Release
+¦           assimp-config-version.cmake
+¦           assimp-config.cmake
+¦           assimp-release-x86_64-data.cmake
+¦           assimp-Target-release.cmake
+¦           assimpTargets.cmake
+¦           BZip2-release-x86_64-data.cmake
+¦           BZip2-Target-release.cmake
+¦           BZip2Config.cmake
+¦           BZip2ConfigVersion.cmake
+¦           BZip2Targets.cmake
+¦           clipper-config-version.cmake
+¦           clipper-config.cmake
+¦           clipper-release-x86_64-data.cmake
+¦           clipper-Target-release.cmake
+¦           clipperTargets.cmake
+¦           cmakedeps_macros.cmake
+¦           CMakePresets.json
+¦           conanbuild.bat
+¦           conanbuildenv-release-x86_64.bat
+¦           conandeps.props
+¦           conandeps_legacy.cmake
+¦           conanrun.bat
+¦           conanrunenv-release-x86_64.bat
+¦           conan_assimp.props
+¦           conan_assimp_release_x64.props
+¦           conan_assimp_vars_release_x64.props
+¦           conan_bzip2.props
+¦           conan_bzip2_release_x64.props
+¦           conan_bzip2_vars_release_x64.props
+¦           conan_clipper.props
+¦           conan_clipper_release_x64.props
+¦           conan_clipper_vars_release_x64.props
+¦           conan_draco.props
+¦           conan_draco_release_x64.props
+¦           conan_draco_vars_release_x64.props
+¦           conan_entt.props
+¦           conan_entt_release_x64.props
+¦           conan_entt_vars_release_x64.props
+¦           conan_fmt.props
+¦           conan_fmt__fmt.props
+¦           conan_fmt__fmt_release_x64.props
+¦           conan_fmt__fmt_vars_release_x64.props
+¦           conan_glew.props
+¦           conan_glew_glewlib.props
+¦           conan_glew_glewlib_release_x64.props
+¦           conan_glew_glewlib_vars_release_x64.props
+¦           conan_glfw.props
+¦           conan_glfw_release_x64.props
+¦           conan_glfw_vars_release_x64.props
+¦           conan_glm.props
+¦           conan_glm_release_x64.props
+¦           conan_glm_vars_release_x64.props
+¦           conan_glu.props
+¦           conan_glu_release_x64.props
+¦           conan_glu_vars_release_x64.props
+¦           conan_imgui.props
+¦           conan_imgui_release_x64.props
+¦           conan_imgui_vars_release_x64.props
+¦           conan_kuba-zip.props
+¦           conan_kuba-zip_release_x64.props
+¦           conan_kuba-zip_vars_release_x64.props
+¦           conan_minizip.props
+¦           conan_minizip_release_x64.props
+¦           conan_minizip_vars_release_x64.props
+¦           conan_openddl-parser.props
+¦           conan_openddl-parser_release_x64.props
+¦           conan_openddl-parser_vars_release_x64.props
+¦           conan_opengl.props
+¦           conan_opengl_release_x64.props
+¦           conan_opengl_vars_release_x64.props
+¦           conan_physx.props
+¦           conan_physx_physxcharacterkinematic.props
+¦           conan_physx_physxcharacterkinematic_release_x64.props
+¦           conan_physx_physxcharacterkinematic_vars_release_x64.props
+¦           conan_physx_physxcommon.props
+¦           conan_physx_physxcommon_release_x64.props
+¦           conan_physx_physxcommon_vars_release_x64.props
+¦           conan_physx_physxcooking.props
+¦           conan_physx_physxcooking_release_x64.props
+¦           conan_physx_physxcooking_vars_release_x64.props
+¦           conan_physx_physxextensions.props
+¦           conan_physx_physxextensions_release_x64.props
+¦           conan_physx_physxextensions_vars_release_x64.props
+¦           conan_physx_physxfoundation.props
+¦           conan_physx_physxfoundation_release_x64.props
+¦           conan_physx_physxfoundation_vars_release_x64.props
+¦           conan_physx_physxmain.props
+¦           conan_physx_physxmain_release_x64.props
+¦           conan_physx_physxmain_vars_release_x64.props
+¦           conan_physx_physxpvdsdk.props
+¦           conan_physx_physxpvdsdk_release_x64.props
+¦           conan_physx_physxpvdsdk_vars_release_x64.props
+¦           conan_physx_physxtask.props
+¦           conan_physx_physxtask_release_x64.props
+¦           conan_physx_physxtask_vars_release_x64.props
+¦           conan_physx_physxvehicle.props
+¦           conan_physx_physxvehicle_release_x64.props
+¦           conan_physx_physxvehicle_vars_release_x64.props
+¦           conan_poly2tri.props
+¦           conan_poly2tri_release_x64.props
+¦           conan_poly2tri_vars_release_x64.props
+¦           conan_pugixml.props
+¦           conan_pugixml_release_x64.props
+¦           conan_pugixml_vars_release_x64.props
+¦           conan_spdlog.props
+¦           conan_spdlog_libspdlog.props
+¦           conan_spdlog_libspdlog_release_x64.props
+¦           conan_spdlog_libspdlog_vars_release_x64.props
+¦           conan_stb.props
+¦           conan_stb_release_x64.props
+¦           conan_stb_vars_release_x64.props
+¦           conan_toolchain.cmake
+¦           conan_zlib.props
+¦           conan_zlib_release_x64.props
+¦           conan_zlib_vars_release_x64.props
+¦           deactivate_conanbuild.bat
+¦           deactivate_conanrun.bat
+¦           draco-config-version.cmake
+¦           draco-config.cmake
+¦           draco-release-x86_64-data.cmake
+¦           draco-Target-release.cmake
+¦           dracoTargets.cmake
+¦           EnTT-release-x86_64-data.cmake
+¦           EnTT-Target-release.cmake
+¦           EnTTConfig.cmake
+¦           EnTTConfigVersion.cmake
+¦           EnTTTargets.cmake
+¦           FindBZip2.cmake
+¦           FindGLEW.cmake
+¦           FindZLIB.cmake
+¦           fmt-config-version.cmake
+¦           fmt-config.cmake
+¦           fmt-release-x86_64-data.cmake
+¦           fmt-Target-release.cmake
+¦           fmtTargets.cmake
+¦           glew-config-version.cmake
+¦           glew-config.cmake
+¦           glew-release-x86_64-data.cmake
+¦           glew-Target-release.cmake
+¦           glewTargets.cmake
+¦           glfw3-config-version.cmake
+¦           glfw3-config.cmake
+¦           glfw3-release-x86_64-data.cmake
+¦           glfw3-Target-release.cmake
+¦           glfw3Targets.cmake
+¦           glm-config-version.cmake
+¦           glm-config.cmake
+¦           glm-release-x86_64-data.cmake
+¦           glm-Target-release.cmake
+¦           glmTargets.cmake
+¦           glu-config-version.cmake
+¦           glu-config.cmake
+¦           glu-release-x86_64-data.cmake
+¦           glu-Target-release.cmake
+¦           gluTargets.cmake
+¦           imgui-config-version.cmake
+¦           imgui-config.cmake
+¦           imgui-release-x86_64-data.cmake
+¦           imgui-Target-release.cmake
+¦           imguiTargets.cmake
+¦           minizip-config-version.cmake
+¦           minizip-config.cmake
+¦           minizip-release-x86_64-data.cmake
+¦           minizip-Target-release.cmake
+¦           minizipTargets.cmake
+¦           module-BZip2-release-x86_64-data.cmake
+¦           module-BZip2-Target-release.cmake
+¦           module-BZip2Targets.cmake
+¦           module-GLEW-release-x86_64-data.cmake
+¦           module-GLEW-Target-release.cmake
+¦           module-GLEWTargets.cmake
+¦           module-ZLIB-release-x86_64-data.cmake
+¦           module-ZLIB-Target-release.cmake
+¦           module-ZLIBTargets.cmake
+¦           openddlparser-config-version.cmake
+¦           openddlparser-config.cmake
+¦           openddlparser-release-x86_64-data.cmake
+¦           openddlparser-Target-release.cmake
+¦           openddlparserTargets.cmake
+¦           opengl_system-config-version.cmake
+¦           opengl_system-config.cmake
+¦           opengl_system-release-x86_64-data.cmake
+¦           opengl_system-Target-release.cmake
+¦           opengl_systemTargets.cmake
+¦           PhysX-release-x86_64-data.cmake
+¦           PhysX-Target-release.cmake
+¦           PhysXConfig.cmake
+¦           PhysXConfigVersion.cmake
+¦           PhysXTargets.cmake
+¦           poly2tri-config-version.cmake
+¦           poly2tri-config.cmake
+¦           poly2tri-release-x86_64-data.cmake
+¦           poly2tri-Target-release.cmake
+¦           poly2triTargets.cmake
+¦           pugixml-config-version.cmake
+¦           pugixml-config.cmake
+¦           pugixml-release-x86_64-data.cmake
+¦           pugixml-Target-release.cmake
+¦           pugixmlTargets.cmake
+¦           spdlog-config-version.cmake
+¦           spdlog-config.cmake
+¦           spdlog-release-x86_64-data.cmake
+¦           spdlog-Target-release.cmake
+¦           spdlogTargets.cmake
+¦           stb-config-version.cmake
+¦           stb-config.cmake
+¦           stb-release-x86_64-data.cmake
+¦           stb-Target-release.cmake
+¦           stbTargets.cmake
+¦           zip-config-version.cmake
+¦           zip-config.cmake
+¦           zip-release-x86_64-data.cmake
+¦           zip-Target-release.cmake
+¦           zipTargets.cmake
+¦           ZLIB-release-x86_64-data.cmake
+¦           ZLIB-Target-release.cmake
+¦           ZLIBConfig.cmake
+¦           ZLIBConfigVersion.cmake
+¦           ZLIBTargets.cmake
 ¦           
 +---Editor
 ¦   ¦   Editor.filters
@@ -17,9 +459,12 @@ C:.
 ¦   +---Resources
 ¦   ¦   +---Models
 ¦   ¦   ¦       Cube.FBX
+¦   ¦   ¦       dance.fbx
 ¦   ¦   ¦       sphere.fbx
+¦   ¦   ¦       walking.fbx
 ¦   ¦   ¦       
 ¦   ¦   +---Shaders
+¦   ¦   ¦       bloom.glsl
 ¦   ¦   ¦       color.glsl
 ¦   ¦   ¦       color3D.glsl
 ¦   ¦   ¦       final.glsl
@@ -43,34 +488,11 @@ C:.
 ¦   ¦       
 ¦   +---x64
 ¦       +---Debug
-¦       ¦   ¦   Editor.Build.CppClean.log
-¦       ¦   ¦   Editor.exe.recipe
-¦       ¦   ¦   Editor.ilk
-¦       ¦   ¦   Editor.log
-¦       ¦   ¦   Editor.obj
-¦       ¦   ¦   Editor.vcxproj.FileListAbsolute.txt
-¦       ¦   ¦   vc143.idb
-¦       ¦   ¦   vc143.pdb
-¦       ¦   ¦   
-¦       ¦   +---Editor.tlog
-¦       ¦           CL.command.1.tlog
-¦       ¦           Cl.items.tlog
-¦       ¦           CL.read.1.tlog
-¦       ¦           CL.write.1.tlog
-¦       ¦           Editor.lastbuildstate
-¦       ¦           link.command.1.tlog
-¦       ¦           link.read.1.tlog
-¦       ¦           link.secondary.1.tlog
-¦       ¦           link.write.1.tlog
-¦       ¦           
-¦       +---Release
-¦           ¦   Editor.Build.CppClean.log
 ¦           ¦   Editor.exe.recipe
-¦           ¦   Editor.iobj
-¦           ¦   Editor.ipdb
+¦           ¦   Editor.ilk
 ¦           ¦   Editor.log
 ¦           ¦   Editor.obj
-¦           ¦   Editor.vcxproj.FileListAbsolute.txt
+¦           ¦   vc143.idb
 ¦           ¦   vc143.pdb
 ¦           ¦   
 ¦           +---Editor.tlog
@@ -101,39 +523,55 @@ C:.
 ¦       ¦   ¦       Context.h
 ¦       ¦   ¦       Interface.h
 ¦       ¦   ¦       
+¦       ¦   +---Audio
+¦       ¦   ¦       Audio.cpp
+¦       ¦   ¦       Audio.hpp
+¦       ¦   ¦       
 ¦       ¦   +---common
 ¦       ¦   ¦       Core.h
 ¦       ¦   ¦       Events.h
 ¦       ¦   ¦       framework.h
 ¦       ¦   ¦       
+¦       ¦   +---ECS
+¦       ¦   ¦       ECS.hpp
+¦       ¦   ¦       
 ¦       ¦   +---Graphics
-¦       ¦       ¦   Renderer.h
-¦       ¦       ¦   
-¦       ¦       +---Buffers
-¦       ¦       ¦       Frame.h
-¦       ¦       ¦       Mesh.h
-¦       ¦       ¦       Vertex.h
-¦       ¦       ¦       
-¦       ¦       +---Models
-¦       ¦       ¦       Helper.h
-¦       ¦       ¦       Model.h
-¦       ¦       ¦       
-¦       ¦       +---Shaders
-¦       ¦       ¦       Color.h
-¦       ¦       ¦       Final.h
-¦       ¦       ¦       PBR.h
-¦       ¦       ¦       Shader.h
-¦       ¦       ¦       Skybox.h
-¦       ¦       ¦       SkyMap.h
-¦       ¦       ¦       
-¦       ¦       +---Textures
-¦       ¦       ¦       Texture.h
-¦       ¦       ¦       
-¦       ¦       +---Utilities
-¦       ¦               Data.h
-¦       ¦               Quad.h
-¦       ¦               Skybox.h
-¦       ¦               
+¦       ¦   ¦   ¦   Renderer.h
+¦       ¦   ¦   ¦   
+¦       ¦   ¦   +---Buffers
+¦       ¦   ¦   ¦       Frame.h
+¦       ¦   ¦   ¦       Mesh.h
+¦       ¦   ¦   ¦       Vertex.h
+¦       ¦   ¦   ¦       
+¦       ¦   ¦   +---Models
+¦       ¦   ¦   ¦       Animation.h
+¦       ¦   ¦   ¦       Animator.h
+¦       ¦   ¦   ¦       Helper.h
+¦       ¦   ¦   ¦       Model.h
+¦       ¦   ¦   ¦       
+¦       ¦   ¦   +---Shaders
+¦       ¦   ¦   ¦       Bloom.h
+¦       ¦   ¦   ¦       Color.h
+¦       ¦   ¦   ¦       Final.h
+¦       ¦   ¦   ¦       PBR.h
+¦       ¦   ¦   ¦       Shader.h
+¦       ¦   ¦   ¦       Skybox.h
+¦       ¦   ¦   ¦       SkyMap.h
+¦       ¦   ¦   ¦       
+¦       ¦   ¦   +---Textures
+¦       ¦   ¦   ¦       Texture.h
+¦       ¦   ¦   ¦       
+¦       ¦   ¦   +---Utilities
+¦       ¦   ¦           Data.h
+¦       ¦   ¦           Quad.h
+¦       ¦   ¦           Skybox.h
+¦       ¦   ¦           
+¦       ¦   +---Physics
+¦       ¦           Callback.h
+¦       ¦           Context.h
+¦       ¦           Helpers.h
+¦       ¦           Utilities.h
+¦       ¦           
 ¦       +---src
 ¦       ¦   ¦   BoomEngine.cpp
 ¦       ¦   ¦   Logger.cpp
@@ -146,42 +584,14 @@ C:.
 ¦       ¦           
 ¦       +---x64
 ¦           +---Debug
-¦           ¦   ¦   BoomEngine.Build.CppClean.log
-¦           ¦   ¦   BoomEngine.dll.recipe
-¦           ¦   ¦   BoomEngine.ilk
-¦           ¦   ¦   BoomEngine.log
-¦           ¦   ¦   BoomEngine.obj
-¦           ¦   ¦   BoomEngine.vcxproj.FileListAbsolute.txt
-¦           ¦   ¦   Logger.obj
-¦           ¦   ¦   vc143.idb
-¦           ¦   ¦   vc143.pdb
-¦           ¦   ¦   
-¦           ¦   +---BoomEngine
-¦           ¦   ¦       Core.pch
-¦           ¦   ¦       
-¦           ¦   +---BoomEngine.tlog
-¦           ¦           BoomEngine.lastbuildstate
-¦           ¦           CL.command.1.tlog
-¦           ¦           Cl.items.tlog
-¦           ¦           CL.read.1.tlog
-¦           ¦           CL.write.1.tlog
-¦           ¦           link.command.1.tlog
-¦           ¦           link.read.1.tlog
-¦           ¦           link.secondary.1.tlog
-¦           ¦           link.write.1.tlog
-¦           ¦           
-¦           +---Release
-¦               ¦   AppWindow.obj
-¦               ¦   BoomEngine.Build.CppClean.log
 ¦               ¦   BoomEngine.dll.recipe
-¦               ¦   BoomEngine.iobj
-¦               ¦   BoomEngine.ipdb
+¦               ¦   BoomEngine.ilk
 ¦               ¦   BoomEngine.log
 ¦               ¦   BoomEngine.obj
-¦               ¦   BoomEngine.vcxproj.FileListAbsolute.txt
 ¦               ¦   Context.obj
 ¦               ¦   Logger.obj
-¦               ¦   Renderer.obj
+¦               ¦   Texture.obj
+¦               ¦   vc143.idb
 ¦               ¦   vc143.pdb
 ¦               ¦   
 ¦               +---BoomEngine
@@ -203,18 +613,12 @@ C:.
 ¦       
 +---x64
     +---Debug
-    ¦       BoomEngine.dll
-    ¦       BoomEngine.exp
-    ¦       BoomEngine.lib
-    ¦       BoomEngine.pdb
-    ¦       Editor.exe
-    ¦       Editor.pdb
-    ¦       
-    +---Release
             BoomEngine.dll
             BoomEngine.exp
             BoomEngine.lib
             BoomEngine.pdb
             Editor.exe
             Editor.pdb
+            fmodL.dll
+            fmodstudioL.dll
             

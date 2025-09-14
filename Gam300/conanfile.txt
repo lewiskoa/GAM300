@@ -9,6 +9,8 @@ stb/cci.20230920
 assimp/5.4.3
 physx/4.1.1
 entt/3.12.2
+yaml-cpp/0.8.0
+magic_enum/0.9.6
 
 [generators]
 MSBuildDeps
@@ -18,3 +20,4 @@ assimp/5.4.3:shared=False
 glew/2.2.0:shared=False
 glfw/3.3.8:shared=False
 physx/4.1.1:shared=True
+yaml-cpp/0.8.0:shared=True

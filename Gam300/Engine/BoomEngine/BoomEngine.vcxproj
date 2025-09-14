@@ -167,11 +167,14 @@
     <ClInclude Include="includes\Application\Context.h" />
     <ClInclude Include="includes\Application\Interface.h" />
     <ClInclude Include="includes\AppWindow.h" />
+    <ClInclude Include="includes\Audio\Audio.hpp" />
     <ClInclude Include="includes\Auxiliaries\Assets.h" />
+    <ClInclude Include="includes\Auxiliaries\Serializer.h" />
     <ClInclude Include="includes\BoomEngine.h" />
-    <ClInclude Include="includes\common\Events.h" />
-    <ClInclude Include="includes\common\framework.h" />
-    <ClInclude Include="includes\common\Core.h" />
+    <ClInclude Include="includes\Common\Events.h" />
+    <ClInclude Include="includes\Common\framework.h" />
+    <ClInclude Include="includes\Common\Core.h" />
+    <ClInclude Include="includes\Common\YAML.h" />
     <ClInclude Include="includes\ECS\ECS.hpp" />
     <ClInclude Include="includes\GlobalConstants.h" />
     <ClInclude Include="includes\Graphics\Buffers\Frame.h" />
@@ -200,6 +203,9 @@
     <ClInclude Include="includes\Physics\Utilities.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="includes\Audio\Audio.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Application\Context.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
