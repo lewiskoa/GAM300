@@ -4,6 +4,7 @@
 #include "Interface.h"
 #include "ECS/ECS.hpp"
 #include "Physics/Context.h"
+#include <iostream>  
 namespace Boom
 {
     /**
@@ -23,9 +24,11 @@ namespace Boom
          */
 
         double m_SphereTimer = 0.0;
-        glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
-        Entity m_SphereEntity; // <-- Add this
-
+        glm::vec3 m_SphereStartPos = glm::vec3(2.0f, 10.0f, 0.0f);
+        Entity m_SphereEntity; 
+        Entity m_MeshEntity; // Add this to store mesh entity reference
+        float m_MeshRotationX = 0; // Track current X rotation
+        double m_RotationPrintTimer = 0.0;
 
         BOOM_INLINE Application()
         {
@@ -57,7 +60,7 @@ namespace Boom
                 rb.Density = 1.0f;
 
                 // Small velocity to check for movement
-                rb.InitialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
+                rb.InitialVelocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
                 // Attach collider (sphere)
                 auto& col = sphere.Attach<ColliderComponent>().Collider;
@@ -163,18 +166,40 @@ namespace Boom
             auto dance = std::make_shared<SkeletalModel>("dance.fbx");
 
 
-            Entity danceModel{ &registry };
+            // Create a mesh collider entity
+            Entity meshEntity = CreateEntt<Entity>();
             {
-                auto& t = danceModel.Attach<TransformComponent>().Transform;
-                t.rotate.y = 0.f;
-                t.translate = glm::vec3(-10.f, -2.5f, -5.0f); // Centered
-                t.scale = glm::vec3(0.03f);
+                // Set initial position 
+                auto& t = meshEntity.Attach<TransformComponent>().Transform;
+                t.translate = glm::vec3(5.0f, 0.0f, 0.0f);
+                t.scale = glm::vec3(0.05f);
+                t.rotate = glm::vec3(m_MeshRotationX, 0.0f, 0.0f); // Use the tracked rotation
 
-                auto& mc = danceModel.Attach<ModelComponent>();
-                mc.model = dance; // Use SkeletalModel for animation
+                // Print initial rotation values
+                std::cout << "=== Mesh Entity Initial Rotation ===" << std::endl;
+                std::cout << "X: " << t.rotate.x << " degrees" << std::endl;
+                std::cout << "Y: " << t.rotate.y << " degrees" << std::endl;
+                std::cout << "Z: " << t.rotate.z << " degrees" << std::endl;
+                std::cout << "====================================" << std::endl;
 
-                danceModel.Attach<AnimatorComponent>().Animator = dance->GetAnimator();
+                // Attach rigidbody (dynamic for testing, could be static)
+                auto& rb = meshEntity.Attach<RigidBodyComponent>().RigidBody;
+                rb.Type = RigidBody3D::STATIC;
+
+                // Attach mesh collider
+                auto& col = meshEntity.Attach<ColliderComponent>().Collider;
+                col.Type = Collider3D::MESH;
+
+                // Attach model (required for mesh collider)
+                auto& mc = meshEntity.Attach<ModelComponent>();
+                mc.model = std::make_shared<StaticModel>("dance.fbx");
             }
+
+            // Store the mesh entity reference
+            m_MeshEntity = meshEntity;
+
+            // Register with physics system
+            m_Context->Physics->AddRigidBody(meshEntity);
 
             //lights testers
             PointLight pl1{};
@@ -192,7 +217,6 @@ namespace Boom
                 dl.intensity = 10.f;
             }
             m_Context->window->camPos.z = 10.f;
-
             //textures
             auto roughness = std::make_shared<Texture2D>("Marble/roughness.png");
             auto albedo = std::make_shared<Texture2D>("Marble/albedo.png");
@@ -212,7 +236,9 @@ namespace Boom
             while (m_Context->window->PollEvents())
             {
                 ComputeFrameDeltaTime();
-
+                // Handle mesh rotation input
+                HandleMeshRotationInput();
+                PrintMeshRotationEverySecond();
                 m_SphereTimer += m_Context->DeltaTime;
 
                 // Reset sphere after 5 seconds
@@ -234,7 +260,7 @@ namespace Boom
                         PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(rb.Actor);
                         if (dyn)
                         {
-                            dyn->setLinearVelocity(PxVec3(1.0f, 0.0f, 0.0f)); // initial velocity
+                            dyn->setLinearVelocity(PxVec3(0.0f, 0.0f, 0.0f)); // initial velocity
                             dyn->setAngularVelocity(PxVec3(0.0f)); // stop rotation
                             dyn->clearForce();
                             dyn->clearTorque();
@@ -355,6 +381,84 @@ namespace Boom
         }
         
         private:
+
+            BOOM_INLINE void PrintMeshRotationEverySecond()
+            {
+                // Update the timer
+                m_RotationPrintTimer += m_Context->DeltaTime;
+
+                // Print rotation every 1 second
+                if (m_RotationPrintTimer >= 1.0)
+                {
+                    m_RotationPrintTimer = 0.0; // Reset timer
+
+                    // Get the current mesh entity's rotation
+                    if (m_MeshEntity) // Make sure the entity is valid
+                    {
+                        auto& transform = m_MeshEntity.Get<TransformComponent>().Transform;
+
+                        // Print rotation values with timestamp
+                        std::cout << "=== Mesh Rotation (Time: " << glfwGetTime() << "s) ===" << std::endl;
+                        std::cout << "X: " << transform.rotate.x << " degrees" << std::endl;
+                        std::cout << "Y: " << transform.rotate.y << " degrees" << std::endl;
+                        std::cout << "Z: " << transform.rotate.z << " degrees" << std::endl;
+                        std::cout << "================================================" << std::endl;
+                    }
+                }
+            }
+        
+            BOOM_INLINE void HandleMeshRotationInput()
+            {
+                GLFWwindow* window = m_Context->window->Window();
+                const float rotationSpeed = 90.0f; // degrees per second
+                const float rotationStep = rotationSpeed * static_cast<float>(m_Context->DeltaTime);
+
+                bool rotationChanged = false;
+
+                // Check for + key (increase X rotation)
+                if (glfwGetKey(window, GLFW_KEY_KP_ADD) == GLFW_PRESS ||
+                    glfwGetKey(window, GLFW_KEY_EQUAL) == GLFW_PRESS) {
+                    m_MeshRotationX += rotationStep;
+                    rotationChanged = true;
+                }
+
+                // Check for - key (decrease X rotation)
+                if (glfwGetKey(window, GLFW_KEY_KP_SUBTRACT) == GLFW_PRESS ||
+                    glfwGetKey(window, GLFW_KEY_MINUS) == GLFW_PRESS) {
+                    m_MeshRotationX -= rotationStep;
+                    rotationChanged = true;
+                }
+
+                // Update the mesh entity's rotation if it changed
+                if (rotationChanged) {
+                    // Wrap rotation to keep it in a reasonable range
+                    if (m_MeshRotationX > 360.0f) m_MeshRotationX -= 360.0f;
+                    if (m_MeshRotationX < -360.0f) m_MeshRotationX += 360.0f;
+
+                    // Print rotation value to console
+                    std::cout << "Mesh X Rotation: " << m_MeshRotationX << " degrees" << std::endl;
+
+                    // Update the transform
+                    auto& transform = m_MeshEntity.Get<TransformComponent>().Transform;
+                    transform.rotate.x = m_MeshRotationX;
+
+                    // Since this is a static body, we might need to update the physics actor too
+                    if (m_MeshEntity.Has<RigidBodyComponent>()) {
+                        auto& rb = m_MeshEntity.Get<RigidBodyComponent>().RigidBody;
+                        if (rb.Actor) {
+                            // Convert rotation to radians for PhysX
+                            glm::vec3 radians = glm::radians(transform.rotate);
+                            glm::quat quat = glm::quat(radians);
+
+                            PxTransform currentPose = rb.Actor->getGlobalPose();
+                            currentPose.q = PxQuat(quat.x, quat.y, quat.z, quat.w);
+                            rb.Actor->setGlobalPose(currentPose);
+                        }
+                    }
+                }
+            }
+
+
         BOOM_INLINE void RegisterEventCallbacks()
         {
             // Set physics event callback (mark unused param to avoid warnings)
@@ -406,8 +510,16 @@ namespace Boom
                 {
                     auto& transform = entity.template Get<TransformComponent>().Transform;
                     auto pose = comp.RigidBody.Actor->getGlobalPose();
-                    glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
-                    transform.rotate = glm::degrees(glm::eulerAngles(rot));
+
+                    // Commented out for testing
+                        //glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
+                        //transform.rotate = glm::degrees(glm::eulerAngles(rot));
+
+                    // Don't update rotation for the mesh entity since it's static and we want to control it manually
+                    if (entity.ID() != m_MeshEntity.ID()) {
+                        glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
+                        transform.rotate = glm::degrees(glm::eulerAngles(rot));
+                    }
                     transform.translate = PxToVec3(pose.p);
                 });
         }

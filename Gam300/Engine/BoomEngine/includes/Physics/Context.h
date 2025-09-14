@@ -89,7 +89,56 @@ namespace Boom {
                     collider.Shape = m_Physics -> createShape(sphere, *collider.Material);
                 }
                 else if (collider.Type == Collider3D::MESH) {
-                    // coming next!
+                    std::cout << "Creating MESH collider from actual model geometry..." << std::endl;
+
+                    if (entity.template Has<ModelComponent>()) {
+                        auto& modelComp = entity.Get<ModelComponent>();
+                        if (modelComp.model) {
+                            if (auto staticModel = std::dynamic_pointer_cast<StaticModel>(modelComp.model)) {
+                                auto physicsMeshData = staticModel->GetMeshDataForPhysics();
+
+                                if (!physicsMeshData.empty()) {
+                                    // Use the first mesh (you could combine multiple meshes)
+                                    auto& meshData = physicsMeshData[0];
+
+                                    // Scale vertices by transform
+                                    MeshData<ShadedVert> scaledMeshData = meshData;
+                                    for (auto& vertex : scaledMeshData.vtx) {
+                                        vertex.pos *= transform.scale;
+                                    }
+
+                                    std::cout << "Using actual model geometry: " << scaledMeshData.vtx.size() << " vertices" << std::endl;
+
+                                    // Cook the actual mesh geometry
+                                    collider.Mesh = CookMesh(scaledMeshData);
+                                    collider.Shape = m_Physics->createShape(collider.Mesh, *collider.Material);
+
+                                    if (!collider.Shape) {
+                                        BOOM_ERROR("Failed to create mesh collider shape");
+                                        return;
+                                    }
+
+                                    std::cout << "REAL MESH collider created successfully!" << std::endl;
+                                }
+                                else {
+                                    BOOM_ERROR("StaticModel has no physics mesh data");
+                                    return;
+                                }
+                            }
+                            else {
+                                BOOM_ERROR("Mesh colliders currently only support StaticModel");
+                                return;
+                            }
+                        }
+                        else {
+                            BOOM_ERROR("Entity has ModelComponent but no model loaded");
+                            return;
+                        }
+                    }
+                    else {
+                        BOOM_ERROR("Mesh collider requires ModelComponent");
+                        return;
+                    }
                 }
                 else
                 {
