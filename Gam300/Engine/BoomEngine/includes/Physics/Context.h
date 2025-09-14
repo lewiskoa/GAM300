@@ -73,28 +73,84 @@ namespace Boom {
                 auto& collider = entity.Get<ColliderComponent>().Collider;
 
                 // create collider material
-                collider.material = m_Physics -> createMaterial(collider.staticFriction,
-                collider.dynamicFriction,
-                collider.restitution);
+                collider.material = m_Physics->createMaterial(collider.staticFriction,
+                    collider.dynamicFriction,
+                    collider.restitution);
 
                 if (collider.type == Collider3D::BOX)
                 {
                     PxBoxGeometry
                         box(ToPxVec3(transform.scale / 2.0f));
-                    collider.Shape = m_Physics -> createShape(box, *collider.material);
+                    collider.Shape = m_Physics->createShape(box, *collider.material);
                 }
                 else if (collider.type == Collider3D::SPHERE) {
                     PxSphereGeometry
                         sphere(transform.scale.x / 2.0f);
-                    collider.Shape = m_Physics -> createShape(sphere, *collider.material);
+                    collider.Shape = m_Physics->createShape(sphere, *collider.material);
                 }
                 else if (collider.type == Collider3D::MESH) {
-                    // coming next!
+                    std::cout << "Creating MESH collider from actual model geometry..." << std::endl;
+
+                    if (entity.template Has<ModelComponent>()) {
+                        auto& modelComp = entity.Get<ModelComponent>();
+                        if (modelComp.modelID) {
+
+                            extern AssetRegistry g_AssetRegistry;
+                            auto& modelAsset = g_AssetRegistry.Get<ModelAsset>(modelComp.modelID);
+                            Model3D modelPtr = modelAsset.data;
+
+                            // Only support StaticModel for mesh colliders
+                            auto staticModel = std::dynamic_pointer_cast<StaticModel>(modelPtr);
+                            if (staticModel) {
+                                auto physicsMeshData = staticModel->GetMeshDataForPhysics();
+
+                                if (!physicsMeshData.empty()) {
+                                    // Use the first mesh (you could combine multiple meshes)
+                                    auto& meshData = physicsMeshData[0];
+
+                                    // Scale vertices by transform
+                                    MeshData<ShadedVert> scaledMeshData = meshData;
+                                    for (auto& vertex : scaledMeshData.vtx) {
+                                        vertex.pos *= transform.scale;
+                                    }
+
+                                    std::cout << "Using actual model geometry: " << scaledMeshData.vtx.size() << " vertices" << std::endl;
+
+                                    // Cook the actual mesh geometry
+                                    collider.mesh = CookMesh(scaledMeshData);
+                                    collider.Shape = m_Physics->createShape(collider.mesh, *collider.material);
+
+                                    if (!collider.Shape) {
+                                        BOOM_ERROR("Failed to create mesh collider shape");
+                                        return;
+                                    }
+
+                                    std::cout << "REAL MESH collider created successfully!" << std::endl;
+                                }
+                                else {
+                                    BOOM_ERROR("StaticModel has no physics mesh data");
+                                    return;
+                                }
+                            }
+                            else {
+                                BOOM_ERROR("Mesh colliders currently only support StaticModel");
+                                return;
+                            }
+                        }
+                        else {
+                            BOOM_ERROR("Entity has ModelComponent but no model loaded");
+                            return;
+                        }
+                    }
+                    else {
+                        BOOM_ERROR("Mesh collider requires ModelComponent");
+                        return;
+                    }
                 }
                 else
                 {
                     BOOM_ERROR("Error creating collider invalid type provided");
-                        return;
+                    return;
                 }
 
                 // create actor instanace
@@ -103,7 +159,7 @@ namespace Boom {
                 {
                     body.actor = PxCreateDynamic(*m_Physics, pose, *collider.Shape, body.density);
                     body.actor->setActorFlag(PxActorFlag::eSEND_SLEEP_NOTIFIES, true);
-                    
+
                     PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(body.actor);
                     if (dyn) {
                         dyn->setMass(body.mass);
@@ -120,11 +176,11 @@ namespace Boom {
             {
                 if (body.type == RigidBody3D::DYNAMIC)
                 {
-                    body.actor = m_Physics -> createRigidDynamic(pose);
+                    body.actor = m_Physics->createRigidDynamic(pose);
                 }
                 else if (body.type == RigidBody3D::STATIC)
                 {
-                    body.actor = m_Physics -> createRigidStatic(pose);
+                    body.actor = m_Physics->createRigidStatic(pose);
 
 
                 }
@@ -143,9 +199,9 @@ namespace Boom {
             // add actor to the m_Scene
             m_Scene->addActor(*body.actor);
         }
-    
-        
-             
+
+
+
         // Mesh Colliders
         BOOM_INLINE PxConvexMeshGeometry CookMesh(const MeshData<ShadedVert>& data) {
             // px vertex container
@@ -176,13 +232,13 @@ namespace Boom {
             PxCooking* cooking = PxCreateCooking(PX_PHYSICS_VERSION,
                 *m_Foundation, cookingParams);
             PxConvexMeshCookingResult::Enum result;
-            PxConvexMesh* convexMesh = cooking -> createConvexMesh(meshDesc,
-    m_Physics->getPhysicsInsertionCallback(), &result);
+            PxConvexMesh* convexMesh = cooking->createConvexMesh(meshDesc,
+                m_Physics->getPhysicsInsertionCallback(), &result);
             PxConvexMeshGeometry convexMeshGeometry(convexMesh);
 
             cooking->release();
             return convexMeshGeometry;
-        
+
         }
 
 
@@ -215,8 +271,8 @@ namespace Boom {
             [[maybe_unused]] PxFilterData filterData0,
             [[maybe_unused]] PxFilterObjectAttributes attributes1,
             [[maybe_unused]] PxFilterData filterData1,
-            [[maybe_unused]] PxPairFlags& pairFlags, 
-            [[maybe_unused]] const void* constantBlock, 
+            [[maybe_unused]] PxPairFlags& pairFlags,
+            [[maybe_unused]] const void* constantBlock,
             [[maybe_unused]] PxU32 constantBlockSize
         )
         {
