@@ -181,6 +181,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Shaders\brdf.glsl" />
+    <None Include="Resources\Shaders\irradiance.glsl" />
+    <None Include="Resources\Shaders\prefiltered.glsl" />
+  </ItemGroup>
   <!-- Resolve conanbuild folder: prefer SolutionDir, fallback to ProjectDir -->
   <PropertyGroup Label="ConanImportSettings">
     <_ConanRoot Condition="'$(SolutionDir)' != ''">$(SolutionDir)conanbuild\</_ConanRoot>

@@ -8,6 +8,9 @@
 #include "Shaders/Bloom.h"
 #include "GlobalConstants.h"
 #include "Shaders/Shadow.h"
+#include "Shaders/Irradiance.h"
+#include "Shaders/BRDF.h"
+#include "Shaders/Prefiltered.h"
 namespace Boom {
 	struct GraphicsRenderer {
 	public:
@@ -41,7 +44,11 @@ namespace Boom {
 			finalShader = std::make_unique<FinalShader>("final.glsl");
 			pbrShader = std::make_unique<PBRShader>("pbr.glsl");
 			bloom = std::make_unique<BloomShader>("bloom.glsl", w, h);	
+			irradianceShader = std::make_unique<IrradianceShader>("irradiance.glsl");
 			frame = std::make_unique<FrameBuffer>(w, h);
+			brdfShader = std::make_unique<BrdfShader>("brdf.glsl");
+			prefilShader = std::make_unique<PrefilteredShader>("prefiltered.glsl");
+
 
 			skyboxMesh = CreateSkyboxMesh();
 		}
@@ -65,9 +72,13 @@ namespace Boom {
 	public: //skybox
 		BOOM_INLINE void InitSkybox(Skybox& sky, Texture const& tex, int32_t size) {
 			sky.cubeMap = skyMapShader->Generate(tex, skyboxMesh, size);
+			sky.IrradMap = irradianceShader->Generate(sky.cubeMap, skyboxMesh, 32);
+			sky.BrdfMap = brdfShader->Generate(512);
+			sky.PrefilMap = prefilShader->Generate(sky.cubeMap, skyboxMesh, 128);
 		}
 		BOOM_INLINE void DrawSkybox(Skybox const& sky, Transform3D const& transform) {
 			skyBoxShader->Draw(skyboxMesh, sky.cubeMap, transform);
+			pbrShader->SetEnvMaps(sky.IrradMap,sky.PrefilMap,sky.BrdfMap);
 		}
 	public: //animator
 		BOOM_INLINE void SetJoints(std::vector<glm::mat4>& transforms)
@@ -108,7 +119,7 @@ namespace Boom {
 		}
 		BOOM_INLINE void ShowFrame() {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Show(frame->GetTexture(), bloom->GetMap(), true);
+			finalShader->Show(frame->GetTexture(), bloom->GetMap(), false);
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
@@ -162,6 +173,11 @@ namespace Boom {
 		std::unique_ptr<PBRShader> pbrShader;
 		std::unique_ptr<FrameBuffer> frame;
 		std::unique_ptr<BloomShader> bloom;
+		std::unique_ptr<IrradianceShader> irradianceShader;
+		std::unique_ptr<BrdfShader> brdfShader;
+		std::unique_ptr<PrefilteredShader> prefilShader;
+
+
 		SkyboxMesh skyboxMesh;
 	};
 }

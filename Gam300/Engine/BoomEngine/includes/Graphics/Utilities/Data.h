@@ -137,6 +137,11 @@ namespace Boom {
 	};
 
 	struct Skybox {
+		BOOM_INLINE Skybox(const Skybox&) = default;
+		BOOM_INLINE Skybox() = default;
+		uint32_t IrradMap = 0u;
+		uint32_t PrefilMap = 0u;
+		uint32_t BrdfMap = 0u;
 		uint32_t cubeMap{};
 	};
 }

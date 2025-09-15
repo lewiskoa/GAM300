@@ -186,9 +186,12 @@
     <ClInclude Include="includes\Graphics\Models\Model.h" />
     <ClInclude Include="includes\Graphics\Renderer.h" />
     <ClInclude Include="includes\Graphics\Shaders\Bloom.h" />
+    <ClInclude Include="includes\Graphics\Shaders\BRDF.h" />
     <ClInclude Include="includes\Graphics\Shaders\Color.h" />
     <ClInclude Include="includes\Graphics\Shaders\Final.h" />
+    <ClInclude Include="includes\Graphics\Shaders\Irradiance.h" />
     <ClInclude Include="includes\Graphics\Shaders\PBR.h" />
+    <ClInclude Include="includes\Graphics\Shaders\Prefiltered.h" />
     <ClInclude Include="includes\Graphics\Shaders\Shader.h" />
     <ClInclude Include="includes\Graphics\Shaders\Shadow.h" />
     <ClInclude Include="includes\Graphics\Shaders\Skybox.h" />

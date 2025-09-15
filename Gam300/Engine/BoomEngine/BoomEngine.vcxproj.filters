@@ -132,6 +132,15 @@
     <ClInclude Include="includes\Auxiliaries\Serializer.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Graphics\Shaders\Irradiance.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Graphics\Shaders\Prefiltered.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Graphics\Shaders\BRDF.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">

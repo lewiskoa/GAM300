@@ -36,6 +36,9 @@ namespace Boom {
 			, viewPosLoc{ GetUniformVar("viewPos") }
 
 			, jointsLoc{ GetUniformVar("hasJoints") }
+			, u_IrradMap{GetUniformVar("u_irradMap")}
+			, prefilMap{GetUniformVar("u_prefilMap")}
+		    , brdfMap{ GetUniformVar("u_brdfMap") }
 		{
 		}
 
@@ -94,6 +97,23 @@ namespace Boom {
 		BOOM_INLINE void SetPointLightCount(int32_t count) {
 			SetUniform(noPointLightLoc, count);
 		}
+		BOOM_INLINE void SetEnvMaps(int32_t irrad,int32_t prefil, int32_t brdf) {
+			Use();
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, irrad);
+			glUniform1i(u_IrradMap, 0);
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, prefil);
+			glUniform1i(prefilMap, 1);
+
+			// BRDF Map
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, brdf);
+			glUniform1i(brdfMap, 2);
+
+
+		}
 	public:
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
 			SetUniform(frustumMatLoc, cam.Frustum(transform, ratio));
@@ -115,7 +135,7 @@ namespace Boom {
 
 			//material texture maps
 			{
-				int32_t unit{};
+				int32_t unit=3;
 				//int32_t unit=4;
 				bool isMap{};
 
@@ -198,5 +218,11 @@ namespace Boom {
 		int32_t viewPosLoc;
 
 		int32_t jointsLoc;
+
+		int32_t u_IrradMap;
+		int32_t prefilMap;
+		int32_t brdfMap;
+
+		
 	};
 }

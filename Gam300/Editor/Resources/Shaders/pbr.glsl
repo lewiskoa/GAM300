@@ -126,6 +126,7 @@ float GeometrySmithGGX(float nDotV, float nDotL, float roughness);
 //Trowbridge-Reitz calculates the probability distribution 
 // of surface normals based on surface roughness
 float DistributionGGX(vec3 N, vec3 H, float roughness);
+vec3 ComputeAmbientLight(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
 vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
 vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
 vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
@@ -164,7 +165,8 @@ void main() {
     vec3 f0 = mix(vec3(0.04), albedo, metallic);
 
     //lights
-    vec3 color = ComputePointLights(N, V, f0, albedo, roughness, metallic) + 
+    vec3 color = ComputeAmbientLight(N,V,f0,albedo,roughness,metallic)+
+    ComputePointLights(N, V, f0, albedo, roughness, metallic) + 
                 ComputeDirLights(N, V, f0, albedo, roughness, metallic) + 
                 ComputeSpotLights(N, V, f0, albedo, roughness, metallic);
     
@@ -201,6 +203,32 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float nDotHSq = nDotH * nDotH;
     float denom = nDotHSq * (aSq - 1.0) + 1.0;
     return aSq / (PI * denom * denom);
+}
+
+uniform samplerCube u_irradMap;
+uniform samplerCube u_prefilMap;
+uniform sampler2D u_brdfMap;
+vec3 ComputeAmbientLight(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic){
+ // angle between surface normal and light direction.
+	float cosTheta = max(0.0, dot(N, V));
+	
+	// get diffuse contribution factor 
+	vec3 F = FresnelSchlick(cosTheta, f0);
+	vec3 Kd = mix(vec3(1.0) - F, vec3(0.0), metallic);
+
+	vec3 diffuseIBL = Kd * albedo * texture(u_irradMap, N).rgb;
+
+	// sample pre-filtered map at correct mipmap level.
+	int mipLevels = 5;
+	vec3 Lr = 2.0 * cosTheta * N - V;
+	vec3 Ks = textureLod(u_prefilMap, Lr, roughness * mipLevels).rgb;
+
+	// split-sum approx.factors for Cook-Torrance specular BRDF.
+	vec2 brdf = texture(u_brdfMap, vec2(cosTheta, roughness)).rg;
+	vec3 specularIBL = (f0 * brdf.x + brdf.y) * Ks;
+
+	return (diffuseIBL + specularIBL);
+
 }
 vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic) {
     vec3 result = vec3(0.0); 
