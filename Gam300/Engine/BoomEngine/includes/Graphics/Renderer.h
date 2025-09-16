@@ -164,4 +164,6 @@ namespace Boom {
 		std::unique_ptr<BloomShader> bloom;
 		SkyboxMesh skyboxMesh;
 	};
+
+
 }

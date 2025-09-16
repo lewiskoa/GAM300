@@ -261,6 +261,9 @@ namespace Boom {
 		BOOM_INLINE int IsExit() const {
 			return glfwWindowShouldClose(windowPtr);
 		}
+		BOOM_INLINE GLFWwindow* Handle() const {
+			return windowPtr;
+		}
 	private:
 		int32_t width;
 		int32_t height;

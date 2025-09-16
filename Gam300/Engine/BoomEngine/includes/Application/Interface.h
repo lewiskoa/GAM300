@@ -140,6 +140,15 @@ namespace Boom
                 });
         }
 
+        BOOM_INLINE GLFWwindow* GetWindowHandle()
+        {
+            return m_Context->window->Handle();
+        }
+
+        BOOM_INLINE uint32_t GetSceneFrame()
+        {
+			return m_Context->renderer->GetFrame();
+        }
 
 
     protected:
