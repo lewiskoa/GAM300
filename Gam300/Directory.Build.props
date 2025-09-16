@@ -1,4 +1,4 @@
-<Project>
+<Project>	
 	<ImportGroup Label="PropertySheets">
 		<!-- Debug -->
 		<Import Project="conanbuild\Debug\conandeps.props"
@@ -31,7 +31,7 @@
 			%(AdditionalDependencies)
 		</AdditionalDependencies>
 	</PropertyGroup>
-
+	
 	<PropertyGroup Label="FMOD">
 		<!-- ..\ because Directory.Build.props sits next to the .sln in Gam300\ -->
 		<FMODRoot>$(SolutionDir)..\FMOD Studio API Windows\api</FMODRoot>
