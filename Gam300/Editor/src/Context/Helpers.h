@@ -1,6 +1,8 @@
 #pragma once
 #include <BoomEngine.h>
 #include <Vendors/FA.h>
+
+#define IMGUI_ENABLE_DOCKING
 #include <Vendors/imgui/imgui.h>
 #include <Vendors/imgui/imgui_internal.h>
 #include <Vendors/imgui/imgui_impl_glfw.h>
