@@ -15,7 +15,7 @@ namespace Boom
      * Inherits from AppInterface to receive the same lifecycle hooks
      * and gain access to the shared AppContext.
      */
-    struct Application : AppInterface
+    struct BOOM_API Application : AppInterface
     {
         template<typename EntityType, typename... Components, typename Fn>
         BOOM_INLINE void EnttView(Fn&& fn) {
@@ -32,8 +32,8 @@ namespace Boom
          */
 
         double m_SphereTimer = 0.0;
-        glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
-        Entity m_SphereEntity; // <-- Add this
+        //glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
+        //Entity m_SphereEntity; // <-- Add this
 
 
         BOOM_INLINE Application()

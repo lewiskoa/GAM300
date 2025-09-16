@@ -32,9 +32,10 @@ int32_t main()
     //auto app = new Application();
     //app->AttachLayer<Editor>();
     //app->RunContext(false);
+    //BOOM_DELETE(app);
     auto app{ std::make_unique<Application>() };
     app->PostEvent<WindowTitleRenameEvent>("Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
-    app->RunContext();
-    //BOOM_DELETE(app);
+    app->AttachLayer<Editor>();
+    app->RunContext(false);
     return 0;
 }

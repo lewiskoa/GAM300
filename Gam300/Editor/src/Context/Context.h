@@ -16,6 +16,14 @@ struct GuiContext : AppInterface
 
 	BOOM_INLINE virtual void OnStart() override final
 	{
+		GLFWwindow* window = this->GetWindowHandle();
+
+		BOOM_INFO("Window handle: {}", (void*)window);
+		if (window) {
+			BOOM_INFO("Window visible: {}", glfwGetWindowAttrib(window, GLFW_VISIBLE));
+			BOOM_INFO("Window focused: {}", glfwGetWindowAttrib(window, GLFW_FOCUSED));
+			BOOM_INFO("Current context: {}", (void*)glfwGetCurrentContext());
+		}
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
