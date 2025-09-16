@@ -13,7 +13,7 @@ namespace Boom
 
         BOOM_INLINE uint32_t Generate(int32_t size)
         {
-          /*  GLint oldVP[4];
+            /*GLint oldVP[4];
             glGetIntegerv(GL_VIEWPORT, oldVP);
             GLint oldDrawFBO = 0, oldReadFBO = 0;
             glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &oldDrawFBO);
@@ -44,7 +44,7 @@ namespace Boom
             //glBindFramebuffer(GL_DRAW_FRAMEBUFFER, oldDrawFBO);
             //glBindFramebuffer(GL_READ_FRAMEBUFFER, oldReadFBO);
 
-            //// restore viewport
+            ////// restore viewport
             //glViewport(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glBindTexture(GL_TEXTURE_2D, 0);

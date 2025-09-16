@@ -146,8 +146,10 @@ float ComputeMapOrMatF(bool isMap, sampler2D map, float mat) {
     return res;
 }
 
+uniform sampler2D u_brdfMap;
 void main() {
     vec3 V = normalize(vertex.position - viewPos);
+   
 
     //material or texture maps
     vec3 N = normalize(vertex.normal);
@@ -165,7 +167,7 @@ void main() {
     vec3 f0 = mix(vec3(0.04), albedo, metallic);
 
     //lights
-    vec3 color = ComputeAmbientLight(N,V,f0,albedo,roughness,metallic)+
+    vec3 color =ComputeAmbientLight(N,V,f0,albedo,roughness,metallic)+
     ComputePointLights(N, V, f0, albedo, roughness, metallic) + 
                 ComputeDirLights(N, V, f0, albedo, roughness, metallic) + 
                 ComputeSpotLights(N, V, f0, albedo, roughness, metallic);
@@ -178,8 +180,9 @@ void main() {
     else {
         out_brightness=vec4(0.0,0.0,0.0,1.0);
     }
-    out_fragment = vec4(color, 1.0);
-    
+   // out_fragment = vec4(color, 1.0);
+    out_fragment = vec4(texture(u_brdfMap, vec2(1, 1)).rg, 0.0, 1.0);
+
     //fragColor = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
 }
 
@@ -207,7 +210,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
 
 uniform samplerCube u_irradMap;
 uniform samplerCube u_prefilMap;
-uniform sampler2D u_brdfMap;
+//specular and diffuse potential issues
 vec3 ComputeAmbientLight(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic){
  // angle between surface normal and light direction.
 	float cosTheta = max(0.0, dot(N, V));
@@ -215,8 +218,9 @@ vec3 ComputeAmbientLight(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, 
 	// get diffuse contribution factor 
 	vec3 F = FresnelSchlick(cosTheta, f0);
 	vec3 Kd = mix(vec3(1.0) - F, vec3(0.0), metallic);
-
-	vec3 diffuseIBL = Kd * albedo * texture(u_irradMap, N).rgb;
+    //vec3 diffuseIBL = Kd * albedo *( texture(u_irradMap, N).rgb *0.25);
+    vec3 diffuseIBL = Kd * albedo*( texture(u_irradMap, N).rgb);
+	//vec3 diffuseIBL = vec3(0.5);
 
 	// sample pre-filtered map at correct mipmap level.
 	int mipLevels = 5;
@@ -225,8 +229,9 @@ vec3 ComputeAmbientLight(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, 
 
 	// split-sum approx.factors for Cook-Torrance specular BRDF.
 	vec2 brdf = texture(u_brdfMap, vec2(cosTheta, roughness)).rg;
-	vec3 specularIBL = (f0 * brdf.x + brdf.y) * Ks;
-
+   // vec2 brdf = vec2(0.5);
+vec3 specularIBL = (f0 * brdf.x + brdf.y) * Ks;
+  // vec3 specularIBL = vec3(0.0);
 	return (diffuseIBL + specularIBL);
 
 }

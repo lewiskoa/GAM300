@@ -99,10 +99,11 @@ namespace Boom {
 		}
 		BOOM_INLINE void SetEnvMaps(int32_t irrad,int32_t prefil, int32_t brdf) {
 			Use();
+			//irrad
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, irrad);
 			glUniform1i(u_IrradMap, 0);
-
+			//prefiltered
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, prefil);
 			glUniform1i(prefilMap, 1);
@@ -135,7 +136,7 @@ namespace Boom {
 
 			//material texture maps
 			{
-				int32_t unit=3;
+				int32_t unit=0;
 				//int32_t unit=4;
 				bool isMap{};
 

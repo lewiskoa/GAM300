@@ -16,7 +16,11 @@ namespace Boom
 
         BOOM_INLINE uint32_t Generate(uint32_t skyCubMap, SkyboxMesh& mesh, int32_t size)
         {
-
+           /* GLint oldVP[4];
+            glGetIntegerv(GL_VIEWPORT, oldVP);
+            GLint oldDrawFBO = 0, oldReadFBO = 0;
+            glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &oldDrawFBO);
+            glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &oldReadFBO);*/
             // view matrices
             glm::mat4 views[] =
             {
@@ -75,7 +79,10 @@ namespace Boom
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 RenderSkyboxMesh(mesh);
             }
-
+            //restoring viewport
+        /*    glViewport(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, oldDrawFBO);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, oldReadFBO);*/
             // unbind shader, buffer
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
