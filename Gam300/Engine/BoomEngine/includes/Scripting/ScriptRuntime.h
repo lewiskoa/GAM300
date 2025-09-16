@@ -1,65 +1,55 @@
 #pragma once
+#include "GlobalConstants.h"
+#include <string>
+#include <unordered_map>
+#include <atomic>
+#include <mutex>
 
-// Native glue between your ECS and the ScriptAPI C boundary.
-// No C# includes here—pure C++.
-
-#include "Core.h"
-
-struct Vec3 { float x, y, z; };
-using Entity = uint32_t;
-
-// Delegates (must match ScriptAPI.h)
-using CreateFn = void(*)(Entity entity, uint64_t instanceId);
-using UpdateFn = void(*)(uint64_t instanceId, float dt);
-using DestroyFn = void(*)(uint64_t instanceId);
-
-// ---------------- EngineHooks ----------------
-// You plug your real engine functions into this without exposing headers.
-struct EngineHooks
-{
-    // Required
+// Engine functions you wire up from the engine side
+struct EngineHooks {
     void (*Log)(const char* msg) = nullptr;
 
-    // ECS / Transform
-    Entity(*CreateEntity)() = nullptr;
-    void   (*SetPosition)(Entity, Vec3) = nullptr;
-    Vec3(*GetPosition)(Entity) = nullptr;
+    // ECS via integer handles; keep your engine Entity private
+    Boom::EntityId(*CreateEntity)() = nullptr;
+    void           (*DestroyEntity)(Boom::EntityId) = nullptr;
+
+    // Transform
+    void         (*SetPosition)(Boom::EntityId, const Boom::Vec3&) = nullptr;
+    Boom::Vec3(*GetPosition)(Boom::EntityId) = nullptr;
 };
 
-// ---------------- ScriptRuntime ----------------
-class ScriptRuntime
-{
+class ScriptRuntime {
 public:
-    // Call once during engine/editor startup—before .NET registration begins.
-    static void Initialize(const EngineHooks& hooks);
+    using CreateFn = void(*)(Boom::EntityId, std::uint64_t);
+    using UpdateFn = void(*)(std::uint64_t, float);
+    using DestroyFn = void(*)(std::uint64_t);
 
-    // Optional: free all instances on shutdown
-    static void Shutdown();
+    struct ScriptType {
+        CreateFn  c = nullptr;
+        UpdateFn  u = nullptr;
+        DestroyFn d = nullptr;
+    };
 
-    // Registration from C# (one call per script type)
-    static void RegisterType(const std::string& typeName,
-        CreateFn c, UpdateFn u, DestroyFn d);
+    static void           Initialize(const EngineHooks& hooks);
+    static void           Shutdown();
 
-    // Instance management (used by Editor & scene loading)
-    static uint64_t CreateInstance(const std::string& typeName, Entity e);
-    static void     DestroyInstance(uint64_t id);
+    static void           RegisterType(const std::string& typeName, CreateFn c, UpdateFn u, DestroyFn d);
+    static std::uint64_t  CreateInstance(const std::string& typeName, Boom::EntityId e);
+    static void           DestroyInstance(std::uint64_t id);
+    static void           UpdateInstance(std::uint64_t id, float dt);
+    static void           UpdateAll(float dt);
 
-    // Per-frame update
-    static void     UpdateInstance(uint64_t id, float dt);
-    static void     UpdateAll(float dt);
-
-    // These are used by ScriptAPI C exports:
-    static inline const EngineHooks& Hooks() { return s_hooks; }
+    static EngineHooks& Hooks() { return s_hooks; }
 
 private:
-    struct ScriptType { CreateFn c{}; UpdateFn u{}; DestroyFn d{}; };
+    static std::uint64_t  NextId();
 
-    static EngineHooks                                    s_hooks;
-    static std::unordered_map<std::string, ScriptType>    s_types;
-    static std::unordered_map<uint64_t, ScriptType>       s_instances; // maps id -> vtable
-    static std::unordered_map<uint64_t, Entity>           s_instanceEntity;
-    static std::atomic_uint64_t                           s_nextId;
-    static std::mutex                                     s_mutex;     // protects maps
+    static EngineHooks s_hooks;
 
-    static uint64_t NextId();
+    static std::unordered_map<std::string, ScriptType>      s_types;
+    static std::unordered_map<std::uint64_t, ScriptType>    s_instances;
+    static std::unordered_map<std::uint64_t, Boom::EntityId> s_instanceEntity;
+
+    static std::atomic_uint64_t s_nextId;
+    static std::mutex           s_mutex;
 };
