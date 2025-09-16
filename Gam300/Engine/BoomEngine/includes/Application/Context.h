@@ -18,7 +18,7 @@ namespace Boom
 	/**
 	* @brief Holds global state and owns all attached layers.
 	*/
-	struct AppContext
+	struct BOOM_API AppContext
 	{
 		/// BOOM_INLINE hints to the compiler to inline destructor calls
 		/// reducing function-call overhead in the engine’s core update loop

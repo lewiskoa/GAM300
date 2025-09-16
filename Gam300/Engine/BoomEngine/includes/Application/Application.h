@@ -124,7 +124,7 @@ namespace Boom
          * BOOM_INLINE suggests inlining this hot-path entry point so
          * the call to RunContext itself adds minimal overhead.
          */
-        BOOM_INLINE void RunContext()
+        BOOM_INLINE void RunContext(bool showFrame = false)
         {
             //use of ecs
             CreateEntities();
@@ -277,7 +277,8 @@ namespace Boom
                 }
 
                 //draw the updated frame
-                m_Context->renderer->ShowFrame();
+                m_Context->renderer->ShowFrame(showFrame);
+                //m_Context->renderer->ShowFrame();
                 //glfwSwapBuffers(m_Context->window->Window());
             }
         }

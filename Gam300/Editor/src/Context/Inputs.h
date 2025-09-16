@@ -89,7 +89,7 @@ BOOM_INLINE bool InputCombo(const char* label, const std::vector<const char*>& c
         {
             if (ImGui::Selectable(combos[i], !strcmp(combos[i], preview)))
             {
-                strncpy(preview, combos[i], sizeof(preview) - 1);  // Safer than strcpy
+                strncpy_s(preview, combos[i], sizeof(preview) - 1);  // Safer than strcpy
                 preview[sizeof(preview) - 1] = '\0';  // Ensure null termination
                 hasChanged = true;
             }
@@ -103,7 +103,7 @@ BOOM_INLINE bool InputCombo(const char* label, const std::vector<const char*>& c
 BOOM_INLINE  bool InputText(const char* label, char* value, const char* hint = nullptr, size_t size = 32)
 {
     BeginInput(label);
-    bool hasChanged = ImGui::InputTextEx("##", hint, value, size, ImVec2(0, 0), ImGuiInputTextFlags_EnterReturnsTrue);
+    bool hasChanged = ImGui::InputTextEx("##", hint, value, (int)size, ImVec2(0, 0), ImGuiInputTextFlags_EnterReturnsTrue);
     EndInput();
     return hasChanged;
 }

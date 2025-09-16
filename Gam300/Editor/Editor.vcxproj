@@ -235,6 +235,11 @@
     <ClInclude Include="src\Vendors\imgui\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="src\Vendors\imgui\backends\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="src\Vendors\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="src\Windows\Hierarchy.h" />
+    <ClInclude Include="src\Windows\Inspector.h" />
+    <ClInclude Include="src\Windows\MenuBar.h" />
+    <ClInclude Include="src\Windows\Resource.h" />
+    <ClInclude Include="src\Windows\Viewport.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Vendors\imgui\examples\example_glfw_wgpu\web\index.html" />

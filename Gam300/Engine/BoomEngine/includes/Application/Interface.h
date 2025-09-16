@@ -19,7 +19,7 @@ namespace Boom
      * Provides lifecycle hooks (OnStart, OnUpdate) and
      * layer-management utilities via templates.
      */
-    struct AppInterface
+    struct BOOM_API AppInterface
     {
         /**
          * @brief  Virtual destructor for safe polymorphic cleanup.
