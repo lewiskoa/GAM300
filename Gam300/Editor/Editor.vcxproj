@@ -19,9 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="EditorPaths">
-  <EditorRoot>$(ProjectDir)</EditorRoot>
-  <VendorsRoot>$(EditorRoot)src\Vendors</VendorsRoot>   <!-- Add 'src\' here -->
-  <EditorIncludeRoots>
+    <EditorRoot>$(ProjectDir)</EditorRoot>
+    <VendorsRoot>$(EditorRoot)src\Vendors</VendorsRoot>
+    <!-- Add 'src\' here -->
+    <EditorIncludeRoots>
     $(EditorRoot);
     $(EditorRoot)src;                    <!-- Add this line -->
     $(VendorsRoot);
@@ -29,11 +30,11 @@
     $(VendorsRoot)\imgui\backends;
     $(VendorsRoot)\imgui\misc\cpp
   </EditorIncludeRoots>
-  <EngineIncludeRoots>
+    <EngineIncludeRoots>
     $(SolutionDir)Engine\BoomEngine\includes;
     $(SolutionDir)Engine\BoomEngine\includes\common
   </EngineIncludeRoots>
-</PropertyGroup>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -222,7 +223,11 @@
     <ClCompile Include="src\Vendors\imgui\backends\imgui_impl_opengl3.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Context\Context.h" />
+    <ClInclude Include="src\Context\Events.h" />
     <ClInclude Include="src\Context\Helpers.h" />
+    <ClInclude Include="src\Context\Inputs.h" />
+    <ClInclude Include="src\Context\Widgets.h" />
     <ClInclude Include="src\Vendors\FA.h" />
     <ClInclude Include="src\Vendors\imgui\imgui.h" />
     <ClInclude Include="src\Vendors\imgui\imgui_internal.h" />
