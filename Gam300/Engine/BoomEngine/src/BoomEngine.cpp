@@ -13,7 +13,6 @@
 #include "ECS/ECS.hpp"
 #include <iostream>
 #include "Audio/Audio.hpp"
-#include <imgui.h>
 using namespace std;
 using namespace Boom;
 #define LOG_EVENT(MSG) std::cout << "[Event] " << MSG << '\n'
