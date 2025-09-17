@@ -137,17 +137,42 @@ private:
             uint32_t frameTexture = GetSceneFrame();
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
-            if (frameTexture && viewportSize.x > 0 && viewportSize.y > 0) {
+            if (frameTexture > 0 && viewportSize.x > 0 && viewportSize.y > 0) {
+                // Display the engine's rendered frame
                 ImGui::Image((ImTextureID)(uintptr_t)frameTexture, viewportSize,
-                    ImVec2(0, 1), ImVec2(1, 0));
+                    ImVec2(0, 1), ImVec2(1, 0));  // Flipped UV for OpenGL
 
+                // Add viewport interaction info
                 if (ImGui::IsItemHovered()) {
-                    BOOM_INFO("Viewport hovered");
+                    ImGui::SetTooltip("Engine Viewport - Scene render output");
+                }
+
+                // Debug info (remove later)
+                static int debugCount = 0;
+                if (++debugCount % 300 == 0) {  // Every 5 seconds
+                    BOOM_INFO("Viewport - Texture ID: {}, Size: {}x{}",
+                        frameTexture, viewportSize.x, viewportSize.y);
                 }
             }
             else {
-                ImGui::Text("Frame Texture: %u", frameTexture);
-                ImGui::Text("Viewport Size: %.1fx%.1f", viewportSize.x, viewportSize.y);
+                // Show debug info when texture is invalid
+                ImGui::Text("Frame Texture ID: %u", frameTexture);
+                ImGui::Text("Viewport Size: %.0fx%.0f", viewportSize.x, viewportSize.y);
+                ImGui::Text("Waiting for engine frame data...");
+
+                // Draw a placeholder
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+                ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+                ImVec2 canvasSize = viewportSize;
+
+                if (canvasSize.x > 50 && canvasSize.y > 50) {
+                    drawList->AddRectFilled(canvasPos,
+                        ImVec2(canvasPos.x + canvasSize.x, canvasPos.y + canvasSize.y),
+                        IM_COL32(64, 64, 64, 255));
+
+                    drawList->AddText(ImVec2(canvasPos.x + 10, canvasPos.y + 10),
+                        IM_COL32(255, 255, 255, 255), "Engine Viewport");
+                }
             }
         }
         ImGui::End();

@@ -95,8 +95,8 @@ namespace Boom {
 		}
 		//HEHE OOPS
 		BOOM_INLINE uint32_t GetFrame() {
-			//return frame->GetTexture();
-			return finalShader->GetMap();
+			return frame->GetTexture();
+			//return finalShader->GetMap();
 		}
 
 		BOOM_INLINE void NewFrame() {
