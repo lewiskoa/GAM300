@@ -270,7 +270,11 @@ public:
 
     BOOM_INLINE void OnStart() override
     {
+
         BOOM_INFO("Editor::OnStart - Initializing GLFW for Editor DLL");
+		//auto vwindow = GetWindowHandle();
+        //ImGui_ImplGlfw_InitForOpenGL(vwindow, true);
+        //ImGui_ImplOpenGL3_Init("#version 450");
 
         if (!glfwInit()) {
             BOOM_ERROR("Editor::OnStart - Failed to initialize GLFW!");
@@ -381,10 +385,90 @@ int32_t main()
         auto app = std::make_unique<Application>();
         app->PostEvent<WindowTitleRenameEvent>("Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
 
-        // DON'T do the context killing test - just attach the editor and run
-        app->AttachLayer<Editor>();
+        // Initialize GLFW in editor
+        //if (!glfwInit()) {
+        //    BOOM_ERROR("Failed to initialize GLFW in editor");
+        //    return -1;
+        //}
 
-        // This is the key line you were missing - actually run the application!
+        // Get the engine window handle
+        GLFWwindow* engineWindow = app->GetWindowHandle();
+        BOOM_INFO("Got engine window handle: {}", (void*)engineWindow);
+
+        if (engineWindow) {
+            // Test window properties
+            int width, height;
+            glfwGetWindowSize(engineWindow, &width, &height);
+            BOOM_INFO("Window size: {}x{}", width, height);
+
+            // Try to make context current
+            BOOM_INFO("Attempting to make context current...");
+            glfwMakeContextCurrent(engineWindow);
+
+            GLFWwindow* current = glfwGetCurrentContext();
+            BOOM_INFO("Current context after switch: {}", (void*)current);
+
+            if (current == engineWindow) {
+                BOOM_INFO("SUCCESS! Context is current, initializing ImGui...");
+
+                // Initialize ImGui
+                IMGUI_CHECKVERSION();
+                ImGuiContext* ctx = ImGui::CreateContext();
+                BOOM_INFO("Created ImGui context: {}", (void*)ctx);
+
+                ImGuiIO& io = ImGui::GetIO();
+                io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+                io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+                // Initialize backends
+                bool platformInit = ImGui_ImplGlfw_InitForOpenGL(engineWindow, true);
+                bool rendererInit = ImGui_ImplOpenGL3_Init("#version 450");
+
+                BOOM_INFO("Platform backend init: {}", platformInit);
+                BOOM_INFO("Renderer backend init: {}", rendererInit);
+
+                if (platformInit && rendererInit) {
+                    BOOM_INFO("ImGui initialized successfully in main()!");
+
+                    // Set style
+                    ImGui::StyleColorsDark();
+
+                    // Test a simple ImGui frame
+                    ImGui_ImplOpenGL3_NewFrame();
+                    ImGui_ImplGlfw_NewFrame();
+                    ImGui::NewFrame();
+
+                    ImGui::Begin("Test Window");
+                    ImGui::Text("Hello from main()!");
+                    ImGui::End();
+
+                    ImGui::Render();
+                    ImDrawData* drawData = ImGui::GetDrawData();
+                    if (drawData && drawData->Valid) {
+                        ImGui_ImplOpenGL3_RenderDrawData(drawData);
+                        BOOM_INFO("ImGui test render successful!");
+                    }
+
+                    // Clean up
+                    ImGui_ImplOpenGL3_Shutdown();
+                    ImGui_ImplGlfw_Shutdown();
+                    ImGui::DestroyContext();
+                }
+                else {
+                    BOOM_ERROR("ImGui backend initialization failed");
+                }
+            }
+            else {
+                BOOM_ERROR("Failed to make context current. Expected: {}, Got: {}",
+                    (void*)engineWindow, (void*)current);
+            }
+        }
+        else {
+            BOOM_ERROR("No engine window handle available");
+        }
+
+        // Run the application (remove the Editor layer for this test)
+        // app->AttachLayer<Editor>();
         app->RunContext(false);
 
     }
