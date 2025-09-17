@@ -7,8 +7,15 @@ struct Editor : AppInterface {};
 int32_t main()
  {
     MyEngineClass engine;
+    /*
+    if (engine.GetWindowWeak().expired()) {
+        std::cout << "window missing" << std::endl;
+    }
+    else {
+        std::cout << "window found" << std::endl;
+    }*/
     engine.whatup();
-
+    
     BOOM_INFO("Editor Started");
 	std::cout << "Editor Started" << std::endl;
     /*

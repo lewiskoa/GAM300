@@ -16,9 +16,9 @@ namespace Boom {
 			, height{ h }
 			, refreshRate{ 144 }
 			, isFullscreen{ false }
-			, windowPtr{}
 			, monitorPtr{}
 			, modePtr{}
+			, windowPtr{}
 			, dispatcher{ disp }
 
 			, camPos{0.f, 0.f, 3.f}
@@ -47,26 +47,26 @@ namespace Boom {
 			glfwWindowHint(GLFW_MAXIMIZED, GL_FALSE);
 			glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
-			windowPtr = glfwCreateWindow(width, height, windowTitle, NULL, NULL);
-			if (windowPtr == nullptr) {
+			windowPtr = std::shared_ptr<GLFWwindow>(
+				glfwCreateWindow(width, height, windowTitle, NULL, NULL),
+				glfwDestroyWindow
+			);
+			if (windowPtr.get() == nullptr) {
 				BOOM_FATAL("AppWindow::Init() - failed to init app window.");
 				std::exit(EXIT_FAILURE);
 			}
-			glfwMakeContextCurrent(windowPtr);
+			glfwMakeContextCurrent(windowPtr.get());
 
 			//user data
-			glfwSetWindowUserPointer(windowPtr, this);
+			glfwSetWindowUserPointer(windowPtr.get(), this);
 			//enable a-vsync
 			glfwSwapInterval(-1);
-			SetupCallbacks(windowPtr);
+			SetupCallbacks(windowPtr.get());
 
 			//initial window color
 			std::apply(glClearColor, CONSTANTS::DEFAULT_BACKGROUND_COLOR);
 		}
-		BOOM_INLINE ~AppWindow() {
-			glfwDestroyWindow(windowPtr);
-			glfwTerminate();
-		}
+		BOOM_INLINE ~AppWindow() {}
 
 	private: //GLFW callbacks
 		BOOM_INLINE static void SetupCallbacks(GLFWwindow* win) {
@@ -90,9 +90,10 @@ namespace Boom {
 			if (action) {
 				self->isFullscreen = true;
 				//GetUserData(win)->dispatcher->PostEvent<WindowMaximizeEvent>();
+				/*
 				self->dispatcher->PostTask([&self] {
 					glfwSetWindowMonitor(
-						self->windowPtr,
+						self->windowPtr.get(),
 						self->monitorPtr,
 						0,
 						0,
@@ -101,7 +102,7 @@ namespace Boom {
 						self->modePtr->refreshRate
 					);
 					}
-				);
+				);*/
 			}
 			else {
 				self->isFullscreen = false;
@@ -111,7 +112,7 @@ namespace Boom {
 		}
 		BOOM_INLINE static void OnResize(GLFWwindow* win, int32_t w, int32_t h) {
 			(void)win; (void)w; (void)h;
-			//GetUserData(win)->dispatcher->PostEvent<WindowResizeEvent>(w, h);
+			GetUserData(win)->dispatcher->PostEvent<WindowResizeEvent>(w, h);
 		}
 		BOOM_INLINE static void OnIconify(GLFWwindow* win, int32_t action) {
 			(void)win;
@@ -222,7 +223,7 @@ namespace Boom {
 
 	public:
 		BOOM_INLINE void SetWindowTitle(std::string const& title) {
-			glfwSetWindowTitle(windowPtr, title.c_str());
+			glfwSetWindowTitle(windowPtr.get(), title.c_str());
 		}
 
 		[[nodiscard]] BOOM_INLINE int32_t& Width() noexcept {
@@ -230,16 +231,16 @@ namespace Boom {
 		}
 		[[nodiscard]] BOOM_INLINE int32_t& Height() noexcept {
 			return height;
-		}
-		[[nodiscard]] BOOM_INLINE GLFWwindow* Window() noexcept {
+		} 
+		[[nodiscard]] BOOM_INLINE std::shared_ptr<GLFWwindow> Handle() const {
 			return windowPtr;
 		}
 		
 		BOOM_INLINE bool PollEvents() {
 			glfwPollEvents();
 			dispatcher->PollEvents();
-			glfwSwapBuffers(windowPtr);
-			return !glfwWindowShouldClose(windowPtr);
+			glfwSwapBuffers(windowPtr.get());
+			return !glfwWindowShouldClose(windowPtr.get());
 		}
 		BOOM_INLINE bool IsKey(int32_t key) const {
 			if (key >= 0 && key <= GLFW_KEY_LAST)
@@ -252,21 +253,19 @@ namespace Boom {
 			return false;
 		}
 		BOOM_INLINE int IsExit() const {
-			return glfwWindowShouldClose(windowPtr);
+			return glfwWindowShouldClose(windowPtr.get());
 		}
-		BOOM_INLINE GLFWwindow* Handle() const {
-			return windowPtr;
-		}
+		
 	private:
 		int32_t width;
 		int32_t height;
 		int32_t refreshRate;
 		bool isFullscreen;
 
-		//glfw window context
-		GLFWwindow* windowPtr;
+		//these are kept raw as they are lightweight and non-owning
 		GLFWmonitor* monitorPtr;
 		GLFWvidmode const* modePtr;
+		std::shared_ptr<GLFWwindow> windowPtr;
 		EventDispatcher* dispatcher;
 		//WindowInputs inputs;
 

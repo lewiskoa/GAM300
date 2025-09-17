@@ -140,7 +140,7 @@ namespace Boom
                 });
         }
 
-        BOOM_INLINE GLFWwindow* GetWindowHandle()
+        BOOM_INLINE std::shared_ptr<GLFWwindow> GetWindowHandle()
         {
             return m_Context->window->Handle();
         }

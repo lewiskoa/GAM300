@@ -17,15 +17,6 @@
 using namespace std;
 using namespace Boom;
 #define LOG_EVENT(MSG) std::cout << "[Event] " << MSG << '\n'
-// TODO: This is an example of a library function
-
-namespace {
-    //this function shows the barebones process of entire rendering process
-    //void TestRender();
-    
-    //this function shows the renderer logic
-   // void TestShaders(Boom::EventDispatcher& dispatcher);
-}
 
 void MyEngineClass::whatup() {
     cout << "nig\n";
@@ -77,7 +68,7 @@ void MyEngineClass::whatup() {
         {
             auto& se = SoundEngine::Instance();
             if (se.Init()) {
-                se.PlaySound("startup", "Resources/Audio/vboom.wav", false);
+                //se.PlaySound("startup", "Resources/Audio/vboom.wav", false);
 
                 // Simple loop to update FMOD for 2 seconds
                 auto start = std::chrono::high_resolution_clock::now();
@@ -90,7 +81,7 @@ void MyEngineClass::whatup() {
             
             //TestShaders(dispatcher);
             //actual application code to run
-            auto app{ std::make_unique<Application>() };
+            std::unique_ptr<Boom::Application> app{ std::make_unique<Boom::Application>() };
             app->PostEvent<WindowTitleRenameEvent>("Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
             app->RunContext();
 
@@ -142,132 +133,4 @@ namespace {
         glGetIntegerv(GL_MAX_VERTEX_ATTRIB_BINDINGS, &output);
         BOOM_INFO("Maximum vertex buffer bindings: {}\n", output);
     }
-    //void TestRender() {
-    //    if (!glfwInit()) {
-    //        BOOM_FATAL("AppWindow::Init() - glfwInit() failed.");
-    //        std::exit(EXIT_FAILURE);
-    //    }
-    //    GLFWwindow* window = glfwCreateWindow(1800, 900, "test", NULL, NULL);
-    //    if (!window)
-    //    {
-    //        std::cerr << "GLFW failed to create window context." << std::endl;
-    //        glfwTerminate();
-    //        std::exit(EXIT_FAILURE);
-    //    }
-
-    //    glfwMakeContextCurrent(window);
-
-    //    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    //    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-    //    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    //    glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-    //    glfwWindowHint(GLFW_DEPTH_BITS, 24);
-    //    glfwWindowHint(GLFW_RED_BITS, 8); glfwWindowHint(GLFW_GREEN_BITS, 8);
-    //    glfwWindowHint(GLFW_BLUE_BITS, 8); glfwWindowHint(GLFW_ALPHA_BITS, 8);
-
-    //    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); //no resize of app window
-
-    //    auto keyCB = [](GLFWwindow* win, int32_t key, int32_t, int32_t action, int32_t) {
-    //        if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-    //            glfwSetWindowShouldClose(win, GLFW_TRUE);
-    //            return;
-    //        }
-    //        };
-    //    glfwSetKeyCallback(window, keyCB);
-    //    glfwSetErrorCallback([](int32_t errorNo, char const* description) {
-    //        BOOM_ERROR("[GLFW]: [{}] {}", errorNo, description);
-    //        });
-
-    //    glfwSwapInterval(-1);
-
-    //    glewExperimental = GL_TRUE;
-    //    GLenum err = glewInit();
-    //    if (GLEW_OK != err) {
-    //        std::cerr << "Unable to initialize GLEW - error: " << glewGetErrorString(err) << " abort program" << std::endl;
-    //        std::exit(EXIT_FAILURE);
-    //    }
-    //    if (GLEW_VERSION_4_5) {
-    //        std::cout << "Using glew version: " << glewGetString(GLEW_VERSION) << std::endl;
-    //        std::cout << "Driver supports OpenGL 4.5\n" << std::endl;
-    //    }
-    //    else {
-    //        std::cerr << "Warning: The driver may lack full compatibility with OpenGL 4.5, potentially limiting access to advanced features." << std::endl;
-    //    }
-
-    //    PrintSpecs();
-
-    //    //store mesh buffer data
-    //    ColorShader s{
-    //        "color.glsl",
-    //        {1.f, 0.f, 0.f, 1.f}
-    //    };
-
-    //    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    //    glEnable(GL_BLEND);
-    //    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //    glViewport(0, 0, 1800, 900);
-    //    std::apply(glClearColor, CONSTANTS::DEFAULT_BACKGROUND_COLOR);
-
-    //    while (!glfwWindowShouldClose(window)) {
-    //        //glClear(GL_COLOR_BUFFER_BIT);
-
-    //        {//draw quad model (triangle strip)
-    //            s.Show();
-    //        }
-
-    //        glfwSwapBuffers(window);
-    //        glfwPollEvents();
-    //    }
-    //    glfwDestroyWindow(window);
-    //    glfwTerminate();
-    //}
-    //void TestShaders(Boom::EventDispatcher& dispatcher) {
-    //    Boom::AppWindow awin{ &dispatcher, CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT, "Boom Editor - Press 'Esc' to quit" };
-    //    Boom::GraphicsRenderer g{ CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT };
-    //    //color shader uses a test quad that only covers a portion of the screen
-    //    ColorShader cs{
-    //            "color.glsl",
-    //            {1.f, 1.f, 0.f, .5f} //translucent yellow
-    //    };
-    //    FinalShader fs{
-    //        "final.glsl",
-    //        {1.f, 0.f, 0.f, 1.f} //red
-    //    };
-    //    //PBRShader pbrs{ "pbr.glsl" };
-    //    FrameBuffer fb{ 1800, 900 };
-    //    Color3DShader cs3d{
-    //        "color3D.glsl",
-    //        {1.f, 1.f, 0.f, 0.5f} //translucent yellow
-    //    };
-
-    //    while (awin.PollEvents()) {
-    //        //update all system logic
-    //        {
-    //            //...
-    //            dispatcher.PollEvents();
-    //        }
-
-    //        //finally render logic
-    //        {
-    //            glClear(GL_COLOR_BUFFER_BIT);
-    //            //load frame buffer for texture for final 2d shader
-    //            fb.Begin();
-    //            //pbrs.Use();
-    //            {
-    //                //this portion is where ecs is to be placed
-    //            }
-    //            //pbrs.UnUse();
-    //            fb.End();
-
-    //            //display the 2nd passed shader + test color shader onto the window
-
-    //            fs.Show(fb.GetTexture());
-    //            //cs.Show();
-    //            cs3d.Show();
-
-    //            glfwSwapBuffers(awin.Window());
-    //        }
-    //    }
-    //}
 }

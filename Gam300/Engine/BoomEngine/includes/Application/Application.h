@@ -116,6 +116,8 @@ namespace Boom
         {
             DestroyPhysicsActors();
             BOOM_DELETE(m_Context);
+            //called here in case of the need of multiple windows
+            glfwTerminate(); 
         }
 
         /**
