@@ -4,7 +4,6 @@ opengl/system
 glfw/3.3.8
 glew/2.2.0
 glm/1.0.1
-imgui/1.89.7
 stb/cci.20230920
 assimp/5.4.3
 physx/4.1.1

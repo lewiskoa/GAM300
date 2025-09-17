@@ -270,29 +270,23 @@ public:
 
     BOOM_INLINE void OnStart() override
     {
-        BOOM_INFO("Editor::OnStart - Starting WITHOUT context switching");
+        BOOM_INFO("Editor::OnStart - Initializing GLFW for Editor DLL");
 
-        m_InitialWindow = GetWindowHandle();
-        m_LastValidWindow = m_InitialWindow;
-
-        GLFWwindow* currentContext = glfwGetCurrentContext();
-
-        BOOM_INFO("Editor::OnStart - Current context: {}", (void*)currentContext);
-        BOOM_INFO("Editor::OnStart - Engine window: {}", (void*)m_InitialWindow);
-
-        if (currentContext) {
-            CreateImGuiWithCurrentContext(currentContext);
-        }
-        else if (m_InitialWindow) {
-            BOOM_WARN("Editor::OnStart - Deferring ImGui creation to OnUpdate()");
-            m_DeferredInit = true;
-        }
-        else {
-            BOOM_ERROR("Editor::OnStart - No context and no engine window!");
+        if (!glfwInit()) {
+            BOOM_ERROR("Editor::OnStart - Failed to initialize GLFW!");
             return;
         }
 
-        BOOM_INFO("Editor::OnStart - Completed successfully");
+        BOOM_INFO("Editor::OnStart - GLFW initialized successfully");
+
+        // Don't try to force context switching here - let it happen during main loop
+        GLFWwindow* engineWindow = GetWindowHandle();
+        BOOM_INFO("Editor::OnStart - Engine window: {} (size check will happen in OnUpdate)", (void*)engineWindow);
+
+        // Set flag to initialize ImGui when context becomes available
+        m_WaitingForContext = true;
+
+        BOOM_INFO("Editor::OnStart - Will initialize ImGui when engine context becomes current");
     }
 
     BOOM_INLINE void OnUpdate() override
@@ -300,98 +294,57 @@ public:
         static int frameCount = 0;
         frameCount++;
 
-        GLFWwindow* currentWindow = GetWindowHandle();
+        // Check if engine has made its context current
+        GLFWwindow* currentContext = glfwGetCurrentContext();
+        GLFWwindow* engineWindow = GetWindowHandle();
 
-        if (m_DeferredInit) {
-            GLFWwindow* currentContext = glfwGetCurrentContext();
+        if (m_WaitingForContext && currentContext) {
+            BOOM_INFO("Editor::OnUpdate [Frame {}] - Engine context is current: {}", frameCount, (void*)currentContext);
+            // Force context current every frame until ImGui initializes
+            glfwMakeContextCurrent(engineWindow);
 
+            GLFWwindow* current = glfwGetCurrentContext();
+            if (current == engineWindow) {
+                BOOM_INFO("Editor forced context current at frame {}", frameCount);
+
+                try {
+                    CreateImGuiWithCurrentContext(current);
+                    m_WaitingForContext = false;
+                }
+                catch (const std::exception& e) {
+                    BOOM_ERROR("ImGui init failed: {}", e.what());
+                }
+            }
+        }
+
+        if (m_GuiContext && currentContext) {
+            // Update ImGui only when we have a valid context
+            m_GuiContext->OnUpdate();
+
+            if (frameCount % 300 == 0) {
+                BOOM_INFO("Editor::OnUpdate - ImGui running at frame {} with context {}",
+                    frameCount, (void*)currentContext);
+            }
+        }
+        else if (m_WaitingForContext) {
+            // Still waiting for context
+            if (frameCount % 180 == 0) { // Every 3 seconds
+                BOOM_INFO("Editor::OnUpdate - Waiting for engine context... Frame {}, Current: {}",
+                    frameCount, (void*)currentContext);
+            }
+        }
+        else if (!currentContext) {
+            // Lost context during runtime
             if (frameCount % 60 == 0) {
-                BOOM_INFO("Editor::OnUpdate [Frame {}] - Deferred init check: current={}, window={}",
-                    frameCount, (void*)currentContext, (void*)currentWindow);
-            }
-
-            if (currentContext) {
-                BOOM_INFO("Editor::OnUpdate - Context available for deferred init: {}", (void*)currentContext);
-                CreateImGuiWithCurrentContext(currentContext);
-                m_DeferredInit = false;
-            }
-            else if (currentWindow) {
-                if (frameCount % 60 == 0) {
-                    BOOM_INFO("Editor::OnUpdate - Attempting to fix window and force context...");
-
-                    // Check window properties
-                    int width, height;
-                    glfwGetWindowSize(currentWindow, &width, &height);
-                    int visible = glfwGetWindowAttrib(currentWindow, GLFW_VISIBLE);
-                    int focused = glfwGetWindowAttrib(currentWindow, GLFW_FOCUSED);
-
-                    BOOM_INFO("Editor::OnUpdate - Window state: size={}x{}, visible={}, focused={}",
-                        width, height, visible, focused);
-
-                    // If window has zero size, try to fix it
-                    if (width == 0 || height == 0) {
-                        BOOM_INFO("Editor::OnUpdate - Fixing window size...");
-
-                        // Make window visible first
-                        if (!visible) {
-                            BOOM_INFO("Editor::OnUpdate - Making window visible...");
-                            glfwShowWindow(currentWindow);
-                        }
-
-                        // Set a reasonable size
-                        BOOM_INFO("Editor::OnUpdate - Setting window size to 1280x720...");
-                        glfwSetWindowSize(currentWindow, 1280, 720);
-
-                        // Force window to front
-                        glfwFocusWindow(currentWindow);
-
-                        // Check if it worked
-                        glfwGetWindowSize(currentWindow, &width, &height);
-                        BOOM_INFO("Editor::OnUpdate - New window size: {}x{}", width, height);
-                    }
-
-                    if (width > 0 && height > 0) {
-                        BOOM_INFO("Editor::OnUpdate - Window is valid, forcing context...");
-
-                        // Now try to make context current
-                        glfwMakeContextCurrent(currentWindow);
-
-                        GLFWwindow* newCurrent = glfwGetCurrentContext();
-                        if (newCurrent == currentWindow) {
-                            BOOM_INFO("Editor::OnUpdate - Successfully forced engine context current!");
-                            CreateImGuiWithCurrentContext(newCurrent);
-                            m_DeferredInit = false;
-                        }
-                        else {
-                            BOOM_ERROR("Editor::OnUpdate - Failed to force engine context current");
-                        }
-                    }
-                    else {
-                        BOOM_ERROR("Editor::OnUpdate - Still can't fix window size");
-                    }
-                }
-            }
-            else {
-                if (frameCount % 300 == 0) {
-                    BOOM_ERROR("Editor::OnUpdate - No window available after {} frames", frameCount);
-                }
-                return;
+                BOOM_WARN("Editor::OnUpdate - Lost OpenGL context at frame {}", frameCount);
             }
         }
+    }
 
-        if (m_GuiContext) {
-            GLFWwindow* currentContext = glfwGetCurrentContext();
-            if (currentContext) {
-                m_GuiContext->OnUpdate();
-
-                if (frameCount % 300 == 0) {
-                    BOOM_INFO("Editor::OnUpdate - ImGui running successfully at frame {}", frameCount);
-                }
-            }
-            else {
-                BOOM_WARN("Editor::OnUpdate - Lost OpenGL context during runtime!");
-            }
-        }
+    BOOM_INLINE ~Editor()
+    {
+        m_GuiContext.reset();
+        BOOM_INFO("Editor::~Editor - Cleaned up");
     }
 
 private:
@@ -399,30 +352,22 @@ private:
     {
         BOOM_INFO("CreateImGuiWithCurrentContext - Using context: {}", (void*)context);
 
-        try {
-            GLenum error = glGetError();
-            if (error != GL_NO_ERROR) {
-                BOOM_ERROR("CreateImGuiWithCurrentContext - OpenGL error before init: {}", error);
-                return;
-            }
+        // Get window dimensions for ImGui
+        GLFWwindow* engineWindow = GetWindowHandle();
+        int width, height;
+        glfwGetWindowSize(engineWindow, &width, &height);
+        BOOM_INFO("CreateImGuiWithCurrentContext - Window size: {}x{}", width, height);
 
-            m_GuiContext = std::make_unique<GuiContextNoSwitch>();
-            m_GuiContext->InitializeWithExistingContext(context);
-            m_GuiContext->AttachWindow<ViewportWindow>();
+        m_GuiContext = std::make_unique<GuiContextNoSwitch>();
+        m_GuiContext->InitializeWithExistingContext(context);
+        m_GuiContext->AttachWindow<ViewportWindow>();
 
-            BOOM_INFO("CreateImGuiWithCurrentContext - Success!");
-
-        }
-        catch (const std::exception& e) {
-            BOOM_ERROR("CreateImGuiWithCurrentContext - Failed: {}", e.what());
-        }
+        BOOM_INFO("CreateImGuiWithCurrentContext - Success!");
     }
 
 private:
     std::unique_ptr<GuiContextNoSwitch> m_GuiContext;
-    bool m_DeferredInit = false;
-    GLFWwindow* m_InitialWindow = nullptr;
-    GLFWwindow* m_LastValidWindow = nullptr;
+    bool m_WaitingForContext = false;
 };
 
 int32_t main()

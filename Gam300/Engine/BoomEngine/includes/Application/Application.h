@@ -167,44 +167,19 @@ namespace Boom
 
             while (m_Context->window->PollEvents())
             {
-                /*
-                ComputeFrameDeltaTime();
+                GLFWwindow* engineWindow = m_Context->window->Handle();
+                GLFWwindow* beforeCurrent = glfwGetCurrentContext();
 
-                m_SphereTimer += m_Context->DeltaTime;
+                glfwMakeContextCurrent(engineWindow);
 
-                // Reset sphere after 5 seconds
-                if (m_SphereTimer >= 5.0)
-                {
-                    m_SphereTimer = 0.0;
+                GLFWwindow* afterCurrent = glfwGetCurrentContext();
 
-                    // Reset position and velocity
-                    auto& transform = m_SphereEntity.Get<TransformComponent>().Transform;
-                    transform.translate = m_SphereStartPos;
-
-                    auto& rb = m_SphereEntity.Get<RigidBodyComponent>().RigidBody;
-                    if (rb.actor)
-                    {
-                        // Reset PhysX actor pose and velocity
-                        PxTransform pose(ToPxVec3(m_SphereStartPos));
-                        rb.actor->setGlobalPose(pose);
-
-                        PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(rb.actor);
-                        if (dyn)
-                        {
-                            dyn->setLinearVelocity(PxVec3(1.0f, 0.0f, 0.0f)); // initial velocity
-                            dyn->setAngularVelocity(PxVec3(0.0f)); // stop rotation
-                            dyn->clearForce();
-                            dyn->clearTorque();
-                            dyn->wakeUp();
-                        }
-                    }
+                // Log every 60 frames to verify context switching
+                static int debugFrameCount = 0;
+                if (++debugFrameCount % 60 == 0) {
+                    BOOM_INFO("Engine main loop - Before: {}, Engine: {}, After: {}",
+                        (void*)beforeCurrent, (void*)engineWindow, (void*)afterCurrent);
                 }
-
-                RunPhysicsSimulation();
-                SoundEngine::Instance().Update();
-                */
-                //updates new frame
-                //RenderSceneDepth();
                 m_Context->renderer->NewFrame();
                 {
                     //testing rendering
