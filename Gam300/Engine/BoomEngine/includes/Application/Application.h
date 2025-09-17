@@ -209,8 +209,10 @@ namespace Boom
                 {
                     //testing rendering
                     {
+                        //[0, 360] range
                         static float testRot{};
-                        if ((testRot += 0.25f) > 360.f) { testRot -= 360.f; }
+                        testRot += 0.25f;
+                        testRot = glm::mod(testRot, 360.f);
 
                         //lights
                         m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
@@ -218,7 +220,7 @@ namespace Boom
                         m_Context->renderer->SetPointLightCount(0);
 
                         //glm::vec3 testDir{ -glm::cos(glm::radians(testRot)), .3f, glm::sin(glm::radians(testRot)) };
-						glm::vec3 testDir{ .7f, -.3f, -.3f };
+						glm::vec3 testDir{ -.7f, -.3f, .3f };
                         m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
                         m_Context->renderer->SetDirectionalLightCount(1);
 
@@ -228,8 +230,9 @@ namespace Boom
                         //camera
                         EnttView<Entity, CameraComponent>([this](auto entity, CameraComponent& comp) {
                                 Transform3D& transform{ entity.template Get<TransformComponent>().transform };
-                                transform.translate = m_Context->window->camPos;
-                                transform.rotate = { 0.f, testRot, 0.f };
+                                glm::vec3 rotOffset{ glm::cos(glm::radians(testRot)), 0.f, glm::sin(glm::radians(testRot)) };
+                                transform.translate = m_Context->window->camPos.z * rotOffset;
+								transform.rotate = { 0.f, -testRot + 90.f, 0.f };
                                 m_Context->renderer->SetCamera(comp.camera, transform);
                             }
                         );
