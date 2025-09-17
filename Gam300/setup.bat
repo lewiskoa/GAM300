@@ -116,11 +116,13 @@ REM 6) Install dependencies for both configurations
 REM ------------------------------------------------------------------------
 echo [STEP] Installing dependencies for Release...
 conan install . -of conanbuild\Release -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
-    -s build_type=Release -g CMakeDeps -g CMakeToolchain --build=missing
+  -s build_type=Release -g MSBuildDeps --build=missing ^
+  -o glfw/*:shared=True -o glew/*:shared=True
 
 echo [STEP] Installing dependencies for Debug...
 conan install . -of conanbuild\Debug -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
-    -s build_type=Debug -g CMakeDeps -g CMakeToolchain --build=missing
+  -s build_type=Debug -g MSBuildDeps --build=missing ^
+  -o glfw/*:shared=True -o glew/*:shared=True
 
 echo.
 echo ==== Setup Complete! Dependencies are in conanbuild/ ====

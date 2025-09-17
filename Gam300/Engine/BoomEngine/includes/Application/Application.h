@@ -180,6 +180,9 @@ namespace Boom
                     BOOM_INFO("Engine main loop - Before: {}, Engine: {}, After: {}",
                         (void*)beforeCurrent, (void*)engineWindow, (void*)afterCurrent);
                 }
+
+                //glfwMakeContextCurrent(m_Context->window->Handle());
+
                 m_Context->renderer->NewFrame();
                 {
                     //testing rendering
@@ -245,16 +248,27 @@ namespace Boom
                 }
                 m_Context->renderer->EndFrame();
 
+                //draw the updated frame
+                m_Context->renderer->ShowFrame(showFrame);
+
+                // CRITICAL: Set up OpenGL state for ImGui before layer updates
+                //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+                //glViewport(0, 0, m_Context->window->Width(), m_Context->window->Height());
+
+                //// Enable proper blend state for ImGui
+                //glEnable(GL_BLEND);
+                //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                //glDisable(GL_DEPTH_TEST);
+                //glDisable(GL_CULL_FACE);
+
                 //update layers
                 for (auto layer : m_Context->Layers)
                 {
                     layer->OnUpdate();
                 }
 
-                //draw the updated frame
-                m_Context->renderer->ShowFrame(showFrame);
                 //m_Context->renderer->ShowFrame();
-                //glfwSwapBuffers(m_Context->window->Window());
+                glfwSwapBuffers(m_Context->window->Window());
             }
         }
 
