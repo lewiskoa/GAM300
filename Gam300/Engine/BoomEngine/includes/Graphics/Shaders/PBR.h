@@ -31,9 +31,10 @@ namespace Boom {
 			, occlusionLoc{ GetUniformVar("material.occlusion") }
 			, emissiveLoc{ GetUniformVar("material.emissive") }
 
-			, viewPosLoc{ GetUniformVar("viewPos") }
 			, frustumMatLoc{ GetUniformVar("frustumMat") }
 			, modelMatLoc{ GetUniformVar("modelMat") }
+			, viewPosLoc{ GetUniformVar("viewPos") }
+
 			, jointsLoc{ GetUniformVar("hasJoints") }
 		{
 		}
@@ -172,7 +173,6 @@ namespace Boom {
 		int32_t noDirLightLoc;
 		int32_t noPointLightLoc;
 		
-
 		int32_t roughnessMapLoc;
 		int32_t occlusionMapLoc;
 		int32_t emissiveMapLoc;
@@ -193,9 +193,9 @@ namespace Boom {
 		int32_t occlusionLoc;
 		int32_t emissiveLoc;
 
-		int32_t viewPosLoc;
 		int32_t frustumMatLoc;
 		int32_t modelMatLoc;
+		int32_t viewPosLoc;
 
 		int32_t jointsLoc;
 	};

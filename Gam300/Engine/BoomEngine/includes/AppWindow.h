@@ -204,18 +204,11 @@ namespace Boom {
 				return;
 			}
 			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-				static float xPos{};
-				if (key == GLFW_KEY_A) {
-					self->camPos.x += 0.1f;
-				}
-				if (key == GLFW_KEY_D) {
-					self->camPos.x -= 0.1f;
-				}
 				if (key == GLFW_KEY_W) {
-					self->camPos.y -= 0.1f;
+					self->camPos.z -= 0.1f;
 				}
 				if (key == GLFW_KEY_S) {
-					self->camPos.y += 0.1f;
+					self->camPos.z += 0.1f;
 				}
 			}
 
