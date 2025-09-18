@@ -1,6 +1,6 @@
 #pragma once
 namespace Boom {
-	struct Texture2D {
+	struct BOOM_API Texture2D {
 		Texture2D() = default;
 		//file path starts from Textures folder
 		Texture2D(std::string filename, bool isFlipY = true, bool isHDR = false);

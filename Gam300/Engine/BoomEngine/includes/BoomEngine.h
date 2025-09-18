@@ -1,14 +1,14 @@
 #pragma once
 #include"Core.h"
 #include "Application/Application.h"
-//#ifdef BOOM_EXPORTS
-//#define BOOM_API __declspec(dllexport)
-//#else
-//#define BOOM_API __declspec(dllimport)
-//#endif
 
+using namespace Boom;   
 //trying out
-class BOOM_API MyEngineClass {
+class BOOM_API MyEngineClass 
+{
 public:
     void whatup();
+
+    std::unique_ptr<Application>CreateApp();
 };
+

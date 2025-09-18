@@ -97,6 +97,10 @@ void MyEngineClass::whatup() {
         }
 }
 
+std::unique_ptr<Application>MyEngineClass::CreateApp() {
+    return std::make_unique<Application>();
+}
+
 namespace {
     std::string GetGlewString(GLenum name, bool isError = false) {
         if (isError)

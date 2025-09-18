@@ -1,3 +1,4 @@
+#pragma warning(disable: 4834)  // Disable nodiscard warnings
 #include "BoomEngine.h"
 #include "Vendors/imgui/imgui.h"
 #include "Windows/Inspector.h"
@@ -247,7 +248,7 @@ int32_t main()
         BOOM_INFO("Editor Started");
 
         // Create application
-        auto app = std::make_unique<Application>();
+        auto app = engine.CreateApp();
         app->PostEvent<WindowTitleRenameEvent>("Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
 
         // Get the engine window handle
