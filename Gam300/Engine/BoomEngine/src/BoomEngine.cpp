@@ -22,7 +22,7 @@ using namespace Boom;
 namespace {
     //this function shows the barebones process of entire rendering process
     //void TestRender();
-    
+    void UpdateAudioTest();
     //this function shows the renderer logic
    // void TestShaders(Boom::EventDispatcher& dispatcher);
 }
@@ -75,23 +75,37 @@ void MyEngineClass::whatup() {
         std::cout << "Dispatcher smoketest finished inside MyEngineClass::whatup().\n";
 
         {
-            auto& se = SoundEngine::Instance();
-            if (se.Init()) {
-                se.PlaySound("startup", "Resources/Audio/vboom.wav", false);
-
-                // Simple loop to update FMOD for 2 seconds
-                auto start = std::chrono::high_resolution_clock::now();
-                while (std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - start).count() < 2.0f) {
-                    se.Update();
-                    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                }
-            }
-
-            
             //TestShaders(dispatcher);
             //actual application code to run
             auto app{ std::make_unique<Application>() };
             app->PostEvent<WindowTitleRenameEvent>("Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
+
+            auto& se = SoundEngine::Instance();
+            if (se.Init()) {
+                se.PlaySound("startup", "Resources/Audio/vboom.wav", false);
+
+                se.PlaySound("orbit", "Resources/Audio/Fetty Wap.wav", true);
+
+                auto start = std::chrono::high_resolution_clock::now();
+                while (true) {
+                    FMOD_VECTOR listenerPos = { 0.0f, 0.0f, 0.0f }; // Listener at origin
+                    FMOD_VECTOR listenerVel = { 0.0f, 0.0f, 0.0f };
+                    FMOD_VECTOR listenerForward = { 0.0f, 0.0f, 1.0f }; // Facing +Z
+                    FMOD_VECTOR listenerUp = { 0.0f, 1.0f, 0.0f }; // Y-up
+
+                    SoundEngine::Instance().SetListenerAttributes(listenerPos, listenerVel, listenerForward, listenerUp);
+
+                    se.Update();         // FMOD update
+                    UpdateAudioTest();   // orbiting test
+                    //std::this_thread::sleep_for(std::chrono::milliseconds(16));
+                }
+                //// Simple loop to update FMOD for 2 seconds
+                //auto start = std::chrono::high_resolution_clock::now();
+                //while (std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - start).count() < 2.0f) {
+                //    se.Update();
+                //    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                //}
+            }
             app->RunContext();
 
             SoundEngine::Instance().Shutdown();
@@ -107,6 +121,23 @@ namespace {
             return ret ? ret : "Unknown glewGetString(" + std::to_string(name) + ')';
         }
     }
+
+    void UpdateAudioTest() {
+        static float angle = 0.0f;
+        angle += 0.02f; // orbit speed
+        float radius = 8.0f;
+
+        FMOD_VECTOR pos = {
+            cos(angle) * radius, // X
+            0.0f,                // Y
+            sin(angle) * radius  // Z
+        };
+
+        FMOD_VECTOR vel = { 0.0f, 0.0f, 0.0f };
+
+        SoundEngine::Instance().SetSoundPosition("orbit", pos, vel);
+    }
+
     void PrintSpecs() {
         BOOM_INFO("GPU Vendor: {}", GetGlewString(GL_VENDOR));
         BOOM_INFO("GPU Renderer: {}", GetGlewString(GL_RENDERER));
