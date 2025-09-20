@@ -13,11 +13,11 @@ namespace Boom
 
         BOOM_INLINE uint32_t Generate(int32_t size)
         {
-            /*GLint oldVP[4];
+            GLint oldVP[4];
             glGetIntegerv(GL_VIEWPORT, oldVP);
             GLint oldDrawFBO = 0, oldReadFBO = 0;
             glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &oldDrawFBO);
-            glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &oldReadFBO);*/
+            glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &oldReadFBO);
             uint32_t brdfMap = 0u;
             glGenTextures(1, &brdfMap);
             glBindTexture(GL_TEXTURE_2D, brdfMap);
@@ -36,16 +36,17 @@ namespace Boom
             glBindFramebuffer(GL_FRAMEBUFFER, FBO);
             glBindRenderbuffer(GL_RENDERBUFFER, RBO);
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size, size);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdfMap, 0);
            
             glViewport(0, 0, size, size);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             CreateQuad2D()->Draw();
-            //glBindFramebuffer(GL_DRAW_FRAMEBUFFER, oldDrawFBO);
-            //glBindFramebuffer(GL_READ_FRAMEBUFFER, oldReadFBO);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, oldDrawFBO);
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, oldReadFBO);
 
-            ////// restore viewport
-            //glViewport(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
+            //// restore viewport
+            glViewport(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glBindTexture(GL_TEXTURE_2D, 0);
             glUseProgram(0);

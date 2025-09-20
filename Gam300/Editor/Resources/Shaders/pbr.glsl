@@ -146,7 +146,6 @@ float ComputeMapOrMatF(bool isMap, sampler2D map, float mat) {
     return res;
 }
 
-uniform sampler2D u_brdfMap;
 void main() {
     vec3 V = normalize(vertex.position - viewPos);
    
@@ -180,8 +179,8 @@ void main() {
     else {
         out_brightness=vec4(0.0,0.0,0.0,1.0);
     }
-   // out_fragment = vec4(color, 1.0);
-    out_fragment = vec4(texture(u_brdfMap, vec2(1, 1)).rg, 0.0, 1.0);
+    out_fragment = vec4(color, 1.0);
+    //out_fragment = vec4(texture(u_brdfMap, vec2(1, 1)).rg, 0.0, 1.0);
 
     //fragColor = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
 }
@@ -208,8 +207,9 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
     return aSq / (PI * denom * denom);
 }
 
-uniform samplerCube u_irradMap;
-uniform samplerCube u_prefilMap;
+layout(binding = 0) uniform samplerCube u_irradMap;
+layout(binding = 1) uniform samplerCube u_prefilMap;
+layout(binding = 2) uniform sampler2D   u_brdfMap;
 //specular and diffuse potential issues
 vec3 ComputeAmbientLight(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic){
  // angle between surface normal and light direction.
@@ -219,20 +219,27 @@ vec3 ComputeAmbientLight(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, 
 	vec3 F = FresnelSchlick(cosTheta, f0);
 	vec3 Kd = mix(vec3(1.0) - F, vec3(0.0), metallic);
     //vec3 diffuseIBL = Kd * albedo *( texture(u_irradMap, N).rgb *0.25);
-    vec3 diffuseIBL = Kd * albedo*( texture(u_irradMap, N).rgb);
-	//vec3 diffuseIBL = vec3(0.5);
-
-	// sample pre-filtered map at correct mipmap level.
+    //vec3 diffuseIBL = Kd * albedo*( texture(u_irradMap, N).rgb);
+//	vec3 diffuseIBL = vec3(0.0);
+//
+//	// sample pre-filtered map at correct mipmap level.
 	int mipLevels = 5;
 	vec3 Lr = 2.0 * cosTheta * N - V;
 	vec3 Ks = textureLod(u_prefilMap, Lr, roughness * mipLevels).rgb;
-
-	// split-sum approx.factors for Cook-Torrance specular BRDF.
+//vec3 Ks = textureLod(u_prefilMap, Lr, roughness * miplevels).rgb;
+vec3 diff = texture(u_irradMap, N).rgb;
+vec3 diffuseIBL = Kd * albedo * diff;
+//vec3 specularIBL = vec3(0.0);
+//return diffuseIBL;
+//	// split-sum approx.factors for Cook-Torrance specular BRDF.
 	vec2 brdf = texture(u_brdfMap, vec2(cosTheta, roughness)).rg;
    // vec2 brdf = vec2(0.5);
 vec3 specularIBL = (f0 * brdf.x + brdf.y) * Ks;
-  // vec3 specularIBL = vec3(0.0);
+   //vec3 specularIBL = vec3(0.0);
 	return (diffuseIBL + specularIBL);
+//vec2 br = texture(u_brdfMap, vec2(NV, roughness)).rg;
+
+
 
 }
 vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic) {

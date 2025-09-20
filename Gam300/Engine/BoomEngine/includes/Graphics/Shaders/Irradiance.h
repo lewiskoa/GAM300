@@ -16,11 +16,11 @@ namespace Boom
 
         BOOM_INLINE uint32_t Generate(uint32_t skyCubMap, SkyboxMesh& mesh, int32_t size)
         {
-           /* GLint oldVP[4];
+            GLint oldVP[4];
             glGetIntegerv(GL_VIEWPORT, oldVP);
             GLint oldDrawFBO = 0, oldReadFBO = 0;
             glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &oldDrawFBO);
-            glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &oldReadFBO);*/
+            glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &oldReadFBO);
             // view matrices
             glm::mat4 views[] =
             {
@@ -53,6 +53,8 @@ namespace Boom
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
+          
+
             glUseProgram(shaderId);
             glUniformMatrix4fv(u_Proj, 1, GL_FALSE, glm::value_ptr(projection));
 
@@ -67,6 +69,8 @@ namespace Boom
             glBindFramebuffer(GL_FRAMEBUFFER, FBO);
             glBindRenderbuffer(GL_RENDERBUFFER, RBO);
             glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size, size);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RBO);
+            glDrawBuffer(GL_COLOR_ATTACHMENT0);
 
             glViewport(0, 0, size, size);
             glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -80,9 +84,9 @@ namespace Boom
                 RenderSkyboxMesh(mesh);
             }
             //restoring viewport
-        /*    glViewport(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
+            glViewport(oldVP[0], oldVP[1], oldVP[2], oldVP[3]);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, oldDrawFBO);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, oldReadFBO);*/
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, oldReadFBO);
             // unbind shader, buffer
             glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);

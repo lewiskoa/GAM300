@@ -40,9 +40,13 @@ namespace Boom {
 			, prefilMap{GetUniformVar("u_prefilMap")}
 		    , brdfMap{ GetUniformVar("u_brdfMap") }
 		{
+			
+
+	
 		}
 
 	public: //lights
+	
 		template<class TYPE>
 		void SetLight(TYPE const& light, Transform3D const& transform, int32_t index) {
 			static_assert(
@@ -102,7 +106,7 @@ namespace Boom {
 			//irrad
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, irrad);
-			glUniform1i(u_IrradMap, 0);
+			glUniform1i(u_IrradMap,0);
 			//prefiltered
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, prefil);
@@ -136,9 +140,9 @@ namespace Boom {
 
 			//material texture maps
 			{
-				int32_t unit=0;
-				//int32_t unit=4;
-				bool isMap{};
+				//int32_t unit=0;
+				int32_t unit=4;
+				bool isMap =false;
 
 				isMap = material.albedoMap != nullptr;
 				SetUniform(isAlbedoMapLoc, isMap);

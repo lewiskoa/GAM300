@@ -121,6 +121,7 @@ namespace Boom {
 			}
 			return res;
 		}
+		
 		//uint
 		void SetUniform(int32_t loc, uint32_t val) const {
 			glUniform1ui(loc, val);
