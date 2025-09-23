@@ -181,8 +181,6 @@ namespace Boom
                         (void*)beforeCurrent, (void*)engineWindow, (void*)afterCurrent);
                 }
 
-                //glfwMakeContextCurrent(m_Context->window->Handle());
-
                 m_Context->renderer->NewFrame();
                 {
                     //testing rendering
@@ -259,9 +257,6 @@ namespace Boom
                 {
                     layer->OnUpdate();
                 }
-
-                //m_Context->renderer->ShowFrame();
-                glfwSwapBuffers(m_Context->window->Window());
             }
         }
 
