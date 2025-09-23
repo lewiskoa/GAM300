@@ -34,6 +34,71 @@ namespace Boom {
 			UnUse();
 		}
 
+		//Hehe OOPS
+
+		BOOM_INLINE ~FinalShader()
+		{
+			glDeleteTextures(1, &m_Final);
+		}
+
+		BOOM_INLINE void Render(uint32_t vmap, uint32_t vbloom, bool useFBO)
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, useFBO ? m_FBO : 0);
+			glClear(GL_COLOR_BUFFER_BIT);
+			glClearColor(0, 0, 0, 1);
+			glUseProgram(shaderId);
+
+			//set color map
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, vmap);
+			glUniform1i(vbloom, 1);
+
+			//render quad
+			quad->Draw();
+			glUseProgram(0);
+
+			//bind default fbo
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+
+		BOOM_INLINE void Resize(int32_t width, int32_t height)
+		{
+			glBindTexture(GL_TEXTURE_2D, m_Final);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
+
+		BOOM_INLINE uint32_t GetMap()
+		{
+			return m_Final;
+		}
+
+		BOOM_INLINE void CreateBuffer(int32_t width, int32_t height)
+		{
+			// create frame buffer
+			glGenFramebuffers(1, &m_FBO);
+			glBindFramebuffer(GL_FRAMEBUFFER, m_FBO);
+
+			// create attachment
+			glGenTextures(1, &m_Final);
+			glBindTexture(GL_TEXTURE_2D, m_Final);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_Final, 0);
+
+			// check frame buffer
+			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+			{
+				BOOM_ERROR("glCheckFramebufferStatus() Failed!");
+			}
+
+			// unbind frame buffer
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
+
 	private:
 		
 		Quad2D quad;
@@ -42,5 +107,8 @@ namespace Boom {
 		//int32_t colLoc;
 		int32_t bloomEnabled;
 		glm::vec4 color;
+
+		uint32_t m_Final = 0u;
+		uint32_t m_FBO = 0u;
 	};
 }

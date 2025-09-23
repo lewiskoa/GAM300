@@ -19,7 +19,7 @@ namespace Boom
      * Provides lifecycle hooks (OnStart, OnUpdate) and
      * layer-management utilities via templates.
      */
-    struct AppInterface
+    struct BOOM_API AppInterface
     {
         /**
          * @brief  Virtual destructor for safe polymorphic cleanup.
@@ -140,6 +140,15 @@ namespace Boom
                 });
         }
 
+        BOOM_INLINE GLFWwindow* GetWindowHandle()
+        {
+            return m_Context->window->Handle();
+        }
+
+        BOOM_INLINE uint32_t GetSceneFrame()
+        {
+			return m_Context->renderer->GetFrame();
+        }
 
 
     protected:

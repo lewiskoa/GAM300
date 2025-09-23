@@ -52,7 +52,24 @@ namespace Boom {
 				BOOM_FATAL("AppWindow::Init() - failed to init app window.");
 				std::exit(EXIT_FAILURE);
 			}
+
+			// ADD THESE LINES:
+			BOOM_INFO("AppWindow - Initial window size: {}x{}", width, height);
+			glfwShowWindow(windowPtr);  // Make sure window is visible
+			glfwFocusWindow(windowPtr); // Bring to front
+
+			int actualWidth, actualHeight;
+			glfwGetWindowSize(windowPtr, &actualWidth, &actualHeight);
+			BOOM_INFO("AppWindow - Actual window size after creation: {}x{}", actualWidth, actualHeight);
+
 			glfwMakeContextCurrent(windowPtr);
+			GLFWwindow* current = glfwGetCurrentContext();
+			BOOM_INFO("AppWindow created context: window={}, current={}",
+				(void*)windowPtr, (void*)current);
+
+			if (current != windowPtr) {
+				BOOM_ERROR("Failed to make window context current in constructor!");
+			}
 
 			//user data
 			glfwSetWindowUserPointer(windowPtr, this);
@@ -187,18 +204,11 @@ namespace Boom {
 				return;
 			}
 			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-				static float xPos{};
-				if (key == GLFW_KEY_A) {
-					self->camPos.x += 0.1f;
-				}
-				if (key == GLFW_KEY_D) {
-					self->camPos.x -= 0.1f;
-				}
 				if (key == GLFW_KEY_W) {
-					self->camPos.y -= 0.1f;
+					self->camPos.z -= 0.1f;
 				}
 				if (key == GLFW_KEY_S) {
-					self->camPos.y += 0.1f;
+					self->camPos.z += 0.1f;
 				}
 			}
 
@@ -260,6 +270,9 @@ namespace Boom {
 		}
 		BOOM_INLINE int IsExit() const {
 			return glfwWindowShouldClose(windowPtr);
+		}
+		BOOM_INLINE GLFWwindow* Handle() const {
+			return windowPtr;
 		}
 	private:
 		int32_t width;

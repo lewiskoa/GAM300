@@ -93,10 +93,12 @@ namespace Boom {
 		BOOM_INLINE void Resize(int32_t w, int32_t h) {
 			frame->Resize(w, h);
 		}
-
+		//HEHE OOPS
 		BOOM_INLINE uint32_t GetFrame() {
 			return frame->GetTexture();
+			//return finalShader->GetMap();
 		}
+
 		BOOM_INLINE void NewFrame() {
 			frame->Begin();
 			pbrShader->Use();
@@ -104,11 +106,16 @@ namespace Boom {
 		BOOM_INLINE void EndFrame() {
 			pbrShader->UnUse();
 			frame->End();
-			//bloom->Compute(frame->GetBrightnessMap(), 10);
+			bloom->Compute(frame->GetBrightnessMap(), 10);
 		}
 		BOOM_INLINE void ShowFrame() {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Show(frame->GetTexture(), bloom->GetMap(), false);
+			finalShader->Show(frame->GetTexture(), bloom->GetMap(), true);
+		}
+
+		BOOM_INLINE void ShowFrame(bool useFBO) {
+			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
+			finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO);
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
@@ -164,4 +171,6 @@ namespace Boom {
 		std::unique_ptr<BloomShader> bloom;
 		SkyboxMesh skyboxMesh;
 	};
+
+
 }

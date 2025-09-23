@@ -18,6 +18,23 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup Label="EditorPaths">
+    <EditorRoot>$(ProjectDir)</EditorRoot>
+    <VendorsRoot>$(EditorRoot)src\Vendors</VendorsRoot>
+    <!-- Add 'src\' here -->
+    <EditorIncludeRoots>
+    $(EditorRoot);
+    $(EditorRoot)src;                    <!-- Add this line -->
+    $(VendorsRoot);
+    $(VendorsRoot)\imgui;
+    $(VendorsRoot)\imgui\backends;
+    $(VendorsRoot)\imgui\misc\cpp
+  </EditorIncludeRoots>
+    <EngineIncludeRoots>
+    $(SolutionDir)Engine\BoomEngine\includes;
+    $(SolutionDir)Engine\BoomEngine\includes\common
+  </EngineIncludeRoots>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -54,10 +71,8 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -71,6 +86,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <!-- (Optional legacy) IncludePath – harmless to keep -->
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>$(ProjectDir)Engine\BoomEngine\includes\;$(ProjectDir)Engine\BoomEngine\includes\common\;$(ProjectDir)Engine\BoomEngine\src\;$(IncludePath)</IncludePath>
   </PropertyGroup>
@@ -83,6 +99,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)Engine\BoomEngine\includes\;$(ProjectDir)Engine\BoomEngine\includes\common\;$(ProjectDir)Engine\BoomEngine\src\;$(IncludePath)</IncludePath>
   </PropertyGroup>
+  <!-- Debug | Win32 -->
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -91,7 +108,11 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>;$(SolutionDir)\Engine\BoomEngine\includes;$(SolutionDir)\Engine\BoomEngine\includes\common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+      $(EditorIncludeRoots);
+      $(EngineIncludeRoots);
+      %(AdditionalIncludeDirectories)
+    </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -100,6 +121,7 @@
       <AdditionalDependencies>BoomEngine.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <!-- Release | Win32 -->
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -110,7 +132,11 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>;$(SolutionDir)\Engine\BoomEngine\includes;$(SolutionDir)\Engine\BoomEngine\includes\common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+        $(EditorIncludeRoots);
+        $(EngineIncludeRoots);
+        %(AdditionalIncludeDirectories)
+    </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -121,29 +147,37 @@
       <AdditionalDependencies>BoomEngine.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <!-- Debug | x64 -->
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;GLFW_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\BoomEngine;%(AdditionalIncludeDirectories);$(SolutionDir)\Engine\BoomEngine\includes;$(SolutionDir)\Engine\BoomEngine\includes\common</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <AdditionalIncludeDirectories>
+        $(EditorIncludeRoots);
+        $(EngineIncludeRoots);
+        %(AdditionalIncludeDirectories)
+    </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>
-      $(SolutionDir)x64\$(Configuration);
-      %(AdditionalLibraryDirectories)
+        $(SolutionDir)x64\$(Configuration);
+        %(AdditionalLibraryDirectories)
       </AdditionalLibraryDirectories>
       <AdditionalDependencies>BoomEngine.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(SolutionDir)x64\$(Configuration)\BoomEngine.dll" "$(OutDir)"</Command>
+      <Command>xcopy /Y /D "$(SolutionDir)x64\$(Configuration)\BoomEngine.dll" "$(OutDir)"
+if exist "$(glfw_BIN_DIRS)" xcopy /y /i "$(glfw_BIN_DIRS)\*.dll" "$(TargetDir)"
+if exist "$(glew_BIN_DIRS)" xcopy /y /i "$(glew_BIN_DIRS)\*.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+  <!-- Release | x64 -->
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
@@ -154,7 +188,11 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalIncludeDirectories>$(ConanimguiIncludeDirectories)%(AdditionalIncludeDirectories);$(SolutionDir)\Engine\BoomEngine\includes;$(SolutionDir)\Engine\BoomEngine\includes\common</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>
+        $(EditorIncludeRoots);
+        $(EngineIncludeRoots);
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -162,8 +200,8 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>
-      $(SolutionDir)x64\$(Configuration);
-      %(AdditionalLibraryDirectories)
+        $(SolutionDir)x64\$(Configuration);
+        %(AdditionalLibraryDirectories)
       </AdditionalLibraryDirectories>
       <AdditionalDependencies>BoomEngine.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -174,29 +212,54 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Editor.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
-    </ClCompile>
+    <!-- Core ImGui -->
+    <ClCompile Include="src\Editor.cpp" />
+    <ClCompile Include="src\Vendors\imgui\imgui.cpp" />
+    <ClCompile Include="src\Vendors\imgui\imgui_draw.cpp" />
+    <ClCompile Include="src\Vendors\imgui\imgui_tables.cpp" />
+    <ClCompile Include="src\Vendors\imgui\imgui_widgets.cpp" />
+    <!-- Optional: demo -->
+    <ClCompile Include="src\Vendors\imgui\imgui_demo.cpp" />
+    <!-- ONE backend pair you actually use -->
+    <ClCompile Include="src\Vendors\imgui\backends\imgui_impl_glfw.cpp" />
+    <ClCompile Include="src\Vendors\imgui\backends\imgui_impl_opengl3.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Context\Context.h" />
+    <ClInclude Include="src\Context\DebugHelpers.h" />
+    <ClInclude Include="src\Context\Events.h" />
+    <ClInclude Include="src\Context\Helpers.h" />
+    <ClInclude Include="src\Context\Inputs.h" />
+    <ClInclude Include="src\Context\Widgets.h" />
+    <ClInclude Include="src\Vendors\FA.h" />
+    <ClInclude Include="src\Vendors\imgui\imgui.h" />
+    <ClInclude Include="src\Vendors\imgui\imgui_internal.h" />
+    <ClInclude Include="src\Vendors\imgui\backends\imgui_impl_glfw.h" />
+    <ClInclude Include="src\Vendors\imgui\backends\imgui_impl_opengl3.h" />
+    <ClInclude Include="src\Vendors\imgui\backends\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="src\Vendors\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="src\Windows\Hierarchy.h" />
+    <ClInclude Include="src\Windows\Inspector.h" />
+    <ClInclude Include="src\Windows\MenuBar.h" />
+    <ClInclude Include="src\Windows\Resource.h" />
+    <ClInclude Include="src\Windows\Viewport.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="src\Vendors\imgui\examples\example_glfw_wgpu\web\index.html" />
+    <None Include="src\Vendors\imgui\examples\libs\emscripten\shell_minimal.html" />
   </ItemGroup>
   <!-- Resolve conanbuild folder: prefer SolutionDir, fallback to ProjectDir -->
   <PropertyGroup Label="ConanImportSettings">
     <_ConanRoot Condition="'$(SolutionDir)' != ''">$(SolutionDir)conanbuild\</_ConanRoot>
     <_ConanRoot Condition="'$(_ConanRoot)' == ''">$(ProjectDir)conanbuild\</_ConanRoot>
-    <!-- Map VS config/platform to Conan's lowercase filenames -->
     <_Cfg Condition="'$(Configuration)'=='Debug'">debug</_Cfg>
     <_Cfg Condition="'$(Configuration)'=='Release'">release</_Cfg>
-    <!-- Conan uses x64 / x86 (not Win32) -->
     <_Plat Condition="'$(Platform)'=='x64'">x64</_Plat>
     <_Plat Condition="'$(Platform)'=='Win32'">x86</_Plat>
   </PropertyGroup>
-  <!-- Base (all configs) -->
+  <!-- Base & per-config Conan imports -->
   <Import Project="$(_ConanRoot)conandeps.props" Condition="Exists('$(_ConanRoot)conandeps.props')" />
-  <!-- Per-config (preferred when present) -->
   <Import Project="$(_ConanRoot)conandeps_$(_Cfg)_$(_Plat).props" Condition="Exists('$(_ConanRoot)conandeps_$(_Cfg)_$(_Plat).props')" />
-  <!-- Must remain after our .props imports -->
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>
