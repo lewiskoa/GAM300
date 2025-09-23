@@ -116,6 +116,8 @@ namespace Boom
         {
             DestroyPhysicsActors();
             BOOM_DELETE(m_Context);
+            //called here in case of the need of multiple windows
+            glfwTerminate(); 
         }
 
         /**
@@ -167,10 +169,10 @@ namespace Boom
 
             while (m_Context->window->PollEvents())
             {
-                GLFWwindow* engineWindow = m_Context->window->Handle();
+                std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
                 GLFWwindow* beforeCurrent = glfwGetCurrentContext();
 
-                glfwMakeContextCurrent(engineWindow);
+                glfwMakeContextCurrent(engineWindow.get());
 
                 GLFWwindow* afterCurrent = glfwGetCurrentContext();
 
@@ -178,10 +180,8 @@ namespace Boom
                 static int debugFrameCount = 0;
                 if (++debugFrameCount % 60 == 0) {
                     BOOM_INFO("Engine main loop - Before: {}, Engine: {}, After: {}",
-                        (void*)beforeCurrent, (void*)engineWindow, (void*)afterCurrent);
+                        (void*)beforeCurrent, (void*)engineWindow.get(), (void*)afterCurrent);
                 }
-
-                //glfwMakeContextCurrent(m_Context->window->Handle());
 
                 m_Context->renderer->NewFrame();
                 {
@@ -259,9 +259,6 @@ namespace Boom
                 {
                     layer->OnUpdate();
                 }
-
-                //m_Context->renderer->ShowFrame();
-                glfwSwapBuffers(m_Context->window->Window());
             }
         }
 
