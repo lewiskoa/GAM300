@@ -35,7 +35,6 @@ namespace Boom
         //glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
         //Entity m_SphereEntity; // <-- Add this
 
-
         BOOM_INLINE Application()
         {
             m_LayerID = TypeID<Application>();

@@ -25,6 +25,10 @@ namespace Boom {
 			return m_PhysicsMeshData;
 		}
 
+		BOOM_INLINE const std::vector<MeshData<ShadedVert>>& GetMeshDataForPhysics() const {
+			return m_PhysicsMeshData;
+		}
+
 		/**
 		 * @brief Loads meshes from a static (non-skeletal) model file via Assimp.
 		 * @param filename File name relative to CONSTANTS::MODELS_LOCATION.
@@ -109,12 +113,16 @@ namespace Boom {
 
 			meshData.drawMode = GL_TRIANGLES; //default draw mode
 
+			m_PhysicsMeshData.push_back(meshData);
+
 			auto ret{ std::make_unique<ShadedMesh>(std::move(meshData)) };
 			meshes.push_back(std::move(ret));
 		}
 	
 	private:
 		std::vector<Mesh3D> meshes;
+		std::vector<std::unique_ptr<ShadedMesh>> m_Meshes;
+		std::vector<MeshData<ShadedVert>> m_PhysicsMeshData;
 	};
 
 	//---------------------------Skeletal Model------------------------------
