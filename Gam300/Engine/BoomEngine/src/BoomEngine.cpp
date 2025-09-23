@@ -77,13 +77,6 @@ void MyEngineClass::whatup() {
                 }
             }
 
-            
-            //TestShaders(dispatcher);
-            //actual application code to run
-            /*auto app{ std::make_unique<Application>() };
-            app->PostEvent<WindowTitleRenameEvent>("Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
-            app->RunContext();*/
-
             SoundEngine::Instance().Shutdown();
         }
 }
