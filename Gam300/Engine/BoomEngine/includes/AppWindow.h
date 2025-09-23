@@ -55,7 +55,24 @@ namespace Boom {
 				BOOM_FATAL("AppWindow::Init() - failed to init app window.");
 				std::exit(EXIT_FAILURE);
 			}
+
+			// ADD THESE LINES:
+			BOOM_INFO("AppWindow - Initial window size: {}x{}", width, height);
+			glfwShowWindow(windowPtr.get());  // Make sure window is visible
+			glfwFocusWindow(windowPtr.get()); // Bring to front
+
+			int actualWidth, actualHeight;
+			glfwGetWindowSize(windowPtr.get(), &actualWidth, &actualHeight);
+			BOOM_INFO("AppWindow - Actual window size after creation: {}x{}", actualWidth, actualHeight);
+
 			glfwMakeContextCurrent(windowPtr.get());
+			GLFWwindow* current = glfwGetCurrentContext();
+			BOOM_INFO("AppWindow created context: window={}, current={}",
+				(void*)windowPtr.get(), (void*)current);
+
+			if (current != windowPtr.get()) {
+				BOOM_ERROR("Failed to make window context current in constructor!");
+			}
 
 			//user data
 			glfwSetWindowUserPointer(windowPtr.get(), this);

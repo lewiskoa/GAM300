@@ -15,7 +15,7 @@ namespace Boom
      * Inherits from AppInterface to receive the same lifecycle hooks
      * and gain access to the shared AppContext.
      */
-    struct Application : AppInterface
+    struct BOOM_API Application : AppInterface
     {
         template<typename EntityType, typename... Components, typename Fn>
         BOOM_INLINE void EnttView(Fn&& fn) {
@@ -32,8 +32,8 @@ namespace Boom
          */
 
         double m_SphereTimer = 0.0;
-        glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
-        Entity m_SphereEntity; // <-- Add this
+        //glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
+        //Entity m_SphereEntity; // <-- Add this
 
 
         BOOM_INLINE Application()
@@ -126,7 +126,7 @@ namespace Boom
          * BOOM_INLINE suggests inlining this hot-path entry point so
          * the call to RunContext itself adds minimal overhead.
          */
-        BOOM_INLINE void RunContext()
+        BOOM_INLINE void RunContext(bool showFrame = false)
         {
             //use of ecs
             CreateEntities();
@@ -169,44 +169,20 @@ namespace Boom
 
             while (m_Context->window->PollEvents())
             {
-                /*
-                ComputeFrameDeltaTime();
+                std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
+                GLFWwindow* beforeCurrent = glfwGetCurrentContext();
 
-                m_SphereTimer += m_Context->DeltaTime;
+                glfwMakeContextCurrent(engineWindow.get());
 
-                // Reset sphere after 5 seconds
-                if (m_SphereTimer >= 5.0)
-                {
-                    m_SphereTimer = 0.0;
+                GLFWwindow* afterCurrent = glfwGetCurrentContext();
 
-                    // Reset position and velocity
-                    auto& transform = m_SphereEntity.Get<TransformComponent>().Transform;
-                    transform.translate = m_SphereStartPos;
-
-                    auto& rb = m_SphereEntity.Get<RigidBodyComponent>().RigidBody;
-                    if (rb.actor)
-                    {
-                        // Reset PhysX actor pose and velocity
-                        PxTransform pose(ToPxVec3(m_SphereStartPos));
-                        rb.actor->setGlobalPose(pose);
-
-                        PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(rb.actor);
-                        if (dyn)
-                        {
-                            dyn->setLinearVelocity(PxVec3(1.0f, 0.0f, 0.0f)); // initial velocity
-                            dyn->setAngularVelocity(PxVec3(0.0f)); // stop rotation
-                            dyn->clearForce();
-                            dyn->clearTorque();
-                            dyn->wakeUp();
-                        }
-                    }
+                // Log every 60 frames to verify context switching
+                static int debugFrameCount = 0;
+                if (++debugFrameCount % 60 == 0) {
+                    BOOM_INFO("Engine main loop - Before: {}, Engine: {}, After: {}",
+                        (void*)beforeCurrent, (void*)engineWindow.get(), (void*)afterCurrent);
                 }
 
-                RunPhysicsSimulation();
-                SoundEngine::Instance().Update();
-                */
-                //updates new frame
-                //RenderSceneDepth();
                 m_Context->renderer->NewFrame();
                 {
                     //testing rendering
@@ -275,15 +251,14 @@ namespace Boom
                 }
                 m_Context->renderer->EndFrame();
 
+                //draw the updated frame
+                m_Context->renderer->ShowFrame(showFrame);
+
                 //update layers
                 for (auto layer : m_Context->Layers)
                 {
                     layer->OnUpdate();
                 }
-
-                //draw the updated frame
-                m_Context->renderer->ShowFrame();
-                //glfwSwapBuffers(m_Context->window->Window());
             }
         }
 
@@ -340,95 +315,95 @@ namespace Boom
 			sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
 
             // -------- Serializer round-trip smoke test --------
-            {
-                DataSerializer ser;
+            //{
+            //    DataSerializer ser;
 
-                const std::string scenePath = "SceneTest.yaml";
-                const std::string assetsPath = "AssetsTest.yaml";
+            //    const std::string scenePath = "SceneTest.yaml";
+            //    const std::string assetsPath = "AssetsTest.yaml";
 
-                // Count entities before serialize
-                size_t countBefore = 0;
-                auto viewBefore = m_Context->scene.view<entt::entity>();
-                for (auto entity : viewBefore) 
-                {
-                    (void)entity; // Suppress unused variable warning
-                    ++countBefore;
-                }
+            //    // Count entities before serialize
+            //    size_t countBefore = 0;
+            //    auto viewBefore = m_Context->scene.view<entt::entity>();
+            //    for (auto entity : viewBefore) 
+            //    {
+            //        (void)entity; // Suppress unused variable warning
+            //        ++countBefore;
+            //    }
 
-                // 1) Serialize scene + assets
-                ser.Serialize(m_Context->scene, scenePath);
-                ser.Serialize(*m_Context->assets, assetsPath);
-                BOOM_INFO("[Serializer] Wrote scene -> {} and assets -> {}", scenePath, assetsPath);
+            //    // 1) Serialize scene + assets
+            //    ser.Serialize(m_Context->scene, scenePath);
+            //    ser.Serialize(*m_Context->assets, assetsPath);
+            //    BOOM_INFO("[Serializer] Wrote scene -> {} and assets -> {}", scenePath, assetsPath);
 
-                // 2) Clear everything
-                m_Context->scene.clear();
-                // Re-init assets to restore EMPTY_ASSET sentinels
-                *m_Context->assets = AssetRegistry();
-                BOOM_INFO("[Serializer] Cleared registries");
+            //    // 2) Clear everything
+            //    m_Context->scene.clear();
+            //    // Re-init assets to restore EMPTY_ASSET sentinels
+            //    *m_Context->assets = AssetRegistry();
+            //    BOOM_INFO("[Serializer] Cleared registries");
 
-                try 
-                {
-                    BOOM_INFO("[Serializer] Starting asset deserialization...");
-                    ser.Deserialize(*m_Context->assets, assetsPath);
-                    BOOM_INFO("[Serializer] Asset deserialization complete");
+            //    try 
+            //    {
+            //        BOOM_INFO("[Serializer] Starting asset deserialization...");
+            //        ser.Deserialize(*m_Context->assets, assetsPath);
+            //        BOOM_INFO("[Serializer] Asset deserialization complete");
 
-                    BOOM_INFO("[Serializer] Starting scene deserialization...");
-                    ser.Deserialize(m_Context->scene, *m_Context->assets, scenePath);
-                    BOOM_INFO("[Serializer] Scene deserialization complete");
-                }
-                catch (const std::exception& e) 
-                {
+            //        BOOM_INFO("[Serializer] Starting scene deserialization...");
+            //        ser.Deserialize(m_Context->scene, *m_Context->assets, scenePath);
+            //        BOOM_INFO("[Serializer] Scene deserialization complete");
+            //    }
+            //    catch (const std::exception& e) 
+            //    {
 
-                    (void)BOOM_ERROR(std::string("[Serializer] Deserialization failed: ") + e.what());
-                    //return; // Skip the rest of the test
-                }
+            //        (void)BOOM_ERROR(std::string("[Serializer] Deserialization failed: ") + e.what());
+            //        //return; // Skip the rest of the test
+            //    }
 
-                // 3) Deserialize back
-                BOOM_INFO("[Serializer] Reloaded scene + assets from YAML");
+            //    // 3) Deserialize back
+            //    BOOM_INFO("[Serializer] Reloaded scene + assets from YAML");
 
-                // 4) Verify a few expectations
-                size_t countAfter = 0;
-                auto viewAfter = m_Context->scene.view<entt::entity>();
-                for (auto entity : viewAfter) {
-                    (void)entity; // Suppress unused variable warning
-                    ++countAfter;
-                }
+            //    // 4) Verify a few expectations
+            //    size_t countAfter = 0;
+            //    auto viewAfter = m_Context->scene.view<entt::entity>();
+            //    for (auto entity : viewAfter) {
+            //        (void)entity; // Suppress unused variable warning
+            //        ++countAfter;
+            //    }
 
 
-                bool hasCamera = false, hasSkyboxEnt = false, hasModelEnt = false;
-                EnttView<Entity, CameraComponent, TransformComponent>([&](auto, auto&, auto&) { hasCamera = true; });
-                EnttView<Entity, SkyboxComponent>([&](auto, auto&) { hasSkyboxEnt = true; });
-                EnttView<Entity, ModelComponent>([&](auto, auto&) { hasModelEnt = true; });
+            //    bool hasCamera = false, hasSkyboxEnt = false, hasModelEnt = false;
+            //    EnttView<Entity, CameraComponent, TransformComponent>([&](auto, auto&, auto&) { hasCamera = true; });
+            //    EnttView<Entity, SkyboxComponent>([&](auto, auto&) { hasSkyboxEnt = true; });
+            //    EnttView<Entity, ModelComponent>([&](auto, auto&) { hasModelEnt = true; });
 
-                bool hasSkyboxAsset = false, hasDanceModel = false, hasMarbleMat = false;
-                m_Context->assets->View([&](Asset* a) {
-                    BOOM_INFO("[Verify] Asset: type={}, name='{}', checking...", (int)a->type, a->name);
-                    if (a->type == AssetType::SKYBOX) {
-                        BOOM_INFO("[Verify] Found skybox asset!");
-                        hasSkyboxAsset = true;
-                    }
-                    if (a->type == AssetType::MODEL && a->name == "dance") {
-                        BOOM_INFO("[Verify] Found dance model!");
-                        hasDanceModel = true;
-                    }
-                    if (a->type == AssetType::MATERIAL && a->name == "Marble") {
-                        BOOM_INFO("[Verify] Found marble material!");
-                        hasMarbleMat = true;
-                    }
-                    });
+            //    bool hasSkyboxAsset = false, hasDanceModel = false, hasMarbleMat = false;
+            //    m_Context->assets->View([&](Asset* a) {
+            //        BOOM_INFO("[Verify] Asset: type={}, name='{}', checking...", (int)a->type, a->name);
+            //        if (a->type == AssetType::SKYBOX) {
+            //            BOOM_INFO("[Verify] Found skybox asset!");
+            //            hasSkyboxAsset = true;
+            //        }
+            //        if (a->type == AssetType::MODEL && a->name == "dance") {
+            //            BOOM_INFO("[Verify] Found dance model!");
+            //            hasDanceModel = true;
+            //        }
+            //        if (a->type == AssetType::MATERIAL && a->name == "Marble") {
+            //            BOOM_INFO("[Verify] Found marble material!");
+            //            hasMarbleMat = true;
+            //        }
+            //        });
 
-                BOOM_INFO("[Serializer] Entities before: {}, after: {}", (int)countBefore, (int)countAfter);
-                BOOM_INFO("[Serializer] hasCamera={}, hasSkyboxEnt={}, hasModelEnt={}",
-                    hasCamera, hasSkyboxEnt, hasModelEnt);
-                BOOM_INFO("[Serializer] hasSkyboxAsset={}, hasDanceModel={}, hasMarbleMat={}",
-                    hasSkyboxAsset, hasDanceModel, hasMarbleMat);
+            //    BOOM_INFO("[Serializer] Entities before: {}, after: {}", (int)countBefore, (int)countAfter);
+            //    BOOM_INFO("[Serializer] hasCamera={}, hasSkyboxEnt={}, hasModelEnt={}",
+            //        hasCamera, hasSkyboxEnt, hasModelEnt);
+            //    BOOM_INFO("[Serializer] hasSkyboxAsset={}, hasDanceModel={}, hasMarbleMat={}",
+            //        hasSkyboxAsset, hasDanceModel, hasMarbleMat);
 
-                // Optional: assert-ish checks (convert to your engine’s assert/log style)
-                if (!hasCamera || !hasSkyboxEnt || !hasModelEnt)
-                    BOOM_ERROR("[Serializer] Missing expected entity after reload.");
-                if (!hasSkyboxAsset || !hasDanceModel || !hasMarbleMat)
-                    BOOM_ERROR("[Serializer] Missing expected asset after reload.");
-            }
+            //    // Optional: assert-ish checks (convert to your engine’s assert/log style)
+            //    if (!hasCamera || !hasSkyboxEnt || !hasModelEnt)
+            //        BOOM_ERROR("[Serializer] Missing expected entity after reload.");
+            //    if (!hasSkyboxAsset || !hasDanceModel || !hasMarbleMat)
+            //        BOOM_ERROR("[Serializer] Missing expected asset after reload.");
+            //}
             // -------- End serializer round-trip test --------
 
         }

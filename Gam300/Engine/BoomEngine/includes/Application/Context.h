@@ -12,7 +12,7 @@
 namespace Boom
 {
 	// Forward declaration of the base interface
-	struct AppInterface;
+	struct  AppInterface;
 
 	
 	/**
@@ -58,7 +58,7 @@ namespace Boom
 		std::unique_ptr<AssetRegistry> assets;
 		std::unique_ptr<DataSerializer> seriealizer;
 		std::unique_ptr<PhysicsContext> Physics; //physics context
-		double DeltaTime;
+		double DeltaTime{};
 		EntityRegistry scene;
 	};
 

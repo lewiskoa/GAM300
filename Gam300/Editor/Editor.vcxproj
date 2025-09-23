@@ -152,7 +152,7 @@
     <ClCompile>
       <WarningLevel>Level4</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;GLFW_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -172,7 +172,9 @@
       <AdditionalDependencies>BoomEngine.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y /D "$(SolutionDir)x64\$(Configuration)\BoomEngine.dll" "$(OutDir)"</Command>
+      <Command>xcopy /Y /D "$(SolutionDir)x64\$(Configuration)\BoomEngine.dll" "$(OutDir)"
+if exist "$(glfw_BIN_DIRS)" xcopy /y /i "$(glfw_BIN_DIRS)\*.dll" "$(TargetDir)"
+if exist "$(glew_BIN_DIRS)" xcopy /y /i "$(glew_BIN_DIRS)\*.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <!-- Release | x64 -->
@@ -224,6 +226,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Context\Context.h" />
+    <ClInclude Include="src\Context\DebugHelpers.h" />
     <ClInclude Include="src\Context\Events.h" />
     <ClInclude Include="src\Context\Helpers.h" />
     <ClInclude Include="src\Context\Inputs.h" />
@@ -235,6 +238,11 @@
     <ClInclude Include="src\Vendors\imgui\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="src\Vendors\imgui\backends\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="src\Vendors\imgui\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="src\Windows\Hierarchy.h" />
+    <ClInclude Include="src\Windows\Inspector.h" />
+    <ClInclude Include="src\Windows\MenuBar.h" />
+    <ClInclude Include="src\Windows\Resource.h" />
+    <ClInclude Include="src\Windows\Viewport.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\Vendors\imgui\examples\example_glfw_wgpu\web\index.html" />

@@ -6,6 +6,8 @@
 #pragma once 
 #ifndef CORE_H
 #define CORE_H
+#define GLM_ENABLE_EXPERIMENTAL //needed for GLM_GTX_component_wise as it is an experimental feature
+#define GLM_DLL
 
 // add headers that you want to pre-compile here
 #include <GL/glew.h>
@@ -13,7 +15,6 @@
 
 #pragma warning(push)
 #pragma warning(disable : 4201) //unfortunate nameless struct warning avoidance.
-#define GLM_ENABLE_EXPERIMENTAL //needed for GLM_GTX_component_wise as it is an experimental feature
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>

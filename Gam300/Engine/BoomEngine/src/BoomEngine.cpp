@@ -80,12 +80,16 @@ void MyEngineClass::whatup() {
             
             //TestShaders(dispatcher);
             //actual application code to run
-            std::unique_ptr<Boom::Application> app{ std::make_unique<Boom::Application>() };
+            /*auto app{ std::make_unique<Application>() };
             app->PostEvent<WindowTitleRenameEvent>("Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
-            app->RunContext();
+            app->RunContext();*/
 
             SoundEngine::Instance().Shutdown();
         }
+}
+
+std::unique_ptr<Application>MyEngineClass::CreateApp() {
+    return std::make_unique<Application>();
 }
 
 namespace {
