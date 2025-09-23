@@ -30,6 +30,15 @@ namespace Boom
         std::string name;
     };
 
+
+
+    enum class InterpolationMode
+    {
+        Linear,
+        Constant,
+        Bezier
+    };
+
     /**
          * @brief A single sampled pose for a joint (bone) at a moment in time.
          *
@@ -49,8 +58,109 @@ namespace Boom
         glm::quat rotation = glm::vec3(0.0f);
         glm::vec3 scale = glm::vec3(1.0f);
         float timeStamp = 0.0f;
+        InterpolationMode mode = InterpolationMode::Linear;
+
+        // For bezier interpolation (optional tangent control)
+        glm::vec3 positionOutTangent = glm::vec3(0.0f);
+        glm::vec3 positionInTangent = glm::vec3(0.0f);
     };
 
+
+    /**
+    * @brief Simple animation curve for a joint's transform
+    */
+    class JointCurve
+    {
+    public:
+        std::vector<KeyFrame> keys;
+
+        BOOM_INLINE void AddKey(float time, const glm::vec3& pos, const glm::quat& rot, const glm::vec3& scale,
+            InterpolationMode mode = InterpolationMode::Linear)
+        {
+            KeyFrame key;
+            key.timeStamp = time;
+            key.position = pos;
+            key.rotation = rot;
+            key.scale = scale;
+            key.mode = mode;
+
+            // Insert in sorted order
+            auto it = std::lower_bound(keys.begin(), keys.end(), key,
+                [](const KeyFrame& a, const KeyFrame& b) {
+                    return a.timeStamp < b.timeStamp;
+                });
+            keys.insert(it, key);
+        }
+
+        BOOM_INLINE KeyFrame Evaluate(float time) const
+        {
+            if (keys.empty()) return KeyFrame{};
+            if (keys.size() == 1) return keys[0];
+
+            // Handle time outside bounds
+            if (time <= keys.front().timeStamp) return keys.front();
+            if (time >= keys.back().timeStamp) return keys.back();
+
+            // Find surrounding keyframes
+            auto it = std::lower_bound(keys.begin(), keys.end(), time,
+                [](const KeyFrame& key, float t) {
+                    return key.timeStamp < t;
+                });
+
+            if (it == keys.begin()) return *it;
+
+            const auto& nextKey = *it;
+            const auto& prevKey = *(it - 1);
+
+            float t = (time - prevKey.timeStamp) / (nextKey.timeStamp - prevKey.timeStamp);
+
+            KeyFrame result;
+            result.timeStamp = time;
+
+            switch (prevKey.mode)
+            {
+            case InterpolationMode::Constant:
+                result.position = prevKey.position;
+                result.rotation = prevKey.rotation;
+                result.scale = prevKey.scale;
+                break;
+
+            case InterpolationMode::Linear:
+                result.position = glm::mix(prevKey.position, nextKey.position, t);
+                result.rotation = glm::slerp(prevKey.rotation, nextKey.rotation, t);
+                result.scale = glm::mix(prevKey.scale, nextKey.scale, t);
+                break;
+
+            case InterpolationMode::Bezier:
+                // Simple bezier with automatic tangents for now
+                result.position = EvaluateBezierPosition(prevKey, nextKey, t);
+                result.rotation = glm::slerp(prevKey.rotation, nextKey.rotation, t); // Linear for rotation
+                result.scale = glm::mix(prevKey.scale, nextKey.scale, t);
+                break;
+            }
+
+            return result;
+        }
+
+    private:
+        BOOM_INLINE glm::vec3 EvaluateBezierPosition(const KeyFrame& prev, const KeyFrame& next, float t) const
+        {
+            // Simple bezier interpolation
+            float dt = next.timeStamp - prev.timeStamp;
+            glm::vec3 p0 = prev.position;
+            glm::vec3 p1 = prev.position + prev.positionOutTangent * dt * 0.33333f;
+            glm::vec3 p2 = next.position - next.positionInTangent * dt * 0.33333f;
+            glm::vec3 p3 = next.position;
+
+            float u = 1.0f - t;
+            float tt = t * t;
+            float uu = u * u;
+            float uuu = uu * u;
+            float ttt = tt * t;
+
+            return uuu * p0 + 3 * uu * t * p1 + 3 * u * tt * p2 + ttt * p3;
+        }
+    };
 
     /**
     * @brief A node in the skeleton hierarchy (a.k.a. bone/joint).
@@ -72,9 +182,11 @@ namespace Boom
     struct Joint
     {
         std::vector<Joint> children{};
-        std::vector<KeyFrame> keys{};
+        //std::vector<KeyFrame> keys{};
+		JointCurve curve{};
         std::string name{};
         glm::mat4 offset{}; // <- inverse transform mtx
         int32_t index{};
     };
+
 }

@@ -273,8 +273,8 @@ namespace Boom {
 					auto jointIt = jointMap.find(ai_channel->mNodeName.C_Str());
 					if (jointIt == jointMap.end()) continue;
 
-					auto& keys = jointIt->second.keys;
-					keys.reserve(ai_channel->mNumPositionKeys); // Or max of all key counts
+					auto& curve = jointIt->second.curve;
+					curve.keys.reserve(ai_channel->mNumPositionKeys); // Or max of all key counts
 
 					// Handle mismatched key counts properly
 					uint32_t maxKeys = std::max({ ai_channel->mNumPositionKeys,
@@ -300,7 +300,7 @@ namespace Boom {
 							key.scale = AssimpToVec3(ai_channel->mScalingKeys[k].mValue);
 						}
 
-						keys.push_back(key);
+						curve.keys.push_back(key);
 					}
 				}
 

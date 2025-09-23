@@ -76,16 +76,16 @@ namespace Boom
         * @pre 0.0f <= @p progression <= 1.0f.
         * @note Assumes right-handed TRS composition: translate * rotate * scale.
         */
-        BOOM_INLINE glm::mat4 Interpolate(const KeyFrame& prev, const KeyFrame& next, float progression)
-        {
-            return (glm::translate(glm::mat4(1.0f),
-                glm::mix(prev.position, next.position, progression)) *
+        //BOOM_INLINE glm::mat4 Interpolate(const KeyFrame& prev, const KeyFrame& next, float progression)
+        //{
+        //    return (glm::translate(glm::mat4(1.0f),
+        //        glm::mix(prev.position, next.position, progression)) *
 
-                glm::toMat4(glm::normalize(glm::slerp(prev.rotation
-                    , next.rotation, progression))) *
-                glm::scale(glm::mat4(1.0f), glm::mix(prev.scale,
-                    next.scale, progression)));
-        }
+        //        glm::toMat4(glm::normalize(glm::slerp(prev.rotation
+        //            , next.rotation, progression))) *
+        //        glm::scale(glm::mat4(1.0f), glm::mix(prev.scale,
+        //            next.scale, progression)));
+        //}
 
         /**
          * @brief Find the two keyframes bracketing the current local time for a joint.
@@ -102,18 +102,28 @@ namespace Boom
          * @warning No explicit fallback is provided if @c m_Time is beyond the last key
          *          (should not happen because @c Animate() wraps time with @c fmod).
          */
-        BOOM_INLINE void GetPreviousAndNextFrames(Joint&
-            joint, KeyFrame& prev, KeyFrame& next)
+        //BOOM_INLINE void GetPreviousAndNextFrames(Joint&
+        //    joint, KeyFrame& prev, KeyFrame& next)
+        //{
+        //    for (uint32_t i = 1u; i < joint.keys.size(); i++)
+        //    {
+        //        if (m_Time < joint.keys[i].timeStamp)
+        //        {
+        //            prev = joint.keys[i - 1];
+        //            next = joint.keys[i];
+        //            return;
+        //        }
+        //    }
+        //}
+
+
+        // Replace GetPreviousAndNextFrames and Interpolate with:
+        BOOM_INLINE glm::mat4 EvaluateJointTransform(Joint& joint, float time)
         {
-            for (uint32_t i = 1u; i < joint.keys.size(); i++)
-            {
-                if (m_Time < joint.keys[i].timeStamp)
-                {
-                    prev = joint.keys[i - 1];
-                    next = joint.keys[i];
-                    return;
-                }
-            }
+            auto frame = joint.curve.Evaluate(time);
+            return glm::translate(glm::mat4(1.0f), frame.position) *
+                glm::toMat4(frame.rotation) *
+                glm::scale(glm::mat4(1.0f), frame.scale);
         }
 
         /**
@@ -137,23 +147,18 @@ namespace Boom
         */
         BOOM_INLINE void UpdateJoints(Joint& joint, const glm::mat4& parentTransform)
         {
-            KeyFrame prev, next;
+            // Use the new curve-based evaluation
+            glm::mat4 localTransform = EvaluateJointTransform(joint, m_Time);
 
-            // get previous and next frames
-            GetPreviousAndNextFrames(joint, prev, next);
+            // Combine with parent transform
+            glm::mat4 worldTransform = parentTransform * localTransform;
 
-            // compute interpolation factor
-            float progression = (m_Time - prev.timeStamp) / (next.timeStamp - prev.timeStamp);
+            // Update joint transform
+            m_Transforms[joint.index] = worldTransform * m_GlobalTransform * joint.offset;
 
-            // compute joint new transform
-            glm::mat4 transform = parentTransform * Interpolate(prev, next, progression);
-
-            // update joint transform
-            m_Transforms[joint.index] = (transform * m_GlobalTransform * joint.offset);
-
-            // update children joints
+            // Update children joints
             for (auto& child : joint.children) {
-                UpdateJoints(child, transform);
+                UpdateJoints(child, worldTransform);
             }
         }
 
