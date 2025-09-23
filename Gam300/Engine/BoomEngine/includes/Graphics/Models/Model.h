@@ -109,16 +109,12 @@ namespace Boom {
 
 			meshData.drawMode = GL_TRIANGLES; //default draw mode
 
-			m_PhysicsMeshData.push_back(meshData);
-
 			auto ret{ std::make_unique<ShadedMesh>(std::move(meshData)) };
 			meshes.push_back(std::move(ret));
 		}
 	
 	private:
 		std::vector<Mesh3D> meshes;
-		std::vector<std::unique_ptr<ShadedMesh>> m_Meshes;
-		std::vector<MeshData<ShadedVert>> m_PhysicsMeshData;
 	};
 
 	//---------------------------Skeletal Model------------------------------
