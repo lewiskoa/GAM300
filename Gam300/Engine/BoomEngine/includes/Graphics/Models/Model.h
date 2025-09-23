@@ -21,9 +21,6 @@ namespace Boom {
 	{
 		BOOM_INLINE StaticModel() = default;
 
-		BOOM_INLINE const std::vector<MeshData<ShadedVert>>& GetMeshDataForPhysics() const {
-			return m_PhysicsMeshData;
-		}
 
 		BOOM_INLINE const std::vector<MeshData<ShadedVert>>& GetMeshDataForPhysics() const {
 			return m_PhysicsMeshData;
