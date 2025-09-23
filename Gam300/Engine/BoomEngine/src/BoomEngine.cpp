@@ -86,19 +86,6 @@ void MyEngineClass::whatup() {
 
                 se.PlaySound("orbit", "Resources/Audio/Fetty Wap.wav", true);
 
-                auto start = std::chrono::high_resolution_clock::now();
-                while (true) {
-                    FMOD_VECTOR listenerPos = { 0.0f, 0.0f, 0.0f }; // Listener at origin
-                    FMOD_VECTOR listenerVel = { 0.0f, 0.0f, 0.0f };
-                    FMOD_VECTOR listenerForward = { 0.0f, 0.0f, 1.0f }; // Facing +Z
-                    FMOD_VECTOR listenerUp = { 0.0f, 1.0f, 0.0f }; // Y-up
-
-                    SoundEngine::Instance().SetListenerAttributes(listenerPos, listenerVel, listenerForward, listenerUp);
-
-                    se.Update();         // FMOD update
-                    UpdateAudioTest();   // orbiting test
-                    //std::this_thread::sleep_for(std::chrono::milliseconds(16));
-                }
                 //// Simple loop to update FMOD for 2 seconds
                 //auto start = std::chrono::high_resolution_clock::now();
                 //while (std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - start).count() < 2.0f) {

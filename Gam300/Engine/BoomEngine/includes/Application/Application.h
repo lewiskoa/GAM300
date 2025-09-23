@@ -167,6 +167,26 @@ namespace Boom
 
             while (m_Context->window->PollEvents())
             {
+                ComputeFrameDeltaTime();
+                RunPhysicsSimulation();
+
+                // --- Audio updates ---
+                FMOD_VECTOR listenerPos = { m_Context->window->camPos.x, m_Context->window->camPos.y, m_Context->window->camPos.z };
+                FMOD_VECTOR listenerVel = { 0.0f, 0.0f, 0.0f };
+                FMOD_VECTOR listenerForward = { 0.0f, 0.0f, 1.0f };
+                FMOD_VECTOR listenerUp = { 0.0f, 1.0f, 0.0f };
+                SoundEngine::Instance().SetListenerAttributes(listenerPos, listenerVel, listenerForward, listenerUp);
+
+                // Orbiting sound (persist angle between frames)
+                static float s_audioAngle = 0.0f;
+                s_audioAngle += 0.02f * static_cast<float>(m_Context->DeltaTime * 60.0); // speed scaled with delta
+                float radius = 8.0f;
+                FMOD_VECTOR pos = { cosf(s_audioAngle) * radius, 0.0f, sinf(s_audioAngle) * radius };
+                FMOD_VECTOR vel = { 0.0f, 0.0f, 0.0f };
+                SoundEngine::Instance().SetSoundPosition("orbit", pos, vel);
+
+                // Finally update FMOD
+                SoundEngine::Instance().Update();
                 /*
                 ComputeFrameDeltaTime();
 
