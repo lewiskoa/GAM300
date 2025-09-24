@@ -41,6 +41,7 @@ namespace Boom {
 			finalShader = std::make_unique<FinalShader>("final.glsl", w, h);
 			pbrShader = std::make_unique<PBRShader>("pbr.glsl");
 			bloom = std::make_unique<BloomShader>("bloom.glsl", w, h);	
+			shadowShader = std::make_unique<ShadowShader>("shadow.glsl");
 			frame = std::make_unique<FrameBuffer>(w, h);
 
 			skyboxMesh = CreateSkyboxMesh();
@@ -68,6 +69,7 @@ namespace Boom {
 		}
 		BOOM_INLINE void DrawSkybox(Skybox const& sky, Transform3D const& transform) {
 			skyBoxShader->Draw(skyboxMesh, sky.cubeMap, transform);
+			pbrShader->SetEnvMaps(shadowShader->GetDepthMap());
 		}
 	public: //animator
 		BOOM_INLINE void SetJoints(std::vector<glm::mat4>& transforms)
@@ -110,13 +112,39 @@ namespace Boom {
 		}
 		BOOM_INLINE void ShowFrame() {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Show(frame->GetTexture(), bloom->GetMap(), true);
+			finalShader->Show(frame->GetTexture(), bloom->GetMap(), true); //dont i need to change frame->GetTexture into shadowShader->GetDepthMap()?
 		}
 
 		BOOM_INLINE void ShowFrame(bool useFBO) {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, true); //enable/disable bloom here
+			finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, false); //enable/disable bloom here
 		}
+		public: //shadow mapping
+			BOOM_INLINE void DrawDepth(Model3D& model, Transform3D& transform) {
+				shadowShader->Draw(model, transform);
+			}
+			BOOM_INLINE void BeginShadowPass(const glm::vec3& LightDir)
+			{
+				// prepare projection and view mtx
+				static auto proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f);
+				auto view = glm::lookAt(LightDir, glm::vec3(0.0f, 0.0f, 0.0f),
+					glm::vec3(0.0f, 1.0f, 0.0f));
+
+				// compute light space
+				auto lightSpaceMtx = (proj * view);
+
+				// set pbr shader light space mtx and depth map
+				pbrShader->Use();
+				pbrShader->SetLightSpaceMatrix(lightSpaceMtx);
+
+				// begin depth rendering
+				shadowShader->BeginFrame(lightSpaceMtx);
+			}
+			BOOM_INLINE void EndShadowPass()
+			{
+				shadowShader->EndFrame();
+				
+			}
 	private:
 		BOOM_INLINE void PrintSpecs() {
 			//?? missing enum?
@@ -169,6 +197,7 @@ namespace Boom {
 		std::unique_ptr<PBRShader> pbrShader;
 		std::unique_ptr<FrameBuffer> frame;
 		std::unique_ptr<BloomShader> bloom;
+		std::unique_ptr<ShadowShader> shadowShader;
 		SkyboxMesh skyboxMesh;
 	};
 

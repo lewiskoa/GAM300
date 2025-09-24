@@ -182,7 +182,7 @@ namespace Boom
                     BOOM_INFO("Engine main loop - Before: {}, Engine: {}, After: {}",
                         (void*)beforeCurrent, (void*)engineWindow.get(), (void*)afterCurrent);
                 }
-
+                RenderSceneDepth();
                 m_Context->renderer->NewFrame();
                 {
                     //testing rendering
@@ -297,7 +297,7 @@ namespace Boom
             skybox.Attach<TransformComponent>();
 
             //dance boi
-            Entity robot{ &m_Context->scene };
+           /* Entity robot{ &m_Context->scene };
             robot.Attach<InfoComponent>();
             auto& robotModel{ robot.Attach<ModelComponent>() };
             robotModel.materialID = mat1Asset->uid;
@@ -305,7 +305,7 @@ namespace Boom
             auto& rt { robot.Attach<TransformComponent>().transform };
             rt.translate = glm::vec3(0.f, -1.5f, 0.f);
             rt.scale = glm::vec3(0.01f);
-            robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
+            robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();*/
         
             //sphere 
 			Entity sphereEn{ &m_Context->scene };
@@ -313,6 +313,14 @@ namespace Boom
 			auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
 			sphereModel.modelID = sphereAsset->uid;
 			sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
+
+            Entity ground{ &m_Context->scene };
+            ground.Attach<InfoComponent>();
+            auto& gModel = ground.Attach<ModelComponent>();
+            gModel.modelID = cubeAsset->uid;                 // or a proper plane mesh
+            auto& gt = ground.Attach<TransformComponent>().transform;
+            gt.translate = glm::vec3(0.f, -1.5f, 0.f);
+            gt.scale = glm::vec3(50.f, 0.1f, 50.f);      // thin, large box acts like a plane
 
             // -------- Serializer round-trip smoke test --------
             //{
@@ -459,6 +467,27 @@ BOOM_INLINE void ComputeFrameDeltaTime()
                     glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
                     transform.rotate = glm::degrees(glm::eulerAngles(rot));
                     transform.translate = PxToVec3(pose.p);
+                });
+        }
+        BOOM_INLINE void RenderSceneDepth() {
+            EnttView<Entity, DirectLightComponent>([this](auto light, auto&)
+                {
+                    // light direction
+                    auto& lightDir = light.template Get<TransformComponent>().transform.rotate;
+
+                    // begin rendering
+                    m_Context->renderer->BeginShadowPass(lightDir);
+
+                    // render depth 
+                    EnttView<Entity, ModelComponent>([this, &lightDir](auto entity, auto& comp)
+                        {
+                            auto& transform = entity.template Get<TransformComponent>().transform;
+                            auto& model = m_Context->assets->Get<ModelAsset>(comp.modelID);
+                            m_Context->renderer->DrawDepth(model.data, transform);
+                        });
+
+                    // finalize frame
+                    m_Context->renderer->EndShadowPass();
                 });
         }
     };

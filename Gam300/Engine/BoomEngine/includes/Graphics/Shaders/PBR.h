@@ -36,6 +36,8 @@ namespace Boom {
 			, viewPosLoc{ GetUniformVar("viewPos") }
 
 			, jointsLoc{ GetUniformVar("hasJoints") }
+			, shadowMap{ GetUniformVar("shadowMap") }
+			, depthMap{ GetUniformVar("lightSpaceMat") }
 		{
 		}
 
@@ -93,6 +95,16 @@ namespace Boom {
 		}
 		BOOM_INLINE void SetPointLightCount(int32_t count) {
 			SetUniform(noPointLightLoc, count);
+		}
+
+		BOOM_INLINE void SetLightSpaceMatrix(glm::mat4 const& lightSpace) {
+			SetUniform(depthMap, lightSpace);
+		}
+
+		BOOM_INLINE void SetEnvMaps(int32_t depthmap) {
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, depthmap);
+			glUniform1i(shadowMap, 0);
 		}
 	public:
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
@@ -198,5 +210,8 @@ namespace Boom {
 		int32_t viewPosLoc;
 
 		int32_t jointsLoc;
+		
+		int32_t shadowMap;
+		int32_t depthMap;
 	};
 }

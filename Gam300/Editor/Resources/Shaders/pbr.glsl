@@ -129,7 +129,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness);
 vec3 ComputePointLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
 vec3 ComputeDirLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
 vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, float metallic);
-
+float ComputeShadow();
 vec3 ComputeMapOrMatV3(bool isMap, sampler2D map, vec3 mat) {
     vec3 res = mat;
     if (isMap) {
@@ -169,7 +169,8 @@ void main() {
                 ComputeSpotLights(N, V, f0, albedo, roughness, metallic);
     
     //occ and em
-    color = color * occlusion + emissive;
+    color = (color * occlusion) + emissive;
+    color *=(1.0-ComputeShadow());
     if (dot(color,BLOOM_THRESHOLD)>1.0) {
         out_brightness=vec4(color,1.0);
     }
@@ -297,5 +298,13 @@ vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, fl
     }
 
     return result;
+}
+uniform sampler2D shadowMap;
+uniform mat4 lightSpaceMat;
+float ComputeShadow() {
+    vec4 position = lightSpaceMat * vec4(vertex.position, 1.0);
+    vec3 uvs = (position.xyz / position.w)*0.5+0.5;
+    float depth = texture(shadowMap, uvs.xy).r;
+    return position.z>depth?1.0:0.0;
 }
 ==FRAGMENT==
