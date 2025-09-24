@@ -67,8 +67,6 @@ namespace Boom {
 
 			glfwMakeContextCurrent(windowPtr.get());
 			GLFWwindow* current = glfwGetCurrentContext();
-			BOOM_INFO("AppWindow created context: window={}, current={}",
-				(void*)windowPtr.get(), (void*)current);
 
 			if (current != windowPtr.get()) {
 				BOOM_ERROR("Failed to make window context current in constructor!");

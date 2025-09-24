@@ -170,18 +170,9 @@ namespace Boom
             while (m_Context->window->PollEvents())
             {
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
-                GLFWwindow* beforeCurrent = glfwGetCurrentContext();
 
                 glfwMakeContextCurrent(engineWindow.get());
 
-                GLFWwindow* afterCurrent = glfwGetCurrentContext();
-
-                // Log every 60 frames to verify context switching
-                static int debugFrameCount = 0;
-                if (++debugFrameCount % 60 == 0) {
-                    BOOM_INFO("Engine main loop - Before: {}, Engine: {}, After: {}",
-                        (void*)beforeCurrent, (void*)engineWindow.get(), (void*)afterCurrent);
-                }
 
                 m_Context->renderer->NewFrame();
                 {
