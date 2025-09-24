@@ -5,6 +5,7 @@
 namespace Boom {
 	namespace CONSTANTS {
 		constexpr std::tuple<float, float, float, float> DEFAULT_BACKGROUND_COLOR = {.3f, .3f, .3f, 1.f};
+		constexpr std::string_view RESOURCES_LOCATION = "Resources";
 		constexpr std::string_view SHADERS_LOCATION = "Resources/Shaders/";
 		constexpr std::string_view MODELS_LOCATION = "Resources/Models/";
 		constexpr std::string_view TEXTURES_LOCATION = "Resources/Textures/";

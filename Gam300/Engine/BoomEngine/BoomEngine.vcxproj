@@ -208,6 +208,7 @@
     <ClCompile Include="includes\Audio\Audio.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="includes\Auxiliaries\ResourceLoader.h" />
     <ClCompile Include="src\Application\Context.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>

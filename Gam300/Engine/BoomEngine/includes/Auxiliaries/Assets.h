@@ -113,6 +113,13 @@ namespace Boom {
 		}
 
 	public: //custom and specific assets
+		//loads all supported files by extension type
+		//	.fbx Model
+		//	.png Texture
+		//	.hdr Skybox
+		BOOM_INLINE void AddFileByExtension(std::string const& path, std::string const& extension) {
+			(void)path; (void)extension;
+		}
 		//file path starts from Textures folder
 		BOOM_INLINE auto AddSkybox(
 			AssetID uid,
@@ -171,6 +178,12 @@ namespace Boom {
 			asset->metallicMapID = uidMaps[3];
 			asset->occlusionMapID = uidMaps[4];
 			asset->emissiveMapID = uidMaps[5];
+			asset->data.albedoMap = Get<TextureAsset>(uidMaps[0]).data;
+			asset->data.normalMap = Get<TextureAsset>(uidMaps[1]).data;
+			asset->data.roughnessMap = Get<TextureAsset>(uidMaps[2]).data;
+			asset->data.metallicMap = Get<TextureAsset>(uidMaps[3]).data;
+			asset->data.occlusionMap = Get<TextureAsset>(uidMaps[4]).data;
+			asset->data.emissiveMap = Get<TextureAsset>(uidMaps[5]).data;
 			Add(uid, path, asset);
 			return asset;
 		}

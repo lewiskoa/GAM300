@@ -4,7 +4,8 @@
 #include "Interface.h"
 #include "ECS/ECS.hpp"
 #include "Physics/Context.h"
-#include "Audio/Audio.hpp"   
+#include "Audio/Audio.hpp"
+#include "Auxiliaries/ResourceLoader.h"
 
 namespace Boom
 {
@@ -228,10 +229,10 @@ namespace Boom
                                 ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
                                 //draw model with material if it has one
                                 if (comp.materialID != EMPTY_ASSET) {
-                                    auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
-									material.data.albedoMap = m_Context->assets->Get<TextureAsset>(material.albedoMapID).data;
-                                    material.data.normalMap = m_Context->assets->Get<TextureAsset>(material.normalMapID).data;
-                                    material.data.roughnessMap = m_Context->assets->Get<TextureAsset>(material.roughnessMapID).data;
+                                    MaterialAsset& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
+									//material.data.albedoMap = m_Context->assets->Get<TextureAsset>(material.albedoMapID).data;
+                                    //material.data.normalMap = m_Context->assets->Get<TextureAsset>(material.normalMapID).data;
+                                    //material.data.roughnessMap = m_Context->assets->Get<TextureAsset>(material.roughnessMapID).data;
                                     m_Context->renderer->Draw(model.data, transform, material.data);
                                 }
                                 else {
@@ -271,9 +272,9 @@ namespace Boom
             auto cubeAsset{ m_Context->assets->AddModel(RandomU64(), "cube.fbx") };
             
             //materials
-            auto albedoTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/albedo.png") };
-            auto normalTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/normal.png") };
-            auto roughnessTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/roughness.png") };
+            auto albedoTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/marble-albedo.png") };
+            auto normalTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/marble-normal.png") };
+            auto roughnessTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/marble-roughness.png") };
             std::array<AssetID, 6> marbleMat{
                 albedoTexAsset->uid,
                 normalTexAsset->uid,
