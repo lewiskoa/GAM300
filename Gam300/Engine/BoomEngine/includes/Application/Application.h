@@ -15,7 +15,11 @@ namespace Boom
      * Inherits from AppInterface to receive the same lifecycle hooks
      * and gain access to the shared AppContext.
      */
-    struct BOOM_API Application : AppInterface
+    struct 
+        
+        
+        
+    Application : AppInterface
     {
         template<typename EntityType, typename... Components, typename Fn>
         BOOM_INLINE void EnttView(Fn&& fn) {

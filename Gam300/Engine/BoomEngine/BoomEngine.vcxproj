@@ -203,6 +203,11 @@
     <ClInclude Include="includes\Physics\Context.h" />
     <ClInclude Include="includes\Physics\Helpers.h" />
     <ClInclude Include="includes\Physics\Utilities.h" />
+    <ClInclude Include="includes\Scripting\ScriptAPI.h" />
+    <ClInclude Include="src\Scripting\ScriptingSystem.h" />
+    <ClInclude Include="includes\Scripting\ScriptRuntime.h" />
+    <ClInclude Include="thirdparty\dotnet\hostfxr.h" />
+    <ClInclude Include="thirdparty\dotnet\nethost.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="includes\Audio\Audio.cpp">
@@ -215,7 +220,13 @@
     <ClCompile Include="src\Logger.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Scripting\ScriptAPI.cpp" />
+    <ClCompile Include="src\Scripting\ScriptingSystem.cpp" />
+    <ClCompile Include="src\Scripting\ScriptRunTime.cpp" />
     <ClCompile Include="src\Textures\Texture.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="thirdparty\dotnet\nethost.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,32 +1,45 @@
+// includes/Scripting/ScriptAPI.h
 #pragma once
-#include "GlobalConstants.h" // Boom::EntityId, Boom::Vec3
+#include "Core.h"           // defines BOOM_API
+#include <stdint.h>         // uint64_t
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
-	// plain C struct for ABI
-	struct ScriptVec3 { float x, y, z; };
+    typedef uint32_t ScriptEntityId;
 
-	// C# delegates (must match managed signatures)
-	using CreateFn = void(*)(Boom::EntityId /*entity*/, std::uint64_t /*instanceId*/);
-	using UpdateFn = void(*)(std::uint64_t /*instanceId*/, float /*dt*/);
-	using DestroyFn = void(*)(std::uint64_t /*instanceId*/);
+    typedef struct ScriptVec3 {
+        float x, y, z;
+    } ScriptVec3;
 
-	// -------- Logging
-	BOOM_API void           script_log(const char* msg);
+    /* Delegates (C function pointers) */
+    typedef void (*ScriptCreateFn)  (ScriptEntityId /*entity*/, uint64_t /*instanceId*/);
+    typedef void (*ScriptUpdateFn)  (uint64_t /*instanceId*/, float /*dt*/);
+    typedef void (*ScriptDestroyFn) (uint64_t /*instanceId*/);
 
-	// -------- Minimal ECS surface
-	BOOM_API Boom::EntityId script_create_entity();
-	BOOM_API void           script_destroy_entity(Boom::EntityId e);
+    /* -------- Logging -------- */
+    BOOM_API void           script_log(const char* msg);
 
-	// -------- Transform
-	BOOM_API void           script_set_position(Boom::EntityId e, ScriptVec3 p);
-	BOOM_API ScriptVec3     script_get_position(Boom::EntityId e);
+    /* -------- Minimal ECS surface -------- */
+    BOOM_API ScriptEntityId script_create_entity(void);
+    BOOM_API void           script_destroy_entity(ScriptEntityId e);
 
-	// -------- Registration & lifetime
-	BOOM_API void           script_register_type(const char* typeName, CreateFn c, UpdateFn u, DestroyFn d);
-	BOOM_API std::uint64_t  script_create_instance(const char* typeName, Boom::EntityId e);
-	BOOM_API void           script_destroy_instance(std::uint64_t instanceId);
-	BOOM_API void           script_update_instance(std::uint64_t instanceId, float dt);
-	BOOM_API void           script_update_all(float dt);
+    /* -------- Transform -------- */
+    BOOM_API void           script_set_position(ScriptEntityId e, ScriptVec3 p);
+    BOOM_API ScriptVec3     script_get_position(ScriptEntityId e);
 
-} // extern "C"
+    /* -------- Registration & lifetime -------- */
+    BOOM_API void           script_register_type(const char* typeName,
+        ScriptCreateFn c,
+        ScriptUpdateFn u,
+        ScriptDestroyFn d);
+
+    BOOM_API uint64_t       script_create_instance(const char* typeName, ScriptEntityId e);
+    BOOM_API void           script_destroy_instance(uint64_t instanceId);
+    BOOM_API void           script_update_instance(uint64_t instanceId, float dt);
+    BOOM_API void           script_update_all(float dt);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif

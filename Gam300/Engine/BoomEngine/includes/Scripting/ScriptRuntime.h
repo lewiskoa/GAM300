@@ -1,55 +1,42 @@
 #pragma once
-#include "GlobalConstants.h"
-#include <string>
-#include <unordered_map>
-#include <atomic>
-#include <mutex>
+#include <cstdint>
+#include "GlobalConstants.h"   // for Boom::EntityId, Boom::Vec3 (adjust include if needed)
 
-// Engine functions you wire up from the engine side
-struct EngineHooks {
-    void (*Log)(const char* msg) = nullptr;
+namespace ScriptRuntime {
 
-    // ECS via integer handles; keep your engine Entity private
-    Boom::EntityId(*CreateEntity)() = nullptr;
-    void           (*DestroyEntity)(Boom::EntityId) = nullptr;
+    // ---- Script (managed) callbacks the runtime will call ----
+    using CreateCb = void(*)(Boom::EntityId /*entity*/, std::uint64_t /*instanceId*/);
+    using UpdateCb = void(*)(std::uint64_t /*instanceId*/, float /*dt*/);
+    using DestroyCb = void(*)(std::uint64_t /*instanceId*/);
 
-    // Transform
-    void         (*SetPosition)(Boom::EntityId, const Boom::Vec3&) = nullptr;
-    Boom::Vec3(*GetPosition)(Boom::EntityId) = nullptr;
-};
-
-class ScriptRuntime {
-public:
-    using CreateFn = void(*)(Boom::EntityId, std::uint64_t);
-    using UpdateFn = void(*)(std::uint64_t, float);
-    using DestroyFn = void(*)(std::uint64_t);
-
-    struct ScriptType {
-        CreateFn  c = nullptr;
-        UpdateFn  u = nullptr;
-        DestroyFn d = nullptr;
+    // ---- Hooks: engine functions the runtime can call back into ----
+    struct EngineHooks {
+        void (*Log)(const char* msg) = nullptr;
+        Boom::EntityId(*CreateEntity)() = nullptr;
+        void (*DestroyEntity)(Boom::EntityId e) = nullptr;
+        void (*SetPosition)(Boom::EntityId e, Boom::Vec3 p) = nullptr;
+        Boom::Vec3(*GetPosition)(Boom::EntityId e) = nullptr;
+        // add more as your engine surface grows (Get/SetRotation, FindByName, etc.)
     };
 
-    static void           Initialize(const EngineHooks& hooks);
-    static void           Shutdown();
+    // ---- Hooks accessors (declared here, defined once in .cpp) ----
+    const EngineHooks& Hooks() noexcept;
+    void SetHooks(const EngineHooks& h);
 
-    static void           RegisterType(const std::string& typeName, CreateFn c, UpdateFn u, DestroyFn d);
-    static std::uint64_t  CreateInstance(const std::string& typeName, Boom::EntityId e);
-    static void           DestroyInstance(std::uint64_t id);
-    static void           UpdateInstance(std::uint64_t id, float dt);
-    static void           UpdateAll(float dt);
+    // ---- Lifetime of the runtime ----
+    void Initialize(const EngineHooks& h);   // convenience: calls SetHooks
+    void Shutdown();
 
-    static EngineHooks& Hooks() { return s_hooks; }
+    // ---- Script type registry & instances ----
+    void RegisterType(const char* typeName, CreateCb c, UpdateCb u, DestroyCb d);
 
-private:
-    static std::uint64_t  NextId();
+    std::uint64_t CreateInstance(const char* typeName, Boom::EntityId e);
+    void          DestroyInstance(std::uint64_t id);
 
-    static EngineHooks s_hooks;
+    void UpdateInstance(std::uint64_t id, float dt);
+    void UpdateAll(float dt);
 
-    static std::unordered_map<std::string, ScriptType>      s_types;
-    static std::unordered_map<std::uint64_t, ScriptType>    s_instances;
-    static std::unordered_map<std::uint64_t, Boom::EntityId> s_instanceEntity;
+    // Optional helper: map instance -> entity (returns 0 if not found)
+    Boom::EntityId EntityOf(std::uint64_t id);
 
-    static std::atomic_uint64_t s_nextId;
-    static std::mutex           s_mutex;
-};
+} // namespace ScriptRuntime

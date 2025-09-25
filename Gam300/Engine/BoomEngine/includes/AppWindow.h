@@ -284,7 +284,7 @@ namespace Boom {
 		GLFWwindow* windowPtr;
 		GLFWmonitor* monitorPtr;
 		GLFWvidmode const* modePtr;
-		EventDispatcher* dispatcher;
+		EventDispatcher* dispatcher = nullptr;
 		//WindowInputs inputs;
 
 	public: //temporary for testing

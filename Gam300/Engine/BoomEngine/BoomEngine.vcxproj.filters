@@ -132,6 +132,21 @@
     <ClInclude Include="includes\Auxiliaries\Serializer.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Scripting\ScriptAPI.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Scripting\ScriptRuntime.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="thirdparty\dotnet\hostfxr.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="thirdparty\dotnet\nethost.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Scripting\ScriptingSystem.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">
@@ -149,5 +164,17 @@
     <ClCompile Include="includes\Audio\Audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Scripting\ScriptAPI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scripting\ScriptRunTime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scripting\ScriptingSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="thirdparty\dotnet\nethost.lib" />
   </ItemGroup>
 </Project>
