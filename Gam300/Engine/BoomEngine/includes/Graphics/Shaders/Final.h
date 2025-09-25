@@ -5,7 +5,7 @@
 
 namespace Boom {
 	struct FinalShader : Shader {
-		BOOM_INLINE FinalShader(std::string const& filename, glm::vec4 col = glm::vec4{1.f})
+		BOOM_INLINE FinalShader(std::string const& filename, int32_t width, int32_t height, glm::vec4 col = glm::vec4{ 1.f })
 			: Shader{ filename }
 			, map{ GetUniformVar("map") }
 			, quad{ CreateQuad2D() }
@@ -14,6 +14,7 @@ namespace Boom {
 			, bloomEnabled{ GetUniformVar("u_enableBloom") }
 			, color{col}
 		{
+			CreateBuffer(width, height);
 		}
 		BOOM_INLINE void SetSceneMap(uint32_t m,uint32_t blm) {
 			//set color map
@@ -41,21 +42,23 @@ namespace Boom {
 			glDeleteTextures(1, &m_Final);
 		}
 
-		BOOM_INLINE void Render(uint32_t vmap, uint32_t vbloom, bool useFBO)
+		BOOM_INLINE void Render(uint32_t vmap, uint32_t vbloom, bool useFBO, bool enableBloom = false)
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER, useFBO ? m_FBO : 0);
+			glBindFramebuffer(GL_FRAMEBUFFER, useFBO ? m_Final : 0);
 			glClear(GL_COLOR_BUFFER_BIT);
 			glClearColor(0, 0, 0, 1);
-			glUseProgram(shaderId);
+			Use();
+
+			SetUniform(bloomEnabled, enableBloom);
+			SetSceneMap(vmap, vbloom);
 
 			//set color map
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, vmap);
-			glUniform1i(vbloom, 1);
 
 			//render quad
 			quad->Draw();
-			glUseProgram(0);
+			UnUse();
 
 			//bind default fbo
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);

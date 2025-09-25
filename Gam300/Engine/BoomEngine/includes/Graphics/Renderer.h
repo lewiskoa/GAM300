@@ -38,7 +38,7 @@ namespace Boom {
 
 			skyMapShader = std::make_unique<SkyMapShader>("skymap.glsl");
 			skyBoxShader = std::make_unique<SkyboxShader>("skybox.glsl");
-			finalShader = std::make_unique<FinalShader>("final.glsl");
+			finalShader = std::make_unique<FinalShader>("final.glsl", w, h);
 			pbrShader = std::make_unique<PBRShader>("pbr.glsl");
 			bloom = std::make_unique<BloomShader>("bloom.glsl", w, h);	
 			frame = std::make_unique<FrameBuffer>(w, h);
@@ -95,8 +95,8 @@ namespace Boom {
 		}
 		//HEHE OOPS
 		BOOM_INLINE uint32_t GetFrame() {
-			return frame->GetTexture();
-			//return finalShader->GetMap();
+			//return frame->GetTexture();
+			return finalShader->GetMap();
 		}
 
 		BOOM_INLINE void NewFrame() {
@@ -115,7 +115,7 @@ namespace Boom {
 
 		BOOM_INLINE void ShowFrame(bool useFBO) {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO);
+			finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, true); //enable/disable bloom here
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
