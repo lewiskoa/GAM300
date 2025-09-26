@@ -6,6 +6,7 @@
 #include "Windows/Resource.h"
 #include "Windows/Viewport.h"
 #include "Windows/MenuBar.h"
+#include "Windows/Console.h"
 #include "Context/DebugHelpers.h"
 using namespace Boom;
 
@@ -26,6 +27,8 @@ public:
             ImGui::SetCurrentContext(m_ImGuiContext);
             BOOM_INFO("Editor::OnStart - Set ImGui context successfully");
         }
+
+
     }
 
     BOOM_INLINE void OnUpdate() override
@@ -62,6 +65,8 @@ private:
         RenderViewport();
         RenderHierarchy();
         RenderInspector();
+        if (m_ShowConsole)
+            m_Console.OnShow(this);
 
         // End frame and render
         ImGui::Render();
@@ -122,6 +127,7 @@ private:
                 ImGui::MenuItem("Inspector", nullptr, &m_ShowInspector);
                 ImGui::MenuItem("Hierarchy", nullptr, &m_ShowHierarchy);
                 ImGui::MenuItem("Viewport", nullptr, &m_ShowViewport);
+                ImGui::MenuItem("Console", nullptr, &m_ShowConsole);
                 ImGui::EndMenu();
             }
 
@@ -234,6 +240,8 @@ private:
 
 private:
     ImGuiContext* m_ImGuiContext = nullptr;
+    ConsoleWindow m_Console{ this };
+    bool m_ShowConsole = true;
     bool m_ShowInspector = true;
     bool m_ShowHierarchy = true;
     bool m_ShowViewport = true;
