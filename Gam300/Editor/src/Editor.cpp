@@ -7,12 +7,21 @@
 #include "Windows/Viewport.h"
 #include "Windows/MenuBar.h"
 #include "Context/DebugHelpers.h"
+#include "Prefab/PrefabSystem.h"
+#include "ImGuizmo.h"
+#include <glm/gtc/type_ptr.hpp>
+
+
 using namespace Boom;
+bool m_ShowPrefabBrowser = true;
 
 class Editor : public AppInterface
 {
 public:
-    BOOM_INLINE Editor(ImGuiContext* imguiContext) : m_ImGuiContext(imguiContext)
+    // In your Editor class
+public:
+    BOOM_INLINE Editor(ImGuiContext* imguiContext, entt::registry* registry)
+        : m_ImGuiContext(imguiContext), m_Registry(registry) // <-- Assign m_Registry here
     {
         BOOM_INFO("Editor created with ImGui context: {}", (void*)imguiContext);
     }
@@ -62,6 +71,7 @@ private:
         RenderViewport();
         RenderHierarchy();
         RenderInspector();
+        RenderPrefabBrowser();
 
         // End frame and render
         ImGui::Render();
@@ -122,6 +132,7 @@ private:
                 ImGui::MenuItem("Inspector", nullptr, &m_ShowInspector);
                 ImGui::MenuItem("Hierarchy", nullptr, &m_ShowHierarchy);
                 ImGui::MenuItem("Viewport", nullptr, &m_ShowViewport);
+                ImGui::MenuItem("Prefab Browser", nullptr, &m_ShowPrefabBrowser); // <-- MAKE SURE THIS LINE IS HERE
                 ImGui::EndMenu();
             }
 
@@ -179,25 +190,125 @@ private:
         ImGui::End();
     }
 
+    BOOM_INLINE void RenderGizmo()
+    {
+        // Make sure an entity is selected and has a transform component
+        if (!m_Registry->valid(m_SelectedEntity) || !m_Registry->all_of<TransformComponent>(m_SelectedEntity)) {
+            return;
+        }
+
+        // Must be called once per frame
+        ImGuizmo::BeginFrame();
+
+        // Set the area of the viewport where the gizmo will be drawn
+        // This assumes you are calling this function inside your Viewport's ImGui::Begin()/End() block
+        ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+
+        glm::mat4 cameraView = glm::mat4(1.f);       // Default to identity matrix
+        glm::mat4 cameraProjection = glm::mat4(1.f); // Default to identity matrix
+
+        // Create a view of all entities that have BOTH a CameraComponent AND a TransformComponent
+        auto cameraEntities = m_Registry->view<CameraComponent, TransformComponent>();
+        if (cameraEntities.size_hint() > 0) {
+            // Get the very first entity from that view
+            entt::entity mainCameraEntity = cameraEntities.front();
+
+            // Get that entity's components
+            auto& cameraComponent = m_Registry->get<CameraComponent>(mainCameraEntity);
+            auto& transformComponent = m_Registry->get<TransformComponent>(mainCameraEntity);
+
+            // 2. Call the existing methods from your Camera3D struct
+            float aspectRatio = ImGui::GetWindowWidth() / ImGui::GetWindowHeight();
+            cameraView = cameraComponent.camera.View(transformComponent.transform);
+            cameraProjection = cameraComponent.camera.Projection(aspectRatio);
+        }
+
+        // Get the transform component and build the model matrix for the selected entity
+        auto& tc = m_Registry->get<TransformComponent>(m_SelectedEntity);
+        glm::mat4 modelMatrix = tc.transform.Matrix(); // Assumes your Transform3D has a Matrix() function
+
+        // Call the main gizmo function
+        ImGuizmo::Manipulate(
+            glm::value_ptr(cameraView),
+            glm::value_ptr(cameraProjection),
+            m_gizmoOperation, // Use the operation from our member variable
+            m_gizmoMode,
+            glm::value_ptr(modelMatrix)
+        );
+
+        // If the user is interacting with the gizmo...
+        if (ImGuizmo::IsUsing())
+        {
+            // Decompose the modified model matrix back into TRS components
+            glm::vec3 newTranslation, newRotation, newScale;
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelMatrix), glm::value_ptr(newTranslation), glm::value_ptr(newRotation), glm::value_ptr(newScale));
+
+            // Update your entity's transform component with the new values
+            tc.transform.translate = newTranslation;
+            tc.transform.rotate = newRotation;
+            tc.transform.scale = newScale;
+        }
+    }
+
+    // In your Editor class
     BOOM_INLINE void RenderHierarchy()
     {
         if (!m_ShowHierarchy) return;
 
         if (ImGui::Begin("Hierarchy", &m_ShowHierarchy)) {
+
+            if (ImGui::Button("Translate")) m_gizmoOperation = ImGuizmo::TRANSLATE;
+            ImGui::SameLine();
+            if (ImGui::Button("Rotate")) m_gizmoOperation = ImGuizmo::ROTATE;
+            ImGui::SameLine();
+            if (ImGui::Button("Scale")) m_gizmoOperation = ImGuizmo::SCALE;
+            ImGui::Separator();
+
             ImGui::Text("Scene Hierarchy");
             ImGui::Separator();
 
-            if (ImGui::TreeNode("Scene Objects")) {
-                if (ImGui::Selectable("Camera")) {
-                    BOOM_INFO("Camera selected");
+            // This is the new, correct way to loop through all entities
+            for (auto entityID : m_Registry->view<entt::entity>()) {
+
+                std::string name = "Entity " + std::to_string(static_cast<uint32_t>(entityID));
+
+                if (ImGui::Selectable(name.c_str(), m_SelectedEntity == entityID)) {
+                    m_SelectedEntity = entityID;
                 }
-                if (ImGui::Selectable("Light")) {
-                    BOOM_INFO("Light selected");
+            }
+        }
+        ImGui::End();
+    }
+
+// You will need #include <fstream> and #include <vector> if they aren't already in your Editor file.
+
+    BOOM_INLINE void RenderPrefabBrowser()
+    {
+        if (!m_ShowPrefabBrowser) return;
+
+        if (ImGui::Begin("Prefab Browser", &m_ShowPrefabBrowser)) {
+            // ==========================================================
+            // ===== THE PREFAB LIST IS NOW HARDCODED IN THE CODE =====
+            // ==========================================================
+            const char* prefabNames[] = {
+                "Player",
+                "RedBarrel",
+                "EnemyGrunt"
+                // To add a new prefab, you must add its name to this list
+                // and then recompile your program.
+            };
+            // ==========================================================
+
+            ImGui::Text("Available Prefabs:");
+            ImGui::Separator();
+
+            // Loop through the hardcoded array of names
+            for (const char* prefabName : prefabNames) {
+                if (ImGui::Button(prefabName)) {
+                    // When clicked, create the full path and instantiate it
+                    std::string fullPath = "assets/prefabs/" + std::string(prefabName) + ".prefab";
+                    Boom::InstantiatePrefab(*m_Registry, fullPath);
                 }
-                if (ImGui::Selectable("Cube")) {
-                    BOOM_INFO("Cube selected");
-                }
-                ImGui::TreePop();
             }
         }
         ImGui::End();
@@ -208,25 +319,41 @@ private:
         if (!m_ShowInspector) return;
 
         if (ImGui::Begin("Inspector", &m_ShowInspector)) {
-            ImGui::Text("Object Inspector");
-            ImGui::Separator();
+            // First, check if a valid entity is selected
+            if (m_Registry->valid(m_SelectedEntity)) {
 
-            if (ImGui::CollapsingHeader("Transform")) {
-                static float pos[3] = { 0.0f, 0.0f, 0.0f };
-                static float rot[3] = { 0.0f, 0.0f, 0.0f };
-                static float scale[3] = { 1.0f, 1.0f, 1.0f };
+                // --- UI to display components ---
+                // Example for TransformComponent
+                if (m_Registry->all_of<TransformComponent>(m_SelectedEntity)) {
+                    if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+                        auto& tc = m_Registry->get<TransformComponent>(m_SelectedEntity);
+                        ImGui::DragFloat3("Translate", &tc.transform.translate.x, 0.1f);
+                        ImGui::DragFloat3("Rotate", &tc.transform.rotate.x, 1.0f);
+                        ImGui::DragFloat3("Scale", &tc.transform.scale.x, 0.1f);
+                    }
+                }
+                // (You can add more `if` blocks here to display other components)
 
-                ImGui::DragFloat3("Position", pos, 0.1f);
-                ImGui::DragFloat3("Rotation", rot, 1.0f, 0.0f, 360.0f);
-                ImGui::DragFloat3("Scale", scale, 0.1f, 0.1f, 10.0f);
+
+                // --- "Save as Prefab" Button Logic ---
+                ImGui::Separator();
+                if (ImGui::Button("Save as Prefab")) {
+                    ImGui::OpenPopup("SavePrefabPopup");
+                }
+
+                if (ImGui::BeginPopup("SavePrefabPopup")) {
+                    static char prefabName[128] = "NewPrefab";
+                    ImGui::InputText("Prefab Name", prefabName, 128);
+                    if (ImGui::Button("Save")) {
+                        // Call the save function from your PrefabSystem.h
+                        Boom::SaveEntityAsPrefab(*m_Registry, m_SelectedEntity, std::string(prefabName));
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::EndPopup();
+                }
             }
-
-            if (ImGui::CollapsingHeader("Renderer")) {
-                static bool enabled = true;
-                ImGui::Checkbox("Enabled", &enabled);
-
-                static float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-                ImGui::ColorEdit4("Color", color);
+            else {
+                ImGui::Text("No entity selected.");
             }
         }
         ImGui::End();
@@ -237,6 +364,13 @@ private:
     bool m_ShowInspector = true;
     bool m_ShowHierarchy = true;
     bool m_ShowViewport = true;
+
+
+    ImGuizmo::OPERATION m_gizmoOperation = ImGuizmo::TRANSLATE;
+    ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
+
+    entt::registry* m_Registry = nullptr;
+    entt::entity m_SelectedEntity = entt::null;
 };
 
 // Updated main function
@@ -250,6 +384,7 @@ int32_t main()
         // Create application
         auto app = engine.CreateApp();
         app->PostEvent<WindowTitleRenameEvent>("Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
+        entt::registry mainRegistry;
 
         // Get the engine window handle
         GLFWwindow* engineWindow = app->GetWindowHandle();
@@ -292,7 +427,8 @@ int32_t main()
 
         if (imguiContext) {
             // Create and attach editor with ImGui context
-            app->AttachLayer<Editor>(imguiContext);  // Use template version
+            app->AttachLayer<Editor>(imguiContext, &mainRegistry);
+            // Use template version
         }
         else {
             BOOM_ERROR("Failed to initialize ImGui, running without editor");
