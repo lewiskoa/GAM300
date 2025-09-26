@@ -387,17 +387,17 @@ int32_t main()
         entt::registry mainRegistry;
 
         // Get the engine window handle
-        GLFWwindow* engineWindow = app->GetWindowHandle();
+        std::shared_ptr<GLFWwindow> engineWindow = app->GetWindowHandle();
         //BOOM_INFO("Got engine window handle: {}", (void*)engineWindow);
 
         ImGuiContext* imguiContext = nullptr;
 
         if (engineWindow) {
             // Make context current
-            glfwMakeContextCurrent(engineWindow);
+            glfwMakeContextCurrent(engineWindow.get());
             GLFWwindow* current = glfwGetCurrentContext();
 
-            if (current == engineWindow) {
+            if (current == engineWindow.get()) {
                 BOOM_INFO("Context is current, initializing ImGui...");
 
                 // Initialize ImGui
@@ -410,7 +410,7 @@ int32_t main()
                 io.ConfigWindowsMoveFromTitleBarOnly = true;
 
                 // Initialize backends
-                bool platformInit = ImGui_ImplGlfw_InitForOpenGL(engineWindow, true);
+                bool platformInit = ImGui_ImplGlfw_InitForOpenGL(engineWindow.get(), true);
                 bool rendererInit = ImGui_ImplOpenGL3_Init("#version 450");
 
                 if (platformInit && rendererInit) {
