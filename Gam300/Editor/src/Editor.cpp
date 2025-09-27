@@ -77,7 +77,7 @@ private:
         RenderGizmo();
         RenderPrefabBrowser();
         RenderPerformance();
-		RenderPerformanceGraph();
+		
         // End frame and render
         ImGui::Render();
         ImDrawData* drawData = ImGui::GetDrawData();
@@ -139,7 +139,7 @@ private:
                 ImGui::MenuItem("Viewport", nullptr, &m_ShowViewport);
                 ImGui::MenuItem("Prefab Browser", nullptr, &m_ShowPrefabBrowser); // <-- MAKE SURE THIS LINE IS HERE
                 ImGui::MenuItem("Performance", nullptr, &m_ShowPerformance);
-				ImGui::MenuItem("Performance Graph", nullptr, &m_ShowPerformanceGraph);
+			
                 ImGui::EndMenu();
             }
 
@@ -179,18 +179,12 @@ private:
             else if (fps >= 30.f)  ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Playable");
             else                   ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "Slow");
 
-
+            DrawProfilerPanel(m_Context->profiler);
         }
         ImGui::End();
     }
 
-    BOOM_INLINE void RenderPerformanceGraph() {
-		if (!m_ShowPerformanceGraph) return;
-		if (ImGui::Begin("Performance Graph", &m_ShowPerformanceGraph)) {
-            DrawProfilerPanel(m_Context->profiler);
-		}
-        ImGui::End();
-    }
+    
     BOOM_INLINE void RenderViewport()
     {
         if (!m_ShowViewport) return;
@@ -456,7 +450,7 @@ private:
     bool m_ShowViewport = true;
     bool m_ShowPrefabBrowser = true;
     bool m_ShowPerformance = true;
-	bool m_ShowPerformanceGraph = true;
+	
 
     ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
