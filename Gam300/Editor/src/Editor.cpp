@@ -325,10 +325,18 @@ private:
 
             // Loop through the hardcoded array of names
             for (const char* prefabName : prefabNames) {
-                if (ImGui::Button(prefabName)) {
-                    // When clicked, create the full path and instantiate it
-                    std::string fullPath = "assets/prefabs/" + std::string(prefabName) + ".prefab";
-                    Boom::InstantiatePrefab(*m_Registry, fullPath);
+                // Use Selectable instead of Button for a cleaner drag source
+                ImGui::Selectable(prefabName);
+
+                // Check if the item is being dragged
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+                    // Set the payload with a unique identifier and the prefab name
+                    ImGui::SetDragDropPayload("PREFAB_ASSET", prefabName, strlen(prefabName) + 1);
+
+                    // Optional: display a tooltip while dragging
+                    ImGui::Text("Dragging %s", prefabName);
+
+                    ImGui::EndDragDropSource();
                 }
             }
         }
