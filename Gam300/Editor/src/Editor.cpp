@@ -147,6 +147,28 @@ private:
         if (!m_ShowViewport) return;
 
         if (ImGui::Begin("Viewport", &m_ShowViewport)) {
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_ASSET"))
+                {
+                    const char* prefabName = (const char*)payload->Data;
+                    std::string path = "src/Prefabs/" + std::string(prefabName) + ".prefab";
+                    std::cout << "Spawned prefab: " << prefabName << "\n";
+
+
+                    // Instantiate prefab
+                    entt::entity newEntity = Boom::PrefabSystem::InstantiatePrefab(m_Context->scene, path);
+
+                    if (newEntity != entt::null) {
+                        std::cout << "Spawned prefab: " << prefabName << " (" << path << ")\n";
+                    }
+                    else {
+                        std::cout << "Failed to spawn prefab: " << prefabName << "\n";
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
             // Get frame texture from engine
             uint32_t frameTexture = GetSceneFrame();
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
@@ -309,36 +331,25 @@ private:
         if (!m_ShowPrefabBrowser) return;
 
         if (ImGui::Begin("Prefab Browser", &m_ShowPrefabBrowser)) {
-            // ==========================================================
-            // ===== THE PREFAB LIST IS NOW HARDCODED IN THE CODE =====
-            // ==========================================================
-            const char* prefabNames[] = {
-                "Player",
-                "RedBarrel",
-                "EnemyGrunt"
+            const char* prefabName = "Player"; // single prefab
 
-            };
-            // ==========================================================
-
-            ImGui::Text("Available Prefabs:");
-            ImGui::Separator();
-
-            // Loop through the hardcoded array of names
-            for (const char* prefabName : prefabNames) {
-                // Use Selectable instead of Button for a cleaner drag source
-                ImGui::Selectable(prefabName);
-
-                // Check if the item is being dragged
-                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-                    // Set the payload with a unique identifier and the prefab name
-                    ImGui::SetDragDropPayload("PREFAB_ASSET", prefabName, strlen(prefabName) + 1);
-
-                    // Optional: display a tooltip while dragging
-                    ImGui::Text("Dragging %s", prefabName);
-
-                    ImGui::EndDragDropSource();
-                }
+            // Make it selectable and debug when clicked
+            if (ImGui::Selectable(prefabName)) {
+                std::cout << "[DEBUG] Prefab selected: " << prefabName << "\n";
+                // Optional: store the currently selected prefab if needed
+                m_SelectedPrefab = prefabName;
             }
+
+            if (ImGui::Button("Spawn Player")) {
+                entt::entity e = Boom::PrefabSystem::InstantiatePrefab(m_Context->scene, "Editor/src/Prefab/Player.prefab");
+                std::cout << "[DEBUG] Spawned Player entity: " << (uint32_t)e << "\n";
+            }
+            //// Drag source
+            //if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+            //    ImGui::SetDragDropPayload("PREFAB_ASSET", prefabName, strlen(prefabName) + 1);
+            //    ImGui::Text("Dragging %s", prefabName);
+            //    ImGui::EndDragDropSource();
+            //}
         }
         ImGui::End();
     }
@@ -406,6 +417,7 @@ private:
     bool m_ShowHierarchy = true;
     bool m_ShowViewport = true;
     bool m_ShowPrefabBrowser = true;
+    const char* m_SelectedPrefab = nullptr; // stores the currently selected prefab
 
 
     ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;

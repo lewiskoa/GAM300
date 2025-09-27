@@ -99,6 +99,8 @@ namespace Boom {
     struct ModelComponent {
         AssetID materialID{ EMPTY_ASSET };
         AssetID modelID{ EMPTY_ASSET };
+        std::string modelName;
+        std::string materialName;
     };
 
 	//Animator Component

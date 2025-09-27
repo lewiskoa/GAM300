@@ -1,6 +1,6 @@
 ASSETS:
   - Type: SKYBOX
-    UID: 720345975719821118
+    UID: 5254338728309916167
     Name: sky
     Source: Skybox/sky.hdr
     Properties:
@@ -8,34 +8,34 @@ ASSETS:
       IsHDR: true
       IsFlipY: true
   - Type: TEXTURE
-    UID: 18311755710350197663
+    UID: 15347271714716786836
     Name: roughness
     Source: Marble/roughness.png
     Properties:
       IsHDR: false
       IsFlipY: true
   - Type: TEXTURE
-    UID: 10008275255381013694
-    Name: albedo
-    Source: Marble/albedo.png
-    Properties:
-      IsHDR: false
-      IsFlipY: true
-  - Type: TEXTURE
-    UID: 15349971160835450555
+    UID: 18029516926608982720
     Name: normal
     Source: Marble/normal.png
     Properties:
       IsHDR: false
       IsFlipY: true
+  - Type: TEXTURE
+    UID: 14936844510590008100
+    Name: albedo
+    Source: Marble/albedo.png
+    Properties:
+      IsHDR: false
+      IsFlipY: true
   - Type: MATERIAL
-    UID: 411419921121499243
+    UID: 6412011644395130431
     Name: Marble
     Source: Marble
     Properties:
-      AlbedoMap: 10008275255381013694
-      NormalMap: 15349971160835450555
-      RoughnessMap: 18311755710350197663
+      AlbedoMap: 14936844510590008100
+      NormalMap: 18029516926608982720
+      RoughnessMap: 15347271714716786836
       MetallicMap: 0
       OcclusionMap: 0
       EmissiveMap: 0
@@ -45,19 +45,19 @@ ASSETS:
       Occlusion: 1
       Emissive: [0, 0, 0]
   - Type: MODEL
-    UID: 8711384233588492103
-    Name: sphere
-    Source: sphere.fbx
-    Properties:
-      HasJoints: false
-  - Type: MODEL
-    UID: 5708403287610533658
+    UID: 1841178249374328822
     Name: dance
     Source: dance.fbx
     Properties:
       HasJoints: true
   - Type: MODEL
-    UID: 81348412329378045
+    UID: 11295370325815927392
+    Name: sphere
+    Source: sphere.fbx
+    Properties:
+      HasJoints: false
+  - Type: MODEL
+    UID: 7038977916636689949
     Name: cube
     Source: cube.fbx
     Properties:
