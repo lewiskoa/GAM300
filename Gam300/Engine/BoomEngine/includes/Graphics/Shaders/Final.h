@@ -31,7 +31,7 @@ namespace Boom {
 			SetSceneMap(m,blm);
 			glUniform1i(bloomEnabled, enabled ? 1 : 0);
 			//SetUniform(colLoc, color);
-			quad->Draw();
+			quad->Draw(GL_TRIANGLE_STRIP);
 			UnUse();
 		}
 
@@ -57,7 +57,7 @@ namespace Boom {
 			glBindTexture(GL_TEXTURE_2D, vmap);
 
 			//render quad
-			quad->Draw();
+			quad->Draw(GL_TRIANGLE_STRIP);
 			UnUse();
 
 			//bind default fbo

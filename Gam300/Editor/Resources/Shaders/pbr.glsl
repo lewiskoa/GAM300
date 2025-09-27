@@ -113,6 +113,8 @@ uniform int noSpotLight;
 
 uniform vec3 viewPos;
 
+uniform bool isDebugMode;
+
 //this effect influences the appearance of surfaces
 // for example, higher reflectivity at grazing angles than dielectrics
 // f0 stands for the base fresnel distributivity
@@ -146,6 +148,11 @@ float ComputeMapOrMatF(bool isMap, sampler2D map, float mat) {
 }
 
 void main() {
+    if (isDebugMode) {
+        //                                       green            strength
+        out_fragment = vec4(mix(material.albedo, vec3(0.0, 1.0, 0.0), 0.75), 1.0);
+        return;
+    }
     vec3 V = normalize(vertex.position - viewPos);
 
     //material or texture maps

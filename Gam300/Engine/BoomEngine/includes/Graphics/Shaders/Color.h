@@ -15,7 +15,7 @@ namespace Boom {
 		BOOM_INLINE void Show() {
 			Use();
 			SetUniform(colLoc, color);
-			quad->Draw();
+			quad->Draw(GL_TRIANGLE_STRIP);
 			UnUse();
 		}
 
