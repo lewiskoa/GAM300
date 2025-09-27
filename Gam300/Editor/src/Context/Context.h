@@ -23,19 +23,19 @@ struct GuiContext : AppInterface
     {
         DEBUG_DLL_BOUNDARY("GuiContext::OnStart");
 
-        GLFWwindow* window = this->GetWindowHandle();
+        std::shared_ptr<GLFWwindow> window = this->GetWindowHandle();
         if (!window) {
             BOOM_ERROR("GuiContext::OnStart - Invalid window handle!");
             return;
         }
 
         // CRITICAL: Ensure the engine's context is current
-        if (!EnsureContextCurrent(window)) {
+        if (!EnsureContextCurrent(window.get())) {
             BOOM_ERROR("GuiContext::OnStart - Failed to ensure context is current!");
             return;
         }
 
-        DebugHelpers::ValidateWindowHandle(window, "OnStart");
+        DebugHelpers::ValidateWindowHandle(window.get(), "OnStart");
         DEBUG_OPENGL_STATE();
 
         // Initialize ImGui
@@ -67,7 +67,7 @@ struct GuiContext : AppInterface
         bool platformInit = true, rendererInit = true;
 
         if (platformNeedsInit) {
-            platformInit = ImGui_ImplGlfw_InitForOpenGL(window, true);
+            platformInit = ImGui_ImplGlfw_InitForOpenGL(window.get(), true);
             BOOM_INFO("GuiContext::OnStart - Platform backend init result: {}", platformInit);
         }
 
@@ -115,7 +115,7 @@ struct GuiContext : AppInterface
         DEBUG_DLL_BOUNDARY("GuiContext::OnUpdate");
 
         // Ensure context is current before every frame
-        if (!EnsureContextCurrent(m_EngineWindow)) {
+        if (!EnsureContextCurrent(m_EngineWindow.get())) {
             BOOM_ERROR("GuiContext::OnUpdate - Context lost and cannot be restored!");
             return;
         }
@@ -262,7 +262,7 @@ private:
 
 private:
     std::vector<std::unique_ptr<IWidget>> m_Windows;
-    GLFWwindow* m_EngineWindow = nullptr;
+    std::shared_ptr<GLFWwindow> m_EngineWindow = nullptr;
 };
 
 struct GuiContextNoSwitch : AppInterface
