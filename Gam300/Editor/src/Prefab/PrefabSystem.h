@@ -1,65 +1,85 @@
 #pragma once
-#include <entt/entt.hpp>
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <string>
-
-// Make sure this path is correct for your project structure
 #include "ECS/ECS.hpp" 
 
 namespace Boom {
-    //test
-    // Saves an entity's components to a file
-    inline void SaveEntityAsPrefab(entt::registry& registry, entt::entity entity, const std::string& name) {
-        nlohmann::json prefabJson;
-        prefabJson["name"] = name;
 
-        // Add an 'if' block for every component you've made serializable
-        if (registry.all_of<TransformComponent>(entity)) {
-            registry.get<TransformComponent>(entity).serialize(prefabJson["components"]["TransformComponent"]);
+    struct PrefabSystem {
+        // Load a prefab file into the given registry
+        static AssetID FindModelIDByName(AssetRegistry* assets, const std::string& name) {
+            AssetID id = EMPTY_ASSET;
+            assets->View([&](Asset* a) {
+                if (a->type == AssetType::MODEL && a->name == name)
+                    id = a->uid;
+                });
+            return id;
         }
-        if (registry.all_of<SoundComponent>(entity)) {
-            registry.get<SoundComponent>(entity).serialize(prefabJson["components"]["SoundComponent"]);
+
+        static AssetID FindMaterialIDByName(AssetRegistry* assets, const std::string& name) {
+            AssetID id = EMPTY_ASSET;
+            assets->View([&](Asset* a) {
+                if (a->type == AssetType::MATERIAL && a->name == name)
+                    id = a->uid;
+                });
+            return id;
         }
-        if (registry.all_of<InfoComponent>(entity)) {
-            registry.get<InfoComponent>(entity).serialize(prefabJson["components"]["InfoComponent"]);
-        }
-        // ... add more components here as you make them serializable ...
 
-        // This line creates the file. You might need to adjust the path
-        // if your program runs from a different directory than your assets.
-        std::ofstream o("assets/prefabs/" + name + ".prefab");
-        o << std::setw(4) << prefabJson << std::endl;
-    }
 
-    inline entt::entity InstantiatePrefab(entt::registry& registry, const std::string& path) {
-        // This part for reading the file stays the same
-        std::ifstream f(path);
-        if (!f.is_open()) return entt::null;
+        static entt::entity InstantiatePrefab(entt::registry& registry, AssetRegistry* assets, const std::string& path) {
+            std::ifstream f(path);
+            if (!f.is_open()) return entt::null;
 
-        nlohmann::json prefabJson = nlohmann::json::parse(f);
-        entt::entity newEntity = registry.create();
+            nlohmann::json prefabJson = nlohmann::json::parse(f);
+            entt::entity newEntity = registry.create();
 
-        // --- THIS IS THE CORRECTED LOOP ---
-        const auto& components = prefabJson["components"];
-        for (auto& [componentName, componentData] : components.items()) {
-            // 'componentName' is now a string (e.g., "TransformComponent")
-            // 'componentData' is the JSON object for that component
+            const auto& components = prefabJson["components"];
+            bool hasTransform = false;
 
-            if (componentName == "TransformComponent") {
-                registry.emplace<TransformComponent>(newEntity).deserialize(componentData);
+            for (auto& [componentName, componentData] : components.items()) {
+
+                if (componentName == "TransformComponent") {
+                    registry.emplace<TransformComponent>(newEntity).deserialize(componentData);
+                    hasTransform = true;
+                }
+                else if (componentName == "InfoComponent") {
+                    registry.emplace<InfoComponent>(newEntity).deserialize(componentData);
+                }
+                else if (componentName == "ModelComponent") {
+                    auto& mc = registry.emplace<ModelComponent>(newEntity);
+
+                    if (componentData.contains("modelName"))
+                        mc.modelName = componentData["modelName"].get<std::string>();
+                    if (componentData.contains("materialName"))
+                        mc.materialName = componentData["materialName"].get<std::string>();
+
+                    // Lookup IDs dynamically at runtime
+                    mc.modelID = FindModelIDByName(m_Context->assets, mc.modelName);
+                    mc.materialID = FindMaterialIDByName(m_Context->assets, mc.materialName);
+
+                    if (mc.modelID == EMPTY_ASSET)
+                        std::cout << "[Prefab] Warning: Model '" << mc.modelName << "' not found!\n";
+                    if (mc.materialID == EMPTY_ASSET)
+                        std::cout << "[Prefab] Warning: Material '" << mc.materialName << "' not found!\n";
+                }
+
             }
-            else if (componentName == "SoundComponent") {
-                registry.emplace<SoundComponent>(newEntity).deserialize(componentData);
+
+            // Ensure a default transform exists so prefab is visible
+            if (!hasTransform) {
+                auto& tc = registry.emplace<TransformComponent>(newEntity);
+                tc.transform.translate = glm::vec3(0.f, 0.f, 5.f); // In front of camera
+                tc.transform.scale = glm::vec3(1.f);               // Normal size
+                tc.transform.rotate = glm::vec3(0.f);              // No rotation
             }
-            else if (componentName == "InfoComponent") {
-                registry.emplace<InfoComponent>(newEntity).deserialize(componentData);
-            }
-            // ... add more components here ...
+
+            std::cout << "Spawned prefab from: " << path << " (entity ID " << (uint32_t)newEntity << ")\n";
+
+            return newEntity;
         }
-        // --- END OF CORRECTION ---
 
-        return newEntity;
-    }
 
-} // end namespace
+    };
+
+}
