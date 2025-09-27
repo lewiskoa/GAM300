@@ -143,6 +143,11 @@ private:
                 ImGui::EndMenu();
             }
 
+            if (ImGui::BeginMenu("Options")) {
+                ImGui::MenuItem("Debug Draw", nullptr, &m_Context->renderer->IsDrawDebugMode());
+                ImGui::EndMenu();
+            }
+
             ImGui::EndMainMenuBar();
         }
     }

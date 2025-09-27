@@ -178,7 +178,7 @@ namespace Boom {
 		std::unique_ptr<FrameBuffer> frame;
 		std::unique_ptr<BloomShader> bloom;
 		SkyboxMesh skyboxMesh;
-		bool isDrawDebugMode{true};
+		bool isDrawDebugMode{};
 	};
 
 
