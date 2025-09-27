@@ -172,9 +172,11 @@ namespace Boom
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
 
                 glfwMakeContextCurrent(engineWindow.get());
-
-
+                m_Context->profiler.BeginFrame();
+                m_Context->profiler.Start("Total Frame");
+                m_Context->profiler.Start("Renderer Start Frame");
                 m_Context->renderer->NewFrame();
+				m_Context->profiler.End("Renderer Start Frame");
                 {
                     //testing rendering
                     {
@@ -240,16 +242,22 @@ namespace Boom
 
                     }
                 }
+                m_Context->profiler.Start("Renderer End Frame");
                 m_Context->renderer->EndFrame();
-
+                m_Context->profiler.End("Renderer End Frame");
+              
                 //draw the updated frame
                 m_Context->renderer->ShowFrame(showFrame);
-
+              
                 //update layers
                 for (auto layer : m_Context->Layers)
                 {
                     layer->OnUpdate();
+          
+                   
                 }
+                m_Context->profiler.End("Total Frame");
+                m_Context->profiler.EndFrame();
             }
         }
 

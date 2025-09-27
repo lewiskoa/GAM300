@@ -1,4 +1,5 @@
 #pragma warning(disable: 4834)  // Disable nodiscard warnings
+#
 #include "BoomEngine.h"
 #include "Vendors/imgui/imgui.h"
 #include "Windows/Inspector.h"
@@ -10,6 +11,8 @@
 #include "Prefab/PrefabSystem.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "ImGuizmo.h"
+
+#include "Context/Profiler.hpp"
 
 using namespace Boom;
 bool m_ShowPrefabBrowser = true;
@@ -74,7 +77,7 @@ private:
         RenderGizmo();
         RenderPrefabBrowser();
         RenderPerformance();
-
+		RenderPerformanceGraph();
         // End frame and render
         ImGui::Render();
         ImDrawData* drawData = ImGui::GetDrawData();
@@ -136,6 +139,7 @@ private:
                 ImGui::MenuItem("Viewport", nullptr, &m_ShowViewport);
                 ImGui::MenuItem("Prefab Browser", nullptr, &m_ShowPrefabBrowser); // <-- MAKE SURE THIS LINE IS HERE
                 ImGui::MenuItem("Performance", nullptr, &m_ShowPerformance);
+				ImGui::MenuItem("Performance Graph", nullptr, &m_ShowPerformanceGraph);
                 ImGui::EndMenu();
             }
 
@@ -168,17 +172,25 @@ private:
             // plot fills the panel width
             ImVec2 plotSize(ImGui::GetContentRegionAvail().x, 80.f);
             ImGui::PlotLines("FPS", tmp, kPerfHistory, 0, nullptr, 0.0f, 240.0f, plotSize);
-
+           
             // simple status line
             if (fps >= 120.f) ImGui::TextColored(ImVec4(0.3f, 1, 0.3f, 1), "Very fast");
             else if (fps >= 60.f)  ImGui::TextColored(ImVec4(0.6f, 1, 0.6f, 1), "Good");
             else if (fps >= 30.f)  ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Playable");
             else                   ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "Slow");
+
+
         }
         ImGui::End();
     }
 
-
+    BOOM_INLINE void RenderPerformanceGraph() {
+		if (!m_ShowPerformanceGraph) return;
+		if (ImGui::Begin("Performance Graph", &m_ShowPerformanceGraph)) {
+            DrawProfilerPanel(m_Context->profiler);
+		}
+        ImGui::End();
+    }
     BOOM_INLINE void RenderViewport()
     {
         if (!m_ShowViewport) return;
@@ -444,7 +456,7 @@ private:
     bool m_ShowViewport = true;
     bool m_ShowPrefabBrowser = true;
     bool m_ShowPerformance = true;
-
+	bool m_ShowPerformanceGraph = true;
 
     ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
@@ -536,3 +548,4 @@ int32_t main()
 
     return 0;
 }
+
