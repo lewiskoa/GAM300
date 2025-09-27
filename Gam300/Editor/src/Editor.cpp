@@ -8,12 +8,21 @@
 #include "Windows/MenuBar.h"
 #include "Windows/Console.h"
 #include "Context/DebugHelpers.h"
+#include "Prefab/PrefabSystem.h"
+#include <glm/gtc/type_ptr.hpp>
+#include "ImGuizmo.h"
+
+
 using namespace Boom;
+bool m_ShowPrefabBrowser = true;
 
 class Editor : public AppInterface
 {
 public:
-    BOOM_INLINE Editor(ImGuiContext* imguiContext) : m_ImGuiContext(imguiContext)
+    // In your Editor class
+public:
+    BOOM_INLINE Editor(ImGuiContext* imguiContext, entt::registry* registry)
+        : m_ImGuiContext(imguiContext), m_Registry(registry) // <-- Assign m_Registry here
     {
         BOOM_INFO("Editor created with ImGui context: {}", (void*)imguiContext);
     }
@@ -58,6 +67,7 @@ private:
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame(); 
 
         // Create the main editor layout
         CreateMainDockSpace();
@@ -67,6 +77,8 @@ private:
         RenderInspector();
         if (m_ShowConsole)
             m_Console.OnShow(this);
+        RenderGizmo();
+        RenderPrefabBrowser();
 
         // End frame and render
         ImGui::Render();
@@ -128,6 +140,7 @@ private:
                 ImGui::MenuItem("Hierarchy", nullptr, &m_ShowHierarchy);
                 ImGui::MenuItem("Viewport", nullptr, &m_ShowViewport);
                 ImGui::MenuItem("Console", nullptr, &m_ShowConsole);
+                ImGui::MenuItem("Prefab Browser", nullptr, &m_ShowPrefabBrowser); // <-- MAKE SURE THIS LINE IS HERE
                 ImGui::EndMenu();
             }
 
@@ -144,10 +157,20 @@ private:
             uint32_t frameTexture = GetSceneFrame();
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
 
+            float aspectRatio = (viewportSize.y > 0) ? viewportSize.x / viewportSize.y : 1.0f;
+
             if (frameTexture > 0 && viewportSize.x > 0 && viewportSize.y > 0) {
                 // Display the engine's rendered frame
                 ImGui::Image((ImTextureID)(uintptr_t)frameTexture, viewportSize,
                     ImVec2(0, 1), ImVec2(1, 0));  // Flipped UV for OpenGL
+
+                glm::mat4 cameraProjection;
+                auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
+                if (view.begin() != view.end()) {
+                    auto entityID = view.front();
+                    auto& camComp = view.get<Boom::CameraComponent>(entityID);
+                    cameraProjection = camComp.camera.Projection(aspectRatio);
+                }
 
                 // Add viewport interaction info
                 if (ImGui::IsItemHovered()) {
@@ -185,6 +208,73 @@ private:
         ImGui::End();
     }
 
+    BOOM_INLINE void RenderGizmo()
+    {
+        // Do nothing if no entity is selected
+        if (m_SelectedEntity == entt::null) {
+            return;
+        }
+
+        // --- 1. Handle Keyboard Shortcuts to Change Operation ---
+        if (ImGui::IsKeyPressed(ImGuiKey_W)) {
+            m_GizmoOperation = ImGuizmo::TRANSLATE;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_E)) {
+            m_GizmoOperation = ImGuizmo::ROTATE;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_R)) {
+            m_GizmoOperation = ImGuizmo::SCALE;
+        }
+
+        // --- 2. Get Camera View and Projection Matrices ---
+        glm::mat4 cameraView, cameraProjection;
+        {
+            int width, height;
+            glfwGetWindowSize(m_Context->window->Handle().get(), &width, &height);
+            float aspectRatio = (height > 0) ? (float)width / (float)height : 1.0f;
+
+            auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
+            if (view.begin() != view.end()) { // Check if a camera exists
+                auto entityID = view.front();
+                auto& camComp = view.get<Boom::CameraComponent>(entityID);
+                auto& transComp = view.get<Boom::TransformComponent>(entityID);
+                cameraView = camComp.camera.View(transComp.transform);
+                cameraProjection = camComp.camera.Projection(aspectRatio);
+            }
+            else {
+                // Handle the case where no camera is found
+                BOOM_WARN("No camera found in the scene for gizmo rendering.");
+                // You might want to use a default or identity matrix here
+                cameraView = glm::mat4(1.0f);
+                cameraProjection = glm::mat4(1.0f);
+            }
+        }
+
+        // --- 3. Prepare for Drawing the Gizmo ---
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetRect(ImGui::GetMainViewport()->Pos.x, ImGui::GetMainViewport()->Pos.y, ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y);
+
+        // --- 4. Get the Selected Entity's Matrix ---
+        Boom::Entity selectedEntity{ &m_Context->scene, m_SelectedEntity };
+        auto& transformComp = selectedEntity.Get<Boom::TransformComponent>();
+        glm::mat4 modelMatrix = transformComp.transform.Matrix();
+
+        // --- 5. Draw the Gizmo and Update the Transform ---
+        if (ImGuizmo::Manipulate(glm::value_ptr(cameraView),
+            glm::value_ptr(cameraProjection),
+            m_GizmoOperation,
+            ImGuizmo::LOCAL,
+            glm::value_ptr(modelMatrix)))
+        {
+            // If the user moved the gizmo, decompose the new matrix back into TRS
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelMatrix),
+                glm::value_ptr(transformComp.transform.translate),
+                glm::value_ptr(transformComp.transform.rotate),
+                glm::value_ptr(transformComp.transform.scale));
+        }
+    }
+
+    // In your Editor class
     BOOM_INLINE void RenderHierarchy()
     {
         if (!m_ShowHierarchy) return;
@@ -193,17 +283,67 @@ private:
             ImGui::Text("Scene Hierarchy");
             ImGui::Separator();
 
-            if (ImGui::TreeNode("Scene Objects")) {
-                if (ImGui::Selectable("Camera")) {
-                    BOOM_INFO("Camera selected");
+            // Use the correct scene registry from the AppContext
+            auto view = m_Context->scene.view<Boom::InfoComponent>();
+
+            for (auto entityID : view) {
+                auto& info = view.get<Boom::InfoComponent>(entityID);
+
+                // Compare the raw entity IDs for selection
+                bool isSelected = (m_SelectedEntity == entityID);
+
+                // Push the entity's unique ID onto ImGui's ID stack
+                ImGui::PushID(static_cast<int>(entityID));
+
+                // Now, you can safely use the (potentially non-unique) name for the label
+                if (ImGui::Selectable(info.name.c_str(), isSelected)) {
+                    // Assign the raw entity ID on click
+                    m_SelectedEntity = entityID;
                 }
-                if (ImGui::Selectable("Light")) {
-                    BOOM_INFO("Light selected");
+
+                // Pop the ID off the stack to keep it clean for the next item
+                ImGui::PopID();
+            }
+        }
+        ImGui::End();
+    }
+
+// You will need #include <fstream> and #include <vector> if they aren't already in your Editor file.
+
+    BOOM_INLINE void RenderPrefabBrowser()
+    {
+        if (!m_ShowPrefabBrowser) return;
+
+        if (ImGui::Begin("Prefab Browser", &m_ShowPrefabBrowser)) {
+            // ==========================================================
+            // ===== THE PREFAB LIST IS NOW HARDCODED IN THE CODE =====
+            // ==========================================================
+            const char* prefabNames[] = {
+                "Player",
+                "RedBarrel",
+                "EnemyGrunt"
+
+            };
+            // ==========================================================
+
+            ImGui::Text("Available Prefabs:");
+            ImGui::Separator();
+
+            // Loop through the hardcoded array of names
+            for (const char* prefabName : prefabNames) {
+                // Use Selectable instead of Button for a cleaner drag source
+                ImGui::Selectable(prefabName);
+
+                // Check if the item is being dragged
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+                    // Set the payload with a unique identifier and the prefab name
+                    ImGui::SetDragDropPayload("PREFAB_ASSET", prefabName, strlen(prefabName) + 1);
+
+                    // Optional: display a tooltip while dragging
+                    ImGui::Text("Dragging %s", prefabName);
+
+                    ImGui::EndDragDropSource();
                 }
-                if (ImGui::Selectable("Cube")) {
-                    BOOM_INFO("Cube selected");
-                }
-                ImGui::TreePop();
             }
         }
         ImGui::End();
@@ -211,30 +351,58 @@ private:
 
     BOOM_INLINE void RenderInspector()
     {
-        if (!m_ShowInspector) return;
+        ImGui::Begin("Inspector");
 
-        if (ImGui::Begin("Inspector", &m_ShowInspector)) {
-            ImGui::Text("Object Inspector");
+        // 1. Check if an entity is actually selected.
+        //    entt::null is the default "invalid" entity ID.
+        if (m_SelectedEntity != entt::null) {
+            // Create the wrapper object to easily access components
+            Boom::Entity selectedEntity{ &m_Context->scene, m_SelectedEntity };
+
+            // --- Info Component ---
+            if (selectedEntity.Has<Boom::InfoComponent>()) {
+                auto& info = selectedEntity.Get<Boom::InfoComponent>();
+
+                // ImGui expects a non-const char* for InputText
+                char buffer[256];
+                strncpy_s(buffer, sizeof(buffer), info.name.c_str(), sizeof(buffer) - 1);
+
+                if (ImGui::InputText("##Name", buffer, sizeof(buffer))) {
+                    info.name = std::string(buffer);
+                }
+            }
+
             ImGui::Separator();
 
-            if (ImGui::CollapsingHeader("Transform")) {
-                static float pos[3] = { 0.0f, 0.0f, 0.0f };
-                static float rot[3] = { 0.0f, 0.0f, 0.0f };
-                static float scale[3] = { 1.0f, 1.0f, 1.0f };
+            // --- Transform Component ---
+            if (selectedEntity.Has<Boom::TransformComponent>()) {
+                if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    auto& tc = selectedEntity.Get<Boom::TransformComponent>();
 
-                ImGui::DragFloat3("Position", pos, 0.1f);
-                ImGui::DragFloat3("Rotation", rot, 1.0f, 0.0f, 360.0f);
-                ImGui::DragFloat3("Scale", scale, 0.1f, 0.1f, 10.0f);
+                    // Use DragFloat3 for position, rotation, and scale
+                    ImGui::DragFloat3("Position", glm::value_ptr(tc.transform.translate), 0.1f);
+                    ImGui::DragFloat3("Rotation", glm::value_ptr(tc.transform.rotate), 1.0f);
+                    ImGui::DragFloat3("Scale", glm::value_ptr(tc.transform.scale), 0.1f);
+                }
             }
 
-            if (ImGui::CollapsingHeader("Renderer")) {
-                static bool enabled = true;
-                ImGui::Checkbox("Enabled", &enabled);
-
-                static float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-                ImGui::ColorEdit4("Color", color);
+            // --- Model Component ---
+            if (selectedEntity.Has<Boom::ModelComponent>()) {
+                if (ImGui::CollapsingHeader("Model", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    auto& mc = selectedEntity.Get<Boom::ModelComponent>();
+                    ImGui::Text("Model ID: %llu", mc.modelID);
+                    ImGui::Text("Material ID: %llu", mc.materialID);
+                }
             }
+
+            // Add more "if (selectedEntity.Has<...>()" blocks for other components...
+
         }
+        else {
+            // 2. If no entity is selected, show this message.
+            ImGui::Text("No entity selected.");
+        }
+
         ImGui::End();
     }
 
@@ -245,6 +413,14 @@ private:
     bool m_ShowInspector = true;
     bool m_ShowHierarchy = true;
     bool m_ShowViewport = true;
+    bool m_ShowPrefabBrowser = true;
+
+
+    ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;
+    ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
+
+    entt::registry* m_Registry = nullptr;
+    entt::entity m_SelectedEntity = entt::null;
 };
 
 // Updated main function
@@ -258,6 +434,7 @@ int32_t main()
         // Create application
         auto app = engine.CreateApp();
         app->PostEvent<WindowTitleRenameEvent>("Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
+        entt::registry mainRegistry;
 
         // Get the engine window handle
         std::shared_ptr<GLFWwindow> engineWindow = app->GetWindowHandle();
@@ -300,7 +477,8 @@ int32_t main()
 
         if (imguiContext) {
             // Create and attach editor with ImGui context
-            app->AttachLayer<Editor>(imguiContext);  // Use template version
+            app->AttachLayer<Editor>(imguiContext, &mainRegistry);
+            // Use template version
         }
         else {
             BOOM_ERROR("Failed to initialize ImGui, running without editor");

@@ -1,5 +1,6 @@
 #pragma once
 #include <entt/entt.hpp>
+#include <nlohmann/json.hpp>
 #include "Graphics/Utilities/Data.h"
 #include "Auxiliaries/Assets.h"
 #include "Physics/Utilities.h"  
@@ -16,6 +17,46 @@ namespace Boom {
         BOOM_INLINE TransformComponent(const TransformComponent&) = default;
         BOOM_INLINE TransformComponent() = default;
         Transform3D transform;
+
+        //
+        // stuff*
+        void serialize(nlohmann::json& j) const {
+            // Using the correct member names: translate, rotate, scale
+            j["translate"] = { transform.translate.x, transform.translate.y, transform.translate.z };
+            j["rotate"] = { transform.rotate.x, transform.rotate.y, transform.rotate.z };
+            j["scale"] = { transform.scale.x, transform.scale.y, transform.scale.z };
+        }
+
+        void deserialize(const nlohmann::json& j) {
+            // Manually deserializing to handle the glm::vec3 type
+
+            if (j.contains("translate")) {
+                // Step 1: Read into a simple array
+                std::array<float, 3> data;
+                j.at("translate").get_to(data);
+
+                // Step 2: Manually assign to the glm::vec3 members
+                transform.translate.x = data[0];
+                transform.translate.y = data[1];
+                transform.translate.z = data[2];
+            }
+
+            if (j.contains("rotate")) {
+                std::array<float, 3> data;
+                j.at("rotate").get_to(data);
+                transform.rotate.x = data[0];
+                transform.rotate.y = data[1];
+                transform.rotate.z = data[2];
+            }
+
+            if (j.contains("scale")) {
+                std::array<float, 3> data;
+                j.at("scale").get_to(data);
+                transform.scale.x = data[0];
+                transform.scale.y = data[1];
+                transform.scale.z = data[2];
+            }
+        }
     };
 
    
@@ -78,6 +119,17 @@ namespace Boom {
         AssetID parent{ EMPTY_ASSET };
         std::string name{ "Entity" };
         AssetID uid{ RandomU64() };
+
+        void serialize(nlohmann::json& j) const {
+            j["parent"] = parent;
+            j["name"] = name;
+            j["uid"] = uid;
+        }
+        void deserialize(const nlohmann::json& j) {
+            if (j.contains("parent")) j.at("parent").get_to(parent);
+            if (j.contains("name")) j.at("name").get_to(name);
+            if (j.contains("uid")) j.at("uid").get_to(uid);
+        }
     };
     struct DirectLightComponent
     {
@@ -106,6 +158,22 @@ namespace Boom {
         bool loop = false;
         float volume = 1.0f;
         bool playOnStart = false;
+
+        // --- ADD THIS CODE INSIDE THE STRUCT ---
+        void serialize(nlohmann::json& j) const {
+            j["name"] = name;
+            j["filePath"] = filePath;
+            j["loop"] = loop;
+            j["volume"] = volume;
+            j["playOnStart"] = playOnStart;
+        }
+        void deserialize(const nlohmann::json& j) {
+            if (j.contains("name")) j.at("name").get_to(name);
+            if (j.contains("filePath")) j.at("filePath").get_to(filePath);
+            if (j.contains("loop")) j.at("loop").get_to(loop);
+            if (j.contains("volume")) j.at("volume").get_to(volume);
+            if (j.contains("playOnStart")) j.at("playOnStart").get_to(playOnStart);
+            }
     };
 
     struct Entity
