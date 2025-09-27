@@ -101,6 +101,7 @@ namespace Boom {
 			SetUniform(viewPosLoc, transform.translate);
 		}
 		BOOM_INLINE void Draw(Mesh3D const& mesh, Transform3D const& transform) {
+			SetUniform(isDebugModeLoc, false);
 			SetUniform(modelMatLoc, transform.Matrix());
 			mesh->Draw(GL_TRIANGLES);
 		}

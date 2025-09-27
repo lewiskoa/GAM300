@@ -1,6 +1,6 @@
 ENTITIES:
   - InfoComponent:
-      UID: 7934736297461039249
+      UID: 6972648200273416734
       Name: Entity
       Parent: 0
     TransformComponent:
@@ -8,10 +8,10 @@ ENTITIES:
       Rotate: [0, 0, 0]
       Scale: [1, 1, 1]
     ModelComponent:
-      ModelID: 8228158800390742507
+      ModelID: 3376681567339213020
       MaterialID: 0
   - InfoComponent:
-      UID: 7459108959763272110
+      UID: 3797533601966005171
       Name: Entity
       Parent: 0
     TransformComponent:
@@ -19,13 +19,13 @@ ENTITIES:
       Rotate: [0, 0, 0]
       Scale: [0.00999999978, 0.00999999978, 0.00999999978]
     ModelComponent:
-      ModelID: 740272037069434578
-      MaterialID: 15139524357231598735
+      ModelID: 18152921719849407679
+      MaterialID: 12265583759384245998
     AnimatorComponent:
       Sequence: 0
       Time: 0
   - InfoComponent:
-      UID: 13931338875879713637
+      UID: 8536460972771853413
       Name: Entity
       Parent: 0
     TransformComponent:
@@ -33,9 +33,9 @@ ENTITIES:
       Rotate: [0, 0, 0]
       Scale: [1, 1, 1]
     SkyboxComponent:
-      SkyboxID: 2580715282798328157
+      SkyboxID: 15175501329915013583
   - InfoComponent:
-      UID: 7329501425904746554
+      UID: 10191140759882631574
       Name: Entity
       Parent: 0
     CameraComponent:
