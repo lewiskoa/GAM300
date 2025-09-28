@@ -171,6 +171,7 @@
     <ClInclude Include="includes\AppWindow.h" />
     <ClInclude Include="includes\Audio\Audio.hpp" />
     <ClInclude Include="includes\Auxiliaries\Assets.h" />
+    <ClInclude Include="includes\Auxiliaries\Profiler.h" />
     <ClInclude Include="includes\Auxiliaries\Serializer.h" />
     <ClInclude Include="includes\BoomEngine.h" />
     <ClInclude Include="includes\Common\Events.h" />

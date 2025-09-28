@@ -8,7 +8,7 @@
 #include "Auxiliaries/Serializer.h"
 #include "ECS/ECS.hpp"
 #include "Physics/Context.h"
-
+#include "Auxiliaries/Profiler.h"
 namespace Boom
 {
 	// Forward declaration of the base interface
@@ -58,6 +58,7 @@ namespace Boom
 		std::unique_ptr<AssetRegistry> assets;
 		std::unique_ptr<DataSerializer> seriealizer;
 		std::unique_ptr<PhysicsContext> Physics; //physics context
+		Boom::Profiler profiler;
 		double DeltaTime{};
 		EntityRegistry scene;
 	};

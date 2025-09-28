@@ -11,7 +11,7 @@ namespace Boom {
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_LEQUAL);
 
-		mesh->Draw();
+		mesh->Draw(GL_TRIANGLES);
 
 		//reset draw options
 		glDepthFunc(GL_LESS);
@@ -51,7 +51,6 @@ namespace Boom {
 		for (auto& i : idx) {
 			meshData.idx.push_back(i);
 		}
-		meshData.drawMode = GL_TRIANGLES;
 
 		return std::make_unique<Mesh<SkyboxVert>>(std::move(meshData));
 	}

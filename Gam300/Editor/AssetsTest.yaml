@@ -34,7 +34,7 @@ ASSETS:
       Occlusion: 1
       Emissive: [0, 0, 0]
   - Type: SKYBOX
-    UID: 9128646214913012278
+    UID: 11087702601491778420
     Name: sky
     Source: Skybox/sky.hdr
     Properties:
@@ -42,23 +42,87 @@ ASSETS:
       IsHDR: true
       IsFlipY: true
   - Type: TEXTURE
-    UID: 5470649594283892839
+    UID: 17758296579680881521
     Name: albedo
     Source: Marble/albedo.png
     Properties:
       IsHDR: false
       IsFlipY: true
   - Type: TEXTURE
-    UID: 1896435903606531763
-    Name: roughness
-    Source: Marble/roughness.png
-    Properties:
-      IsHDR: false
-      IsFlipY: true
-  - Type: TEXTURE
-    UID: 15452619133611622413
+    UID: 5114666525514813131
     Name: normal
     Source: Marble/normal.png
     Properties:
       IsHDR: false
       IsFlipY: true
+  - Type: TEXTURE
+    UID: 1423389862456603617
+    Name: roughness
+    Source: Marble/roughness.png
+    Properties:
+      IsHDR: false
+      IsFlipY: true
+  - Type: MATERIAL
+    UID: 10176662338859945827
+    Name: Marble
+    Source: Marble
+    Properties:
+      AlbedoMap: 17758296579680881521
+      NormalMap: 5114666525514813131
+      RoughnessMap: 1423389862456603617
+      MetallicMap: 0
+      OcclusionMap: 0
+      EmissiveMap: 0
+      Albedo: [1, 1, 1]
+      Metallic: 0.5
+      Roughness: 0.400000006
+      Occlusion: 1
+      Emissive: [0, 0, 0]
+  - Type: MODEL
+    UID: 16106995934377723377
+    Name: sphere
+    Source: sphere.fbx
+    Properties:
+      HasJoints: false
+  - Type: MODEL
+    UID: 15400697499540810005
+    Name: dance
+    Source: dance.fbx
+    Properties:
+      HasJoints: true
+  - Type: MODEL
+    UID: 13040110478236037527
+    Name: Cube - Copy (3)
+    Source: Cube - Copy (3).fbx
+    Properties:
+      HasJoints: false
+  - Type: MODEL
+    UID: 17966064066677946426
+    Name: cube
+    Source: cube.fbx
+    Properties:
+      HasJoints: false
+  - Type: MODEL
+    UID: 313537610518817051
+    Name: Cube - Copy (2)
+    Source: Cube - Copy (2).fbx
+    Properties:
+      HasJoints: false
+  - Type: MODEL
+    UID: 16758118611772711961
+    Name: Cube - Copy
+    Source: Cube - Copy.fbx
+    Properties:
+      HasJoints: false
+  - Type: MODEL
+    UID: 6266206264084770162
+    Name: Cube - Copy (4)
+    Source: Cube - Copy (4).fbx
+    Properties:
+      HasJoints: false
+  - Type: MODEL
+    UID: 10580139227140169109
+    Name: Cube - Copy (5)
+    Source: Cube - Copy (5).fbx
+    Properties:
+      HasJoints: false

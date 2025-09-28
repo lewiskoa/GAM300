@@ -17,7 +17,6 @@ namespace Boom {
 		data.idx = {
 			3, 0, 2, 1
 		};
-		data.drawMode = GL_TRIANGLE_STRIP;
 
 		return std::make_unique<Mesh<QuadVert>>(std::move(data));
 	}
@@ -35,7 +34,6 @@ namespace Boom {
 		data.idx = {
 			3, 0, 2, 1
 		};
-		data.drawMode = GL_TRIANGLE_STRIP;
 
 		return std::make_unique<Mesh<QuadVert>>(std::move(data));
 	}
@@ -69,7 +67,6 @@ namespace Boom {
 			0, 1, 2,
 			0, 2, 3
 		};
-		data.drawMode = GL_TRIANGLES;
 
 		return std::make_unique<Mesh<ShadedVert>>(std::move(data));
 	}

@@ -172,9 +172,11 @@ namespace Boom
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
 
                 glfwMakeContextCurrent(engineWindow.get());
-
-
+                m_Context->profiler.BeginFrame();
+                m_Context->profiler.Start("Total Frame");
+                m_Context->profiler.Start("Renderer Start Frame");
                 m_Context->renderer->NewFrame();
+				m_Context->profiler.End("Renderer Start Frame");
                 {
                     //testing rendering
                     {
@@ -240,16 +242,22 @@ namespace Boom
 
                     }
                 }
+                m_Context->profiler.Start("Renderer End Frame");
                 m_Context->renderer->EndFrame();
-
+                m_Context->profiler.End("Renderer End Frame");
+              
                 //draw the updated frame
                 m_Context->renderer->ShowFrame(showFrame);
-
+              
                 //update layers
                 for (auto layer : m_Context->Layers)
                 {
                     layer->OnUpdate();
+          
+                   
                 }
+                m_Context->profiler.End("Total Frame");
+                m_Context->profiler.EndFrame();
             }
         }
 
@@ -263,6 +271,12 @@ namespace Boom
             //script asset ...
             auto sphereAsset{ m_Context->assets->AddModel(RandomU64(), "sphere.fbx") };
             auto cubeAsset{ m_Context->assets->AddModel(RandomU64(), "cube.fbx") };
+
+            auto cubeAsset2{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy.fbx") };
+            auto cubeAsset3{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (2).fbx") };
+            auto cubeAsset4{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (3).fbx") };
+            auto cubeAsset5{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (4).fbx") };
+            auto cubeAsset6{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (5).fbx") };
             
             //materials
             auto albedoTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/albedo.png") };

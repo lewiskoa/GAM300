@@ -12,7 +12,6 @@ namespace Boom {
 			: numVtx{ (uint32_t)data.vtx.size() }
 			, numIdx{ (uint32_t)data.idx.size() }
 			, buffId{}
-			, drawMode{ data.drawMode }
 		{
 			if (data.vtx.empty()) {
 				BOOM_ERROR("Mesh() - empty construct");
@@ -86,13 +85,13 @@ namespace Boom {
 		}
 
 		//simple draw mesh function
-		BOOM_INLINE void Draw() {
+		BOOM_INLINE void Draw(uint32_t mode) {
 			glBindVertexArray(buffId);
 			if (numIdx) {
-				glDrawElements(drawMode, numIdx, GL_UNSIGNED_INT, 0);
+				glDrawElements(mode, numIdx, GL_UNSIGNED_INT, 0);
 			}
 			else {
-				glDrawArrays(drawMode, 0, numVtx);
+				glDrawArrays(mode, 0, numVtx);
 			}
 			glBindVertexArray(0);
 		}
@@ -112,7 +111,6 @@ namespace Boom {
 		uint32_t numVtx;
 		uint32_t numIdx;
 		uint32_t buffId;
-		uint32_t drawMode;
 	};
 
 	//3d Mesh
