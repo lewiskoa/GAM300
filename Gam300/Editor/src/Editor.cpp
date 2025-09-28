@@ -77,6 +77,7 @@ private:
         RenderGizmo();
         RenderPrefabBrowser();
         RenderPerformance();
+        RenderResources();
 		
         // End frame and render
         ImGui::Render();
@@ -447,6 +448,10 @@ private:
 
         ImGui::End();
     }
+    
+    BOOM_INLINE void RenderResources() {
+        rw.OnShow(this);
+    }
 
 private:
     ImGuiContext* m_ImGuiContext = nullptr;
@@ -455,7 +460,6 @@ private:
     bool m_ShowViewport = true;
     bool m_ShowPrefabBrowser = true;
     bool m_ShowPerformance = true;
-	
 
     ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
@@ -466,6 +470,9 @@ private:
     static constexpr int kPerfHistory = 180;   // last ~3s @60 FPS
     float m_FpsHistory[kPerfHistory] = { 0.f };
     int   m_FpsWriteIdx = 0;
+
+    //remove when editor.cpp completed
+    ResourceWindow rw{this};
 };
 
 // Updated main function
