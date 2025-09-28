@@ -46,14 +46,6 @@ public:
         // Make sure we're using the right context
         ImGui::SetCurrentContext(m_ImGuiContext);
 
-        if (m_ShouldRefreshScene) {
-            // Call your engine's function to sync the scene to the renderer
-            // Example placeholder:
-            // m_Context->scene.SyncToRenderer(); 
-            // (replace with your actual method that updates GPU/render data)
-
-            m_ShouldRefreshScene = false;
-        }
         // Render editor UI
         RenderEditor();
     }
@@ -398,7 +390,6 @@ private:
             if (ImGui::Selectable(prefabName)) {
                 std::cout << "[DEBUG] Prefab selected: " << prefabName << "\n";
                 // Optional: store the currently selected prefab if needed
-                m_SelectedPrefab = prefabName;
             }
 
             if (ImGui::Button("Spawn Player")) {
