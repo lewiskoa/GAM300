@@ -10,28 +10,43 @@ struct ResourceWindow : IWidget {
 
 	BOOM_INLINE void OnShow(AppInterface* context) override {
 		if (ImGui::Begin(ICON_FA_FOLDER_OPEN "\tResources")) {
-			int32_t colNo{ (int32_t)(ImGui::GetContentRegionAvail().x / ASSET_SIZE + 1) };
-			int32_t col{ 1 };
-			int32_t row{ 1 };
+			int32_t colNo{ (int32_t)((ImGui::GetContentRegionAvail().x) / (ASSET_SIZE + ImGui::GetStyle().ItemSpacing.x)) };
+			colNo = glm::max(1, colNo);
 
-			context->AssetView(
-				[&](auto* asset) {
-					if (col++ <= row * colNo) {
-						ImGui::SameLine();
-					}
-					else
-						++row;
+			ImGuiTableFlags flags{ 
+				ImGuiTableFlags_SizingFixedSame | 
+				ImGuiTableFlags_NoHostExtendX
+			};
 
-					//bool isClicked{};
-					ImGui::ImageButtonEx(
-						(ImGuiID)asset->uid,
-						icon,
-						ImVec2(ASSET_SIZE, ASSET_SIZE),
-						ImVec2(0, 1), ImVec2(1, 0),
-						ImVec4(0, 0, 0, 1),
-						ImVec4(1, 1, 1, 1));
+			if (ImGui::BeginTable("", colNo, flags)) {
+				// set column sizes according to paddings
+				for (int i{}; i < colNo; ++i) {
+					ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, ASSET_SIZE);
 				}
-			);
+
+				context->AssetView(
+					[&](auto* asset) {
+						ImGui::TableNextColumn();
+
+						bool isClicked{
+							ImGui::ImageButtonEx(
+								(ImGuiID)asset->uid,
+								icon,
+								ImVec2(ASSET_SIZE, ASSET_SIZE),
+								ImVec2(0, 1), ImVec2(1, 0),
+								ImVec4(0, 0, 0, 1),
+								ImVec4(1, 1, 1, 1)) 
+						};
+						ImGui::TextWrapped(asset->source.c_str());
+
+						//do stuff after click
+						if (isClicked) {
+
+						}
+					}
+				);
+				ImGui::EndTable();
+			}
 		}
 		ImGui::End();
 	}

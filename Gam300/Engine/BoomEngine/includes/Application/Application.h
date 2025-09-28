@@ -268,6 +268,12 @@ namespace Boom
             //script asset ...
             auto sphereAsset{ m_Context->assets->AddModel(RandomU64(), "sphere.fbx") };
             auto cubeAsset{ m_Context->assets->AddModel(RandomU64(), "cube.fbx") };
+
+            auto cubeAsset2{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy.fbx") };
+            auto cubeAsset3{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (2).fbx") };
+            auto cubeAsset4{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (3).fbx") };
+            auto cubeAsset5{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (4).fbx") };
+            auto cubeAsset6{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (5).fbx") };
             
             //materials
             auto albedoTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/albedo.png") };
