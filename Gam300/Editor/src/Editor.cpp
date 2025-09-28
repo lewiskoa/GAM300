@@ -44,6 +44,14 @@ public:
         // Make sure we're using the right context
         ImGui::SetCurrentContext(m_ImGuiContext);
 
+        if (m_ShouldRefreshScene) {
+            // Call your engine's function to sync the scene to the renderer
+            // Example placeholder:
+            // m_Context->scene.SyncToRenderer(); 
+            // (replace with your actual method that updates GPU/render data)
+
+            m_ShouldRefreshScene = false;
+        }
         // Render editor UI
         RenderEditor();
     }
@@ -158,7 +166,11 @@ private:
 
 
                     // Instantiate prefab
-                    entt::entity newEntity = Boom::PrefabSystem::InstantiatePrefab(m_Context->scene, path);
+                    entt::entity newEntity = Boom::PrefabSystem::InstantiatePrefab(
+                        m_Context->scene,
+                        *m_Context->assets,
+                        path
+                    );
 
                     if (newEntity != entt::null) {
                         std::cout << "Spawned prefab: " << prefabName << " (" << path << ")\n";
@@ -341,9 +353,14 @@ private:
             }
 
             if (ImGui::Button("Spawn Player")) {
-                entt::entity e = Boom::PrefabSystem::InstantiatePrefab(m_Context->scene, "Editor/src/Prefab/Player.prefab");
-                std::cout << "[DEBUG] Spawned Player entity: " << (uint32_t)e << "\n";
+                Boom::PrefabSystem::InstantiatePrefab(
+                    m_Context->scene,
+                    *m_Context->assets,
+                    "src/Prefab/Player.prefab"
+                );
             }
+
+
             //// Drag source
             //if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
             //    ImGui::SetDragDropPayload("PREFAB_ASSET", prefabName, strlen(prefabName) + 1);
@@ -418,6 +435,7 @@ private:
     bool m_ShowViewport = true;
     bool m_ShowPrefabBrowser = true;
     const char* m_SelectedPrefab = nullptr; // stores the currently selected prefab
+    bool m_ShouldRefreshScene = false;
 
 
     ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;

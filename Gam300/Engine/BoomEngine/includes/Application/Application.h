@@ -257,6 +257,9 @@ namespace Boom
         BOOM_INLINE void CreateEntities() {
             auto skyboxAsset{ m_Context->assets->AddSkybox(RandomU64(), "Skybox/sky.hdr", 2048) };
             auto robotAsset{ m_Context->assets->AddModel(RandomU64(), "dance.fbx", true) };
+            if (!robotAsset || !robotAsset->data) {
+                BOOM_ERROR("[ASSET] Failed to load dance.fbx!");
+            }
             //script asset ...
             auto sphereAsset{ m_Context->assets->AddModel(RandomU64(), "sphere.fbx") };
             auto cubeAsset{ m_Context->assets->AddModel(RandomU64(), "cube.fbx") };

@@ -188,6 +188,27 @@ namespace Boom {
 			return asset;
 		}
 
+		BOOM_INLINE AssetID FindModelByName(const std::string& name) {
+			auto& map = GetMap<ModelAsset>();
+			for (auto& [uid, asset] : map) {
+				if (uid != EMPTY_ASSET && asset->name == name) {
+					return uid;
+				}
+			}
+			return EMPTY_ASSET;
+		}
+
+		BOOM_INLINE AssetID FindMaterialByName(const std::string& name) {
+			auto& map = GetMap<MaterialAsset>();
+			for (auto& [uid, asset] : map) {
+				if (uid != EMPTY_ASSET && asset->name == name) {
+					return uid;
+				}
+			}
+			return EMPTY_ASSET;
+		}
+
+
 	private:
 		template <class T>
 		BOOM_INLINE void Add(
