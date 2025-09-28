@@ -331,7 +331,7 @@ struct GuiContextNoSwitch : AppInterface
         BOOM_INFO("InitializeWithExistingContext - Initialization complete!");
     }
 
-    BOOM_INLINE void OnUpdate()
+    BOOM_INLINE void OnUpdate() override final
     {
         // Never try to switch contexts - just work with whatever is current
         GLFWwindow* current = glfwGetCurrentContext();

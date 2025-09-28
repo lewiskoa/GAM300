@@ -132,6 +132,9 @@
     <ClInclude Include="includes\Auxiliaries\Serializer.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Auxiliaries\Profiler.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">

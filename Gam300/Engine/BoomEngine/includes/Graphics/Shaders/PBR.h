@@ -36,6 +36,7 @@ namespace Boom {
 			, viewPosLoc{ GetUniformVar("viewPos") }
 
 			, jointsLoc{ GetUniformVar("hasJoints") }
+			, isDebugModeLoc{ GetUniformVar("isDebugMode") }
 		{
 		}
 
@@ -100,12 +101,14 @@ namespace Boom {
 			SetUniform(viewPosLoc, transform.translate);
 		}
 		BOOM_INLINE void Draw(Mesh3D const& mesh, Transform3D const& transform) {
+			SetUniform(isDebugModeLoc, false);
 			SetUniform(modelMatLoc, transform.Matrix());
-			mesh->Draw();
+			mesh->Draw(GL_TRIANGLES);
 		}
 
-	
 		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material) {
+			SetUniform(isDebugModeLoc, false);
+
 			SetUniform(modelMatLoc, transform.Matrix());
 			SetUniform(albedoLoc, material.albedo);
 			SetUniform(roughLoc, material.roughness);
@@ -159,6 +162,15 @@ namespace Boom {
 			SetUniform(jointsLoc, model->HasJoint());
 			model->Draw();
 		}
+		
+		BOOM_INLINE void DrawDebug(Model3D const& model, Transform3D const& transform, glm::vec3 albedo) {
+			SetUniform(isDebugModeLoc, true);
+			SetUniform(modelMatLoc, transform.Matrix());
+			SetUniform(albedoLoc, albedo);
+
+			SetUniform(jointsLoc, model->HasJoint());
+			model->Draw(GL_LINES);
+		}
 		//Animation 
 		BOOM_INLINE void SetJoints(std::vector<glm::mat4>& transforms)
 		{
@@ -198,5 +210,6 @@ namespace Boom {
 		int32_t viewPosLoc;
 
 		int32_t jointsLoc;
+		int32_t isDebugModeLoc;
 	};
 }

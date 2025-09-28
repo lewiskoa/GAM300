@@ -1,4 +1,5 @@
 #pragma warning(disable: 4834)  // Disable nodiscard warnings
+#
 #include "BoomEngine.h"
 #include "Vendors/imgui/imgui.h"
 #include "Windows/Inspector.h"
@@ -11,6 +12,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "ImGuizmo.h"
 
+#include "Context/Profiler.hpp"
 
 using namespace Boom;
 bool m_ShowPrefabBrowser = true;
@@ -74,7 +76,9 @@ private:
         RenderInspector();
         RenderGizmo();
         RenderPrefabBrowser();
-
+        RenderPerformance();
+        RenderResources();
+		
         // End frame and render
         ImGui::Render();
         ImDrawData* drawData = ImGui::GetDrawData();
@@ -135,13 +139,58 @@ private:
                 ImGui::MenuItem("Hierarchy", nullptr, &m_ShowHierarchy);
                 ImGui::MenuItem("Viewport", nullptr, &m_ShowViewport);
                 ImGui::MenuItem("Prefab Browser", nullptr, &m_ShowPrefabBrowser); // <-- MAKE SURE THIS LINE IS HERE
+                ImGui::MenuItem("Performance", nullptr, &m_ShowPerformance);
+			
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Options")) {
+                ImGui::MenuItem("Debug Draw", nullptr, &m_Context->renderer->IsDrawDebugMode());
                 ImGui::EndMenu();
             }
 
             ImGui::EndMainMenuBar();
         }
     }
+    BOOM_INLINE void RenderPerformance()
+    {
+        if (!m_ShowPerformance) return;
 
+        // normal dockable window
+        if (ImGui::Begin("Performance", &m_ShowPerformance))
+        {
+            // timing
+            ImGuiIO& io = ImGui::GetIO();
+            const float fps = io.Framerate;
+            const float ms = fps > 0.f ? 1000.f / fps : 0.f;
+
+            ImGui::Text("FPS: %.1f  (%.2f ms)", fps, ms);
+            ImGui::Separator();
+
+            // history
+            m_FpsHistory[m_FpsWriteIdx] = fps;
+            m_FpsWriteIdx = (m_FpsWriteIdx + 1) % kPerfHistory;
+
+            float tmp[kPerfHistory];
+            for (int i = 0; i < kPerfHistory; ++i)
+                tmp[i] = m_FpsHistory[(m_FpsWriteIdx + i) % kPerfHistory];
+
+            // plot fills the panel width
+            ImVec2 plotSize(ImGui::GetContentRegionAvail().x, 80.f);
+            ImGui::PlotLines("FPS", tmp, kPerfHistory, 0, nullptr, 0.0f, 240.0f, plotSize);
+           
+            // simple status line
+            if (fps >= 120.f) ImGui::TextColored(ImVec4(0.3f, 1, 0.3f, 1), "Very fast");
+            else if (fps >= 60.f)  ImGui::TextColored(ImVec4(0.6f, 1, 0.6f, 1), "Good");
+            else if (fps >= 30.f)  ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Playable");
+            else                   ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "Slow");
+
+            DrawProfilerPanel(m_Context->profiler);
+        }
+        ImGui::End();
+    }
+
+    
     BOOM_INLINE void RenderViewport()
     {
         if (!m_ShowViewport) return;
@@ -158,7 +207,11 @@ private:
 
 
                     // Instantiate prefab
-                    entt::entity newEntity = Boom::PrefabSystem::InstantiatePrefab(m_Context->scene, path);
+                    entt::entity newEntity = Boom::PrefabSystem::InstantiatePrefab(
+                        m_Context->scene,
+                        *m_Context->assets,
+                        path
+                    );
 
                     if (newEntity != entt::null) {
                         std::cout << "Spawned prefab: " << prefabName << " (" << path << ")\n";
@@ -337,13 +390,17 @@ private:
             if (ImGui::Selectable(prefabName)) {
                 std::cout << "[DEBUG] Prefab selected: " << prefabName << "\n";
                 // Optional: store the currently selected prefab if needed
-                m_SelectedPrefab = prefabName;
             }
 
             if (ImGui::Button("Spawn Player")) {
-                entt::entity e = Boom::PrefabSystem::InstantiatePrefab(m_Context->scene, "Editor/src/Prefab/Player.prefab");
-                std::cout << "[DEBUG] Spawned Player entity: " << (uint32_t)e << "\n";
+                Boom::PrefabSystem::InstantiatePrefab(
+                    m_Context->scene,
+                    *m_Context->assets,
+                    "src/Prefab/Player.prefab"
+                );
             }
+
+
             //// Drag source
             //if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
             //    ImGui::SetDragDropPayload("PREFAB_ASSET", prefabName, strlen(prefabName) + 1);
@@ -410,6 +467,10 @@ private:
 
         ImGui::End();
     }
+    
+    BOOM_INLINE void RenderResources() {
+        rw.OnShow(this);
+    }
 
 private:
     ImGuiContext* m_ImGuiContext = nullptr;
@@ -417,14 +478,21 @@ private:
     bool m_ShowHierarchy = true;
     bool m_ShowViewport = true;
     bool m_ShowPrefabBrowser = true;
-    const char* m_SelectedPrefab = nullptr; // stores the currently selected prefab
 
+    bool m_ShowPerformance = true;
 
     ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
 
     entt::registry* m_Registry = nullptr;
     entt::entity m_SelectedEntity = entt::null;
+
+    static constexpr int kPerfHistory = 180;   // last ~3s @60 FPS
+    float m_FpsHistory[kPerfHistory] = { 0.f };
+    int   m_FpsWriteIdx = 0;
+
+    //remove when editor.cpp completed
+    ResourceWindow rw{this};
 };
 
 // Updated main function
@@ -506,3 +574,4 @@ int32_t main()
 
     return 0;
 }
+
