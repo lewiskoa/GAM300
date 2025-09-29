@@ -1,26 +1,27 @@
 #pragma once
+
 #include <fmod.hpp>
 #include <string>
 #include <unordered_map>
 #include "common/Core.h"
 
-class SoundEngine {
+class  SoundEngine {
 public:
-    static SoundEngine& Instance();
+    static BOOM_API SoundEngine& Instance();
 
-    bool  Init();
-    void  Update();
-    void  Shutdown();
+    BOOM_API bool  Init();
+    BOOM_API void  Update();
+    BOOM_API void  Shutdown();
 
-    void  PlaySound(const std::string& name, const std::string& filePath, bool loop);
-    void  StopSound(const std::string& name);
-    void  SetVolume(const std::string& name, float volume);
+    BOOM_API void  PlaySound(const std::string& name, const std::string& filePath, bool loop);
+    BOOM_API void  StopSound(const std::string& name);
+    BOOM_API void  SetVolume(const std::string& name, float volume);
 
     // NEW: helpful for UI
-    bool  IsPlaying(const std::string& name) const;
-    void  Pause(const std::string& name, bool pause);
-    void  SetLooping(const std::string& name, bool loop);
-    void  StopAllExcept(const std::string& keepName);
+    BOOM_API bool  IsPlaying(const std::string& name) const;
+    BOOM_API void  Pause(const std::string& name, bool pause);
+    BOOM_API  void  SetLooping(const std::string& name, bool loop);
+    BOOM_API void  StopAllExcept(const std::string& keepName);
 
 private:
     FMOD::System* mSystem = nullptr;

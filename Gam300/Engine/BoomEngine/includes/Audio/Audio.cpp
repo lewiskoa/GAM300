@@ -38,7 +38,7 @@ void SoundEngine::Shutdown() {
     }
 }
 
-void SoundEngine::PlaySound(const std::string& name, const std::string& filePath, bool loop) 
+void SoundEngine::PlaySound(const std::string& name, const std::string& filePath, bool loop)
 {
     if (!mSystem) {
         std::cerr << "FMOD system not initialized!\n";
