@@ -3,12 +3,12 @@
 #include <iostream>
 #include <filesystem>
 
-SoundEngine& SoundEngine::Instance() {
+BOOM_API SoundEngine& SoundEngine::Instance() {
     static SoundEngine instance;
     return instance;
 }
 
-bool SoundEngine::Init() {
+BOOM_API bool SoundEngine::Init() {
     FMOD_RESULT result = FMOD::System_Create(&mSystem);
     if (result != FMOD_OK) {
         std::cerr << "FMOD error: " << result << std::endl;
@@ -23,11 +23,11 @@ bool SoundEngine::Init() {
     return true;
 }
 
-void SoundEngine::Update() {
+BOOM_API void SoundEngine::Update() {
     if (mSystem) mSystem->update();
 }
 
-void SoundEngine::Shutdown() {
+BOOM_API void SoundEngine::Shutdown() {
     for (auto& [name, sound] : mSounds) {
         sound->release();
     }
@@ -38,7 +38,7 @@ void SoundEngine::Shutdown() {
     }
 }
 
-void SoundEngine::PlaySound(const std::string& name, const std::string& filePath, bool loop) 
+BOOM_API void SoundEngine::PlaySound(const std::string& name, const std::string& filePath, bool loop)
 {
     if (!mSystem) {
         std::cerr << "FMOD system not initialized!\n";
@@ -80,14 +80,42 @@ void SoundEngine::PlaySound(const std::string& name, const std::string& filePath
 }
 
 
-void SoundEngine::StopSound(const std::string& name) {
+BOOM_API void SoundEngine::StopSound(const std::string& name) {
     if (mChannels.find(name) != mChannels.end()) {
         mChannels[name]->stop();
     }
 }
 
-void SoundEngine::SetVolume(const std::string& name, float volume) {
+BOOM_API void SoundEngine::SetVolume(const std::string& name, float volume) {
     if (mChannels.find(name) != mChannels.end()) {
         mChannels[name]->setVolume(volume);
+    }
+}
+
+BOOM_API bool SoundEngine::IsPlaying(const std::string& name) const {
+    auto it = mChannels.find(name);
+    if (it == mChannels.end() || !it->second) return false;
+    bool playing = false;
+    it->second->isPlaying(&playing);
+    return playing;
+}
+
+BOOM_API void SoundEngine::Pause(const std::string& name, bool pause) {
+    auto it = mChannels.find(name);
+    if (it != mChannels.end() && it->second) {
+        it->second->setPaused(pause);
+    }
+}
+
+BOOM_API void SoundEngine::SetLooping(const std::string& name, bool loop) {
+    auto it = mChannels.find(name);
+    if (it != mChannels.end() && it->second) {
+        it->second->setMode(loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
+    }
+}
+
+BOOM_API void SoundEngine::StopAllExcept(const std::string& keepName) {
+    for (auto& [n, ch] : mChannels) {
+        if (n != keepName && ch) ch->stop();
     }
 }

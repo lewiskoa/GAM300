@@ -8,11 +8,11 @@
 #include "Windows/Viewport.h"
 #include "Windows/MenuBar.h"
 #include "Windows/Console.h"
+#include "Windows/AudioPanel.h"
 #include "Context/DebugHelpers.h"
 #include "Prefab/PrefabSystem.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "ImGuizmo.h"
-
 #include "Context/Profiler.hpp"
 
 using namespace Boom;
@@ -38,11 +38,15 @@ public:
             ImGui::SetCurrentContext(m_ImGuiContext);
             BOOM_INFO("Editor::OnStart - Set ImGui context successfully");
         }
+
+
     }
 
     BOOM_INLINE void OnUpdate() override
     {
         if (!m_ImGuiContext) return;
+
+        SoundEngine::Instance().Update();
 
         // Make sure we're using the right context
         ImGui::SetCurrentContext(m_ImGuiContext);
@@ -52,6 +56,7 @@ public:
     }
 
 private:
+
     BOOM_INLINE void RenderEditor()
     {
         // Set up OpenGL state for ImGui
@@ -85,9 +90,10 @@ private:
         RenderPlaybackControls();
         if (m_ShowConsole)
             m_Console.OnShow(this);
-
+        RenderAudioPanel();
         // Render scene management dialogs
         RenderSceneDialogs();
+
 
         // End frame and render
         ImGui::Render();
@@ -312,6 +318,7 @@ private:
                 ImGui::MenuItem("Performance", nullptr, &m_ShowPerformance);
                 ImGui::MenuItem("Playback Controls", nullptr, &m_ShowPlaybackControls);
                 ImGui::MenuItem("Debug Console", nullptr, &m_ShowConsole);
+                ImGui::MenuItem("Audio", nullptr, &m_ShowAudio);
                 ImGui::EndMenu();
             }
 
@@ -619,7 +626,7 @@ private:
 
             // --- Info Component ---
             if (selectedEntity.Has<Boom::InfoComponent>()) {
-                auto& info = selectedEntity.Get<Boom::InfoComponent>();
+                auto& info = selectedEntity.Get<Boom::InfoComponent>(); 
 
                 // ImGui expects a non-const char* for InputText
                 char buffer[256];
@@ -679,6 +686,96 @@ private:
 
         // TODO: Implement actual directory scanning for .yaml files in Scenes/ folder
         // This would require platform-specific code or a library like std::filesystem
+    }
+
+    BOOM_INLINE void RenderAudioPanel()
+    {
+        if (!m_ShowAudio) return;
+
+        auto& audio = SoundEngine::Instance();
+
+        // Your music catalog. Adjust names/paths to your project.
+        static const std::vector<std::pair<std::string, std::string>> kTracks = {
+            {"Menu",    "Resources/Audio/vboom.wav"},
+            
+        };
+
+        // UI state
+        static int  selected = 0;
+        bool loop = false;
+        static std::unordered_map<std::string, float> sVolume; // per-track volume
+
+        for (auto& [name, _] : kTracks) if (!sVolume.count(name)) sVolume[name] = 1.0f;
+
+        if (ImGui::Begin("Audio", &m_ShowAudio))
+        {
+            // Track select
+            if (ImGui::BeginCombo("Track", kTracks[selected].first.c_str()))
+            {
+                for (int i = 0; i < (int)kTracks.size(); ++i) {
+                    bool isSel = (i == selected);
+                    if (ImGui::Selectable(kTracks[i].first.c_str(), isSel)) selected = i;
+                    if (isSel) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            const std::string& name = kTracks[selected].first;
+            const std::string& path = kTracks[selected].second;
+
+            // Loop toggle (applies live if playing)
+            if (ImGui::Checkbox("Loop", &loop)) {
+                audio.SetLooping(name, loop);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Restart")) {
+                audio.StopAllExcept("");                     // one music at a time
+                audio.PlaySound(name, path, loop);
+                audio.SetVolume(name, sVolume[name]);
+            }
+
+            // Volume
+            float vol = sVolume[name];
+            if (ImGui::SliderFloat("Volume", &vol, 0.0f, 1.0f, "%.2f")) {
+                sVolume[name] = vol;
+                audio.SetVolume(name, vol);
+            }
+
+            // Play / Stop / Pause
+            const bool isPlaying = audio.IsPlaying(name);
+            if (!isPlaying) {
+                if (ImGui::Button("Play")) {
+                    audio.StopAllExcept("");
+                    audio.PlaySound(name, path, loop);
+                    audio.SetVolume(name, sVolume[name]);
+                }
+            }
+            else {
+                if (ImGui::Button("Stop")) {
+                    audio.StopSound(name);
+                }
+                ImGui::SameLine();
+                static bool paused = false;
+                if (ImGui::Checkbox("Paused", &paused)) {
+                    audio.Pause(name, paused);
+                }
+            }
+
+            // Quick switch buttons (optional)
+            ImGui::SeparatorText("Quick Switch");
+            for (int i = 0; i < (int)kTracks.size(); ++i) {
+                ImGui::PushID(i);
+                if (ImGui::Button(kTracks[i].first.c_str())) {
+                    selected = i;
+                    audio.StopAllExcept("");
+                    audio.PlaySound(kTracks[i].first, kTracks[i].second, loop);
+                    audio.SetVolume(kTracks[i].first, sVolume[kTracks[i].first]);
+                }
+                ImGui::PopID();
+                if ((i % 3) != 2) ImGui::SameLine();
+            }
+        }
+        ImGui::End();
     }
 
     BOOM_INLINE void RenderSceneDialogs()
@@ -846,11 +943,13 @@ private:
 
 private:
     ImGuiContext* m_ImGuiContext = nullptr;
+    ConsoleWindow m_Console{ this };
+    bool m_ShowConsole = true;
     bool m_ShowInspector = true;
     bool m_ShowHierarchy = true;
     bool m_ShowViewport = true;
     bool m_ShowPrefabBrowser = true;
-
+    bool m_ShowAudio = true;
     bool m_ShowPerformance = true;
 
     // Scene management UI state
@@ -873,8 +972,6 @@ private:
 	Application* m_Application = nullptr; //To access application functions if needed
     bool m_ShowPlaybackControls = true;
 
-    ConsoleWindow m_Console{ this };
-    bool m_ShowConsole = true;
 
     //remove when editor.cpp completed
     ResourceWindow rw{this};
@@ -887,6 +984,11 @@ int32_t main()
         MyEngineClass engine;
         engine.whatup();
         BOOM_INFO("Editor Started");
+
+        if(!SoundEngine::Instance().Init()) {
+            BOOM_ERROR("FMOD init failed");
+            return -1;
+        }
 
         // Create application
         auto app = engine.CreateApp();
@@ -950,7 +1052,7 @@ int32_t main()
             ImGui_ImplGlfw_Shutdown();
             ImGui::DestroyContext(imguiContext);
         }
-
+        SoundEngine::Instance().Shutdown();
     }
     catch (const std::exception& e) {
         BOOM_ERROR("Application failed: {}", e.what());

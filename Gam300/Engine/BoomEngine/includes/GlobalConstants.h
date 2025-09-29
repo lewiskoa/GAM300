@@ -1,8 +1,13 @@
 #pragma once
 #include <tuple>
 #include <string_view>
+#include <glm/vec3.hpp>
 
 namespace Boom {
+
+	using EntityId = std::uint32_t;
+	using Vec3 = glm::vec3;
+
 	namespace CONSTANTS {
 		constexpr std::tuple<float, float, float, float> DEFAULT_BACKGROUND_COLOR = {.3f, .3f, .3f, 1.f};
 		constexpr std::string_view SHADERS_LOCATION = "Resources/Shaders/";

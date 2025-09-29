@@ -1,12 +1,15 @@
 #pragma once
 #include "Widgets.h"
 #include "DebugHelpers.h" // Include our debug helpers
+#include "Audio/Audio.hpp"
 
 struct GuiContext : AppInterface
 {
     BOOM_INLINE virtual ~GuiContext()
     {
         DEBUG_DLL_BOUNDARY("GuiContext::~GuiContext");
+
+        SoundEngine::Instance().Shutdown();
 
         // Clean up ImGui in reverse order
         if (ImGui::GetCurrentContext()) {
@@ -81,6 +84,10 @@ struct GuiContext : AppInterface
             return;
         }
 
+        if (!SoundEngine::Instance().Init()) {
+            BOOM_ERROR("FMOD failed to initialize");
+        }
+
         // Load fonts only if needed
         if (io.Fonts->Fonts.Size == 0) {
             LoadFonts();
@@ -119,6 +126,8 @@ struct GuiContext : AppInterface
             BOOM_ERROR("GuiContext::OnUpdate - Context lost and cannot be restored!");
             return;
         }
+
+        SoundEngine::Instance().Update();
 
         // Validate ImGui state occasionally
         static int frameCount = 0;
@@ -273,6 +282,7 @@ struct GuiContextNoSwitch : AppInterface
             ImGui_ImplOpenGL3_Shutdown();
             ImGui_ImplGlfw_Shutdown();
             ImGui::DestroyContext();
+            SoundEngine::Instance().Shutdown();
         }
         // NEVER call glfwTerminate() or glfwMakeContextCurrent()
     }

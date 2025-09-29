@@ -129,6 +129,30 @@ echo ==== Setup Complete! Dependencies are in conanbuild/ ====
 pause
 exit /b 0
 
+REM ------------------------------------------------------------------------
+REM 7) Install dependencies for both configurations
+REM ------------------------------------------------------------------------
+echo [STEP] Installing dependencies for Release...
+conan install . -of conanbuild\Release -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
+    -s build_type=Release -g CMakeDeps -g CMakeToolchain --build=missing
+
+echo [STEP] Installing dependencies for Debug...
+conan install . -of conanbuild\Debug -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
+    -s build_type=Debug -g CMakeDeps -g CMakeToolchain --build=missing
+
+REM ------------------------------------------------------------------------
+REM 8) Build managed projects now that dotnet is guaranteed
+REM     - Uncomment these if you want the batch to build C# after deps.
+REM ------------------------------------------------------------------------
+if exist "Managed\EngineDotNet\EngineDotNet.csproj" (
+    echo [STEP] Building Managed\EngineDotNet...
+    dotnet build Managed\EngineDotNet\EngineDotNet.csproj -c Debug
+)
+if exist "Managed\GameScripts\GameScripts.csproj" (
+    echo [STEP] Building Managed\GameScripts...
+    dotnet build Managed\GameScripts\GameScripts.csproj -c Debug
+)
+
 REM ===================== Helper Functions =====================
 
 :FindCMake
@@ -221,3 +245,57 @@ for /d %%d in ("%LOCALAPPDATA%\Programs\Python\*") do (
 set "CONAN_EXE="
 set "CONAN_DIR="
 goto :eof
+
+:EnsureDotNet
+REM Usage: call :EnsureDotNet 8.0.100
+set "REQUIRED_SDK=%~1"
+if not defined REQUIRED_SDK set "REQUIRED_SDK=8.0.100"
+
+REM Prefer repo-local .dotnet; fall back to system, else install local
+set "ROOT=%~dp0"
+set "DOTNET_DIR=%ROOT%.dotnet"
+set "DOTNET_EXE=%DOTNET_DIR%\dotnet.exe"
+
+REM Check local first
+if exist "%DOTNET_EXE%" (
+  for /f "tokens=1" %%v in ('"%DOTNET_EXE%" --version') do set "CUR_VER_LOCAL=%%v"
+  echo [INFO] Local dotnet found: %CUR_VER_LOCAL%
+  set "DOTNET=%DOTNET_EXE%"
+  goto :SetDotnetEnv
+)
+
+REM Check system dotnet
+where dotnet >nul 2>&1 && (
+  for /f "tokens=1" %%v in ('dotnet --version') do set "CUR_VER_SYS=%%v"
+  echo [INFO] System dotnet found: %CUR_VER_SYS%
+  set "DOTNET=dotnet"
+  goto :SetDotnetEnv
+)
+
+REM None found -> install local
+call :InstallDotNet "%REQUIRED_SDK%" "%DOTNET_DIR%" || exit /b 1
+set "DOTNET=%DOTNET_EXE%"
+
+:SetDotnetEnv
+REM Always prefer local if it exists; else use system
+if exist "%DOTNET_EXE%" set "DOTNET=%DOTNET_EXE%"
+
+set "DOTNET_ROOT=%DOTNET_DIR%"
+set "PATH=%DOTNET_DIR%;%PATH%"
+REM Smoke test
+"%DOTNET%" --info >nul 2>&1 || exit /b 1
+exit /b 0
+
+:InstallDotNet
+REM Args: %1 = version, %2 = install dir
+set "SDK_VER=%~1"
+set "DEST=%~2"
+echo [STEP] Installing .NET SDK %SDK_VER% to "%DEST%"
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "mkdir -ea 0 '%DEST%' | Out-Null; " ^
+  "$u='https://dot.net/v1/dotnet-install.ps1'; " ^
+  "$s=Join-Path $env:TEMP 'dotnet-install.ps1'; " ^
+  "Invoke-WebRequest $u -UseBasicParsing -OutFile $s; " ^
+  "powershell -ExecutionPolicy Bypass -File $s -Version %SDK_VER% -InstallDir '%DEST%'; "
+if errorlevel 1 exit /b 1
+exit /b 0

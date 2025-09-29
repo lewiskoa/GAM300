@@ -120,9 +120,6 @@
     <ClInclude Include="includes\Graphics\Shaders\Bloom.h">
       <Filter>includes</Filter>
     </ClInclude>
-    <ClInclude Include="includes\Audio\Audio.hpp">
-      <Filter>includes</Filter>
-    </ClInclude>
     <ClInclude Include="includes\Auxiliaries\Assets.h">
       <Filter>includes</Filter>
     </ClInclude>
@@ -133,6 +130,24 @@
       <Filter>includes</Filter>
     </ClInclude>
     <ClInclude Include="includes\Auxiliaries\Profiler.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Scripting\ScriptAPI.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Scripting\ScriptingSystem.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Scripting\ScriptRuntime.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="thirdparty\dotnet\hostfxr.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="thirdparty\dotnet\nethost.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Audio\Audio.hpp">
       <Filter>includes</Filter>
     </ClInclude>
   </ItemGroup>
@@ -149,8 +164,20 @@
     <ClCompile Include="src\Textures\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Scripting\ScriptAPI.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scripting\ScriptingSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Scripting\ScriptRunTime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="includes\Audio\Audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="thirdparty\dotnet\nethost.lib" />
   </ItemGroup>
 </Project>

@@ -4,7 +4,6 @@
 #include "Context/DebugHelpers.h"
 #include "Vendors/imgui/imgui.h"
 
-
 #ifndef ICON_FA_TERMINAL
 #define ICON_FA_TERMINAL ""
 #endif
