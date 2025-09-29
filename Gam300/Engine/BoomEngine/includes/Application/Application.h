@@ -228,7 +228,8 @@ namespace Boom
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
             //use of ecs
-            CreateEntities();
+            //CreateEntities();
+			LoadScene("default");
 
             //lights testers
             PointLight pl1{};
@@ -312,7 +313,7 @@ namespace Boom
                     if (entity.template Has<AnimatorComponent>()) {
                         AnimatorComponent& an{ entity.template Get<AnimatorComponent>() };
                         // Only animate if not paused
-                        float deltaTime = (m_AppState == ApplicationState::RUNNING) ? 0.001f : 0.0f;
+                        float deltaTime = (m_AppState == ApplicationState::RUNNING) ? static_cast<float>(m_Context->DeltaTime) : 0.0f;
                         auto& joints{ an.animator->Animate(deltaTime) };
                         m_Context->renderer->SetJoints(joints);
                     }
@@ -434,109 +435,171 @@ namespace Boom
 			sphereModel.modelID = sphereAsset->uid;
 			sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
 
-            // -------- Serializer round-trip smoke test --------
-            //{
-            //    DataSerializer ser;
-
-            //    const std::string scenePath = "SceneTest.yaml";
-            //    const std::string assetsPath = "AssetsTest.yaml";
-
-            //    // Count entities before serialize
-            //    size_t countBefore = 0;
-            //    auto viewBefore = m_Context->scene.view<entt::entity>();
-            //    for (auto entity : viewBefore) 
-            //    {
-            //        (void)entity; // Suppress unused variable warning
-            //        ++countBefore;
-            //    }
-
-            //    // 1) Serialize scene + assets
-            //    ser.Serialize(m_Context->scene, scenePath);
-            //    ser.Serialize(*m_Context->assets, assetsPath);
-            //    BOOM_INFO("[Serializer] Wrote scene -> {} and assets -> {}", scenePath, assetsPath);
-
-            //    // 2) Clear everything
-            //    m_Context->scene.clear();
-            //    // Re-init assets to restore EMPTY_ASSET sentinels
-            //    *m_Context->assets = AssetRegistry();
-            //    BOOM_INFO("[Serializer] Cleared registries");
-
-            //    //try 
-            //    //{
-            //    //    BOOM_INFO("[Serializer] Starting asset deserialization...");
-            //    //    ser.Deserialize(*m_Context->assets, assetsPath);
-            //    //    BOOM_INFO("[Serializer] Asset deserialization complete");
-
-            //    //    BOOM_INFO("[Serializer] Starting scene deserialization...");
-            //    //    ser.Deserialize(m_Context->scene, *m_Context->assets, scenePath);
-            //    //    BOOM_INFO("[Serializer] Scene deserialization complete");
-            //    //}
-            //    //catch (const std::exception& e) 
-            //    //{
-
-            //    //    (void)BOOM_ERROR(std::string("[Serializer] Deserialization failed: ") + e.what());
-            //    //    //return; // Skip the rest of the test
-            //    //}
-
-            //    BOOM_INFO("[Serializer] Starting asset deserialization...");
-            //    ser.Deserialize(*m_Context->assets, assetsPath);
-            //    BOOM_INFO("[Serializer] Asset deserialization complete");
-
-            //    BOOM_INFO("[Serializer] Starting scene deserialization...");
-            //    ser.Deserialize(m_Context->scene, *m_Context->assets, scenePath);
-            //    BOOM_INFO("[Serializer] Scene deserialization complete");
-
-            //    // 3) Deserialize back
-            //    BOOM_INFO("[Serializer] Reloaded scene + assets from YAML");
-
-            //    // 4) Verify a few expectations
-            //    size_t countAfter = 0;
-            //    auto viewAfter = m_Context->scene.view<entt::entity>();
-            //    for (auto entity : viewAfter) {
-            //        (void)entity; // Suppress unused variable warning
-            //        ++countAfter;
-            //    }
-
-
-            //    bool hasCamera = false, hasSkyboxEnt = false, hasModelEnt = false;
-            //    EnttView<Entity, CameraComponent, TransformComponent>([&](auto, auto&, auto&) { hasCamera = true; });
-            //    EnttView<Entity, SkyboxComponent>([&](auto, auto&) { hasSkyboxEnt = true; });
-            //    EnttView<Entity, ModelComponent>([&](auto, auto&) { hasModelEnt = true; });
-
-            //    bool hasSkyboxAsset = false, hasDanceModel = false, hasMarbleMat = false;
-            //    m_Context->assets->View([&](Asset* a) {
-            //        BOOM_INFO("[Verify] Asset: type={}, name='{}', checking...", (int)a->type, a->name);
-            //        if (a->type == AssetType::SKYBOX) {
-            //            BOOM_INFO("[Verify] Found skybox asset!");
-            //            hasSkyboxAsset = true;
-            //        }
-            //        if (a->type == AssetType::MODEL && a->name == "dance") {
-            //            BOOM_INFO("[Verify] Found dance model!");
-            //            hasDanceModel = true;
-            //        }
-            //        if (a->type == AssetType::MATERIAL && a->name == "Marble") {
-            //            BOOM_INFO("[Verify] Found marble material!");
-            //            hasMarbleMat = true;
-            //        }
-            //        });
-
-            //    BOOM_INFO("[Serializer] Entities before: {}, after: {}", (int)countBefore, (int)countAfter);
-            //    BOOM_INFO("[Serializer] hasCamera={}, hasSkyboxEnt={}, hasModelEnt={}",
-            //        hasCamera, hasSkyboxEnt, hasModelEnt);
-            //    BOOM_INFO("[Serializer] hasSkyboxAsset={}, hasDanceModel={}, hasMarbleMat={}",
-            //        hasSkyboxAsset, hasDanceModel, hasMarbleMat);
-
-            //    // Optional: assert-ish checks (convert to your engine’s assert/log style)
-            //    if (!hasCamera || !hasSkyboxEnt || !hasModelEnt)
-            //        BOOM_ERROR("[Serializer] Missing expected entity after reload.");
-            //    if (!hasSkyboxAsset || !hasDanceModel || !hasMarbleMat)
-            //        BOOM_ERROR("[Serializer] Missing expected asset after reload.");
-            //}
-            // -------- End serializer round-trip test --------
+           
 
         }
+
+
+        /**
+     * @brief Saves the current scene and assets to files
+     * @param sceneName The name of the scene (without extension)
+     * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
+     * @return true if save was successful, false otherwise
+     */
+        BOOM_INLINE bool SaveScene(const std::string& sceneName, const std::string& scenePath = "Scenes/")
+        {
+			//Try blocks cause crashed in release mode. Need to find new alternative
+            DataSerializer serializer;
+
+            const std::string sceneFilePath = scenePath + sceneName + ".yaml";
+            const std::string assetsFilePath = scenePath + sceneName + "_assets.yaml";
+
+            BOOM_INFO("[Scene] Saving scene '{}' to '{}'", sceneName, sceneFilePath);
+
+            // Serialize scene and assets
+            serializer.Serialize(m_Context->scene, sceneFilePath);
+            serializer.Serialize(*m_Context->assets, assetsFilePath);
+
+            // Update current scene tracking
+            strncpy_s(m_CurrentScenePath, sizeof(m_CurrentScenePath), sceneFilePath.c_str(), _TRUNCATE);
+
+            BOOM_INFO("[Scene] Successfully saved scene '{}' and assets", sceneName);
+			return true;
+        }
+
+        /**
+         * @brief Loads a scene from files, replacing the current scene
+         * @param sceneName The name of the scene (without extension)
+         * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
+         * @return true if load was successful, false otherwise
+         */
+        BOOM_INLINE bool LoadScene(const std::string& sceneName, const std::string& scenePath = "Scenes/")
+        {
+            DataSerializer serializer;
+
+            const std::string sceneFilePath = scenePath + sceneName + ".yaml";
+            const std::string assetsFilePath = scenePath + sceneName + "_assets.yaml";
+
+            BOOM_INFO("[Scene] Loading scene '{}' from '{}'", sceneName, sceneFilePath);
+
+            // Clean up current scene
+            CleanupCurrentScene();
+
+            // Load assets first
+            BOOM_INFO("[Scene] Loading assets...");
+            serializer.Deserialize(*m_Context->assets, assetsFilePath);
+
+            // Then load scene
+            BOOM_INFO("[Scene] Loading scene data...");
+            serializer.Deserialize(m_Context->scene, *m_Context->assets, sceneFilePath);
+
+            // Update tracking
+            strncpy_s(m_CurrentScenePath, sizeof(m_CurrentScenePath), sceneFilePath.c_str(), _TRUNCATE);
+            m_SceneLoaded = true;
+
+            // Reinitialize systems that need it
+            ReinitializeSceneSystems();
+
+            BOOM_INFO("[Scene] Successfully loaded scene '{}'", sceneName);
+			return true;
+        }
+
+
+        /**
+         * @brief Creates a new empty scene
+         * @param sceneName Optional name for the new scene
+         */
+        BOOM_INLINE void NewScene(const std::string& sceneName = "NewScene")
+        {
+            BOOM_INFO("[Scene] Creating new scene '{}'", sceneName);
+
+            // Clean up current scene
+            CleanupCurrentScene();
+
+            // Create basic scene with camera
+            CreateDefaultScene();
+
+            m_CurrentScenePath[0] = '\0'; // Clear the path
+            m_SceneLoaded = false;
+
+            BOOM_INFO("[Scene] New scene '{}' created", sceneName);
+        }
+
+        /**
+         * @brief Gets the current scene file path
+         */
+        BOOM_INLINE std::string GetCurrentScenePath() const { return std::string(m_CurrentScenePath); }
+
+        /**
+         * @brief Checks if a scene is currently loaded
+         */
+        BOOM_INLINE bool IsSceneLoaded() const { return m_SceneLoaded; }
+
 private:
 
+        char m_CurrentScenePath[512] = "\0";
+        bool m_SceneLoaded = false;
+
+        /**
+     * @brief Cleans up the current scene and physics actors
+     */
+        BOOM_INLINE void CleanupCurrentScene()
+        {
+            BOOM_INFO("[Scene] Cleaning up current scene...");
+
+            // Destroy physics actors before clearing scene
+            DestroyPhysicsActors();
+
+            // Clear the ECS scene
+            m_Context->scene.clear();
+
+            // Reset asset registry (keeping EMPTY_ASSET sentinels)
+            *m_Context->assets = AssetRegistry();
+
+            // Reset any scene-specific state
+            m_TestRot = 0.0f;
+
+            BOOM_INFO("[Scene] Scene cleanup complete");
+        }
+
+        /**
+         * @brief Reinitializes systems after loading a scene
+         */
+        BOOM_INLINE void ReinitializeSceneSystems()
+        {
+            BOOM_INFO("[Scene] Reinitializing scene systems...");
+
+            // Reinitialize skybox if present
+            EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
+                SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
+                m_Context->renderer->InitSkybox(skybox.data, skybox.envMap, skybox.size);
+                BOOM_INFO("[Scene] Reinitialized skybox");
+                });
+
+            EnttView<Entity, RigidBodyComponent>([this](auto entity, auto&) {
+                // Re-register with physics system
+                m_Context->Physics->AddRigidBody(entity);
+                BOOM_INFO("[Scene] Reinitialized physics body");
+                });
+
+            BOOM_INFO("[Scene] Scene systems reinitialization complete");
+        }
+
+        /**
+         * @brief Creates a minimal default scene with camera
+         */
+        BOOM_INLINE void CreateDefaultScene()
+        {
+            BOOM_INFO("[Scene] Creating default scene...");
+
+            // Create basic camera entity
+            Entity camera{ &m_Context->scene };
+            camera.Attach<InfoComponent>();
+            camera.Attach<TransformComponent>();
+            camera.Attach<CameraComponent>();
+
+            BOOM_INFO("[Scene] Default scene created with camera");
+        }
 
         BOOM_INLINE void RegisterEventCallbacks()
         {

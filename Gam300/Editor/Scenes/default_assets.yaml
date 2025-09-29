@@ -63,14 +63,6 @@ ASSETS:
       Roughness: 0.400000006
       Occlusion: 1
       Emissive: [0, 0, 0]
-  - Type: SKYBOX
-    UID: 12730153547297182823
-    Name: sky
-    Source: Skybox/sky.hdr
-    Properties:
-      Size: 2048
-      IsHDR: true
-      IsFlipY: true
   - Type: TEXTURE
     UID: 356508722382236238
     Name: albedo
@@ -91,4 +83,12 @@ ASSETS:
     Source: Marble/roughness.png
     Properties:
       IsHDR: false
+      IsFlipY: true
+  - Type: SKYBOX
+    UID: 12730153547297182823
+    Name: sky
+    Source: Skybox/sky.hdr
+    Properties:
+      Size: 2048
+      IsHDR: true
       IsFlipY: true

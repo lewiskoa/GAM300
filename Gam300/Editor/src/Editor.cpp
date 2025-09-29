@@ -66,7 +66,10 @@ private:
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGuizmo::BeginFrame(); 
+        ImGuizmo::BeginFrame();
+
+        // Handle keyboard shortcuts
+        HandleKeyboardShortcuts();
 
         // Create the main editor layout
         CreateMainDockSpace();
@@ -78,8 +81,11 @@ private:
         RenderPrefabBrowser();
         RenderPerformance();
         RenderResources();
-		RenderPlaybackControls();
-		
+        RenderPlaybackControls();
+
+        // Render scene management dialogs
+        RenderSceneDialogs();
+
         // End frame and render
         ImGui::Render();
         ImDrawData* drawData = ImGui::GetDrawData();
@@ -245,19 +251,53 @@ private:
     {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("New Scene")) {
-                    BOOM_INFO("New Scene selected");
+                if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
+                    if (m_Application) {
+                        m_Application->NewScene("UntitledScene");
+                        BOOM_INFO("[Editor] Created new scene");
+                    }
                 }
-                if (ImGui::MenuItem("Open Scene")) {
-                    BOOM_INFO("Open Scene selected");
-                }
-                if (ImGui::MenuItem("Save Scene")) {
-                    BOOM_INFO("Save Scene selected");
-                }
+
                 ImGui::Separator();
-                if (ImGui::MenuItem("Exit")) {
-                    BOOM_INFO("Exit selected");
+
+                if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+                    m_ShowSaveDialog = true;
+                    // Set current scene name as default
+                    if (m_Application && m_Application->IsSceneLoaded()) {
+                        std::string currentPath = m_Application->GetCurrentScenePath();
+                        if (!currentPath.empty()) {
+                            // Extract scene name from path
+                            size_t lastSlash = currentPath.find_last_of("/\\");
+                            size_t lastDot = currentPath.find_last_of(".");
+                            if (lastSlash != std::string::npos && lastDot != std::string::npos && lastDot > lastSlash) {
+                                std::string sceneName = currentPath.substr(lastSlash + 1, lastDot - lastSlash - 1);
+                                strncpy_s(m_SceneNameBuffer, sizeof(m_SceneNameBuffer), sceneName.c_str(), _TRUNCATE);
+                            }
+                        }
+                    }
                 }
+
+                if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S")) {
+                    m_ShowSaveDialog = true;
+                    // Clear the buffer for new name
+                    m_SceneNameBuffer[0] = '\0';
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Load Scene", "Ctrl+O")) {
+                    m_ShowLoadDialog = true;
+                    RefreshSceneList();
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Exit", "Alt+F4")) {
+                    if (m_Application) {
+                        m_Application->Stop();
+                    }
+                }
+
                 ImGui::EndMenu();
             }
 
@@ -267,13 +307,34 @@ private:
                 ImGui::MenuItem("Viewport", nullptr, &m_ShowViewport);
                 ImGui::MenuItem("Prefab Browser", nullptr, &m_ShowPrefabBrowser);
                 ImGui::MenuItem("Performance", nullptr, &m_ShowPerformance);
-                ImGui::MenuItem("Playback Controls", nullptr, &m_ShowPlaybackControls); // Add this line
+                ImGui::MenuItem("Playback Controls", nullptr, &m_ShowPlaybackControls);
                 ImGui::EndMenu();
             }
 
             if (ImGui::BeginMenu("Options")) {
                 ImGui::MenuItem("Debug Draw", nullptr, &m_Context->renderer->IsDrawDebugMode());
                 ImGui::EndMenu();
+            }
+
+            // Show current scene info in menu bar
+            if (m_Application) {
+                ImGui::Separator();
+                if (m_Application->IsSceneLoaded()) {
+                    std::string currentPath = m_Application->GetCurrentScenePath();
+                    if (!currentPath.empty()) {
+                        // Extract just the filename
+                        size_t lastSlash = currentPath.find_last_of("/\\");
+                        std::string fileName = (lastSlash != std::string::npos) ?
+                            currentPath.substr(lastSlash + 1) : currentPath;
+                        ImGui::Text("Scene: %s", fileName.c_str());
+                    }
+                    else {
+                        ImGui::Text("Scene: Unsaved");
+                    }
+                }
+                else {
+                    ImGui::Text("Scene: None");
+                }
             }
 
             ImGui::EndMainMenuBar();
@@ -599,6 +660,182 @@ private:
         rw.OnShow(this);
     }
 
+    BOOM_INLINE void RefreshSceneList()
+    {
+        m_AvailableScenes.clear();
+
+        // For now, add some default scenes - you can implement directory scanning later
+        m_AvailableScenes.push_back("default");
+        m_AvailableScenes.push_back("test");
+        //m_AvailableScenes.push_back("demo_level");
+
+        // TODO: Implement actual directory scanning for .yaml files in Scenes/ folder
+        // This would require platform-specific code or a library like std::filesystem
+    }
+
+    BOOM_INLINE void RenderSceneDialogs()
+    {
+        // Save Scene Dialog
+        if (m_ShowSaveDialog) {
+            ImGui::OpenPopup("Save Scene");
+            m_ShowSaveDialog = false; // Reset flag
+        }
+
+        if (ImGui::BeginPopupModal("Save Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Enter scene name:");
+            ImGui::Separator();
+
+            bool enterPressed = ImGui::InputText("##SceneName", m_SceneNameBuffer, sizeof(m_SceneNameBuffer),
+                ImGuiInputTextFlags_EnterReturnsTrue);
+
+            ImGui::Separator();
+
+            bool saveClicked = ImGui::Button("Save", ImVec2(80, 0));
+            ImGui::SameLine();
+            bool cancelClicked = ImGui::Button("Cancel", ImVec2(80, 0));
+
+            if ((saveClicked || enterPressed) && strlen(m_SceneNameBuffer) > 0) {
+                if (m_Application) {
+                    bool success = m_Application->SaveScene(std::string(m_SceneNameBuffer));
+                    if (success) {
+                        BOOM_INFO("[Editor] Scene '{}' saved successfully", m_SceneNameBuffer);
+                    }
+                    else {
+                        BOOM_ERROR("[Editor] Failed to save scene '{}'", m_SceneNameBuffer);
+                    }
+                }
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (cancelClicked) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
+        // Load Scene Dialog
+        if (m_ShowLoadDialog) {
+            ImGui::OpenPopup("Load Scene");
+            m_ShowLoadDialog = false; // Reset flag
+        }
+
+        if (ImGui::BeginPopupModal("Load Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Select scene to load:");
+            ImGui::Separator();
+
+            // Scene list
+            if (m_AvailableScenes.empty()) {
+                ImGui::Text("No scenes found in Scenes/ directory");
+            }
+            else {
+                // Use a child window to contain the selectables and prevent popup closing
+                if (ImGui::BeginChild("SceneList", ImVec2(250, 150), true)) {
+                    for (int i = 0; i < (int)m_AvailableScenes.size(); i++) {
+                        if (ImGui::Selectable(m_AvailableScenes[i].c_str(), m_SelectedSceneIndex == i)) {
+                            m_SelectedSceneIndex = i;
+                        }
+
+                        // Double-click to load immediately
+                        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                            if (m_Application) {
+                                std::string selectedScene = m_AvailableScenes[i];
+                                bool success = m_Application->LoadScene(selectedScene);
+                                if (success) {
+                                    BOOM_INFO("[Editor] Scene '{}' loaded successfully", selectedScene);
+                                    m_SelectedEntity = entt::null;
+                                }
+                                else {
+                                    BOOM_ERROR("[Editor] Failed to load scene '{}'", selectedScene);
+                                }
+                            }
+                            ImGui::CloseCurrentPopup();
+                            ImGui::EndChild();
+                            ImGui::EndPopup();
+                            return; // Exit early to avoid processing the rest
+                        }
+                    }
+                }
+                ImGui::EndChild();
+            }
+
+            ImGui::Separator();
+
+            bool loadClicked = ImGui::Button("Load", ImVec2(80, 0));
+            ImGui::SameLine();
+            bool cancelClicked = ImGui::Button("Cancel", ImVec2(80, 0));
+
+            if (loadClicked && m_SelectedSceneIndex >= 0 && m_SelectedSceneIndex < (int)m_AvailableScenes.size()) {
+                if (m_Application) {
+                    std::string selectedScene = m_AvailableScenes[m_SelectedSceneIndex];
+                    bool success = m_Application->LoadScene(selectedScene);
+                    if (success) {
+                        BOOM_INFO("[Editor] Scene '{}' loaded successfully", selectedScene);
+                        m_SelectedEntity = entt::null; // Clear selection when loading new scene
+                    }
+                    else {
+                        BOOM_ERROR("[Editor] Failed to load scene '{}'", selectedScene);
+                    }
+                }
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (cancelClicked) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
+
+    // Add keyboard shortcut handling:
+    BOOM_INLINE void HandleKeyboardShortcuts()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+
+        // Scene management shortcuts
+        if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_N)) {
+            // New Scene (Ctrl+N)
+            if (m_Application) {
+                m_Application->NewScene("UntitledScene");
+                BOOM_INFO("[Editor] New scene created via shortcut");
+            }
+        }
+
+        if (io.KeyCtrl && !io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_S)) {
+            // Save Scene (Ctrl+S)
+            if (m_Application && m_Application->IsSceneLoaded()) {
+                std::string currentPath = m_Application->GetCurrentScenePath();
+                if (!currentPath.empty()) {
+                    // Extract scene name and save
+                    size_t lastSlash = currentPath.find_last_of("/\\");
+                    size_t lastDot = currentPath.find_last_of(".");
+                    if (lastSlash != std::string::npos && lastDot != std::string::npos && lastDot > lastSlash) {
+                        std::string sceneName = currentPath.substr(lastSlash + 1, lastDot - lastSlash - 1);
+                        m_Application->SaveScene(sceneName);
+                        BOOM_INFO("[Editor] Scene saved via shortcut");
+                    }
+                }
+                else {
+                    // No current scene, show save dialog
+                    m_ShowSaveDialog = true;
+                }
+            }
+        }
+
+        if (io.KeyCtrl && io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_S)) {
+            // Save Scene As (Ctrl+Shift+S)
+            m_ShowSaveDialog = true;
+        }
+
+        if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O)) {
+            // Load Scene (Ctrl+O)
+            m_ShowLoadDialog = true;
+            RefreshSceneList();
+        }
+    }
+
 private:
     ImGuiContext* m_ImGuiContext = nullptr;
     bool m_ShowInspector = true;
@@ -607,6 +844,13 @@ private:
     bool m_ShowPrefabBrowser = true;
 
     bool m_ShowPerformance = true;
+
+    // Scene management UI state
+    bool m_ShowSaveDialog = false;
+    bool m_ShowLoadDialog = false;
+    char m_SceneNameBuffer[256] = "NewScene";
+    std::vector<std::string> m_AvailableScenes;
+    int m_SelectedSceneIndex = 0;
 
     ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
