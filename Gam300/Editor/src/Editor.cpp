@@ -7,6 +7,7 @@
 #include "Windows/Resource.h"
 #include "Windows/Viewport.h"
 #include "Windows/MenuBar.h"
+#include "Windows/Console.h"
 #include "Context/DebugHelpers.h"
 #include "Prefab/PrefabSystem.h"
 #include <glm/gtc/type_ptr.hpp>
@@ -82,6 +83,8 @@ private:
         RenderPerformance();
         RenderResources();
         RenderPlaybackControls();
+        if (m_ShowConsole)
+            m_Console.OnShow(this);
 
         // Render scene management dialogs
         RenderSceneDialogs();
@@ -95,7 +98,7 @@ private:
         }
     }
 
-    BOOM_INLINE void CreateMainDockSpace()
+    BOOM_INLINE void CreateMainDockSpace() const
     {
         ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->Pos);
@@ -308,6 +311,7 @@ private:
                 ImGui::MenuItem("Prefab Browser", nullptr, &m_ShowPrefabBrowser);
                 ImGui::MenuItem("Performance", nullptr, &m_ShowPerformance);
                 ImGui::MenuItem("Playback Controls", nullptr, &m_ShowPlaybackControls);
+                ImGui::MenuItem("Debug Console", nullptr, &m_ShowConsole);
                 ImGui::EndMenu();
             }
 
@@ -421,7 +425,9 @@ private:
                 ImGui::Image((ImTextureID)(uintptr_t)frameTexture, viewportSize,
                     ImVec2(0, 1), ImVec2(1, 0));  // Flipped UV for OpenGL
 
-                glm::mat4 cameraProjection;
+                m_Console.TrackLastItemAsViewport("Viewport");
+
+                glm::mat4 cameraProjection{};
                 auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
                 if (view.begin() != view.end()) {
                     auto entityID = view.front();
@@ -462,6 +468,8 @@ private:
                 }
             }
         }
+
+
         ImGui::End();
     }
 
@@ -864,6 +872,9 @@ private:
 
 	Application* m_Application = nullptr; //To access application functions if needed
     bool m_ShowPlaybackControls = true;
+
+    ConsoleWindow m_Console{ this };
+    bool m_ShowConsole = true;
 
     //remove when editor.cpp completed
     ResourceWindow rw{this};
