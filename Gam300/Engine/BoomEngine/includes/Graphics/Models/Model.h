@@ -49,21 +49,26 @@ namespace Boom {
 			// parse all meshes
 			ParseNode(ai_scene, ai_scene->mRootNode);
 		}
-		
+
+		BOOM_INLINE const std::vector<MeshData<ShadedVert>>& GetMeshData() const {
+			return m_PhysicsMeshData;
+		}
+
+
 		BOOM_INLINE void Draw(uint32_t mode = GL_TRIANGLES) override
 		{
 			for (auto& mesh : meshes) {
 				mesh->Draw(mode);
 			}
 		}
-	
+
 	private:
 		/**
 		* @brief Recursively parse a scene node and its children to collect meshes.
 		* @param scene Assimp scene.
 		* @param node Current Assimp node to parse.
 		*/
-		BOOM_INLINE void ParseNode(aiScene const* scene, aiNode* node) 
+		BOOM_INLINE void ParseNode(aiScene const* scene, aiNode* node)
 		{
 			for (uint32_t i{}; i < node->mNumMeshes; ++i) {
 				ParseMesh(scene->mMeshes[node->mMeshes[i]]);
@@ -78,7 +83,7 @@ namespace Boom {
 		* @brief Convert an Assimp mesh to an engine mesh and append it to the list.
 		* @param mesh Assimp mesh pointer.
 		*/
-		BOOM_INLINE void ParseMesh(aiMesh* mesh) 
+		BOOM_INLINE void ParseMesh(aiMesh* mesh)
 		{
 			MeshData<ShadedVert> meshData{};
 
@@ -101,12 +106,15 @@ namespace Boom {
 				}
 			}
 
+			m_PhysicsMeshData.push_back(meshData);
+
 			auto ret{ std::make_unique<ShadedMesh>(std::move(meshData)) };
 			meshes.push_back(std::move(ret));
 		}
-	
+
 	private:
 		std::vector<Mesh3D> meshes;
+		std::vector<MeshData<ShadedVert>> m_PhysicsMeshData;
 	};
 
 	//---------------------------Skeletal Model------------------------------
@@ -159,7 +167,7 @@ namespace Boom {
 		}
 		BOOM_INLINE void Draw(uint32_t mode = GL_TRIANGLES) override final
 		{
-			for (auto& mesh : meshes) 
+			for (auto& mesh : meshes)
 			{
 				mesh->Draw(mode);
 			}
@@ -279,21 +287,21 @@ namespace Boom {
 												ai_channel->mNumRotationKeys,
 												ai_channel->mNumScalingKeys });
 
-					for (uint32_t k = 0; k < maxKeys; k++) 
+					for (uint32_t k = 0; k < maxKeys; k++)
 					{
 						KeyFrame key;
 
 						// Sample or interpolate from available keys
-						if (k < ai_channel->mNumPositionKeys) 
+						if (k < ai_channel->mNumPositionKeys)
 						{
 							key.position = AssimpToVec3(ai_channel->mPositionKeys[k].mValue);
 							key.timeStamp = (float)ai_channel->mPositionKeys[k].mTime;
 						}
-						if (k < ai_channel->mNumRotationKeys) 
+						if (k < ai_channel->mNumRotationKeys)
 						{
 							key.rotation = AssimpToQuat(ai_channel->mRotationKeys[k].mValue);
 						}
-						if (k < ai_channel->mNumScalingKeys) 
+						if (k < ai_channel->mNumScalingKeys)
 						{
 							key.scale = AssimpToVec3(ai_channel->mScalingKeys[k].mValue);
 						}
@@ -365,7 +373,7 @@ namespace Boom {
 					SetVertexJoint(data.vtx[ai_bone->mWeights[j].mVertexId], jointMap[jointName].index, ai_bone->mWeights[j].mWeight);
 				}
 			}
-			
+
 			// create new mesh instance
 			meshes.push_back(std::make_unique<SkeletalMesh>(std::move(data)));
 

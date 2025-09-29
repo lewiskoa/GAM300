@@ -53,7 +53,7 @@ namespace Boom
         double m_LastPauseTime = 0.0;  // When the last pause started
         bool m_ShouldExit = false;  // Flag for graceful shutdown
         float m_TestRot = 0.0f;
-        
+
 
 
         BOOM_INLINE Application()
@@ -71,59 +71,59 @@ namespace Boom
                 m_Context->window->SetWindowTitle(e.title);
                 }
             );
-/*
-            // Create a dynamic sphere entity
-            Entity sphere = CreateEntt<Entity>();
-            {
-                // Set initial position above the cube
-                auto& t = sphere.Attach<TransformComponent>().Transform;
-                t.translate = m_SphereStartPos;
-                t.scale = glm::vec3(1.0f); 
-                // Attach rigidbody (dynamic)
-                auto& rb = sphere.Attach<RigidBodyComponent>().RigidBody;
-                rb.type = RigidBody3D::DYNAMIC;
-                rb.mass = 2.0f;
-                rb.density = 1.0f;
+            /*
+                        // Create a dynamic sphere entity
+                        Entity sphere = CreateEntt<Entity>();
+                        {
+                            // Set initial position above the cube
+                            auto& t = sphere.Attach<TransformComponent>().Transform;
+                            t.translate = m_SphereStartPos;
+                            t.scale = glm::vec3(1.0f);
+                            // Attach rigidbody (dynamic)
+                            auto& rb = sphere.Attach<RigidBodyComponent>().RigidBody;
+                            rb.type = RigidBody3D::DYNAMIC;
+                            rb.mass = 2.0f;
+                            rb.density = 1.0f;
 
-                // Small velocity to check for movement
-                rb.initialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
+                            // Small velocity to check for movement
+                            rb.initialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
 
-                // Attach collider (sphere)
-                auto& col = sphere.Attach<ColliderComponent>().Collider;
-                col.type = Collider3D::SPHERE;
+                            // Attach collider (sphere)
+                            auto& col = sphere.Attach<ColliderComponent>().Collider;
+                            col.type = Collider3D::SPHERE;
 
-                // Attach model
-                auto& mc = sphere.Attach<ModelComponent>();
-                mc.model = std::make_shared<StaticModel>("sphere.fbx");
-            }
+                            // Attach model
+                            auto& mc = sphere.Attach<ModelComponent>();
+                            mc.model = std::make_shared<StaticModel>("sphere.fbx");
+                        }
 
 
-            // Create a static cube entity (ground)
-            Entity cube = CreateEntt<Entity>();
-            {
-                // Set initial position at the origin
-                auto& t = cube.Attach<TransformComponent>().Transform;
-                t.translate = glm::vec3(0.0f, 0.0f, 0.0f);
-                t.scale = glm::vec3(2.0f);
+                        // Create a static cube entity (ground)
+                        Entity cube = CreateEntt<Entity>();
+                        {
+                            // Set initial position at the origin
+                            auto& t = cube.Attach<TransformComponent>().Transform;
+                            t.translate = glm::vec3(0.0f, 0.0f, 0.0f);
+                            t.scale = glm::vec3(2.0f);
 
-                // Attach rigidbody (static)
-                auto& rb = cube.Attach<RigidBodyComponent>().RigidBody;
-                rb.type = RigidBody3D::STATIC;
+                            // Attach rigidbody (static)
+                            auto& rb = cube.Attach<RigidBodyComponent>().RigidBody;
+                            rb.type = RigidBody3D::STATIC;
 
-                // Attach collider (box)
-                auto& col = cube.Attach<ColliderComponent>().Collider;
-                col.type = Collider3D::BOX;
+                            // Attach collider (box)
+                            auto& col = cube.Attach<ColliderComponent>().Collider;
+                            col.type = Collider3D::BOX;
 
-                // Attach model 
-                auto& mc = cube.Attach<ModelComponent>();
-                mc.model = std::make_shared<StaticModel>("cube.fbx");
-            }
+                            // Attach model
+                            auto& mc = cube.Attach<ModelComponent>();
+                            mc.model = std::make_shared<StaticModel>("cube.fbx");
+                        }
 
-            m_SphereEntity = sphere;
-            // Register both with the physics system
-            m_Context->Physics->AddRigidBody(sphere);
-            m_Context->Physics->AddRigidBody(cube);
-*/
+                        m_SphereEntity = sphere;
+                        // Register both with the physics system
+                        m_Context->Physics->AddRigidBody(sphere);
+                        m_Context->Physics->AddRigidBody(cube);
+            */
 
         }
 
@@ -138,7 +138,7 @@ namespace Boom
             DestroyPhysicsActors();
             BOOM_DELETE(m_Context);
             //called here in case of the need of multiple windows
-            glfwTerminate(); 
+            glfwTerminate();
         }
 
         /**
@@ -229,7 +229,7 @@ namespace Boom
         {
             //use of ecs
             //CreateEntities();
-			LoadScene("default");
+            LoadScene("default");
 
             //lights testers
             PointLight pl1{};
@@ -390,7 +390,7 @@ namespace Boom
             auto cubeAsset4{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (3).fbx") };
             auto cubeAsset5{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (4).fbx") };
             auto cubeAsset6{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (5).fbx") };
-            
+
             //materials
             auto albedoTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/albedo.png") };
             auto normalTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/normal.png") };
@@ -423,19 +423,19 @@ namespace Boom
             auto& robotModel{ robot.Attach<ModelComponent>() };
             robotModel.materialID = mat1Asset->uid;
             robotModel.modelID = robotAsset->uid;
-            auto& rt { robot.Attach<TransformComponent>().transform };
+            auto& rt{ robot.Attach<TransformComponent>().transform };
             rt.translate = glm::vec3(0.f, -1.5f, 0.f);
             rt.scale = glm::vec3(0.01f);
             robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
-        
-            //sphere 
-			Entity sphereEn{ &m_Context->scene };
-			sphereEn.Attach<InfoComponent>();
-			auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
-			sphereModel.modelID = sphereAsset->uid;
-			sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
 
-           
+            //sphere 
+            Entity sphereEn{ &m_Context->scene };
+            sphereEn.Attach<InfoComponent>();
+            auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
+            sphereModel.modelID = sphereAsset->uid;
+            sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
+
+
 
         }
 
@@ -448,7 +448,7 @@ namespace Boom
      */
         BOOM_INLINE bool SaveScene(const std::string& sceneName, const std::string& scenePath = "Scenes/")
         {
-			//Try blocks cause crashed in release mode. Need to find new alternative
+            //Try blocks cause crashed in release mode. Need to find new alternative
             DataSerializer serializer;
 
             const std::string sceneFilePath = scenePath + sceneName + ".yaml";
@@ -464,7 +464,7 @@ namespace Boom
             strncpy_s(m_CurrentScenePath, sizeof(m_CurrentScenePath), sceneFilePath.c_str(), _TRUNCATE);
 
             BOOM_INFO("[Scene] Successfully saved scene '{}' and assets", sceneName);
-			return true;
+            return true;
         }
 
         /**
@@ -501,7 +501,7 @@ namespace Boom
             ReinitializeSceneSystems();
 
             BOOM_INFO("[Scene] Successfully loaded scene '{}'", sceneName);
-			return true;
+            return true;
         }
 
 
@@ -535,7 +535,7 @@ namespace Boom
          */
         BOOM_INLINE bool IsSceneLoaded() const { return m_SceneLoaded; }
 
-private:
+    private:
 
         char m_CurrentScenePath[512] = "\0";
         bool m_SceneLoaded = false;
@@ -578,7 +578,7 @@ private:
 
             EnttView<Entity, RigidBodyComponent>([this](auto entity, auto&) {
                 // Re-register with physics system
-                m_Context->Physics->AddRigidBody(entity);
+                m_Context->Physics->AddRigidBody(entity, *m_Context->assets);
                 BOOM_INFO("[Scene] Reinitialized physics body");
                 });
 
@@ -606,7 +606,7 @@ private:
             // Set physics event callback (mark unused param to avoid warnings)
             m_Context->Physics->SetEventCallback([this](auto e)
                 {
-                    (void)e; 
+                    (void)e;
                     // Scripting/event logic can be added here
                 });
 
@@ -656,7 +656,7 @@ private:
         BOOM_INLINE void RunPhysicsSimulation()
         {
             // Only simulate physics if running
-            if (m_AppState == ApplicationState::RUNNING) 
+            if (m_AppState == ApplicationState::RUNNING)
             {
                 m_Context->Physics->Simulate(1, static_cast<float>(m_Context->DeltaTime));
                 EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
