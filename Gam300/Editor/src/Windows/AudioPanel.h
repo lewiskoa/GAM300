@@ -11,17 +11,16 @@ namespace EditorUI::Audio
     inline void Render()
     {
         auto& audio = SoundEngine::Instance();
-
+        
         // Catalog (adjust to your paths)
         static const std::vector<std::pair<std::string, std::string>> kTracks = {
-            { "Menu", "Resources/Audio/FISH.wav" },
-            // { "Level 1", "Resources/Audio/level1.ogg" },
-            // { "Boss",   "Resources/Audio/boss.ogg"   },
+            { "Menu", "Resources/Audio/vboom.wav" },
+            
         };
 
         // State
         static int  selected = 0;
-        static bool loop = true;
+        bool loop = false;
         static std::unordered_map<std::string, float> sVolume;
         for (auto& [n, _] : kTracks) if (!sVolume.count(n)) sVolume[n] = 1.0f;
 

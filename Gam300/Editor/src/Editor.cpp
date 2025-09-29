@@ -696,15 +696,13 @@ private:
 
         // Your music catalog. Adjust names/paths to your project.
         static const std::vector<std::pair<std::string, std::string>> kTracks = {
-            {"Menu",    "Assets/Audio/Music/menu_theme.ogg"},
-            {"Level 1", "Assets/Audio/Music/level1_loop.ogg"},
-            {"Boss",    "Assets/Audio/Music/boss_bgm.ogg"},
-            {"Credits", "Assets/Audio/Music/credits.ogg"},
+            {"Menu",    "Resources/Audio/vboom.wav"},
+            
         };
 
         // UI state
         static int  selected = 0;
-        static bool loop = true;
+        bool loop = false;
         static std::unordered_map<std::string, float> sVolume; // per-track volume
 
         for (auto& [name, _] : kTracks) if (!sVolume.count(name)) sVolume[name] = 1.0f;
@@ -986,6 +984,11 @@ int32_t main()
         MyEngineClass engine;
         engine.whatup();
         BOOM_INFO("Editor Started");
+
+        if(!SoundEngine::Instance().Init()) {
+            BOOM_ERROR("FMOD init failed");
+            return -1;
+        }
 
         // Create application
         auto app = engine.CreateApp();
