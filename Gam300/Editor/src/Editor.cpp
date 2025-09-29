@@ -696,8 +696,11 @@ private:
 
         // Your music catalog. Adjust names/paths to your project.
         static const std::vector<std::pair<std::string, std::string>> kTracks = {
-            {"Menu",    "Resources/Audio/vboom.wav"},
-            
+            {"Menu",    "Resources/Audio/Fetty Wap.wav"},
+            { "BOOM", "Resources/Audio/vboom.wav" },
+            { "Fish", "Resources/Audio/FISH.wav" },
+            { "Ambi", "Resources/Audio/outdoorAmbience.wav" },
+            { "Schizo", "Resources/Audio/the voices.wav" },
         };
 
         // UI state
