@@ -93,7 +93,7 @@ namespace Boom
                     glUniform1i(u_BrightnessMap, 0);
                 }
 
-                m_Quad->Draw();
+                m_Quad->Draw(GL_TRIANGLE_STRIP);
                 horizontal = !horizontal;
                 m_LastTarget = target;
             }

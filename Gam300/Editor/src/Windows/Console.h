@@ -1,166 +1,219 @@
-// Windows/Console.h
 #pragma once
-#include <deque>
-#include <mutex>
-#include <unordered_map>
-#include <functional>
+#include "Core.h"
 #include "Context/Context.h"
 #include "Context/DebugHelpers.h"
 #include "Vendors/imgui/imgui.h"
 
+
+#ifndef ICON_FA_TERMINAL
+#define ICON_FA_TERMINAL ""
+#endif
+
+// A UI-only debug console that renders inside ImGui (no stdout prints).
+// It also exposes TrackLastItemAsViewport(...) so your ViewportWindow
+// can log mouse local coords & clicks for the last ImGui item (the Image).
 struct ConsoleWindow : IWidget
 {
-    BOOM_INLINE ConsoleWindow(AppInterface* ctx) : IWidget(ctx)
+    BOOM_INLINE ConsoleWindow(AppInterface* context) : IWidget(context)
     {
         DEBUG_DLL_BOUNDARY("ConsoleWindow::Constructor");
-        DEBUG_POINTER(ctx, "AppInterface");
+        DEBUG_POINTER(context, "AppInterface");
 
-        // default built-ins
-        Register("help", [this](const std::string&) {
-            Log("Commands:");
-            for (auto& [k, _] : m_Cmds) Log("  " + k);
-            Log("  clear");
-            });
-        Register("clear", [this](const std::string&) {
-            std::scoped_lock lk(m_Mu);
-            m_Lines.clear();
-            });
+        if (!context) {
+            BOOM_ERROR("ConsoleWindow::Constructor - Null context!");
+        }
+        else {
+            BOOM_INFO("ConsoleWindow::Constructor - OK");
+        }
 
-        BOOM_INFO("ConsoleWindow::Constructor - Ready");
+        m_KeyDownPrev.fill(false);
+        m_InputBuf[0] = '\0';
     }
 
-    BOOM_INLINE void OnShow(AppInterface* /*ctx*/) override
+    // ---------------------------
+    // Public logging API
+    // ---------------------------
+    BOOM_INLINE void Clear() { m_Lines.clear(); }
+
+    BOOM_INLINE void AddLog(const char* fmt, ...) IM_FMTARGS(2)
+    {
+        if (m_Pause) return;
+        char buf[768];
+        va_list args;
+        va_start(args, fmt);
+        vsnprintf(buf, sizeof(buf), fmt, args);
+        va_end(args);
+
+        if ((int)m_Lines.size() >= m_MaxLines) m_Lines.pop_front();
+        m_Lines.emplace_back(buf);
+    }
+
+    // Call this RIGHT AFTER drawing your viewport Image item in ViewportWindow.
+    // Example use:
+    //   ImGui::Image(...);
+    //   console.TrackLastItemAsViewport("SceneViewport");
+    //
+    // Logs mouse local coords (relative to that Image) + click events,
+    // with throttling to avoid spam.
+    BOOM_INLINE void TrackLastItemAsViewport(const char* label = "Viewport")
+    {
+        ImVec2 min = ImGui::GetItemRectMin();
+        ImVec2 max = ImGui::GetItemRectMax();
+        ImVec2 size{ max.x - min.x, max.y - min.y };
+
+        const bool hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup |
+            ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+
+        ImVec2 mouseGlobal = ImGui::GetMousePos();
+        ImVec2 mouseLocal{ mouseGlobal.x - min.x, mouseGlobal.y - min.y };
+
+        const bool inside = hovered &&
+            mouseLocal.x >= 0 && mouseLocal.y >= 0 &&
+            mouseLocal.x <= size.x && mouseLocal.y <= size.y;
+
+        double now = ImGui::GetTime();
+        float dx = mouseLocal.x - m_LastMouse.x;
+        float dy = mouseLocal.y - m_LastMouse.y;
+        float deltaDist = (m_LastMouse.x == -FLT_MAX) ? 1e9f : std::sqrt(dx * dx + dy * dy);
+
+        if (inside && m_LogMouseMoves && (now - m_LastLogTime) >= m_LogEverySeconds && deltaDist >= 0.5f) {
+            AddLog("[%s] Mouse local(%.1f, %.1f)  global(%.1f, %.1f)  size(%.0f x %.0f)",
+                label, mouseLocal.x, mouseLocal.y, mouseGlobal.x, mouseGlobal.y, size.x, size.y);
+            m_LastMouse = mouseLocal;
+            m_LastLogTime = now;
+        }
+
+        if (inside && m_LogMouseClicks) {
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+                AddLog("[%s] Click: LMB @ local(%.1f, %.1f)", label, mouseLocal.x, mouseLocal.y);
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+                AddLog("[%s] Click: RMB @ local(%.1f, %.1f)", label, mouseLocal.x, mouseLocal.y);
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+                AddLog("[%s] Click: MMB @ local(%.1f, %.1f)", label, mouseLocal.x, mouseLocal.y);
+        }
+    }
+
+    // ---------------------------
+    // IWidget overrides
+    // ---------------------------
+    BOOM_INLINE void OnShow(AppInterface* context) override
     {
         DEBUG_DLL_BOUNDARY("ConsoleWindow::OnShow");
 
-        if (!ImGui::Begin(ICON_FA_TERMINAL "\tConsole", &open))
-        {
-            ImGui::End(); return;
-        }
-
-        // Toolbar
-        if (ImGui::Button("Clear")) { std::scoped_lock lk(m_Mu); m_Lines.clear(); }
-        ImGui::SameLine(); m_Filter.Draw("Filter", 180.0f);
-        ImGui::SameLine(); ImGui::Checkbox("Auto-scroll", &m_AutoScroll);
-        ImGui::Separator();
-
-        // Log region
-        ImGui::BeginChild("LogRegion", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), false,
-            ImGuiWindowFlags_HorizontalScrollbar);
-        {
-            std::scoped_lock lk(m_Mu);
-            for (auto& s : m_Lines)
-                if (m_Filter.PassFilter(s.c_str()))
-                    ImGui::TextUnformatted(s.c_str());
-
-            if (m_RequestScroll || (m_AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-                ImGui::SetScrollHereY(1.0f);
-            m_RequestScroll = false;
-        }
-        ImGui::EndChild();
-
-        // Input line
-        bool reclaim = false;
-        ImGui::PushItemWidth(-1);
-        if (ImGui::InputText("##ConsoleInput", m_Input, IM_ARRAYSIZE(m_Input),
-            ImGuiInputTextFlags_EnterReturnsTrue |
-            ImGuiInputTextFlags_CallbackHistory,
-            &HistoryCB, this))
-        {
-            Execute(m_Input);
-            m_Input[0] = '\0';
-            reclaim = true;
-        }
-        ImGui::PopItemWidth();
-        if (reclaim) ImGui::SetKeyboardFocusHere(-1);
-
-        ImGui::End();
-    }
-
-    BOOM_INLINE void OnSelect(Entity) override { /* no-op */ }
-
-    // ------------ API ------------
-    BOOM_INLINE void Log(const std::string& s)
-    {
-        std::scoped_lock lk(m_Mu);
-        if (m_Lines.size() == kMaxLines) m_Lines.pop_front();
-        m_Lines.push_back(s);
-        m_RequestScroll = true;
-    }
-
-    BOOM_INLINE void Register(const std::string& name,
-        std::function<void(const std::string& args)> fn)
-    {
-        m_Cmds[name] = std::move(fn);
-    }
-
-    // Expose for menu toggle
-    bool open = true;
-
-private:
-    // ------------ internals ------------
-    BOOM_INLINE void Execute(const char* line)
-    {
-        std::string cmd = line; if (cmd.empty()) return;
-        m_History.push_back(cmd); m_HistPos = -1;
-
-        auto sp = cmd.find(' ');
-        std::string name = (sp == std::string::npos) ? cmd : cmd.substr(0, sp);
-        std::string args = (sp == std::string::npos) ? "" : cmd.substr(sp + 1);
-
-        if (name == "help" || name == "clear")
-        {
-            // handled by built-ins through Register() at construction,
-            // re-dispatch to keep behavior consistent
-            if (auto it = m_Cmds.find(name); it != m_Cmds.end()) it->second(args);
+        if (!context) {
+            BOOM_ERROR("ConsoleWindow::OnShow - Null context!");
             return;
         }
 
-        if (auto it = m_Cmds.find(name); it != m_Cmds.end())
-        {
-            try { it->second(args); }
-            catch (const std::exception& e) { Log(std::string("[error] ") + e.what()); }
+        // --- Live keyboard capture (runs regardless of window visibility) ---
+        ImGuiIO& io = ImGui::GetIO();
+
+        // A) Log new key-press transitions (no repeats)
+        for (int k = (int)ImGuiKey_NamedKey_BEGIN; k < (int)ImGuiKey_NamedKey_END; ++k) {
+            ImGuiKey key = (ImGuiKey)k;
+            bool down = ImGui::IsKeyDown(key);
+            if (down && !m_KeyDownPrev[k]) {
+                const char* name = ImGui::GetKeyName(key);
+                AddLog("[KeyDown] %s", (name && *name) ? name : "(Unknown)");
+            }
+            m_KeyDownPrev[k] = down;
         }
-        else
-        {
-            Log("[unknown] " + name);
+
+        // B) Log text characters that ImGui received this frame
+        if (!io.InputQueueCharacters.empty()) {
+            for (ImWchar c : io.InputQueueCharacters) {
+                if (c >= 0x20 && c != 0x7F)
+                    AddLog("[Char] '%c' (U+%04X)", (char)c, (unsigned)c);
+                else
+                    AddLog("[Char] U+%04X", (unsigned)c);
+            }
         }
+
+        if (ImGui::Begin(ICON_FA_TERMINAL "\tDebug Console", &m_Open))
+        {
+            // Toolbar
+            if (ImGui::Button("Clear")) Clear();
+            ImGui::SameLine();
+            ImGui::Checkbox("Auto-scroll", &m_AutoScroll);
+            ImGui::SameLine();
+            ImGui::Checkbox("Pause", &m_Pause);
+            ImGui::SameLine();
+            ImGui::Checkbox("Log mouse moves", &m_LogMouseMoves);
+            ImGui::SameLine();
+            ImGui::Checkbox("Log clicks", &m_LogMouseClicks);
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(180.f);
+            m_Filter.Draw("Filter");
+
+            ImGui::Separator();
+
+            // Scroll area (reserve space for one line of input at bottom)
+            const float inputRowHeight = ImGui::GetFrameHeightWithSpacing() + 4.0f;
+            ImGui::BeginChild("ConsoleScroll", ImVec2(0, -inputRowHeight), false, ImGuiWindowFlags_HorizontalScrollbar);
+            for (const auto& s : m_Lines) {
+                if (!m_Filter.PassFilter(s.c_str())) continue;
+                ImGui::TextUnformatted(s.c_str());
+            }
+            if (m_AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+                ImGui::SetScrollHereY(1.0f);
+            ImGui::EndChild();
+
+            // --- Command input line ---
+            ImGui::Separator();
+            ImGui::SetNextItemWidth(-1.0f);
+            ImGuiInputTextFlags itf = ImGuiInputTextFlags_EnterReturnsTrue;
+            if (m_FocusInput) { ImGui::SetKeyboardFocusHere(); m_FocusInput = false; }
+            if (ImGui::InputText("##ConsoleInput", m_InputBuf, IM_ARRAYSIZE(m_InputBuf), itf)) {
+                if (m_InputBuf[0]) {
+                    AddLog("> %s", m_InputBuf);    // echo the command
+                    // TODO: parse/execute commands here if desired
+                    m_InputBuf[0] = '\0';
+                }
+                m_FocusInput = true; // keep focus after submit
+            }
+        }
+        ImGui::End();
     }
 
-    static int HistoryCB(ImGuiInputTextCallbackData* data)
+    BOOM_INLINE void OnSelect(Entity entity) override
     {
-        auto* self = static_cast<ConsoleWindow*>(data->UserData);
-        if (data->EventFlag == ImGuiInputTextFlags_CallbackHistory)
-        {
-            if (data->EventKey == ImGuiKey_UpArrow)
-            {
-                if (self->m_HistPos == -1) self->m_HistPos = (int)self->m_History.size() - 1;
-                else if (self->m_HistPos > 0) --self->m_HistPos;
-            }
-            else if (data->EventKey == ImGuiKey_DownArrow)
-            {
-                if (self->m_HistPos != -1 && ++self->m_HistPos >= (int)self->m_History.size())
-                    self->m_HistPos = -1;
-            }
-            const char* s = (self->m_HistPos == -1) ? "" : self->m_History[self->m_HistPos].c_str();
-            data->DeleteChars(0, data->BufTextLen);
-            data->InsertChars(0, s);
-        }
-        return 0;
+        DEBUG_DLL_BOUNDARY("ConsoleWindow::OnSelect");
+        BOOM_INFO("ConsoleWindow::OnSelect - Entity selected: {}", (uint32_t)entity);
+    }
+
+    BOOM_INLINE void DebugConsoleState() const
+    {
+        BOOM_INFO("=== ConsoleWindow Debug State ===");
+        BOOM_INFO("Lines: {}", (int)m_Lines.size());
+        BOOM_INFO("MaxLines: {}", m_MaxLines);
+        BOOM_INFO("AutoScroll: {}", m_AutoScroll);
+        BOOM_INFO("Pause: {}", m_Pause);
+        BOOM_INFO("LogMouseMoves: {}", m_LogMouseMoves);
+        BOOM_INFO("LogMouseClicks: {}", m_LogMouseClicks);
+        BOOM_INFO("=== End Debug State ===");
     }
 
 private:
-    static constexpr size_t kMaxLines = 4000;
-
-    std::mutex m_Mu;
+    // Data
     std::deque<std::string> m_Lines;
-    ImGuiTextFilter m_Filter;
-    bool m_AutoScroll = true;
-    bool m_RequestScroll = false;
+    ImGuiTextFilter         m_Filter;
 
-    char m_Input[512]{};
-    std::vector<std::string> m_History;
-    int m_HistPos = -1;
+    bool  m_Open = true;
+    bool  m_AutoScroll = true;
+    bool  m_Pause = false;
+    int   m_MaxLines = 2000;
 
-    std::unordered_map<std::string, std::function<void(const std::string&)>> m_Cmds;
+    // Mouse tracking config/state
+    bool   m_LogMouseMoves = true;
+    bool   m_LogMouseClicks = true;
+    float  m_LogEverySeconds = 0.05f; // throttle mouse move logs
+    ImVec2 m_LastMouse{ -FLT_MAX, -FLT_MAX };
+    double m_LastLogTime = 0.0;
+
+    // Keyboard tracking (named key space)
+    std::array<bool, ImGuiKey_NamedKey_END> m_KeyDownPrev{};
+
+    // Command input line
+    char m_InputBuf[256]{};
+    bool m_FocusInput = false;
 };

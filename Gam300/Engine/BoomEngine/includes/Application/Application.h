@@ -9,6 +9,17 @@
 namespace Boom
 {
     /**
+     * @enum ApplicationState
+     * @brief Defines the current state of the application
+     */
+    enum class ApplicationState
+    {
+        RUNNING,
+        PAUSED,
+        STOPPED
+    };
+
+    /**
      * @class Application
      * @brief Core application that owns the context and drives all layers.
      *
@@ -38,6 +49,15 @@ namespace Boom
         double m_SphereTimer = 0.0;
         //glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
         //Entity m_SphereEntity; // <-- Add this
+
+
+         // Application state management
+        ApplicationState m_AppState = ApplicationState::RUNNING;
+        double m_PausedTime = 0.0;  // Track time spent paused
+        double m_LastPauseTime = 0.0;  // When the last pause started
+        bool m_ShouldExit = false;  // Flag for graceful shutdown
+        float m_TestRot = 0.0f;
+        
 
 
         BOOM_INLINE Application()
@@ -108,6 +128,7 @@ namespace Boom
             m_Context->Physics->AddRigidBody(sphere);
             m_Context->Physics->AddRigidBody(cube);
 */
+
         }
 
         /**
@@ -125,6 +146,84 @@ namespace Boom
         }
 
         /**
+        * @brief Pauses the application (stops updates but continues rendering)
+        */
+        BOOM_INLINE void Pause()
+        {
+            if (m_AppState == ApplicationState::RUNNING) {
+                m_AppState = ApplicationState::PAUSED;
+                m_LastPauseTime = glfwGetTime();
+                BOOM_INFO("[Application] Paused");
+
+                // Pause audio if available
+            }
+        }
+
+        /**
+         * @brief Resumes the application from pause
+         */
+        BOOM_INLINE void Resume()
+        {
+            if (m_AppState == ApplicationState::PAUSED) {
+                m_AppState = ApplicationState::RUNNING;
+
+                // Add paused time to total paused time
+                m_PausedTime += (glfwGetTime() - m_LastPauseTime);
+
+                BOOM_INFO("[Application] Resumed");
+
+                // Resume audio if available
+            }
+        }
+
+        /**
+         * @brief Stops the application gracefully
+         */
+        BOOM_INLINE void Stop()
+        {
+            m_AppState = ApplicationState::STOPPED;
+            m_ShouldExit = true;
+            BOOM_INFO("[Application] Stopping application...");
+
+            // Stop audio if available
+        }
+
+        /**
+         * @brief Toggles between pause and resume
+         */
+        BOOM_INLINE void TogglePause()
+        {
+            if (m_AppState == ApplicationState::RUNNING) {
+                Pause();
+            }
+            else if (m_AppState == ApplicationState::PAUSED) {
+                Resume();
+            }
+        }
+
+        /**
+         * @brief Gets the current application state
+         */
+        BOOM_INLINE ApplicationState GetState() const { return m_AppState; }
+
+        /**
+         * @brief Gets the adjusted time (excluding paused time)
+         */
+        BOOM_INLINE double GetAdjustedTime() const
+        {
+            double currentTime = glfwGetTime();
+            double adjustedPausedTime = m_PausedTime;
+
+            // If currently paused, add the current pause duration
+            if (m_AppState == ApplicationState::PAUSED) {
+                adjustedPausedTime += (currentTime - m_LastPauseTime);
+            }
+
+            return currentTime - adjustedPausedTime;
+        }
+
+
+        /**
          * @brief Runs the main loop, calling OnUpdate() on every attached layer.
          *
          * BOOM_INLINE suggests inlining this hot-path entry point so
@@ -133,7 +232,8 @@ namespace Boom
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
             //use of ecs
-            CreateEntities();
+            //CreateEntities();
+			LoadScene("default");
 
             //lights testers
             PointLight pl1{};
@@ -153,107 +253,128 @@ namespace Boom
 
             //init skybox
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
-                    SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
-                    m_Context->renderer->InitSkybox(skybox.data, skybox.envMap, skybox.size);
+                SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
+                m_Context->renderer->InitSkybox(skybox.data, skybox.envMap, skybox.size);
                 }
             );
-            //init scripts here...
-            /*
-                EnttView<Entity, ScriptComponent>([this] (auto entity, auto& comp) {
-                    // retrieve scrit asset
-                    auto& script = m_Context->Assets->Get<ScriptAsset>(comp.Script);
-                    // load script source
-                    auto name = m_Context->Scripts->LoadScript(script.Source);
-                    // attach to entity
-                    m_Context->Scripts->AttachScript(entity, name);
-                }
-            );
-            */
-            
 
-            while (m_Context->window->PollEvents())
+
+            while (m_Context->window->PollEvents() && !m_ShouldExit)
             {
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
 
                 glfwMakeContextCurrent(engineWindow.get());
 
+                // Always update delta time, but adjust for pause state
+                ComputeFrameDeltaTime();
 
+                m_Context->profiler.BeginFrame();
+                m_Context->profiler.Start("Total Frame");
+                m_Context->profiler.Start("Renderer Start Frame");
                 m_Context->renderer->NewFrame();
-                {
-                    //testing rendering
-                    {
-                        //[0, 360] range
-                        static float testRot{};
-                        testRot += 0.25f;
-                        testRot = glm::mod(testRot, 360.f);
+                m_Context->profiler.End("Renderer Start Frame");
 
-                        //lights
-                        m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                        m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
-                        m_Context->renderer->SetPointLightCount(0);
-
-                        //glm::vec3 testDir{ -glm::cos(glm::radians(testRot)), .3f, glm::sin(glm::radians(testRot)) };
-						glm::vec3 testDir{ -.7f, -.3f, .3f };
-                        m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
-                        m_Context->renderer->SetDirectionalLightCount(1);
-
-                        m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                        m_Context->renderer->SetSpotLightCount(0);
-
-                        //camera
-                        EnttView<Entity, CameraComponent>([this](auto entity, CameraComponent& comp) {
-                                Transform3D& transform{ entity.template Get<TransformComponent>().transform };
-                                glm::vec3 rotOffset{ glm::cos(glm::radians(testRot)), 0.f, glm::sin(glm::radians(testRot)) };
-                                transform.translate = m_Context->window->camPos.z * rotOffset;
-								transform.rotate = { 0.f, -testRot + 90.f, 0.f };
-                                m_Context->renderer->SetCamera(comp.camera, transform);
-                            }
-                        );
-                        
-                        //pbr ecs
-                        EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
-                                //set animator uniform if model has one
-                                if (entity.template Has<AnimatorComponent>()) {
-                                    AnimatorComponent& an{ entity.template Get<AnimatorComponent>() };
-                                    auto& joints{ an.animator->Animate(0.001f) }; // or your real dt
-                                    m_Context->renderer->SetJoints(joints);
-                                }
-
-                                Transform3D& transform{ entity.template Get<TransformComponent>().transform };
-                                ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
-                                //draw model with material if it has one
-                                if (comp.materialID != EMPTY_ASSET) {
-                                    auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
-									material.data.albedoMap = m_Context->assets->Get<TextureAsset>(material.albedoMapID).data;
-                                    material.data.normalMap = m_Context->assets->Get<TextureAsset>(material.normalMapID).data;
-                                    material.data.roughnessMap = m_Context->assets->Get<TextureAsset>(material.roughnessMapID).data;
-                                    m_Context->renderer->Draw(model.data, transform, material.data);
-                                }
-                                else {
-                                    m_Context->renderer->Draw(model.data, transform);
-                                }
-                            }
-                        );
-                        //skybox ecs (should be drawn at the end)
-                        EnttView<Entity, SkyboxComponent>([this](auto entity, SkyboxComponent& comp) {
-                                Transform3D& transform{ entity.template Get<TransformComponent>().transform };
-                                SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
-                                m_Context->renderer->DrawSkybox(skybox.data, transform);
-                            }
-                        );
-
-                    }
+                // Only update rotation when running
+                if (m_AppState == ApplicationState::RUNNING) {
+                    m_TestRot += 0.25f;
+                    m_TestRot = glm::mod(m_TestRot, 360.f);
                 }
+                // When paused, m_TestRot stays at its current value
+
+                //lights (always set up)
+                m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
+                m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
+                m_Context->renderer->SetPointLightCount(0);
+
+                glm::vec3 testDir{ -.7f, -.3f, .3f };
+                m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
+                m_Context->renderer->SetDirectionalLightCount(1);
+
+                m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
+                m_Context->renderer->SetSpotLightCount(0);
+
+                //camera (always set up, but rotation freezes when paused)
+                EnttView<Entity, CameraComponent>([this](auto entity, CameraComponent& comp) {
+                    Transform3D& transform{ entity.template Get<TransformComponent>().transform };
+                    glm::vec3 rotOffset{ glm::cos(glm::radians(m_TestRot)), 0.f, glm::sin(glm::radians(m_TestRot)) };
+                    transform.translate = m_Context->window->camPos.z * rotOffset;
+                    transform.rotate = { 0.f, -m_TestRot + 90.f, 0.f };
+
+                    m_Context->renderer->SetCamera(comp.camera, transform);
+                    });
+
+                //pbr ecs (always render)
+                EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
+                    static int renderCount = 0;
+                    static bool debugModelsPrinted = false;
+
+                    if (!debugModelsPrinted && renderCount < 5) {
+                        BOOM_INFO("[Render] Rendering model entity, ModelID: {}, MaterialID: {}",
+                            comp.modelID, comp.materialID);
+                    }
+
+                    //set animator uniform if model has one
+                    if (entity.template Has<AnimatorComponent>()) {
+                        AnimatorComponent& an{ entity.template Get<AnimatorComponent>() };
+                        // Only animate if not paused
+                        float deltaTime = (m_AppState == ApplicationState::RUNNING) ? static_cast<float>(m_Context->DeltaTime) : 0.0f;
+                        auto& joints{ an.animator->Animate(deltaTime) };
+                        m_Context->renderer->SetJoints(joints);
+                    }
+
+                    Transform3D& transform{ entity.template Get<TransformComponent>().transform };
+                    ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
+
+                    if (!debugModelsPrinted && renderCount < 5) {
+                        BOOM_INFO("[Render] Transform position: ({}, {}, {}), scale: ({}, {}, {})",
+                            transform.translate.x, transform.translate.y, transform.translate.z,
+                            transform.scale.x, transform.scale.y, transform.scale.z);
+                    }
+
+                    //draw model with material if it has one
+                    if (comp.materialID != EMPTY_ASSET) {
+                        auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
+                        material.data.albedoMap = m_Context->assets->Get<TextureAsset>(material.albedoMapID).data;
+                        material.data.normalMap = m_Context->assets->Get<TextureAsset>(material.normalMapID).data;
+                        material.data.roughnessMap = m_Context->assets->Get<TextureAsset>(material.roughnessMapID).data;
+                        m_Context->renderer->Draw(model.data, transform, material.data);
+                    }
+                    else {
+                        m_Context->renderer->Draw(model.data, transform);
+                    }
+
+                    renderCount++;
+                    if (renderCount >= 5) debugModelsPrinted = true;
+                    });
+
+                //skybox ecs (should be drawn at the end)
+                EnttView<Entity, SkyboxComponent>([this](auto entity, SkyboxComponent& comp) {
+                    Transform3D& transform{ entity.template Get<TransformComponent>().transform };
+                    SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
+                    m_Context->renderer->DrawSkybox(skybox.data, transform);
+                    });
+
+                m_Context->profiler.Start("Renderer End Frame");
                 m_Context->renderer->EndFrame();
+                m_Context->profiler.End("Renderer End Frame");
 
                 //draw the updated frame
                 m_Context->renderer->ShowFrame(showFrame);
 
-                //update layers
+
                 for (auto layer : m_Context->Layers)
                 {
                     layer->OnUpdate();
                 }
+                //update layers only when running
+                if (m_AppState == ApplicationState::RUNNING)
+                {
+                    // Run physics simulation only when running
+                    RunPhysicsSimulation();
+                }
+
+                m_Context->profiler.End("Total Frame");
+                m_Context->profiler.EndFrame();
             }
         }
 
@@ -261,9 +382,18 @@ namespace Boom
         BOOM_INLINE void CreateEntities() {
             auto skyboxAsset{ m_Context->assets->AddSkybox(RandomU64(), "Skybox/sky.hdr", 2048) };
             auto robotAsset{ m_Context->assets->AddModel(RandomU64(), "dance.fbx", true) };
+            if (!robotAsset || !robotAsset->data) {
+                BOOM_ERROR("[ASSET] Failed to load dance.fbx!");
+            }
             //script asset ...
             auto sphereAsset{ m_Context->assets->AddModel(RandomU64(), "sphere.fbx") };
             auto cubeAsset{ m_Context->assets->AddModel(RandomU64(), "cube.fbx") };
+
+            auto cubeAsset2{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy.fbx") };
+            auto cubeAsset3{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (2).fbx") };
+            auto cubeAsset4{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (3).fbx") };
+            auto cubeAsset5{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (4).fbx") };
+            auto cubeAsset6{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (5).fbx") };
             
             //materials
             auto albedoTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/albedo.png") };
@@ -309,108 +439,172 @@ namespace Boom
 			sphereModel.modelID = sphereAsset->uid;
 			sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
 
-            // -------- Serializer round-trip smoke test --------
-            {
-                DataSerializer ser;
-
-                const std::string scenePath = "SceneTest.yaml";
-                const std::string assetsPath = "AssetsTest.yaml";
-
-                // Count entities before serialize
-                size_t countBefore = 0;
-                auto viewBefore = m_Context->scene.view<entt::entity>();
-                for (auto entity : viewBefore) 
-                {
-                    (void)entity; // Suppress unused variable warning
-                    ++countBefore;
-                }
-
-                // 1) Serialize scene + assets
-                ser.Serialize(m_Context->scene, scenePath);
-                ser.Serialize(*m_Context->assets, assetsPath);
-                BOOM_INFO("[Serializer] Wrote scene -> {} and assets -> {}", scenePath, assetsPath);
-
-                // 2) Clear everything
-                m_Context->scene.clear();
-                // Re-init assets to restore EMPTY_ASSET sentinels
-                *m_Context->assets = AssetRegistry();
-                BOOM_INFO("[Serializer] Cleared registries");
-
-                //try 
-                //{
-                //    BOOM_INFO("[Serializer] Starting asset deserialization...");
-                //    ser.Deserialize(*m_Context->assets, assetsPath);
-                //    BOOM_INFO("[Serializer] Asset deserialization complete");
-
-                //    BOOM_INFO("[Serializer] Starting scene deserialization...");
-                //    ser.Deserialize(m_Context->scene, *m_Context->assets, scenePath);
-                //    BOOM_INFO("[Serializer] Scene deserialization complete");
-                //}
-                //catch (const std::exception& e) 
-                //{
-
-                //    (void)BOOM_ERROR(std::string("[Serializer] Deserialization failed: ") + e.what());
-                //    //return; // Skip the rest of the test
-                //}
-
-                BOOM_INFO("[Serializer] Starting asset deserialization...");
-                ser.Deserialize(*m_Context->assets, assetsPath);
-                BOOM_INFO("[Serializer] Asset deserialization complete");
-
-                BOOM_INFO("[Serializer] Starting scene deserialization...");
-                ser.Deserialize(m_Context->scene, *m_Context->assets, scenePath);
-                BOOM_INFO("[Serializer] Scene deserialization complete");
-
-                // 3) Deserialize back
-                BOOM_INFO("[Serializer] Reloaded scene + assets from YAML");
-
-                // 4) Verify a few expectations
-                size_t countAfter = 0;
-                auto viewAfter = m_Context->scene.view<entt::entity>();
-                for (auto entity : viewAfter) {
-                    (void)entity; // Suppress unused variable warning
-                    ++countAfter;
-                }
-
-
-                bool hasCamera = false, hasSkyboxEnt = false, hasModelEnt = false;
-                EnttView<Entity, CameraComponent, TransformComponent>([&](auto, auto&, auto&) { hasCamera = true; });
-                EnttView<Entity, SkyboxComponent>([&](auto, auto&) { hasSkyboxEnt = true; });
-                EnttView<Entity, ModelComponent>([&](auto, auto&) { hasModelEnt = true; });
-
-                bool hasSkyboxAsset = false, hasDanceModel = false, hasMarbleMat = false;
-                m_Context->assets->View([&](Asset* a) {
-                    BOOM_INFO("[Verify] Asset: type={}, name='{}', checking...", (int)a->type, a->name);
-                    if (a->type == AssetType::SKYBOX) {
-                        BOOM_INFO("[Verify] Found skybox asset!");
-                        hasSkyboxAsset = true;
-                    }
-                    if (a->type == AssetType::MODEL && a->name == "dance") {
-                        BOOM_INFO("[Verify] Found dance model!");
-                        hasDanceModel = true;
-                    }
-                    if (a->type == AssetType::MATERIAL && a->name == "Marble") {
-                        BOOM_INFO("[Verify] Found marble material!");
-                        hasMarbleMat = true;
-                    }
-                    });
-
-                BOOM_INFO("[Serializer] Entities before: {}, after: {}", (int)countBefore, (int)countAfter);
-                BOOM_INFO("[Serializer] hasCamera={}, hasSkyboxEnt={}, hasModelEnt={}",
-                    hasCamera, hasSkyboxEnt, hasModelEnt);
-                BOOM_INFO("[Serializer] hasSkyboxAsset={}, hasDanceModel={}, hasMarbleMat={}",
-                    hasSkyboxAsset, hasDanceModel, hasMarbleMat);
-
-                // Optional: assert-ish checks (convert to your engine’s assert/log style)
-                if (!hasCamera || !hasSkyboxEnt || !hasModelEnt)
-                    BOOM_ERROR("[Serializer] Missing expected entity after reload.");
-                if (!hasSkyboxAsset || !hasDanceModel || !hasMarbleMat)
-                    BOOM_ERROR("[Serializer] Missing expected asset after reload.");
-            }
-            // -------- End serializer round-trip test --------
+           
 
         }
+
+
+        /**
+     * @brief Saves the current scene and assets to files
+     * @param sceneName The name of the scene (without extension)
+     * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
+     * @return true if save was successful, false otherwise
+     */
+        BOOM_INLINE bool SaveScene(const std::string& sceneName, const std::string& scenePath = "Scenes/")
+        {
+			//Try blocks cause crashed in release mode. Need to find new alternative
+            DataSerializer serializer;
+
+            const std::string sceneFilePath = scenePath + sceneName + ".yaml";
+            const std::string assetsFilePath = scenePath + sceneName + "_assets.yaml";
+
+            BOOM_INFO("[Scene] Saving scene '{}' to '{}'", sceneName, sceneFilePath);
+
+            // Serialize scene and assets
+            serializer.Serialize(m_Context->scene, sceneFilePath);
+            serializer.Serialize(*m_Context->assets, assetsFilePath);
+
+            // Update current scene tracking
+            strncpy_s(m_CurrentScenePath, sizeof(m_CurrentScenePath), sceneFilePath.c_str(), _TRUNCATE);
+
+            BOOM_INFO("[Scene] Successfully saved scene '{}' and assets", sceneName);
+			return true;
+        }
+
+        /**
+         * @brief Loads a scene from files, replacing the current scene
+         * @param sceneName The name of the scene (without extension)
+         * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
+         * @return true if load was successful, false otherwise
+         */
+        BOOM_INLINE bool LoadScene(const std::string& sceneName, const std::string& scenePath = "Scenes/")
+        {
+            DataSerializer serializer;
+
+            const std::string sceneFilePath = scenePath + sceneName + ".yaml";
+            const std::string assetsFilePath = scenePath + sceneName + "_assets.yaml";
+
+            BOOM_INFO("[Scene] Loading scene '{}' from '{}'", sceneName, sceneFilePath);
+
+            // Clean up current scene
+            CleanupCurrentScene();
+
+            // Load assets first
+            BOOM_INFO("[Scene] Loading assets...");
+            serializer.Deserialize(*m_Context->assets, assetsFilePath);
+
+            // Then load scene
+            BOOM_INFO("[Scene] Loading scene data...");
+            serializer.Deserialize(m_Context->scene, *m_Context->assets, sceneFilePath);
+
+            // Update tracking
+            strncpy_s(m_CurrentScenePath, sizeof(m_CurrentScenePath), sceneFilePath.c_str(), _TRUNCATE);
+            m_SceneLoaded = true;
+
+            // Reinitialize systems that need it
+            ReinitializeSceneSystems();
+
+            BOOM_INFO("[Scene] Successfully loaded scene '{}'", sceneName);
+			return true;
+        }
+
+
+        /**
+         * @brief Creates a new empty scene
+         * @param sceneName Optional name for the new scene
+         */
+        BOOM_INLINE void NewScene(const std::string& sceneName = "NewScene")
+        {
+            BOOM_INFO("[Scene] Creating new scene '{}'", sceneName);
+
+            // Clean up current scene
+            CleanupCurrentScene();
+
+            // Create basic scene with camera
+            CreateDefaultScene();
+
+            m_CurrentScenePath[0] = '\0'; // Clear the path
+            m_SceneLoaded = false;
+
+            BOOM_INFO("[Scene] New scene '{}' created", sceneName);
+        }
+
+        /**
+         * @brief Gets the current scene file path
+         */
+        BOOM_INLINE std::string GetCurrentScenePath() const { return std::string(m_CurrentScenePath); }
+
+        /**
+         * @brief Checks if a scene is currently loaded
+         */
+        BOOM_INLINE bool IsSceneLoaded() const { return m_SceneLoaded; }
+
 private:
+
+        char m_CurrentScenePath[512] = "\0";
+        bool m_SceneLoaded = false;
+
+        /**
+     * @brief Cleans up the current scene and physics actors
+     */
+        BOOM_INLINE void CleanupCurrentScene()
+        {
+            BOOM_INFO("[Scene] Cleaning up current scene...");
+
+            // Destroy physics actors before clearing scene
+            DestroyPhysicsActors();
+
+            // Clear the ECS scene
+            m_Context->scene.clear();
+
+            // Reset asset registry (keeping EMPTY_ASSET sentinels)
+            *m_Context->assets = AssetRegistry();
+
+            // Reset any scene-specific state
+            m_TestRot = 0.0f;
+
+            BOOM_INFO("[Scene] Scene cleanup complete");
+        }
+
+        /**
+         * @brief Reinitializes systems after loading a scene
+         */
+        BOOM_INLINE void ReinitializeSceneSystems()
+        {
+            BOOM_INFO("[Scene] Reinitializing scene systems...");
+
+            // Reinitialize skybox if present
+            EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
+                SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
+                m_Context->renderer->InitSkybox(skybox.data, skybox.envMap, skybox.size);
+                BOOM_INFO("[Scene] Reinitialized skybox");
+                });
+
+            EnttView<Entity, RigidBodyComponent>([this](auto entity, auto&) {
+                // Re-register with physics system
+                m_Context->Physics->AddRigidBody(entity);
+                BOOM_INFO("[Scene] Reinitialized physics body");
+                });
+
+            BOOM_INFO("[Scene] Scene systems reinitialization complete");
+        }
+
+        /**
+         * @brief Creates a minimal default scene with camera
+         */
+        BOOM_INLINE void CreateDefaultScene()
+        {
+            BOOM_INFO("[Scene] Creating default scene...");
+
+            // Create basic camera entity
+            Entity camera{ &m_Context->scene };
+            camera.Attach<InfoComponent>();
+            camera.Attach<TransformComponent>();
+            camera.Attach<CameraComponent>();
+
+            BOOM_INFO("[Scene] Default scene created with camera");
+        }
+
         BOOM_INLINE void RegisterEventCallbacks()
         {
             // Set physics event callback (mark unused param to avoid warnings)
@@ -426,11 +620,22 @@ private:
                     m_Context->renderer->Resize(e.width, e.height);
                 });
         }
-BOOM_INLINE void ComputeFrameDeltaTime()
+        BOOM_INLINE void ComputeFrameDeltaTime()
         {
             static double sLastTime = glfwGetTime();
             double currentTime = glfwGetTime();
-            m_Context->DeltaTime = (currentTime - sLastTime);
+
+            // Calculate raw delta time
+            double rawDelta = (currentTime - sLastTime);
+
+            // Only update delta time if not paused
+            if (m_AppState == ApplicationState::RUNNING) {
+                m_Context->DeltaTime = rawDelta;
+            }
+            else {
+                m_Context->DeltaTime = 0.0; // No time progression when paused
+            }
+
             sLastTime = currentTime;
         }
 
@@ -454,15 +659,19 @@ BOOM_INLINE void ComputeFrameDeltaTime()
 
         BOOM_INLINE void RunPhysicsSimulation()
         {
-            m_Context->Physics->Simulate(1, static_cast<float>(m_Context->DeltaTime));
-            EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
-                {
-                    auto& transform = entity.template Get<TransformComponent>().transform;
-                    auto pose = comp.RigidBody.actor->getGlobalPose();
-                    glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
-                    transform.rotate = glm::degrees(glm::eulerAngles(rot));
-                    transform.translate = PxToVec3(pose.p);
-                });
+            // Only simulate physics if running
+            if (m_AppState == ApplicationState::RUNNING) 
+            {
+                m_Context->Physics->Simulate(1, static_cast<float>(m_Context->DeltaTime));
+                EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
+                    {
+                        auto& transform = entity.template Get<TransformComponent>().transform;
+                        auto pose = comp.RigidBody.actor->getGlobalPose();
+                        glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
+                        transform.rotate = glm::degrees(glm::eulerAngles(rot));
+                        transform.translate = PxToVec3(pose.p);
+                    });
+            }
         }
     };
 

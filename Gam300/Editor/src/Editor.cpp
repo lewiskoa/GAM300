@@ -1,4 +1,5 @@
 #pragma warning(disable: 4834)  // Disable nodiscard warnings
+#
 #include "BoomEngine.h"
 #include "Vendors/imgui/imgui.h"
 #include "Windows/Inspector.h"
@@ -12,6 +13,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "ImGuizmo.h"
 
+#include "Context/Profiler.hpp"
 
 using namespace Boom;
 bool m_ShowPrefabBrowser = true;
@@ -21,8 +23,8 @@ class Editor : public AppInterface
 public:
     // In your Editor class
 public:
-    BOOM_INLINE Editor(ImGuiContext* imguiContext, entt::registry* registry)
-        : m_ImGuiContext(imguiContext), m_Registry(registry) // <-- Assign m_Registry here
+    BOOM_INLINE Editor(ImGuiContext* imguiContext, entt::registry* registry, Application* app)
+        : m_ImGuiContext(imguiContext), m_Registry(registry), m_Application(app) // <-- Assign m_Registry here
     {
         BOOM_INFO("Editor created with ImGui context: {}", (void*)imguiContext);
     }
@@ -67,7 +69,10 @@ private:
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
-        ImGuizmo::BeginFrame(); 
+        ImGuizmo::BeginFrame();
+
+        // Handle keyboard shortcuts
+        HandleKeyboardShortcuts();
 
         // Create the main editor layout
         CreateMainDockSpace();
@@ -79,6 +84,14 @@ private:
             m_Console.OnShow(this);
         RenderGizmo();
         RenderPrefabBrowser();
+        RenderPerformance();
+        RenderResources();
+        RenderPlaybackControls();
+        if (m_ShowConsole)
+            m_Console.OnShow(this);
+
+        // Render scene management dialogs
+        RenderSceneDialogs();
 
         // End frame and render
         ImGui::Render();
@@ -89,7 +102,7 @@ private:
         }
     }
 
-    BOOM_INLINE void CreateMainDockSpace()
+    BOOM_INLINE void CreateMainDockSpace() const
     {
         ImGuiViewport* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport->Pos);
@@ -115,23 +128,183 @@ private:
         ImGui::End();
     }
 
+    BOOM_INLINE void RenderPlaybackControls()
+    {
+        if (!m_ShowPlaybackControls) return;
+
+        if (ImGui::Begin("Playback Controls", &m_ShowPlaybackControls))
+        {
+            // Get the application reference (you'll need to store this)
+           
+			Application* app = m_Application;
+
+            if (app) {
+                ApplicationState currentState = app->GetState();
+
+                // Display current state
+                ImGui::Text("Application State: ");
+                ImGui::SameLine();
+                switch (currentState) {
+                case ApplicationState::RUNNING:
+                    ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "RUNNING");
+                    break;
+                case ApplicationState::PAUSED:
+                    ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "PAUSED");
+                    break;
+                case ApplicationState::STOPPED:
+                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "STOPPED");
+                    break;
+                }
+
+                ImGui::Separator();
+
+                // Control buttons
+                ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
+
+                // Play/Resume button
+                bool canPlay = (currentState == ApplicationState::PAUSED || currentState == ApplicationState::STOPPED);
+                if (!canPlay) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+                }
+                else {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.7f, 0.0f, 0.8f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.8f, 0.0f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.6f, 0.0f, 1.0f));
+                }
+
+                if (ImGui::Button("Play/Resume", ImVec2(100, 30))) {
+                    if (canPlay) {
+                        app->Resume();
+                        BOOM_INFO("[Editor] Play/Resume button clicked");
+                    }
+                }
+                ImGui::PopStyleColor(3);
+
+                ImGui::SameLine();
+
+                // Pause button
+                bool canPause = (currentState == ApplicationState::RUNNING);
+                if (!canPause) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+                }
+                else {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 1.0f, 0.0f, 0.8f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 0.2f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
+                }
+
+                if (ImGui::Button("Pause", ImVec2(100, 30))) {
+                    if (canPause) {
+                        app->Pause();
+                        BOOM_INFO("[Editor] Pause button clicked");
+                    }
+                }
+                ImGui::PopStyleColor(3);
+
+                ImGui::SameLine();
+
+                // Stop button
+                bool canStop = (currentState != ApplicationState::STOPPED);
+                if (!canStop) {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
+                }
+                else {
+                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.0f, 0.0f, 0.8f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.0f, 0.0f, 1.0f));
+                }
+
+                if (ImGui::Button("Stop", ImVec2(100, 30))) {
+                    if (canStop) {
+                        app->Stop();
+                        BOOM_INFO("[Editor] Stop button clicked");
+                    }
+                }
+                ImGui::PopStyleColor(3);
+
+                ImGui::PopStyleVar();
+
+                ImGui::Separator();
+
+                // Additional info
+                ImGui::Text("Keyboard Shortcuts:");
+                ImGui::BulletText("Spacebar: Toggle Pause/Resume");
+                ImGui::BulletText("Escape: Stop Application");
+
+                // Time information
+                if (currentState != ApplicationState::STOPPED) {
+                    ImGui::Separator();
+                    ImGui::Text("Adjusted Time: %.2f seconds", app->GetAdjustedTime());
+
+                    if (currentState == ApplicationState::PAUSED) {
+                        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Time is paused");
+                    }
+                }
+            }
+            else {
+                ImGui::Text("Application reference not available");
+            }
+        }
+        ImGui::End();
+    }
+
     BOOM_INLINE void RenderMenuBar()
     {
         if (ImGui::BeginMainMenuBar()) {
             if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("New Scene")) {
-                    BOOM_INFO("New Scene selected");
+                if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
+                    if (m_Application) {
+                        m_Application->NewScene("UntitledScene");
+                        BOOM_INFO("[Editor] Created new scene");
+                    }
                 }
-                if (ImGui::MenuItem("Open Scene")) {
-                    BOOM_INFO("Open Scene selected");
-                }
-                if (ImGui::MenuItem("Save Scene")) {
-                    BOOM_INFO("Save Scene selected");
-                }
+
                 ImGui::Separator();
-                if (ImGui::MenuItem("Exit")) {
-                    BOOM_INFO("Exit selected");
+
+                if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+                    m_ShowSaveDialog = true;
+                    // Set current scene name as default
+                    if (m_Application && m_Application->IsSceneLoaded()) {
+                        std::string currentPath = m_Application->GetCurrentScenePath();
+                        if (!currentPath.empty()) {
+                            // Extract scene name from path
+                            size_t lastSlash = currentPath.find_last_of("/\\");
+                            size_t lastDot = currentPath.find_last_of(".");
+                            if (lastSlash != std::string::npos && lastDot != std::string::npos && lastDot > lastSlash) {
+                                std::string sceneName = currentPath.substr(lastSlash + 1, lastDot - lastSlash - 1);
+                                strncpy_s(m_SceneNameBuffer, sizeof(m_SceneNameBuffer), sceneName.c_str(), _TRUNCATE);
+                            }
+                        }
+                    }
                 }
+
+                if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S")) {
+                    m_ShowSaveDialog = true;
+                    // Clear the buffer for new name
+                    m_SceneNameBuffer[0] = '\0';
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Load Scene", "Ctrl+O")) {
+                    m_ShowLoadDialog = true;
+                    RefreshSceneList();
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Exit", "Alt+F4")) {
+                    if (m_Application) {
+                        m_Application->Stop();
+                    }
+                }
+
                 ImGui::EndMenu();
             }
 
@@ -139,20 +312,112 @@ private:
                 ImGui::MenuItem("Inspector", nullptr, &m_ShowInspector);
                 ImGui::MenuItem("Hierarchy", nullptr, &m_ShowHierarchy);
                 ImGui::MenuItem("Viewport", nullptr, &m_ShowViewport);
-                ImGui::MenuItem("Console", nullptr, &m_ShowConsole);
-                ImGui::MenuItem("Prefab Browser", nullptr, &m_ShowPrefabBrowser); // <-- MAKE SURE THIS LINE IS HERE
+                ImGui::MenuItem("Prefab Browser", nullptr, &m_ShowPrefabBrowser);
+                ImGui::MenuItem("Performance", nullptr, &m_ShowPerformance);
+                ImGui::MenuItem("Playback Controls", nullptr, &m_ShowPlaybackControls);
+                ImGui::MenuItem("Debug Console", nullptr, &m_ShowConsole);
                 ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("Options")) {
+                ImGui::MenuItem("Debug Draw", nullptr, &m_Context->renderer->IsDrawDebugMode());
+                ImGui::EndMenu();
+            }
+
+            // Show current scene info in menu bar
+            if (m_Application) {
+                ImGui::Separator();
+                if (m_Application->IsSceneLoaded()) {
+                    std::string currentPath = m_Application->GetCurrentScenePath();
+                    if (!currentPath.empty()) {
+                        // Extract just the filename
+                        size_t lastSlash = currentPath.find_last_of("/\\");
+                        std::string fileName = (lastSlash != std::string::npos) ?
+                            currentPath.substr(lastSlash + 1) : currentPath;
+                        ImGui::Text("Scene: %s", fileName.c_str());
+                    }
+                    else {
+                        ImGui::Text("Scene: Unsaved");
+                    }
+                }
+                else {
+                    ImGui::Text("Scene: None");
+                }
             }
 
             ImGui::EndMainMenuBar();
         }
     }
+    BOOM_INLINE void RenderPerformance()
+    {
+        if (!m_ShowPerformance) return;
 
+        // normal dockable window
+        if (ImGui::Begin("Performance", &m_ShowPerformance))
+        {
+            // timing
+            ImGuiIO& io = ImGui::GetIO();
+            const float fps = io.Framerate;
+            const float ms = fps > 0.f ? 1000.f / fps : 0.f;
+
+            ImGui::Text("FPS: %.1f  (%.2f ms)", fps, ms);
+            ImGui::Separator();
+
+            // history
+            m_FpsHistory[m_FpsWriteIdx] = fps;
+            m_FpsWriteIdx = (m_FpsWriteIdx + 1) % kPerfHistory;
+
+            float tmp[kPerfHistory];
+            for (int i = 0; i < kPerfHistory; ++i)
+                tmp[i] = m_FpsHistory[(m_FpsWriteIdx + i) % kPerfHistory];
+
+            // plot fills the panel width
+            ImVec2 plotSize(ImGui::GetContentRegionAvail().x, 80.f);
+            ImGui::PlotLines("FPS", tmp, kPerfHistory, 0, nullptr, 0.0f, 240.0f, plotSize);
+           
+            // simple status line
+            if (fps >= 120.f) ImGui::TextColored(ImVec4(0.3f, 1, 0.3f, 1), "Very fast");
+            else if (fps >= 60.f)  ImGui::TextColored(ImVec4(0.6f, 1, 0.6f, 1), "Good");
+            else if (fps >= 30.f)  ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Playable");
+            else                   ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "Slow");
+
+            DrawProfilerPanel(m_Context->profiler);
+        }
+        ImGui::End();
+    }
+
+    
     BOOM_INLINE void RenderViewport()
     {
         if (!m_ShowViewport) return;
 
         if (ImGui::Begin("Viewport", &m_ShowViewport)) {
+
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_ASSET"))
+                {
+                    const char* prefabName = (const char*)payload->Data;
+                    std::string path = "src/Prefabs/" + std::string(prefabName) + ".prefab";
+                    std::cout << "Spawned prefab: " << prefabName << "\n";
+
+
+                    // Instantiate prefab
+                    entt::entity newEntity = Boom::PrefabSystem::InstantiatePrefab(
+                        m_Context->scene,
+                        *m_Context->assets,
+                        path
+                    );
+
+                    if (newEntity != entt::null) {
+                        std::cout << "Spawned prefab: " << prefabName << " (" << path << ")\n";
+                    }
+                    else {
+                        std::cout << "Failed to spawn prefab: " << prefabName << "\n";
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
             // Get frame texture from engine
             uint32_t frameTexture = GetSceneFrame();
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
@@ -164,7 +429,9 @@ private:
                 ImGui::Image((ImTextureID)(uintptr_t)frameTexture, viewportSize,
                     ImVec2(0, 1), ImVec2(1, 0));  // Flipped UV for OpenGL
 
-                glm::mat4 cameraProjection;
+                m_Console.TrackLastItemAsViewport("Viewport");
+
+                glm::mat4 cameraProjection{};
                 auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
                 if (view.begin() != view.end()) {
                     auto entityID = view.front();
@@ -205,6 +472,8 @@ private:
                 }
             }
         }
+
+
         ImGui::End();
     }
 
@@ -315,36 +584,29 @@ private:
         if (!m_ShowPrefabBrowser) return;
 
         if (ImGui::Begin("Prefab Browser", &m_ShowPrefabBrowser)) {
-            // ==========================================================
-            // ===== THE PREFAB LIST IS NOW HARDCODED IN THE CODE =====
-            // ==========================================================
-            const char* prefabNames[] = {
-                "Player",
-                "RedBarrel",
-                "EnemyGrunt"
+            const char* prefabName = "Player"; // single prefab
 
-            };
-            // ==========================================================
-
-            ImGui::Text("Available Prefabs:");
-            ImGui::Separator();
-
-            // Loop through the hardcoded array of names
-            for (const char* prefabName : prefabNames) {
-                // Use Selectable instead of Button for a cleaner drag source
-                ImGui::Selectable(prefabName);
-
-                // Check if the item is being dragged
-                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-                    // Set the payload with a unique identifier and the prefab name
-                    ImGui::SetDragDropPayload("PREFAB_ASSET", prefabName, strlen(prefabName) + 1);
-
-                    // Optional: display a tooltip while dragging
-                    ImGui::Text("Dragging %s", prefabName);
-
-                    ImGui::EndDragDropSource();
-                }
+            // Make it selectable and debug when clicked
+            if (ImGui::Selectable(prefabName)) {
+                std::cout << "[DEBUG] Prefab selected: " << prefabName << "\n";
+                // Optional: store the currently selected prefab if needed
             }
+
+            if (ImGui::Button("Spawn Player")) {
+                Boom::PrefabSystem::InstantiatePrefab(
+                    m_Context->scene,
+                    *m_Context->assets,
+                    "src/Prefab/Player.prefab"
+                );
+            }
+
+
+            //// Drag source
+            //if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+            //    ImGui::SetDragDropPayload("PREFAB_ASSET", prefabName, strlen(prefabName) + 1);
+            //    ImGui::Text("Dragging %s", prefabName);
+            //    ImGui::EndDragDropSource();
+            //}
         }
         ImGui::End();
     }
@@ -361,7 +623,7 @@ private:
 
             // --- Info Component ---
             if (selectedEntity.Has<Boom::InfoComponent>()) {
-                auto& info = selectedEntity.Get<Boom::InfoComponent>();
+                auto& info = selectedEntity.Get<Boom::InfoComponent>(); 
 
                 // ImGui expects a non-const char* for InputText
                 char buffer[256];
@@ -405,6 +667,186 @@ private:
 
         ImGui::End();
     }
+    
+    BOOM_INLINE void RenderResources() {
+        rw.OnShow(this);
+    }
+
+    BOOM_INLINE void RefreshSceneList()
+    {
+        m_AvailableScenes.clear();
+
+        // For now, add some default scenes - you can implement directory scanning later
+        m_AvailableScenes.push_back("default");
+        m_AvailableScenes.push_back("test");
+        //m_AvailableScenes.push_back("demo_level");
+
+        // TODO: Implement actual directory scanning for .yaml files in Scenes/ folder
+        // This would require platform-specific code or a library like std::filesystem
+    }
+
+    BOOM_INLINE void RenderSceneDialogs()
+    {
+        // Save Scene Dialog
+        if (m_ShowSaveDialog) {
+            ImGui::OpenPopup("Save Scene");
+            m_ShowSaveDialog = false; // Reset flag
+        }
+
+        if (ImGui::BeginPopupModal("Save Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Enter scene name:");
+            ImGui::Separator();
+
+            bool enterPressed = ImGui::InputText("##SceneName", m_SceneNameBuffer, sizeof(m_SceneNameBuffer),
+                ImGuiInputTextFlags_EnterReturnsTrue);
+
+            ImGui::Separator();
+
+            bool saveClicked = ImGui::Button("Save", ImVec2(80, 0));
+            ImGui::SameLine();
+            bool cancelClicked = ImGui::Button("Cancel", ImVec2(80, 0));
+
+            if ((saveClicked || enterPressed) && strlen(m_SceneNameBuffer) > 0) {
+                if (m_Application) {
+                    bool success = m_Application->SaveScene(std::string(m_SceneNameBuffer));
+                    if (success) {
+                        BOOM_INFO("[Editor] Scene '{}' saved successfully", m_SceneNameBuffer);
+                    }
+                    else {
+                        BOOM_ERROR("[Editor] Failed to save scene '{}'", m_SceneNameBuffer);
+                    }
+                }
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (cancelClicked) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
+        // Load Scene Dialog
+        if (m_ShowLoadDialog) {
+            ImGui::OpenPopup("Load Scene");
+            m_ShowLoadDialog = false; // Reset flag
+        }
+
+        if (ImGui::BeginPopupModal("Load Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Select scene to load:");
+            ImGui::Separator();
+
+            // Scene list
+            if (m_AvailableScenes.empty()) {
+                ImGui::Text("No scenes found in Scenes/ directory");
+            }
+            else {
+                // Use a child window to contain the selectables and prevent popup closing
+                if (ImGui::BeginChild("SceneList", ImVec2(250, 150), true)) {
+                    for (int i = 0; i < (int)m_AvailableScenes.size(); i++) {
+                        if (ImGui::Selectable(m_AvailableScenes[i].c_str(), m_SelectedSceneIndex == i)) {
+                            m_SelectedSceneIndex = i;
+                        }
+
+                        // Double-click to load immediately
+                        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                            if (m_Application) {
+                                std::string selectedScene = m_AvailableScenes[i];
+                                bool success = m_Application->LoadScene(selectedScene);
+                                if (success) {
+                                    BOOM_INFO("[Editor] Scene '{}' loaded successfully", selectedScene);
+                                    m_SelectedEntity = entt::null;
+                                }
+                                else {
+                                    BOOM_ERROR("[Editor] Failed to load scene '{}'", selectedScene);
+                                }
+                            }
+                            ImGui::CloseCurrentPopup();
+                            ImGui::EndChild();
+                            ImGui::EndPopup();
+                            return; // Exit early to avoid processing the rest
+                        }
+                    }
+                }
+                ImGui::EndChild();
+            }
+
+            ImGui::Separator();
+
+            bool loadClicked = ImGui::Button("Load", ImVec2(80, 0));
+            ImGui::SameLine();
+            bool cancelClicked = ImGui::Button("Cancel", ImVec2(80, 0));
+
+            if (loadClicked && m_SelectedSceneIndex >= 0 && m_SelectedSceneIndex < (int)m_AvailableScenes.size()) {
+                if (m_Application) {
+                    std::string selectedScene = m_AvailableScenes[m_SelectedSceneIndex];
+                    bool success = m_Application->LoadScene(selectedScene);
+                    if (success) {
+                        BOOM_INFO("[Editor] Scene '{}' loaded successfully", selectedScene);
+                        m_SelectedEntity = entt::null; // Clear selection when loading new scene
+                    }
+                    else {
+                        BOOM_ERROR("[Editor] Failed to load scene '{}'", selectedScene);
+                    }
+                }
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (cancelClicked) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
+
+    // Add keyboard shortcut handling:
+    BOOM_INLINE void HandleKeyboardShortcuts()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+
+        // Scene management shortcuts
+        if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_N)) {
+            // New Scene (Ctrl+N)
+            if (m_Application) {
+                m_Application->NewScene("UntitledScene");
+                BOOM_INFO("[Editor] New scene created via shortcut");
+            }
+        }
+
+        if (io.KeyCtrl && !io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_S)) {
+            // Save Scene (Ctrl+S)
+            if (m_Application && m_Application->IsSceneLoaded()) {
+                std::string currentPath = m_Application->GetCurrentScenePath();
+                if (!currentPath.empty()) {
+                    // Extract scene name and save
+                    size_t lastSlash = currentPath.find_last_of("/\\");
+                    size_t lastDot = currentPath.find_last_of(".");
+                    if (lastSlash != std::string::npos && lastDot != std::string::npos && lastDot > lastSlash) {
+                        std::string sceneName = currentPath.substr(lastSlash + 1, lastDot - lastSlash - 1);
+                        m_Application->SaveScene(sceneName);
+                        BOOM_INFO("[Editor] Scene saved via shortcut");
+                    }
+                }
+                else {
+                    // No current scene, show save dialog
+                    m_ShowSaveDialog = true;
+                }
+            }
+        }
+
+        if (io.KeyCtrl && io.KeyShift && ImGui::IsKeyPressed(ImGuiKey_S)) {
+            // Save Scene As (Ctrl+Shift+S)
+            m_ShowSaveDialog = true;
+        }
+
+        if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O)) {
+            // Load Scene (Ctrl+O)
+            m_ShowLoadDialog = true;
+            RefreshSceneList();
+        }
+    }
 
 private:
     ImGuiContext* m_ImGuiContext = nullptr;
@@ -415,12 +857,33 @@ private:
     bool m_ShowViewport = true;
     bool m_ShowPrefabBrowser = true;
 
+    bool m_ShowPerformance = true;
+
+    // Scene management UI state
+    bool m_ShowSaveDialog = false;
+    bool m_ShowLoadDialog = false;
+    char m_SceneNameBuffer[256] = "NewScene";
+    std::vector<std::string> m_AvailableScenes;
+    int m_SelectedSceneIndex = 0;
 
     ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
 
     entt::registry* m_Registry = nullptr;
     entt::entity m_SelectedEntity = entt::null;
+
+    static constexpr int kPerfHistory = 180;   // last ~3s @60 FPS
+    float m_FpsHistory[kPerfHistory] = { 0.f };
+    int   m_FpsWriteIdx = 0;
+
+	Application* m_Application = nullptr; //To access application functions if needed
+    bool m_ShowPlaybackControls = true;
+
+    ConsoleWindow m_Console{ this };
+    bool m_ShowConsole = true;
+
+    //remove when editor.cpp completed
+    ResourceWindow rw{this};
 };
 
 // Updated main function
@@ -477,7 +940,7 @@ int32_t main()
 
         if (imguiContext) {
             // Create and attach editor with ImGui context
-            app->AttachLayer<Editor>(imguiContext, &mainRegistry);
+            app->AttachLayer<Editor>(imguiContext, &mainRegistry, app.get());
             // Use template version
         }
         else {
@@ -502,3 +965,4 @@ int32_t main()
 
     return 0;
 }
+

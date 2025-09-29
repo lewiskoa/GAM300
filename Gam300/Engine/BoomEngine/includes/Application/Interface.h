@@ -140,6 +140,11 @@ namespace Boom
                 });
         }
 
+        template<typename Task>
+        BOOM_INLINE void AssetView(Task&& task) {
+            m_Context->assets->View([&](auto asset) { task(asset); });
+        }
+
         BOOM_INLINE std::shared_ptr<GLFWwindow> GetWindowHandle()
         {
             return m_Context->window->Handle();

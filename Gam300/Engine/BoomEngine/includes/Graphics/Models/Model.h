@@ -13,7 +13,7 @@ namespace Boom {
 		BOOM_INLINE Model() = default;
 		BOOM_INLINE Model(std::string const&) {};
 		BOOM_INLINE virtual bool HasJoint() { return false; }
-		BOOM_INLINE virtual void Draw() = 0;
+		BOOM_INLINE virtual void Draw(uint32_t = GL_TRIANGLES) = 0;
 	};
 
 	//---------------------------Static Model------------------------------
@@ -50,10 +50,10 @@ namespace Boom {
 			ParseNode(ai_scene, ai_scene->mRootNode);
 		}
 		
-		BOOM_INLINE void Draw() override
+		BOOM_INLINE void Draw(uint32_t mode = GL_TRIANGLES) override
 		{
 			for (auto& mesh : meshes) {
-				mesh->Draw();
+				mesh->Draw(mode);
 			}
 		}
 	
@@ -100,8 +100,6 @@ namespace Boom {
 					meshData.idx.push_back(mesh->mFaces[i].mIndices[j]);
 				}
 			}
-
-			meshData.drawMode = GL_TRIANGLES; //default draw mode
 
 			auto ret{ std::make_unique<ShadedMesh>(std::move(meshData)) };
 			meshes.push_back(std::move(ret));
@@ -159,11 +157,11 @@ namespace Boom {
 			// parse animations
 			ParseAnimations(ai_scene, jointMap);
 		}
-		BOOM_INLINE void Draw() override final 
+		BOOM_INLINE void Draw(uint32_t mode = GL_TRIANGLES) override final
 		{
 			for (auto& mesh : meshes) 
 			{
-				mesh->Draw();
+				mesh->Draw(mode);
 			}
 		}
 
@@ -367,8 +365,6 @@ namespace Boom {
 					SetVertexJoint(data.vtx[ai_bone->mWeights[j].mVertexId], jointMap[jointName].index, ai_bone->mWeights[j].mWeight);
 				}
 			}
-
-			data.drawMode = GL_TRIANGLES;   // <-- ADD THIS LINES
 			
 			// create new mesh instance
 			meshes.push_back(std::make_unique<SkeletalMesh>(std::move(data)));

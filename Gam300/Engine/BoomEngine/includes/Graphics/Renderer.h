@@ -8,6 +8,7 @@
 #include "Shaders/Bloom.h"
 #include "GlobalConstants.h"
 #include "Shaders/Shadow.h"
+
 namespace Boom {
 	struct GraphicsRenderer {
 	public:
@@ -86,16 +87,19 @@ namespace Boom {
 			pbrShader->Draw(mesh, transform);
 		}
 		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material = {}) {
-			pbrShader->Draw(model, transform, material);
+			if (isDrawDebugMode) {
+				pbrShader->DrawDebug(model, transform, material.albedo);
+			}
+			else {
+				pbrShader->Draw(model, transform, material);
+			}
 		}
 
 	public: //helper functions
 		BOOM_INLINE void Resize(int32_t w, int32_t h) {
 			frame->Resize(w, h);
 		}
-		//HEHE OOPS
 		BOOM_INLINE uint32_t GetFrame() {
-			//return frame->GetTexture();
 			return finalShader->GetMap();
 		}
 
@@ -110,12 +114,16 @@ namespace Boom {
 		}
 		BOOM_INLINE void ShowFrame() {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Show(frame->GetTexture(), bloom->GetMap(), true);
+			finalShader->Show(frame->GetTexture(), bloom->GetMap(), !isDrawDebugMode);
 		}
 
 		BOOM_INLINE void ShowFrame(bool useFBO) {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, true); //enable/disable bloom here
+			finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, !isDrawDebugMode); //enable/disable bloom here
+		}
+
+		bool& IsDrawDebugMode() {
+			return isDrawDebugMode;
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
@@ -170,6 +178,7 @@ namespace Boom {
 		std::unique_ptr<FrameBuffer> frame;
 		std::unique_ptr<BloomShader> bloom;
 		SkyboxMesh skyboxMesh;
+		bool isDrawDebugMode{};
 	};
 
 

@@ -26,7 +26,6 @@ namespace Boom {
 	struct MeshData {
 		std::vector<uint32_t> idx;
 		std::vector<Vertex> vtx;
-		uint32_t drawMode{GL_TRIANGLES};
 	};
 
 	struct SkeletalVertex : ShadedVert
