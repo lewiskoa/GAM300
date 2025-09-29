@@ -135,7 +135,7 @@
     <ClInclude Include="includes\Scripting\ScriptAPI.h">
       <Filter>includes</Filter>
     </ClInclude>
-    <ClInclude Include="src\Scripting\ScriptingSystem.h">
+    <ClInclude Include="includes\Scripting\ScriptingSystem.h">
       <Filter>includes</Filter>
     </ClInclude>
     <ClInclude Include="includes\Scripting\ScriptRuntime.h">

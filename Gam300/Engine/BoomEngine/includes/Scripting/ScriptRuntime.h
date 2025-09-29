@@ -1,4 +1,5 @@
 #pragma once
+#include "Core.h"
 #include <cstdint>
 #include "GlobalConstants.h"   // for Boom::EntityId, Boom::Vec3 (adjust include if needed)
 

@@ -1,5 +1,5 @@
 #include "Core.h"
-#include "ScriptingSystem.h"
+#include "Scripting/ScriptingSystem.h"
 
 void ScriptingSystem::Init(const ScriptRuntime::EngineHooks& hooks) {
     ScriptRuntime::Initialize(hooks);     // or ScriptRuntime::SetHooks(hooks)
