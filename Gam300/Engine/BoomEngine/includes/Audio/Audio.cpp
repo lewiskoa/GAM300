@@ -91,3 +91,31 @@ void SoundEngine::SetVolume(const std::string& name, float volume) {
         mChannels[name]->setVolume(volume);
     }
 }
+
+bool SoundEngine::IsPlaying(const std::string& name) const {
+    auto it = mChannels.find(name);
+    if (it == mChannels.end() || !it->second) return false;
+    bool playing = false;
+    it->second->isPlaying(&playing);
+    return playing;
+}
+
+void SoundEngine::Pause(const std::string& name, bool pause) {
+    auto it = mChannels.find(name);
+    if (it != mChannels.end() && it->second) {
+        it->second->setPaused(pause);
+    }
+}
+
+void SoundEngine::SetLooping(const std::string& name, bool loop) {
+    auto it = mChannels.find(name);
+    if (it != mChannels.end() && it->second) {
+        it->second->setMode(loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF);
+    }
+}
+
+void SoundEngine::StopAllExcept(const std::string& keepName) {
+    for (auto& [n, ch] : mChannels) {
+        if (n != keepName && ch) ch->stop();
+    }
+}
