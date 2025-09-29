@@ -18,7 +18,6 @@ using namespace Boom;
 #define LOG_EVENT(MSG) std::cout << "[Event] " << MSG << '\n'
 
 void MyEngineClass::whatup() {
-    cout << "nig\n";
 
 	// Example of using the logger
     #ifdef BOOM_ENABLE_LOG
