@@ -332,37 +332,13 @@ private:
                     m_SelectedEntity = PrefabSystem::InstantiatePrefab(
                         m_Context->scene,
                         *m_Context->assets,
-                        "src/Prefab/Player.prefab");
+                        "src/Prefab/gameobject.prefab");
                 }
                 if (ImGui::MenuItem("Delete Selected")) {
-                   // m_Context->scene.orphan(m_SelectedEntity);
                     m_Context->scene.destroy(m_SelectedEntity);
-                    //m_Context->scene.release(m_SelectedEntity);
-                    //type entt::entity
                     m_SelectedEntity = entt::null;
                 }
                 ImGui::EndMenu();
-            }
-
-            // Show current scene info in menu bar
-            if (m_Application) {
-                ImGui::Separator();
-                if (m_Application->IsSceneLoaded()) {
-                    std::string currentPath = m_Application->GetCurrentScenePath();
-                    if (!currentPath.empty()) {
-                        // Extract just the filename
-                        size_t lastSlash = currentPath.find_last_of("/\\");
-                        std::string fileName = (lastSlash != std::string::npos) ?
-                            currentPath.substr(lastSlash + 1) : currentPath;
-                        ImGui::Text("Scene: %s", fileName.c_str());
-                    }
-                    else {
-                        ImGui::Text("Scene: Unsaved");
-                    }
-                }
-                else {
-                    ImGui::Text("Scene: None");
-                }
             }
 
             ImGui::EndMainMenuBar();
@@ -413,6 +389,26 @@ private:
 
         if (ImGui::Begin("Viewport", &m_ShowViewport)) {
 
+            // Show current scene info in menu bar
+            if (m_Application) {
+                if (m_Application->IsSceneLoaded()) {
+                    std::string currentPath = m_Application->GetCurrentScenePath();
+                    if (!currentPath.empty()) {
+                        // Extract just the filename
+                        size_t lastSlash = currentPath.find_last_of("/\\");
+                        std::string fileName = (lastSlash != std::string::npos) ?
+                            currentPath.substr(lastSlash + 1) : currentPath;
+                        ImGui::Text("Scene: %s", fileName.c_str());
+                    }
+                    else {
+                        ImGui::Text("Scene: Unsaved");
+                    }
+                }
+                else {
+                    ImGui::Text("Scene: None");
+                }
+                ImGui::Separator();
+            }
             
             // Get frame texture from engine
             uint32_t frameTexture = GetSceneFrame();

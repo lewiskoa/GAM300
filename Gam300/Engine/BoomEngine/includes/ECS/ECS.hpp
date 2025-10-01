@@ -20,8 +20,9 @@ namespace Boom {
         Transform3D transform;
 
         void serialize(nlohmann::json& j) const {
-            (void)j;
-            //d
+            j["translate"] = { transform.translate.x, transform.translate.y, transform.translate.z };
+            j["rotate"] = { transform.rotate.x, transform.rotate.y, transform.rotate.z };
+            j["scale"] = { transform.scale.x, transform.scale.y, transform.scale.z };
         }
         void deserialize(const nlohmann::json& j) {
             if (j.contains("translate")) {
