@@ -24,8 +24,32 @@ namespace Boom {
             //d
         }
         void deserialize(const nlohmann::json& j) {
-            (void)j;
-            //h
+            if (j.contains("translate")) {
+                // Step 1: Read into a simple array
+                std::array<float, 3> data;
+                j.at("translate").get_to(data);
+
+                // Step 2: Manually assign to the glm::vec3 members
+                transform.translate.x = data[0];
+                transform.translate.y = data[1];
+                transform.translate.z = data[2];
+            }
+
+            if (j.contains("rotate")) {
+                std::array<float, 3> data;
+                j.at("rotate").get_to(data);
+                transform.rotate.x = data[0];
+                transform.rotate.y = data[1];
+                transform.rotate.z = data[2];
+            }
+
+            if (j.contains("scale")) {
+                std::array<float, 3> data;
+                j.at("scale").get_to(data);
+                transform.scale.x = data[0];
+                transform.scale.y = data[1];
+                transform.scale.z = data[2];
+            }
         }
     };
 
