@@ -151,10 +151,11 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>Core.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)\Core</PrecompiledHeaderOutputFile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\Vendors\xproperty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -207,6 +208,8 @@
     <ClInclude Include="includes\Scripting\ScriptAPI.h" />
     <ClInclude Include="includes\Scripting\ScriptingSystem.h" />
     <ClInclude Include="includes\Scripting\ScriptRuntime.h" />
+    <ClInclude Include="src\Vendors\xproperty\my_properties.h" />
+    <ClInclude Include="src\Vendors\xproperty\xproperties.h" />
     <ClInclude Include="thirdparty\dotnet\hostfxr.h" />
     <ClInclude Include="thirdparty\dotnet\nethost.h" />
   </ItemGroup>

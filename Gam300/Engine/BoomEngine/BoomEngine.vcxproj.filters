@@ -150,6 +150,12 @@
     <ClInclude Include="includes\Audio\Audio.hpp">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="src\Vendors\xproperty\my_properties.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Vendors\xproperty\xproperties.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">
