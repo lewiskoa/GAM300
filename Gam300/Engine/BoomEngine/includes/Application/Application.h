@@ -362,19 +362,19 @@ namespace Boom
 
             //camera
             Entity camera{ &m_Context->scene };
-            camera.Attach<InfoComponent>();
+            camera.Attach<InfoComponent>().name = "camera";
             camera.Attach<TransformComponent>();
             camera.Attach<CameraComponent>();
 
             //skybox
             Entity skybox{ &m_Context->scene };
-            skybox.Attach<InfoComponent>();
+            skybox.Attach<InfoComponent>().name = "skybox";
             skybox.Attach<SkyboxComponent>().skyboxID = skyboxAsset->uid;
             skybox.Attach<TransformComponent>();
 
             //dance boi
             Entity robot{ &m_Context->scene };
-            robot.Attach<InfoComponent>();
+            robot.Attach<InfoComponent>().name = "dance boi";
             auto& robotModel{ robot.Attach<ModelComponent>() };
             robotModel.materialID = mat1Asset->uid;
             robotModel.modelID = robotAsset->uid;
@@ -385,7 +385,7 @@ namespace Boom
 
             //sphere 
             Entity sphereEn{ &m_Context->scene };
-            sphereEn.Attach<InfoComponent>();
+            sphereEn.Attach<InfoComponent>().name = "sphere";
             auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
             sphereModel.modelID = sphereAsset->uid;
             sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
