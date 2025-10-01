@@ -10,7 +10,7 @@
 #include "Windows/Console.h"
 #include "Windows/AudioPanel.h"
 #include "Context/DebugHelpers.h"
-#include "Prefab/PrefabSystem.h"
+//#include "Prefab/PrefabSystem.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "ImGuizmo.h"
 #include "Context/Profiler.hpp"
@@ -84,7 +84,6 @@ private:
         RenderHierarchy();
         RenderInspector();
         RenderGizmo();
-        RenderPrefabBrowser();
         RenderPerformance();
         RenderResources();
         RenderPlaybackControls();
@@ -396,31 +395,7 @@ private:
 
         if (ImGui::Begin("Viewport", &m_ShowViewport)) {
 
-            if (ImGui::BeginDragDropTarget())
-            {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_ASSET"))
-                {
-                    const char* prefabName = (const char*)payload->Data;
-                    std::string path = "src/Prefabs/" + std::string(prefabName) + ".prefab";
-                    std::cout << "Spawned prefab: " << prefabName << "\n";
-
-
-                    // Instantiate prefab
-                    entt::entity newEntity = Boom::PrefabSystem::InstantiatePrefab(
-                        m_Context->scene,
-                        *m_Context->assets,
-                        path
-                    );
-
-                    if (newEntity != entt::null) {
-                        std::cout << "Spawned prefab: " << prefabName << " (" << path << ")\n";
-                    }
-                    else {
-                        std::cout << "Failed to spawn prefab: " << prefabName << "\n";
-                    }
-                }
-                ImGui::EndDragDropTarget();
-            }
+            
             // Get frame texture from engine
             uint32_t frameTexture = GetSceneFrame();
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
@@ -576,40 +551,6 @@ private:
                 // Pop the ID off the stack to keep it clean for the next item
                 ImGui::PopID();
             }
-        }
-        ImGui::End();
-    }
-
-// You will need #include <fstream> and #include <vector> if they aren't already in your Editor file.
-
-    BOOM_INLINE void RenderPrefabBrowser()
-    {
-        if (!m_ShowPrefabBrowser) return;
-
-        if (ImGui::Begin("Prefab Browser", &m_ShowPrefabBrowser)) {
-            const char* prefabName = "Player"; // single prefab
-
-            // Make it selectable and debug when clicked
-            if (ImGui::Selectable(prefabName)) {
-                std::cout << "[DEBUG] Prefab selected: " << prefabName << "\n";
-                // Optional: store the currently selected prefab if needed
-            }
-
-            if (ImGui::Button("Spawn Player")) {
-                Boom::PrefabSystem::InstantiatePrefab(
-                    m_Context->scene,
-                    *m_Context->assets,
-                    "src/Prefab/Player.prefab"
-                );
-            }
-
-
-            //// Drag source
-            //if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            //    ImGui::SetDragDropPayload("PREFAB_ASSET", prefabName, strlen(prefabName) + 1);
-            //    ImGui::Text("Dragging %s", prefabName);
-            //    ImGui::EndDragDropSource();
-            //}
         }
         ImGui::End();
     }

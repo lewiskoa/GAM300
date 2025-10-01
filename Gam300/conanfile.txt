@@ -22,4 +22,4 @@ assimp/5.4.3:shared=False
 glfw/3.3.8:shared=True
 glew/2.2.0:shared=True
 physx/4.1.1:shared=True
-yaml-cpp/0.8.0:shared=True
+yaml-cpp/0.8.0:shared=False

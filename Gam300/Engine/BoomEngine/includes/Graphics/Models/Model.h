@@ -7,6 +7,8 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 
+
+
 namespace Boom {
 	struct Model
 	{

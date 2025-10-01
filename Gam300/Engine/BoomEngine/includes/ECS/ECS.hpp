@@ -4,6 +4,7 @@
 #include "Graphics/Utilities/Data.h"
 #include "Auxiliaries/Assets.h"
 #include "Physics/Utilities.h"  
+
 namespace Boom {
 	using EntityRegistry = entt::registry;  
 	using EntityID = entt::entity;
@@ -18,48 +19,8 @@ namespace Boom {
         BOOM_INLINE TransformComponent() = default;
         Transform3D transform;
 
-        //
-        // stuff*
-        void serialize(nlohmann::json& j) const {
-            // Using the correct member names: translate, rotate, scale
-            j["translate"] = { transform.translate.x, transform.translate.y, transform.translate.z };
-            j["rotate"] = { transform.rotate.x, transform.rotate.y, transform.rotate.z };
-            j["scale"] = { transform.scale.x, transform.scale.y, transform.scale.z };
-        }
-
-        void deserialize(const nlohmann::json& j) {
-            // Manually deserializing to handle the glm::vec3 type
-
-            if (j.contains("translate")) {
-                // Step 1: Read into a simple array
-                std::array<float, 3> data;
-                j.at("translate").get_to(data);
-
-                // Step 2: Manually assign to the glm::vec3 members
-                transform.translate.x = data[0];
-                transform.translate.y = data[1];
-                transform.translate.z = data[2];
-            }
-
-            if (j.contains("rotate")) {
-                std::array<float, 3> data;
-                j.at("rotate").get_to(data);
-                transform.rotate.x = data[0];
-                transform.rotate.y = data[1];
-                transform.rotate.z = data[2];
-            }
-
-            if (j.contains("scale")) {
-                std::array<float, 3> data;
-                j.at("scale").get_to(data);
-                transform.scale.x = data[0];
-                transform.scale.y = data[1];
-                transform.scale.z = data[2];
-            }
-        }
     };
 
-   
     // camera component
     struct CameraComponent
     {
@@ -122,17 +83,9 @@ namespace Boom {
         std::string name{ "Entity" };
         AssetID uid{ RandomU64() };
 
-        void serialize(nlohmann::json& j) const {
-            j["parent"] = parent;
-            j["name"] = name;
-            j["uid"] = uid;
-        }
-        void deserialize(const nlohmann::json& j) {
-            if (j.contains("parent")) j.at("parent").get_to(parent);
-            if (j.contains("name")) j.at("name").get_to(name);
-            if (j.contains("uid")) j.at("uid").get_to(uid);
-        }
+       
     };
+
     struct DirectLightComponent
     {
         BOOM_INLINE DirectLightComponent(const DirectLightComponent&) = default;

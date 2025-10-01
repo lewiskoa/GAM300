@@ -2,6 +2,7 @@
 #include "../Buffers/Mesh.h"
 #include "../Textures/Texture.h"
 
+
 //helper functions
 namespace Boom {
 	BOOM_INLINE glm::highp_mat4 GetRotationMatrix(glm::vec3 const& rot) {
@@ -32,7 +33,10 @@ namespace Boom {
 		glm::vec3 translate;
 		glm::vec3 rotate;
 		glm::vec3 scale;
+
+
 	};
+
 
 	struct Camera3D {
 		//transform here refers to the camera's transformation variables
