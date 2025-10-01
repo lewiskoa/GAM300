@@ -10,7 +10,7 @@
 #include "Windows/Console.h"
 #include "Windows/AudioPanel.h"
 #include "Context/DebugHelpers.h"
-//#include "Prefab/PrefabSystem.h"
+#include "Prefab/PrefabSystem.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "ImGuizmo.h"
 #include "Context/Profiler.hpp"
@@ -323,6 +323,24 @@ private:
 
             if (ImGui::BeginMenu("Options")) {
                 ImGui::MenuItem("Debug Draw", nullptr, &m_Context->renderer->IsDrawDebugMode());
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("GameObjects")) {
+                if (ImGui::MenuItem("Create New Object")) {
+                    //type entt::entity
+                    m_SelectedEntity = PrefabSystem::InstantiatePrefab(
+                        m_Context->scene,
+                        *m_Context->assets,
+                        "src/Prefab/Player.prefab");
+                }
+                if (ImGui::MenuItem("Delete Selected")) {
+                   // m_Context->scene.orphan(m_SelectedEntity);
+                    m_Context->scene.destroy(m_SelectedEntity);
+                    //m_Context->scene.release(m_SelectedEntity);
+                    //type entt::entity
+                    m_SelectedEntity = entt::null;
+                }
                 ImGui::EndMenu();
             }
 

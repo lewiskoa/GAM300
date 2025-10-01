@@ -19,6 +19,14 @@ namespace Boom {
         BOOM_INLINE TransformComponent() = default;
         Transform3D transform;
 
+        void serialize(nlohmann::json& j) const {
+            (void)j;
+            //d
+        }
+        void deserialize(const nlohmann::json& j) {
+            (void)j;
+            //h
+        }
     };
 
     // camera component
@@ -128,7 +136,7 @@ namespace Boom {
             if (j.contains("loop")) j.at("loop").get_to(loop);
             if (j.contains("volume")) j.at("volume").get_to(volume);
             if (j.contains("playOnStart")) j.at("playOnStart").get_to(playOnStart);
-            }
+        }
     };
 
     struct Entity

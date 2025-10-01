@@ -2,7 +2,7 @@
 #include "Core.h" //used for variables and error handling
 #include "common/Events.h"
 #include "GlobalConstants.h"
-#include <iostream>
+
 namespace Boom {
 	struct AppWindow {
 	public:
