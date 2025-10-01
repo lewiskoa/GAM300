@@ -234,13 +234,13 @@ namespace Boom
             //use of ecs
             //CreateEntities();
             LoadScene("default");
-
+            CreateEntities();
             //lights testers
-            PointLight pl1{};
+          /*  PointLight pl1{};
             PointLight pl2{};
             DirectionalLight dl{};
-            SpotLight sl{};
-            {
+            SpotLight sl{};*/
+   /*         {
                 pl1.radiance.b = 0.f;
                 pl1.intensity = 2.f;
                 pl2.radiance.g = 0.f;
@@ -249,8 +249,8 @@ namespace Boom
                 sl.radiance = { 1.f, 1.f, 1.f };
 
                 dl.intensity = 10.f;
-            }
-
+            }*/
+       
             //init skybox
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
                 SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
@@ -282,7 +282,7 @@ namespace Boom
                 // When paused, m_TestRot stays at its current value
 
                 //lights (always set up)
-                m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
+               /* m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
                 m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
                 m_Context->renderer->SetPointLightCount(0);
 
@@ -291,8 +291,19 @@ namespace Boom
                 m_Context->renderer->SetDirectionalLightCount(1);
 
                 m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                m_Context->renderer->SetSpotLightCount(0);
-
+                m_Context->renderer->SetSpotLightCount(0);*/
+               
+                {
+                    int points = 0;
+                    EnttView<Entity, PointLightComponent, TransformComponent>(
+                        [this, &points](auto, PointLightComponent& plc, TransformComponent& tc)
+                        {
+                            m_Context->renderer->SetLight(plc.light, tc.transform, points++);
+                        });
+                    m_Context->renderer->SetPointLightCount(points);
+                }
+      
+               
                 //camera (always set up, but rotation freezes when paused)
                 EnttView<Entity, CameraComponent>([this](auto entity, CameraComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
@@ -409,37 +420,50 @@ namespace Boom
             };
             auto mat1Asset{ m_Context->assets->AddMaterial(RandomU64(), "Marble", marbleMat) };
 
-            //camera
-            Entity camera{ &m_Context->scene };
-            camera.Attach<InfoComponent>();
-            camera.Attach<TransformComponent>();
-            camera.Attach<CameraComponent>();
+            ////camera
+            //Entity camera{ &m_Context->scene };
+            //camera.Attach<InfoComponent>();
+            //camera.Attach<TransformComponent>();
+            //camera.Attach<CameraComponent>();
 
-            //skybox
-            Entity skybox{ &m_Context->scene };
-            skybox.Attach<InfoComponent>();
-            skybox.Attach<SkyboxComponent>().skyboxID = skyboxAsset->uid;
-            skybox.Attach<TransformComponent>();
+            ////skybox
+            //Entity skybox{ &m_Context->scene };
+            //skybox.Attach<InfoComponent>();
+            //skybox.Attach<SkyboxComponent>().skyboxID = skyboxAsset->uid;
+            //skybox.Attach<TransformComponent>();
 
-            //dance boi
-            Entity robot{ &m_Context->scene };
-            robot.Attach<InfoComponent>();
-            auto& robotModel{ robot.Attach<ModelComponent>() };
-            robotModel.materialID = mat1Asset->uid;
-            robotModel.modelID = robotAsset->uid;
-            auto& rt{ robot.Attach<TransformComponent>().transform };
-            rt.translate = glm::vec3(0.f, -1.5f, 0.f);
-            rt.scale = glm::vec3(0.01f);
-            robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
+            ////dance boi
+            //Entity robot{ &m_Context->scene };
+            //robot.Attach<InfoComponent>();
+            //auto& robotModel{ robot.Attach<ModelComponent>() };
+            //robotModel.materialID = mat1Asset->uid;
+            //robotModel.modelID = robotAsset->uid;
+            //auto& rt{ robot.Attach<TransformComponent>().transform };
+            //rt.translate = glm::vec3(0.f, -1.5f, 0.f);
+            //rt.scale = glm::vec3(0.01f);
+            //robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
 
-            //sphere 
-            Entity sphereEn{ &m_Context->scene };
-            sphereEn.Attach<InfoComponent>();
-            auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
-            sphereModel.modelID = sphereAsset->uid;
-            sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
+            ////sphere 
+            //Entity sphereEn{ &m_Context->scene };
+            //sphereEn.Attach<InfoComponent>();
+            //auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
+            //sphereModel.modelID = sphereAsset->uid;
+            //sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
 
-
+            //ground
+			//Entity ground{ &m_Context->scene };
+   //         auto& info = ground.Attach<InfoComponent>();
+   //         info.name = "Ground";
+			//auto& groundModel{ ground.Attach<ModelComponent>() };
+			//groundModel.modelID = cubeAsset->uid;
+			//groundModel.materialID = mat1Asset->uid;
+			//ground.Attach<TransformComponent>().transform.scale = glm::vec3(10.f, 0.1f, 10.f);
+			Entity pointLight{ &m_Context->scene };
+			auto& info = pointLight.Attach<InfoComponent>();
+			info.name = "Point Light";
+			pointLight.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 0.5f, 0.f);
+			auto& pointLightComp = pointLight.Attach<PointLightComponent>();
+            pointLightComp.light = PointLight({ 1.f, 0.9f, 0.7f }, 3.0f);
 
         }
 

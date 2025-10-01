@@ -98,6 +98,7 @@ namespace Boom {
 		BOOM_INLINE PointLight(glm::vec3 radi = glm::vec3(1.f), float intense = 1.f)
 			: radiance{ radi }, intensity{ intense } 
 		{
+		
 		}
 
 		glm::vec3 radiance;
