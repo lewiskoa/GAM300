@@ -1,8 +1,11 @@
 {
   "components": {
+    "InfoComponent": {
+      "name": "player"
+    },
     "TransformComponent": {
-      "position": [0, 0, 0],
-      "scale": [1, 1, 1]
+      "position": [-20, -5, 0],
+      "scale": [0.01, 0.01, 0.01]
     },
     "ModelComponent": {
       "modelPath": "dance.fbx"
