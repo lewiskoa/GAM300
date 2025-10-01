@@ -1,5 +1,5 @@
 #pragma once
-#define YAML_CPP_STATIC_DEFINE  // Add this for static linking
+//#define YAML_CPP_STATIC_DEFINE  // Add this for static linking
 #include "Core.h"
 #include "yaml-cpp/yaml.h"
 

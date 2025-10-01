@@ -39,19 +39,10 @@ namespace Boom
                 fn(EntityType{ &m_Context->scene, e }, m_Context->scene.get<Components>(e)...);
             }
         }
-        /**
-         * @brief Constructs the Application, assigns its unique ID, and allocates the AppContext.
-         *
-         * BOOM_INLINE hints to the compiler to inline this small constructor
-         * to avoid function-call overhead during startup.
-         */
-
+        
         double m_SphereTimer = 0.0;
-        //glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
-        //Entity m_SphereEntity; // <-- Add this
 
-
-         // Application state management
+        // Application state management
         ApplicationState m_AppState = ApplicationState::RUNNING;
         double m_PausedTime = 0.0;  // Track time spent paused
         double m_LastPauseTime = 0.0;  // When the last pause started
@@ -59,12 +50,18 @@ namespace Boom
         float m_TestRot = 0.0f;
 
 
-
+        /**
+         * @brief Constructs the Application, assigns its unique ID, and allocates the AppContext.
+         *
+         * BOOM_INLINE hints to the compiler to inline this small constructor
+         * to avoid function-call overhead during startup.
+         */
         BOOM_INLINE Application()
         {
             m_LayerID = TypeID<Application>();
             m_Context = new AppContext();
             RegisterEventCallbacks();
+			
 
             AttachCallback<WindowResizeEvent>([this](auto e) {
                 m_Context->renderer->Resize(e.width, e.height);
@@ -75,60 +72,6 @@ namespace Boom
                 m_Context->window->SetWindowTitle(e.title);
                 }
             );
-            /*
-                        // Create a dynamic sphere entity
-                        Entity sphere = CreateEntt<Entity>();
-                        {
-                            // Set initial position above the cube
-                            auto& t = sphere.Attach<TransformComponent>().Transform;
-                            t.translate = m_SphereStartPos;
-                            t.scale = glm::vec3(1.0f);
-                            // Attach rigidbody (dynamic)
-                            auto& rb = sphere.Attach<RigidBodyComponent>().RigidBody;
-                            rb.type = RigidBody3D::DYNAMIC;
-                            rb.mass = 2.0f;
-                            rb.density = 1.0f;
-
-                            // Small velocity to check for movement
-                            rb.initialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
-
-                            // Attach collider (sphere)
-                            auto& col = sphere.Attach<ColliderComponent>().Collider;
-                            col.type = Collider3D::SPHERE;
-
-                            // Attach model
-                            auto& mc = sphere.Attach<ModelComponent>();
-                            mc.model = std::make_shared<StaticModel>("sphere.fbx");
-                        }
-
-
-                        // Create a static cube entity (ground)
-                        Entity cube = CreateEntt<Entity>();
-                        {
-                            // Set initial position at the origin
-                            auto& t = cube.Attach<TransformComponent>().Transform;
-                            t.translate = glm::vec3(0.0f, 0.0f, 0.0f);
-                            t.scale = glm::vec3(2.0f);
-
-                            // Attach rigidbody (static)
-                            auto& rb = cube.Attach<RigidBodyComponent>().RigidBody;
-                            rb.type = RigidBody3D::STATIC;
-
-                            // Attach collider (box)
-                            auto& col = cube.Attach<ColliderComponent>().Collider;
-                            col.type = Collider3D::BOX;
-
-                            // Attach model
-                            auto& mc = cube.Attach<ModelComponent>();
-                            mc.model = std::make_shared<StaticModel>("cube.fbx");
-                        }
-
-                        m_SphereEntity = sphere;
-                        // Register both with the physics system
-                        m_Context->Physics->AddRigidBody(sphere);
-                        m_Context->Physics->AddRigidBody(cube);
-            */
-
         }
 
         /**
@@ -233,6 +176,8 @@ namespace Boom
         {
             //use of ecs
             //CreateEntities();
+            RegisterAllComponents();
+			RegisterAllAssets();
             LoadScene("default");
 
             //lights testers

@@ -150,10 +150,7 @@
     <ClInclude Include="includes\Audio\Audio.hpp">
       <Filter>includes</Filter>
     </ClInclude>
-    <ClInclude Include="src\Vendors\xproperty\my_properties.h">
-      <Filter>includes</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Vendors\xproperty\xproperties.h">
+    <ClInclude Include="includes\Auxiliaries\ComponentSerializer.h">
       <Filter>includes</Filter>
     </ClInclude>
   </ItemGroup>
@@ -180,6 +177,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="includes\Audio\Audio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="includes\Auxiliaries\AssetSerializer.h">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -4,8 +4,7 @@
 namespace Boom {
     struct RigidBody3D
     {
-        BOOM_INLINE RigidBody3D(const RigidBody3D&) =
-            default;
+        BOOM_INLINE RigidBody3D(const RigidBody3D&) = default;
         BOOM_INLINE RigidBody3D() = default;
 
         // body actor pointer

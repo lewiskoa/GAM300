@@ -156,6 +156,8 @@
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)\Core</PrecompiledHeaderOutputFile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir)src\Vendors\xproperty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4273</DisableSpecificWarnings>
+      <AdditionalOptions>/wd5260 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -172,6 +174,7 @@
     <ClInclude Include="includes\AppWindow.h" />
     <ClInclude Include="includes\Audio\Audio.hpp" />
     <ClInclude Include="includes\Auxiliaries\Assets.h" />
+    <ClInclude Include="includes\Auxiliaries\ComponentSerializer.h" />
     <ClInclude Include="includes\Auxiliaries\Profiler.h" />
     <ClInclude Include="includes\Auxiliaries\Serializer.h" />
     <ClInclude Include="includes\BoomEngine.h" />
@@ -208,13 +211,12 @@
     <ClInclude Include="includes\Scripting\ScriptAPI.h" />
     <ClInclude Include="includes\Scripting\ScriptingSystem.h" />
     <ClInclude Include="includes\Scripting\ScriptRuntime.h" />
-    <ClInclude Include="src\Vendors\xproperty\my_properties.h" />
-    <ClInclude Include="src\Vendors\xproperty\xproperties.h" />
     <ClInclude Include="thirdparty\dotnet\hostfxr.h" />
     <ClInclude Include="thirdparty\dotnet\nethost.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="includes\Audio\Audio.cpp" />
+    <ClCompile Include="includes\Auxiliaries\AssetSerializer.h" />
     <ClCompile Include="src\Application\Context.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
