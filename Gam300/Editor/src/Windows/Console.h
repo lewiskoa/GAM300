@@ -97,7 +97,7 @@ struct ConsoleWindow : IWidget
     // ---------------------------
     BOOM_INLINE void OnShow(AppInterface* context) override
     {
-        DEBUG_DLL_BOUNDARY("ConsoleWindow::OnShow");
+        //DEBUG_DLL_BOUNDARY("ConsoleWindow::OnShow");
 
         if (!context) {
             BOOM_ERROR("ConsoleWindow::OnShow - Null context!");

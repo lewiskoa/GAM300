@@ -56,9 +56,6 @@ namespace Boom
         double m_PausedTime = 0.0;  // Track time spent paused
         double m_LastPauseTime = 0.0;  // When the last pause started
         bool m_ShouldExit = false;  // Flag for graceful shutdown
-        float m_TestRot = 0.0f;
-
-
 
         BOOM_INLINE Application()
         {
@@ -276,8 +273,7 @@ namespace Boom
 
                 // Only update rotation when running
                 if (m_AppState == ApplicationState::RUNNING) {
-                    m_TestRot += 0.25f;
-                    m_TestRot = glm::mod(m_TestRot, 360.f);
+                    
                 }
                 // When paused, m_TestRot stays at its current value
 
@@ -296,10 +292,17 @@ namespace Boom
                 //camera (always set up, but rotation freezes when paused)
                 EnttView<Entity, CameraComponent>([this](auto entity, CameraComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
-                    glm::vec3 rotOffset{ glm::cos(glm::radians(m_TestRot)), 0.f, glm::sin(glm::radians(m_TestRot)) };
-                    transform.translate = m_Context->window->camPos.z * rotOffset;
-                    transform.rotate = { 0.f, -m_TestRot + 90.f, 0.f };
 
+                    //get dir vector of current camera
+                    transform.rotate.x += m_Context->window->camRot.x;
+                    transform.rotate.y += m_Context->window->camRot.y;
+                    glm::quat quat{ glm::radians(transform.rotate) };
+                    glm::vec3 dir{ quat * m_Context->window->camMoveDir };
+                    transform.translate += dir;
+
+                    //zero initialize after adding
+                    m_Context->window->camMoveDir = {}; 
+                    m_Context->window->camRot = {};
                     m_Context->renderer->SetCamera(comp.camera, transform);
                     });
 
@@ -561,7 +564,7 @@ namespace Boom
             *m_Context->assets = AssetRegistry();
 
             // Reset any scene-specific state
-            m_TestRot = 0.0f;
+            
 
             BOOM_INFO("[Scene] Scene cleanup complete");
         }
