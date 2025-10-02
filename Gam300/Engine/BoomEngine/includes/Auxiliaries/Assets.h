@@ -84,8 +84,11 @@ namespace Boom {
 		BOOM_INLINE T& Get(AssetID uid) {
 			const uint32_t type{ TypeID<T>() };
 			if (registry[type].count(uid)) {
-				return (T&)(*registry[type][uid]);
+				auto& asset = (T&)(*registry[type][uid]);
+				BOOM_INFO("[AssetRegistry::Get] Found asset UID: {}, Name: '{}'", uid, asset.name);
+				return asset;
 			}
+			BOOM_ERROR("[AssetRegistry::Get] Asset UID {} not found! Returning EMPTY_ASSET", uid);
 			return (T&)(*registry[type][EMPTY_ASSET]);
 		}
 
@@ -210,18 +213,31 @@ namespace Boom {
 
 
 	private:
+		// In your Add() method for debugging
 		template <class T>
 		BOOM_INLINE void Add(
-			AssetID uid, 
-			std::string const& source, 
-			std::shared_ptr<T>& asset) 
+			AssetID uid,
+			std::string const& source,
+			std::shared_ptr<T>& asset)
 		{
 			asset->uid = uid;
 			asset->source = source;
 			std::filesystem::path path{ source };
 			asset->name = path.stem().string();
+
+			// Add validation for textures
+			if constexpr (std::is_same_v<T, TextureAsset>) {
+				if (!asset->data) {
+					BOOM_ERROR("[AssetRegistry::Add] Texture failed to load: '{}'", source);
+				}
+				else {
+					BOOM_INFO("[AssetRegistry::Add] Texture loaded successfully: '{}'", source);
+				}
+			}
+
 			registry[TypeID<T>()][asset->uid] = asset;
 		}
+
 		template <class T>
 		BOOM_INLINE void AddEmpty() {
 			registry[TypeID<T>()][EMPTY_ASSET] = std::make_shared<T>();

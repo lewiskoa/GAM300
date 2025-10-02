@@ -158,6 +158,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir)src\Vendors\xproperty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4273</DisableSpecificWarnings>
       <AdditionalOptions>/wd5260 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -174,9 +175,9 @@
     <ClInclude Include="includes\AppWindow.h" />
     <ClInclude Include="includes\Audio\Audio.hpp" />
     <ClInclude Include="includes\Auxiliaries\Assets.h" />
-    <ClInclude Include="includes\Auxiliaries\ComponentSerializer.h" />
+    <ClInclude Include="includes\Auxiliaries\DataSerializer.h" />
     <ClInclude Include="includes\Auxiliaries\Profiler.h" />
-    <ClInclude Include="includes\Auxiliaries\Serializer.h" />
+    <ClInclude Include="includes\Auxiliaries\SerializationRegistry.h" />
     <ClInclude Include="includes\BoomEngine.h" />
     <ClInclude Include="includes\Common\Events.h" />
     <ClInclude Include="includes\Common\framework.h" />
@@ -216,8 +217,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="includes\Audio\Audio.cpp" />
-    <ClCompile Include="includes\Auxiliaries\AssetSerializer.h" />
     <ClCompile Include="src\Application\Context.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Auxiliaries\AssetSerializer.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Auxiliaries\ComponentSerializer.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Auxiliaries\SerializationRegistry.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Auxiliaries\SerializerInit.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\BoomEngine.cpp" />

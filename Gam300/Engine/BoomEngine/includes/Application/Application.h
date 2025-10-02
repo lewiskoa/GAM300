@@ -5,6 +5,7 @@
 #include "ECS/ECS.hpp"
 #include "Physics/Context.h"
 #include "Audio/Audio.hpp"   
+#include "Auxiliaries/DataSerializer.h"
 
 namespace Boom
 {
@@ -174,40 +175,20 @@ namespace Boom
          */
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
-            //use of ecs
-            //CreateEntities();
-            RegisterAllComponents();
-			RegisterAllAssets();
             LoadScene("default");
-           
-            //lights testers
-          /*  PointLight pl1{};
-            PointLight pl2{};
-            DirectionalLight dl{};
-            SpotLight sl{};*/
-   /*         {
-                pl1.radiance.b = 0.f;
-                pl1.intensity = 2.f;
-                pl2.radiance.g = 0.f;
-                pl2.intensity = 3.f;
 
-                sl.radiance = { 1.f, 1.f, 1.f };
-
-                dl.intensity = 10.f;
-            }*/
-       
-            //init skybox
+            ////init skybox
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
                 SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
                 m_Context->renderer->InitSkybox(skybox.data, skybox.envMap, skybox.size);
-                }
-            );
+                });
 
             //temp input for mouse motion
             glm::dvec2 curMP{};
             glm::dvec2 prevMP{};
             while (m_Context->window->PollEvents() && !m_ShouldExit)
             {
+                BOOM_INFO("[MainLoop] Frame starting"); // ADD THIS
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
 
                 glfwMakeContextCurrent(engineWindow.get());
@@ -303,6 +284,14 @@ namespace Boom
                             comp.modelID, comp.materialID);
                     }
 
+                    ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
+
+                    if (!model.data) {
+                        BOOM_ERROR("[Render] Model data is null for ModelID: {} ({})",
+                            comp.modelID, model.name);
+                        return; // Skip rendering this model
+                    }
+
                     //set animator uniform if model has one
                     if (entity.template Has<AnimatorComponent>()) {
                         AnimatorComponent& an{ entity.template Get<AnimatorComponent>() };
@@ -313,7 +302,7 @@ namespace Boom
                     }
 
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
-                    ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
+                    //ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
 
                     if (!debugModelsPrinted && renderCount < 5) {
                         BOOM_INFO("[Render] Transform position: ({}, {}, {}), scale: ({}, {}, {})",
@@ -324,13 +313,28 @@ namespace Boom
                     //draw model with material if it has one
                     if (comp.materialID != EMPTY_ASSET) {
                         auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
-                        material.data.albedoMap = m_Context->assets->Get<TextureAsset>(material.albedoMapID).data;
-                        material.data.normalMap = m_Context->assets->Get<TextureAsset>(material.normalMapID).data;
-                        material.data.roughnessMap = m_Context->assets->Get<TextureAsset>(material.roughnessMapID).data;
+
+                        // Only assign textures if they exist and are valid
+                        if (material.albedoMapID != EMPTY_ASSET) {
+                            auto& albedoTex = m_Context->assets->Get<TextureAsset>(material.albedoMapID);
+                            if (albedoTex.data) {
+                                material.data.albedoMap = albedoTex.data;
+                            }
+                        }
+                        if (material.normalMapID != EMPTY_ASSET) {
+                            auto& normalTex = m_Context->assets->Get<TextureAsset>(material.normalMapID);
+                            if (normalTex.data) {
+                                material.data.normalMap = normalTex.data;
+                            }
+                        }
+                        if (material.roughnessMapID != EMPTY_ASSET) {
+                            auto& roughnessTex = m_Context->assets->Get<TextureAsset>(material.roughnessMapID);
+                            if (roughnessTex.data) {
+                                material.data.roughnessMap = roughnessTex.data;
+                            }
+                        }
+
                         m_Context->renderer->Draw(model.data, transform, material.data);
-                    }
-                    else {
-                        m_Context->renderer->Draw(model.data, transform);
                     }
 
                     renderCount++;
@@ -368,102 +372,6 @@ namespace Boom
             }
         }
 
-        //loads assets and initialize the starting entities
-        BOOM_INLINE void CreateEntities() {
-            //auto skyboxAsset{ m_Context->assets->AddSkybox(RandomU64(), "Skybox/sky.hdr", 2048) };
-            //auto robotAsset{ m_Context->assets->AddModel(RandomU64(), "dance.fbx", true) };
-            //if (!robotAsset || !robotAsset->data) {
-            //    BOOM_ERROR("[ASSET] Failed to load dance.fbx!");
-            //}
-            ////script asset ...
-            //auto sphereAsset{ m_Context->assets->AddModel(RandomU64(), "sphere.fbx") };
-            //auto cubeAsset{ m_Context->assets->AddModel(RandomU64(), "cube.fbx") };
-
-            //auto cubeAsset2{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy.fbx") };
-            //auto cubeAsset3{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (2).fbx") };
-            //auto cubeAsset4{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (3).fbx") };
-            //auto cubeAsset5{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (4).fbx") };
-            //auto cubeAsset6{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (5).fbx") };
-
-            ////materials
-            //auto albedoTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/albedo.png") };
-            //auto normalTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/normal.png") };
-            //auto roughnessTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/roughness.png") };
-            //std::array<AssetID, 6> marbleMat{
-            //    albedoTexAsset->uid,
-            //    normalTexAsset->uid,
-            //    roughnessTexAsset->uid,
-            //    EMPTY_ASSET,
-            //    EMPTY_ASSET,
-            //    EMPTY_ASSET,
-            //};
-            //auto mat1Asset{ m_Context->assets->AddMaterial(RandomU64(), "Marble", marbleMat) };
-
-            ////camera
-            //Entity camera{ &m_Context->scene };
-            //camera.Attach<InfoComponent>().name = "camera";
-            //camera.Attach<TransformComponent>();
-            //camera.Attach<CameraComponent>();
-
-            ////skybox
-            //Entity skybox{ &m_Context->scene };
-            //skybox.Attach<InfoComponent>().name = "skybox";
-            //skybox.Attach<SkyboxComponent>().skyboxID = skyboxAsset->uid;
-            //skybox.Attach<TransformComponent>();
-
-            ////dance boi
-            //Entity robot{ &m_Context->scene };
-            //robot.Attach<InfoComponent>().name = "dance boi";
-            //auto& robotModel{ robot.Attach<ModelComponent>() };
-            //robotModel.materialID = mat1Asset->uid;
-            //robotModel.modelID = robotAsset->uid;
-            //auto& rt{ robot.Attach<TransformComponent>().transform };
-            //rt.translate = glm::vec3(0.f, -1.5f, 0.f);
-            //rt.scale = glm::vec3(0.01f);
-            //robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
-
-            ////sphere 
-            //Entity sphereEn{ &m_Context->scene };
-            //sphereEn.Attach<InfoComponent>().name = "sphere";
-            //auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
-            //sphereModel.modelID = sphereAsset->uid;
-            //sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
-
-            //ground
-			//Entity ground{ &m_Context->scene };
-   //         auto& info = ground.Attach<InfoComponent>();
-   //         info.name = "Ground";
-			//auto& groundModel{ ground.Attach<ModelComponent>() };
-			//groundModel.modelID = cubeAsset->uid;
-			//groundModel.materialID = mat1Asset->uid;
-			//ground.Attach<TransformComponent>().transform.scale = glm::vec3(10.f, 0.1f, 10.f);
-			Entity pointLight{ &m_Context->scene };
-			auto& info = pointLight.Attach<InfoComponent>();
-			info.name = "Point Light";
-			pointLight.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 0.5f, 0.f);
-			auto& pointLightComp = pointLight.Attach<PointLightComponent>();
-            pointLightComp.light = PointLight({ 1.f, 0.9f, 0.7f }, 10.0f);
-
-			Entity directionalLight{ &m_Context->scene };
-			auto& info2 = directionalLight.Attach<InfoComponent>();
-			info2.name = "Directional Light";
-			directionalLight.Attach<TransformComponent>().transform.rotate = glm::vec3(6.f, 0.f, 0.f);
-			auto& dirLightComp = directionalLight.Attach<DirectLightComponent>();
-			dirLightComp.light = DirectionalLight({ 1.f, 1.f, 0.9f }, 3.0f);
-
-			Entity spotLight{ &m_Context->scene };
-			auto& info3 = spotLight.Attach<InfoComponent>();
-			info3.name = "Spot Light";
-			spotLight.Attach<TransformComponent>().transform.translate = glm::vec3(2.f, 2.f, 2.f);
-			auto& spotLightComp = spotLight.Attach<SpotLightComponent>();   
-            spotLightComp.light = SpotLight(
-                { 0.7f, 0.8f, 1.f }, // radiance
-                15.f,              // intensity
-                17.5f,             // fall (outer angle, degrees)
-                12.5f              // cut (inner angle, degrees)
-            );
-
-        }
 
 
         /**
@@ -595,17 +503,15 @@ namespace Boom
         {
             BOOM_INFO("[Scene] Reinitializing scene systems...");
 
-            // Reinitialize skybox if present
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
                 SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
                 m_Context->renderer->InitSkybox(skybox.data, skybox.envMap, skybox.size);
                 BOOM_INFO("[Scene] Reinitialized skybox");
                 });
 
+            // Only reinitialize physics
             EnttView<Entity, RigidBodyComponent>([this](auto entity, auto&) {
-                // Re-register with physics system
                 m_Context->Physics->AddRigidBody(entity, *m_Context->assets);
-                BOOM_INFO("[Scene] Reinitialized physics body");
                 });
 
             BOOM_INFO("[Scene] Scene systems reinitialization complete");

@@ -126,9 +126,6 @@
     <ClInclude Include="includes\Common\YAML.h">
       <Filter>includes</Filter>
     </ClInclude>
-    <ClInclude Include="includes\Auxiliaries\Serializer.h">
-      <Filter>includes</Filter>
-    </ClInclude>
     <ClInclude Include="includes\Auxiliaries\Profiler.h">
       <Filter>includes</Filter>
     </ClInclude>
@@ -150,7 +147,10 @@
     <ClInclude Include="includes\Audio\Audio.hpp">
       <Filter>includes</Filter>
     </ClInclude>
-    <ClInclude Include="includes\Auxiliaries\ComponentSerializer.h">
+    <ClInclude Include="includes\Auxiliaries\SerializationRegistry.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Auxiliaries\DataSerializer.h">
       <Filter>includes</Filter>
     </ClInclude>
   </ItemGroup>
@@ -179,7 +179,16 @@
     <ClCompile Include="includes\Audio\Audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="includes\Auxiliaries\AssetSerializer.h">
+    <ClCompile Include="src\Auxiliaries\SerializationRegistry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Auxiliaries\AssetSerializer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Auxiliaries\ComponentSerializer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Auxiliaries\SerializerInit.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

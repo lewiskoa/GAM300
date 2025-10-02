@@ -5,7 +5,6 @@
 #include "Graphics/Renderer.h"
 #include "GlobalConstants.h"
 #include "Auxiliaries/Assets.h"
-#include "Auxiliaries/Serializer.h"
 #include "ECS/ECS.hpp"
 #include "Physics/Context.h"
 #include "Auxiliaries/Profiler.h"
@@ -27,7 +26,6 @@ namespace Boom
 			, window{ std::make_unique<AppWindow>(&dispatcher, CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT, "Boom Engine") }
 			, renderer{ std::make_unique<GraphicsRenderer>(CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT) }
 			, assets{ std::make_unique<AssetRegistry>() }
-			, seriealizer{std::make_unique<DataSerializer>()}
 			, Physics{ std::make_unique<PhysicsContext>() }
 			, scene{}
 		{
@@ -56,7 +54,6 @@ namespace Boom
 		std::unique_ptr<AppWindow> window;
 		std::unique_ptr<GraphicsRenderer> renderer;
 		std::unique_ptr<AssetRegistry> assets;
-		std::unique_ptr<DataSerializer> seriealizer;
 		std::unique_ptr<PhysicsContext> Physics; //physics context
 		Boom::Profiler profiler;
 		double DeltaTime{};

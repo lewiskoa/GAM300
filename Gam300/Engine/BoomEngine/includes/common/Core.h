@@ -74,7 +74,8 @@
 template <typename T>
 BOOM_INLINE constexpr uint32_t TypeID()
 {
-	return static_cast<uint32_t>(reinterpret_cast<std::uintptr_t>(&typeid(T)));
+	// Use type_info::hash_code() which is consistent across DLL boundaries
+	return static_cast<uint32_t>(typeid(T).hash_code());
 }
 
 //-------------CONSOLE LOGGING----------------
