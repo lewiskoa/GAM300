@@ -56,7 +56,7 @@ namespace Boom {
 				);
 		}
 		BOOM_INLINE glm::mat4 Projection(float ratio) const {
-			return glm::perspective(FOV, ratio, nearPlane, farPlane);
+			return glm::perspective(glm::radians(FOV), ratio, nearPlane, farPlane);
 		}
 
 		float nearPlane{0.3000f};

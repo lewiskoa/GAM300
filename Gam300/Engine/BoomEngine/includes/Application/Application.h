@@ -203,7 +203,9 @@ namespace Boom
                 }
             );
 
-
+            //temp input for mouse motion
+            glm::dvec2 curMP{};
+            glm::dvec2 prevMP{};
             while (m_Context->window->PollEvents() && !m_ShouldExit)
             {
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
@@ -237,8 +239,11 @@ namespace Boom
                 m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
                 m_Context->renderer->SetSpotLightCount(0);
 
+                //temp input for mouse motion
+                glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
+
                 //camera (always set up, but rotation freezes when paused)
-                EnttView<Entity, CameraComponent>([this](auto entity, CameraComponent& comp) {
+                EnttView<Entity, CameraComponent>([this, &curMP, &prevMP](auto entity, CameraComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
 
                     //get dir vector of current camera
@@ -248,11 +253,16 @@ namespace Boom
                     glm::vec3 dir{ quat * m_Context->window->camMoveDir };
                     transform.translate += dir;
 
-                    //zero initialize after adding
-                    m_Context->window->camMoveDir = {}; 
-                    m_Context->window->camRot = {};
+                    comp.camera.FOV = m_Context->window->camFOV;
+                    if (curMP == prevMP) {
+                        m_Context->window->camRot = {};
+                        if (m_Context->window->isMiddleClickDown)
+                            m_Context->window->camMoveDir = {};
+                    }
+
                     m_Context->renderer->SetCamera(comp.camera, transform);
-                    });
+                });
+                prevMP = curMP;
 
                 //pbr ecs (always render)
                 EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
