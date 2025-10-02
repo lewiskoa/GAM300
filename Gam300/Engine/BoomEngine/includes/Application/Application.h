@@ -302,7 +302,24 @@ namespace Boom
                         });
                     m_Context->renderer->SetPointLightCount(points);
                 }
-      
+				{
+					int directs = 0;
+					EnttView<Entity, DirectLightComponent, TransformComponent>(
+						[this, &directs](auto, DirectLightComponent& dlc, TransformComponent& tc)
+						{
+							m_Context->renderer->SetLight(dlc.light, tc.transform, directs++);
+						});
+					m_Context->renderer->SetDirectionalLightCount(directs);
+				}
+			/*	{
+					int spots = 0;
+					EnttView<Entity, SpotLightComponent, TransformComponent>(
+						[this, &spots](auto, SpotLightComponent& slc, TransformComponent& tc)
+						{
+							m_Context->renderer->SetLight(slc.light, tc.transform, spots++);
+						});
+					m_Context->renderer->SetSpotLightCount(spots);
+				}*/
                
                 //camera (always set up, but rotation freezes when paused)
                 EnttView<Entity, CameraComponent>([this](auto entity, CameraComponent& comp) {
@@ -463,7 +480,21 @@ namespace Boom
 			info.name = "Point Light";
 			pointLight.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 0.5f, 0.f);
 			auto& pointLightComp = pointLight.Attach<PointLightComponent>();
-            pointLightComp.light = PointLight({ 1.f, 0.9f, 0.7f }, 3.0f);
+            pointLightComp.light = PointLight({ 1.f, 0.9f, 0.7f }, 10.0f);
+
+			Entity directionalLight{ &m_Context->scene };
+			auto& info2 = directionalLight.Attach<InfoComponent>();
+			info2.name = "Directional Light";
+			directionalLight.Attach<TransformComponent>().transform.rotate = glm::vec3(-45.f, 0.f, 0.f);
+			auto& dirLightComp = directionalLight.Attach<DirectLightComponent>();
+			dirLightComp.light = DirectionalLight({ 1.f, 1.f, 0.9f }, 3.0f);
+
+			Entity spotLight{ &m_Context->scene };
+			auto& info3 = spotLight.Attach<InfoComponent>();
+			info3.name = "Spot Light";
+			spotLight.Attach<TransformComponent>().transform.translate = glm::vec3(2.f, 2.f, 2.f);
+			auto& spotLightComp = spotLight.Attach<SpotLightComponent>();   
+			spotLightComp.light = SpotLight{ { 0.7f, 0.8f, 1.f }, 15.f, glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(17.5f)) };
 
         }
 
