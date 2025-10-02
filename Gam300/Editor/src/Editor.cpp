@@ -39,7 +39,7 @@ public:
             BOOM_INFO("Editor::OnStart - Set ImGui context successfully");
         }
 
-
+        m_Context->window->isEditor = true;
     }
 
     BOOM_INLINE void OnUpdate() override
@@ -390,6 +390,8 @@ private:
         if (ImGui::Begin("Viewport", &m_ShowViewport)) {
 
             // Show current scene info in menu bar
+            ImGui::BeginTable("TextLayout", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_SizingFixedFit);
+            ImGui::TableNextColumn();
             if (m_Application) {
                 if (m_Application->IsSceneLoaded()) {
                     std::string currentPath = m_Application->GetCurrentScenePath();
@@ -407,6 +409,15 @@ private:
                 else {
                     ImGui::Text("Scene: None");
                 }
+
+                ImGui::TableNextColumn();
+                ImGui::Text("camera speed: %.2f", m_Context->window->camMoveMultiplier);
+                if (m_Context->window->isShiftDown) {
+                    ImGui::SameLine();
+                    ImGui::Text("* %.2f", CONSTANTS::CAM_RUN_MULTIPLIER);
+                }
+                ImGui::EndTable();
+
                 ImGui::Separator();
             }
             

@@ -113,8 +113,10 @@ namespace Boom {
 			}
 		}
 		BOOM_INLINE static void OnResize(GLFWwindow* win, int32_t w, int32_t h) {
-			(void)win; (void)w; (void)h;
-			GetUserData(win)->dispatcher->PostEvent<WindowResizeEvent>(w, h);
+			AppWindow* self{ GetUserData(win) };
+			if (!self->isEditor) {
+				self->dispatcher->PostEvent<WindowResizeEvent>(w, h);
+			}
 		}
 		BOOM_INLINE static void OnIconify(GLFWwindow* win, int32_t action) {
 			(void)win;
@@ -152,7 +154,7 @@ namespace Boom {
 				if (self->isShiftDown) {
 					sum *= 10.f;
 				}
-				self->camMoveMultiplier += sum;
+				self->camMoveMultiplier = glm::clamp(self->camMoveMultiplier + sum, 0.01f, 100.f);
 			}
 			else {
 				self->SetFOV(self->camFOV - (float)y);
@@ -232,29 +234,34 @@ namespace Boom {
 
 			//camera strafing and hovering
 			if (self->isRightClickDown) {
+				float spd{ CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier };
+				if (self->isShiftDown) {
+					spd *= CONSTANTS::CAM_RUN_MULTIPLIER;
+				}
+
 				if (action == GLFW_PRESS) {
 					switch (key) {
-					case GLFW_KEY_W:
-						self->camMoveDir.z = -CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier;
-						break;
-					case GLFW_KEY_S:
-						self->camMoveDir.z = CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier;
-						break;
-					case GLFW_KEY_A:
-						self->camMoveDir.x = -CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier;
-						break;
-					case GLFW_KEY_D:
-						self->camMoveDir.x = CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier;
-						break;
-					case GLFW_KEY_Q:
-						self->camMoveDir.y = -CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier;
-						break;
-					case GLFW_KEY_E:
-						self->camMoveDir.y = CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier;
-						break;
-
 					case GLFW_KEY_LEFT_SHIFT:
 						self->isShiftDown = true;
+						break;
+
+					case GLFW_KEY_W:
+						self->camMoveDir.z = -spd;
+						break;
+					case GLFW_KEY_S:
+						self->camMoveDir.z = spd;
+						break;
+					case GLFW_KEY_A:
+						self->camMoveDir.x = -spd;
+						break;
+					case GLFW_KEY_D:
+						self->camMoveDir.x = spd;
+						break;
+					case GLFW_KEY_Q:
+						self->camMoveDir.y = -spd;
+						break;
+					case GLFW_KEY_E:
+						self->camMoveDir.y = spd;
 						break;
 					}
 				}
@@ -277,10 +284,6 @@ namespace Boom {
 						self->isShiftDown = false;
 						break;
 					}
-				}
-
-				if (self->isShiftDown) {
-					self->camMoveDir *= CONSTANTS::CAM_RUN_MULTIPLIER;
 				}
 			}
 			
@@ -375,5 +378,7 @@ namespace Boom {
 		glm::vec2 camRot{};
 		float camFOV{ CONSTANTS::MIN_FOV };
 		float camMoveMultiplier{ 0.5f };
+
+		bool isEditor{}; //needed due to imgui's weird resizing bug
 	};
 }
