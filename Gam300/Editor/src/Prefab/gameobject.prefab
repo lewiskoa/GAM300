@@ -1,15 +1,15 @@
 {
   "components": {
     "InfoComponent": {
-      "name": "player"
+      "name": "gameobject"
     },
     "TransformComponent": {
-      "translate": [-1, -1, 0],
+      "translate": [0, 0, 0],
       "rotate": [0, 0, 0],
-      "scale": [0.01, 0.01, 0.01]
+      "scale": [1, 1, 1]
     },
     "ModelComponent": {
-      "modelPath": "dance.fbx"
+      "modelPath": "cube.fbx"
     }
   }
 }

@@ -150,6 +150,9 @@
     <ClInclude Include="includes\Audio\Audio.hpp">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Auxiliaries\ComponentSerializer.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">
@@ -174,6 +177,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="includes\Audio\Audio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="includes\Auxiliaries\AssetSerializer.h">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

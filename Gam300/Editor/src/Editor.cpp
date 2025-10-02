@@ -39,7 +39,7 @@ public:
             BOOM_INFO("Editor::OnStart - Set ImGui context successfully");
         }
 
-
+        m_Context->window->isEditor = true;
     }
 
     BOOM_INLINE void OnUpdate() override
@@ -84,7 +84,6 @@ private:
         RenderHierarchy();
         RenderInspector();
         RenderGizmo();
-        RenderPrefabBrowser();
         RenderPerformance();
         RenderResources();
         RenderPlaybackControls();
@@ -327,25 +326,19 @@ private:
                 ImGui::EndMenu();
             }
 
-            // Show current scene info in menu bar
-            if (m_Application) {
-                ImGui::Separator();
-                if (m_Application->IsSceneLoaded()) {
-                    std::string currentPath = m_Application->GetCurrentScenePath();
-                    if (!currentPath.empty()) {
-                        // Extract just the filename
-                        size_t lastSlash = currentPath.find_last_of("/\\");
-                        std::string fileName = (lastSlash != std::string::npos) ?
-                            currentPath.substr(lastSlash + 1) : currentPath;
-                        ImGui::Text("Scene: %s", fileName.c_str());
-                    }
-                    else {
-                        ImGui::Text("Scene: Unsaved");
-                    }
+            if (ImGui::BeginMenu("GameObjects")) {
+                if (ImGui::MenuItem("Create New Object")) {
+                    //type entt::entity
+                    m_SelectedEntity = PrefabSystem::InstantiatePrefab(
+                        m_Context->scene,
+                        *m_Context->assets,
+                        "src/Prefab/gameobject.prefab");
                 }
-                else {
-                    ImGui::Text("Scene: None");
+                if (ImGui::MenuItem("Delete Selected")) {
+                    m_Context->scene.destroy(m_SelectedEntity);
+                    m_SelectedEntity = entt::null;
                 }
+                ImGui::EndMenu();
             }
 
             ImGui::EndMainMenuBar();
@@ -396,31 +389,38 @@ private:
 
         if (ImGui::Begin("Viewport", &m_ShowViewport)) {
 
-            if (ImGui::BeginDragDropTarget())
-            {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PREFAB_ASSET"))
-                {
-                    const char* prefabName = (const char*)payload->Data;
-                    std::string path = "src/Prefabs/" + std::string(prefabName) + ".prefab";
-                    std::cout << "Spawned prefab: " << prefabName << "\n";
-
-
-                    // Instantiate prefab
-                    entt::entity newEntity = Boom::PrefabSystem::InstantiatePrefab(
-                        m_Context->scene,
-                        *m_Context->assets,
-                        path
-                    );
-
-                    if (newEntity != entt::null) {
-                        std::cout << "Spawned prefab: " << prefabName << " (" << path << ")\n";
+            // Show current scene info in menu bar
+            ImGui::BeginTable("TextLayout", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_SizingFixedFit);
+            ImGui::TableNextColumn();
+            if (m_Application) {
+                if (m_Application->IsSceneLoaded()) {
+                    std::string currentPath = m_Application->GetCurrentScenePath();
+                    if (!currentPath.empty()) {
+                        // Extract just the filename
+                        size_t lastSlash = currentPath.find_last_of("/\\");
+                        std::string fileName = (lastSlash != std::string::npos) ?
+                            currentPath.substr(lastSlash + 1) : currentPath;
+                        ImGui::Text("Scene: %s", fileName.c_str());
                     }
                     else {
-                        std::cout << "Failed to spawn prefab: " << prefabName << "\n";
+                        ImGui::Text("Scene: Unsaved");
                     }
                 }
-                ImGui::EndDragDropTarget();
+                else {
+                    ImGui::Text("Scene: None");
+                }
+
+                ImGui::TableNextColumn();
+                ImGui::Text("camera speed: %.2f", m_Context->window->camMoveMultiplier);
+                if (m_Context->window->isShiftDown) {
+                    ImGui::SameLine();
+                    ImGui::Text("* %.2f", CONSTANTS::CAM_RUN_MULTIPLIER);
+                }
+                ImGui::EndTable();
+
+                ImGui::Separator();
             }
+            
             // Get frame texture from engine
             uint32_t frameTexture = GetSceneFrame();
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
@@ -576,40 +576,6 @@ private:
                 // Pop the ID off the stack to keep it clean for the next item
                 ImGui::PopID();
             }
-        }
-        ImGui::End();
-    }
-
-// You will need #include <fstream> and #include <vector> if they aren't already in your Editor file.
-
-    BOOM_INLINE void RenderPrefabBrowser()
-    {
-        if (!m_ShowPrefabBrowser) return;
-
-        if (ImGui::Begin("Prefab Browser", &m_ShowPrefabBrowser)) {
-            const char* prefabName = "Player"; // single prefab
-
-            // Make it selectable and debug when clicked
-            if (ImGui::Selectable(prefabName)) {
-                std::cout << "[DEBUG] Prefab selected: " << prefabName << "\n";
-                // Optional: store the currently selected prefab if needed
-            }
-
-            if (ImGui::Button("Spawn Player")) {
-                Boom::PrefabSystem::InstantiatePrefab(
-                    m_Context->scene,
-                    *m_Context->assets,
-                    "src/Prefab/Player.prefab"
-                );
-            }
-
-
-            //// Drag source
-            //if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-            //    ImGui::SetDragDropPayload("PREFAB_ASSET", prefabName, strlen(prefabName) + 1);
-            //    ImGui::Text("Dragging %s", prefabName);
-            //    ImGui::EndDragDropSource();
-            //}
         }
         ImGui::End();
     }

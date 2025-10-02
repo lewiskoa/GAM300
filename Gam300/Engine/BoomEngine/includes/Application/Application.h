@@ -39,19 +39,10 @@ namespace Boom
                 fn(EntityType{ &m_Context->scene, e }, m_Context->scene.get<Components>(e)...);
             }
         }
-        /**
-         * @brief Constructs the Application, assigns its unique ID, and allocates the AppContext.
-         *
-         * BOOM_INLINE hints to the compiler to inline this small constructor
-         * to avoid function-call overhead during startup.
-         */
-
+        
         double m_SphereTimer = 0.0;
-        //glm::vec3 m_SphereStartPos = glm::vec3(0.0f, 5.0f, 0.0f);
-        //Entity m_SphereEntity; // <-- Add this
 
-
-         // Application state management
+        // Application state management
         ApplicationState m_AppState = ApplicationState::RUNNING;
         double m_PausedTime = 0.0;  // Track time spent paused
         double m_LastPauseTime = 0.0;  // When the last pause started
@@ -59,12 +50,18 @@ namespace Boom
         float m_TestRot = 0.0f;
 
 
-
+        /**
+         * @brief Constructs the Application, assigns its unique ID, and allocates the AppContext.
+         *
+         * BOOM_INLINE hints to the compiler to inline this small constructor
+         * to avoid function-call overhead during startup.
+         */
         BOOM_INLINE Application()
         {
             m_LayerID = TypeID<Application>();
             m_Context = new AppContext();
             RegisterEventCallbacks();
+			
 
             AttachCallback<WindowResizeEvent>([this](auto e) {
                 m_Context->renderer->Resize(e.width, e.height);
@@ -75,60 +72,6 @@ namespace Boom
                 m_Context->window->SetWindowTitle(e.title);
                 }
             );
-            /*
-                        // Create a dynamic sphere entity
-                        Entity sphere = CreateEntt<Entity>();
-                        {
-                            // Set initial position above the cube
-                            auto& t = sphere.Attach<TransformComponent>().Transform;
-                            t.translate = m_SphereStartPos;
-                            t.scale = glm::vec3(1.0f);
-                            // Attach rigidbody (dynamic)
-                            auto& rb = sphere.Attach<RigidBodyComponent>().RigidBody;
-                            rb.type = RigidBody3D::DYNAMIC;
-                            rb.mass = 2.0f;
-                            rb.density = 1.0f;
-
-                            // Small velocity to check for movement
-                            rb.initialVelocity = glm::vec3(1.0f, 0.0f, 0.0f);
-
-                            // Attach collider (sphere)
-                            auto& col = sphere.Attach<ColliderComponent>().Collider;
-                            col.type = Collider3D::SPHERE;
-
-                            // Attach model
-                            auto& mc = sphere.Attach<ModelComponent>();
-                            mc.model = std::make_shared<StaticModel>("sphere.fbx");
-                        }
-
-
-                        // Create a static cube entity (ground)
-                        Entity cube = CreateEntt<Entity>();
-                        {
-                            // Set initial position at the origin
-                            auto& t = cube.Attach<TransformComponent>().Transform;
-                            t.translate = glm::vec3(0.0f, 0.0f, 0.0f);
-                            t.scale = glm::vec3(2.0f);
-
-                            // Attach rigidbody (static)
-                            auto& rb = cube.Attach<RigidBodyComponent>().RigidBody;
-                            rb.type = RigidBody3D::STATIC;
-
-                            // Attach collider (box)
-                            auto& col = cube.Attach<ColliderComponent>().Collider;
-                            col.type = Collider3D::BOX;
-
-                            // Attach model
-                            auto& mc = cube.Attach<ModelComponent>();
-                            mc.model = std::make_shared<StaticModel>("cube.fbx");
-                        }
-
-                        m_SphereEntity = sphere;
-                        // Register both with the physics system
-                        m_Context->Physics->AddRigidBody(sphere);
-                        m_Context->Physics->AddRigidBody(cube);
-            */
-
         }
 
         /**
@@ -233,6 +176,8 @@ namespace Boom
         {
             //use of ecs
             //CreateEntities();
+            RegisterAllComponents();
+			RegisterAllAssets();
             LoadScene("default");
             CreateEntities();
             //lights testers
@@ -258,7 +203,9 @@ namespace Boom
                 }
             );
 
-
+            //temp input for mouse motion
+            glm::dvec2 curMP{};
+            glm::dvec2 prevMP{};
             while (m_Context->window->PollEvents() && !m_ShouldExit)
             {
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
@@ -276,8 +223,7 @@ namespace Boom
 
                 // Only update rotation when running
                 if (m_AppState == ApplicationState::RUNNING) {
-                    m_TestRot += 0.25f;
-                    m_TestRot = glm::mod(m_TestRot, 360.f);
+                    
                 }
                 // When paused, m_TestRot stays at its current value
 
@@ -321,15 +267,32 @@ namespace Boom
 					m_Context->renderer->SetSpotLightCount(spots);
 				}*/
                
+             
+
+                //temp input for mouse motion
+                glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
+
                 //camera (always set up, but rotation freezes when paused)
-                EnttView<Entity, CameraComponent>([this](auto entity, CameraComponent& comp) {
+                EnttView<Entity, CameraComponent>([this, &curMP, &prevMP](auto entity, CameraComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
-                    glm::vec3 rotOffset{ glm::cos(glm::radians(m_TestRot)), 0.f, glm::sin(glm::radians(m_TestRot)) };
-                    transform.translate = m_Context->window->camPos.z * rotOffset;
-                    transform.rotate = { 0.f, -m_TestRot + 90.f, 0.f };
+
+                    //get dir vector of current camera
+                    transform.rotate.x += m_Context->window->camRot.x;
+                    transform.rotate.y += m_Context->window->camRot.y;
+                    glm::quat quat{ glm::radians(transform.rotate) };
+                    glm::vec3 dir{ quat * m_Context->window->camMoveDir };
+                    transform.translate += dir;
+
+                    comp.camera.FOV = m_Context->window->camFOV;
+                    if (curMP == prevMP) {
+                        m_Context->window->camRot = {};
+                        if (m_Context->window->isMiddleClickDown)
+                            m_Context->window->camMoveDir = {};
+                    }
 
                     m_Context->renderer->SetCamera(comp.camera, transform);
-                    });
+                });
+                prevMP = curMP;
 
                 //pbr ecs (always render)
                 EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
@@ -437,35 +400,35 @@ namespace Boom
             };
             auto mat1Asset{ m_Context->assets->AddMaterial(RandomU64(), "Marble", marbleMat) };
 
-            ////camera
-            //Entity camera{ &m_Context->scene };
-            //camera.Attach<InfoComponent>();
-            //camera.Attach<TransformComponent>();
-            //camera.Attach<CameraComponent>();
+            //camera
+            Entity camera{ &m_Context->scene };
+            camera.Attach<InfoComponent>().name = "camera";
+            camera.Attach<TransformComponent>();
+            camera.Attach<CameraComponent>();
 
-            ////skybox
-            //Entity skybox{ &m_Context->scene };
-            //skybox.Attach<InfoComponent>();
-            //skybox.Attach<SkyboxComponent>().skyboxID = skyboxAsset->uid;
-            //skybox.Attach<TransformComponent>();
+            //skybox
+            Entity skybox{ &m_Context->scene };
+            skybox.Attach<InfoComponent>().name = "skybox";
+            skybox.Attach<SkyboxComponent>().skyboxID = skyboxAsset->uid;
+            skybox.Attach<TransformComponent>();
 
-            ////dance boi
-            //Entity robot{ &m_Context->scene };
-            //robot.Attach<InfoComponent>();
-            //auto& robotModel{ robot.Attach<ModelComponent>() };
-            //robotModel.materialID = mat1Asset->uid;
-            //robotModel.modelID = robotAsset->uid;
-            //auto& rt{ robot.Attach<TransformComponent>().transform };
-            //rt.translate = glm::vec3(0.f, -1.5f, 0.f);
-            //rt.scale = glm::vec3(0.01f);
-            //robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
+            //dance boi
+            Entity robot{ &m_Context->scene };
+            robot.Attach<InfoComponent>().name = "dance boi";
+            auto& robotModel{ robot.Attach<ModelComponent>() };
+            robotModel.materialID = mat1Asset->uid;
+            robotModel.modelID = robotAsset->uid;
+            auto& rt{ robot.Attach<TransformComponent>().transform };
+            rt.translate = glm::vec3(0.f, -1.5f, 0.f);
+            rt.scale = glm::vec3(0.01f);
+            robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
 
-            ////sphere 
-            //Entity sphereEn{ &m_Context->scene };
-            //sphereEn.Attach<InfoComponent>();
-            //auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
-            //sphereModel.modelID = sphereAsset->uid;
-            //sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
+            //sphere 
+            Entity sphereEn{ &m_Context->scene };
+            sphereEn.Attach<InfoComponent>().name = "sphere";
+            auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
+            sphereModel.modelID = sphereAsset->uid;
+            sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
 
             //ground
 			//Entity ground{ &m_Context->scene };
@@ -616,7 +579,7 @@ namespace Boom
             *m_Context->assets = AssetRegistry();
 
             // Reset any scene-specific state
-            m_TestRot = 0.0f;
+            
 
             BOOM_INFO("[Scene] Scene cleanup complete");
         }

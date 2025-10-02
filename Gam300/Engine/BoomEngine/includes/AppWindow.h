@@ -20,8 +20,6 @@ namespace Boom {
 			, modePtr{}
 			, windowPtr{}
 			, dispatcher{ disp }
-
-			, camPos{0.f, 0.f, 3.f}
 		{
 			if (!glfwInit()) {
 				BOOM_FATAL("AppWindow::Init() - glfwInit() failed.");
@@ -80,6 +78,8 @@ namespace Boom {
 
 			//initial window color
 			std::apply(glClearColor, CONSTANTS::DEFAULT_BACKGROUND_COLOR);
+
+			glfwGetCursorPos(windowPtr.get(), &prevMousePos.x, &prevMousePos.y);
 		}
 		BOOM_INLINE ~AppWindow() {}
 
@@ -105,19 +105,6 @@ namespace Boom {
 			if (action) {
 				self->isFullscreen = true;
 				//GetUserData(win)->dispatcher->PostEvent<WindowMaximizeEvent>();
-				/*
-				self->dispatcher->PostTask([&self] {
-					glfwSetWindowMonitor(
-						self->windowPtr.get(),
-						self->monitorPtr,
-						0,
-						0,
-						self->modePtr->width,
-						self->modePtr->height,
-						self->modePtr->refreshRate
-					);
-					}
-				);*/
 			}
 			else {
 				self->isFullscreen = false;
@@ -126,8 +113,10 @@ namespace Boom {
 			}
 		}
 		BOOM_INLINE static void OnResize(GLFWwindow* win, int32_t w, int32_t h) {
-			(void)win; (void)w; (void)h;
-			GetUserData(win)->dispatcher->PostEvent<WindowResizeEvent>(w, h);
+			AppWindow* self{ GetUserData(win) };
+			if (!self->isEditor) {
+				self->dispatcher->PostEvent<WindowResizeEvent>(w, h);
+			}
 		}
 		BOOM_INLINE static void OnIconify(GLFWwindow* win, int32_t action) {
 			(void)win;
@@ -155,25 +144,49 @@ namespace Boom {
 		}
 
 		BOOM_INLINE static void OnWheel(GLFWwindow* win, double x, double y) {
-			(void)win; (void)x; (void)y;
+			(void)x;
 			/*
 			GetUserData(win)->dispatcher->PostEvent<MouseWheelEvent>(x, y);
 			*/
+			AppWindow* self{ GetUserData(win) };
+			if (self->isRightClickDown) {
+				float sum{ (float)y * 0.01f };
+				if (self->isShiftDown) {
+					sum *= 10.f;
+				}
+				self->camMoveMultiplier = glm::clamp(self->camMoveMultiplier + sum, 0.01f, 100.f);
+			}
+			else {
+				self->SetFOV(self->camFOV - (float)y);
+			}
 		}
 		BOOM_INLINE static void OnMouse(GLFWwindow* win, int32_t button, int32_t action, int32_t) {
-			(void)win;
-			//AppWindow* self{ GetUserData(win) };
-
+			AppWindow* self{ GetUserData(win) };
+			
 			if (button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST) {
 				switch (action) {
 				case GLFW_RELEASE:
 					//self->dispatcher->PostEvent<MouseReleaseEvent>(button);
 					//self->inputs.Mouse.reset(button);
+
+					if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+						self->isRightClickDown = false;
+					}
+					if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+						self->isMiddleClickDown = false;
+					}
 					break;
 
 				case GLFW_PRESS:
 					//self->dispatcher->PostEvent<MouseDownEvent>(button);
 					//self->inputs.Mouse.set(button);
+
+					if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+						self->isRightClickDown = true;
+					}
+					if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+						self->isMiddleClickDown = true;
+					}
 					break;
 				}
 				return;
@@ -181,6 +194,22 @@ namespace Boom {
 			BOOM_ERROR("AppWindow::OnMouse() invalid keycode: [{}]", button);
 		}
 		BOOM_INLINE static void OnMotion(GLFWwindow* win, double x, double y) {
+			AppWindow* self{ GetUserData(win) };
+			
+			//camera yaw and pitch
+			if (self->isRightClickDown) {
+				self->camRot.x = (float)(self->prevMousePos.y - y) * CONSTANTS::CAM_PAN_SPEED;
+				self->camRot.y = (float)(self->prevMousePos.x - x) * CONSTANTS::CAM_PAN_SPEED;
+			}
+			//panning camera position
+			else if (self->isMiddleClickDown) {
+				glm::vec2 pan{ glm::dvec2{
+					(self->prevMousePos.x - x) / (double)self->width,
+					(y - self->prevMousePos.y) / (double)self->height} };
+
+				self->camMoveDir.y = pan.y * self->camFOV * 0.1f; 
+				self->camMoveDir.x = pan.x * self->camFOV * 0.09f;
+			}
 			/*
 			//AppWindow* self{ GetUserData(win) };
 			//self->dispatcher->PostEvent<MouseMotionEvent>(x, y);
@@ -191,7 +220,7 @@ namespace Boom {
 			self->inputs.MouseX = x;
 			self->inputs.MouseY = y;
 			*/
-			(void)win;  (void)x; (void)y; //remove when added in
+			self->prevMousePos = { x, y };
 		}
 		BOOM_INLINE static void OnKey(GLFWwindow* win, int32_t key, int32_t, int32_t action, int32_t) {
 			AppWindow* self{ GetUserData(win) };
@@ -202,14 +231,62 @@ namespace Boom {
 				glfwSetWindowShouldClose(win, GLFW_TRUE);
 				return;
 			}
-			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-				if (key == GLFW_KEY_W) {
-					self->camPos.z -= 0.1f;
+
+			//camera strafing and hovering
+			if (self->isRightClickDown) {
+				float spd{ CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier };
+				if (self->isShiftDown) {
+					spd *= CONSTANTS::CAM_RUN_MULTIPLIER;
 				}
-				if (key == GLFW_KEY_S) {
-					self->camPos.z += 0.1f;
+
+				if (action == GLFW_PRESS) {
+					switch (key) {
+					case GLFW_KEY_LEFT_SHIFT:
+						self->isShiftDown = true;
+						break;
+
+					case GLFW_KEY_W:
+						self->camMoveDir.z = -spd;
+						break;
+					case GLFW_KEY_S:
+						self->camMoveDir.z = spd;
+						break;
+					case GLFW_KEY_A:
+						self->camMoveDir.x = -spd;
+						break;
+					case GLFW_KEY_D:
+						self->camMoveDir.x = spd;
+						break;
+					case GLFW_KEY_Q:
+						self->camMoveDir.y = -spd;
+						break;
+					case GLFW_KEY_E:
+						self->camMoveDir.y = spd;
+						break;
+					}
+				}
+				else if (action == GLFW_RELEASE) {
+					switch (key) {
+					case GLFW_KEY_W:
+					case GLFW_KEY_S:
+						self->camMoveDir.z = 0.f;
+						break;
+					case GLFW_KEY_A:
+					case GLFW_KEY_D:
+						self->camMoveDir.x = 0.f;
+						break;
+					case GLFW_KEY_Q:
+					case GLFW_KEY_E:
+						self->camMoveDir.y = 0.f;
+						break;
+
+					case GLFW_KEY_LEFT_SHIFT:
+						self->isShiftDown = false;
+						break;
+					}
 				}
 			}
+			
 
 			if (key >= 0 && key <= GLFW_KEY_LAST) {
 				switch (action) {
@@ -270,6 +347,10 @@ namespace Boom {
 		BOOM_INLINE int IsExit() const {
 			return glfwWindowShouldClose(windowPtr.get());
 		}
+		BOOM_INLINE void SetFOV(float fov) {
+			camFOV = glm::clamp(fov, CONSTANTS::MIN_FOV, CONSTANTS::MAX_FOV);
+			BOOM_DEBUG("fov:{}", camFOV);
+		}
 		
 	private:
 		int32_t width;
@@ -284,8 +365,20 @@ namespace Boom {
 		EventDispatcher* dispatcher;
 		//WindowInputs inputs;
 
-	public: //temporary for testing
-		glm::vec3 camPos;
-		
+	public: //usage for basic glew input to move camera in editor
+		bool isRightClickDown{};
+		bool isMiddleClickDown{};
+		bool isShiftDown{};
+		//x - strafe right/left
+		//y - hover  up/down
+		//z - zoom   front/back
+		glm::vec3 camMoveDir{};
+		glm::dvec2 prevMousePos{};
+		//around x/y
+		glm::vec2 camRot{};
+		float camFOV{ CONSTANTS::MIN_FOV };
+		float camMoveMultiplier{ 0.5f };
+
+		bool isEditor{}; //needed due to imgui's weird resizing bug
 	};
 }

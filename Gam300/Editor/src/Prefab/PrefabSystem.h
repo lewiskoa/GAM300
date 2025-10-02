@@ -28,16 +28,20 @@ namespace Boom {
                 return entt::null;
             }
 
-            entt::entity newEntity = registry.create();
+            Entity newEntity{ &registry };
 
             const auto& components = prefabJson["components"];
             for (auto& [componentName, componentData] : components.items()) {
 
-                if (componentName == "TransformComponent") {
-                    registry.emplace<TransformComponent>(newEntity).deserialize(componentData);
+                if (componentName == "InfoComponent") {
+                    auto& info{ newEntity.Attach<InfoComponent>() };
+                    info.name = componentData.at("name");
+                }
+                else if (componentName == "TransformComponent") {
+                    newEntity.Attach<TransformComponent>().deserialize(componentData);
                 }
                 else if (componentName == "ModelComponent") {
-                    auto& mc = registry.emplace<ModelComponent>(newEntity);
+                    auto& mc = newEntity.Attach<ModelComponent>();
 
                     // Load model either by name or path
                     if (componentData.contains("modelName")) {
