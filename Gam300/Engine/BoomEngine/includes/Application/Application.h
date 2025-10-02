@@ -179,7 +179,7 @@ namespace Boom
             RegisterAllComponents();
 			RegisterAllAssets();
             LoadScene("default");
-            CreateEntities();
+           
             //lights testers
           /*  PointLight pl1{};
             PointLight pl2{};
@@ -257,7 +257,7 @@ namespace Boom
 						});
 					m_Context->renderer->SetDirectionalLightCount(directs);
 				}
-			/*	{
+				{
 					int spots = 0;
 					EnttView<Entity, SpotLightComponent, TransformComponent>(
 						[this, &spots](auto, SpotLightComponent& slc, TransformComponent& tc)
@@ -265,8 +265,7 @@ namespace Boom
 							m_Context->renderer->SetLight(slc.light, tc.transform, spots++);
 						});
 					m_Context->renderer->SetSpotLightCount(spots);
-				}*/
-               
+				}               
              
 
                 //temp input for mouse motion
@@ -371,64 +370,64 @@ namespace Boom
 
         //loads assets and initialize the starting entities
         BOOM_INLINE void CreateEntities() {
-            auto skyboxAsset{ m_Context->assets->AddSkybox(RandomU64(), "Skybox/sky.hdr", 2048) };
-            auto robotAsset{ m_Context->assets->AddModel(RandomU64(), "dance.fbx", true) };
-            if (!robotAsset || !robotAsset->data) {
-                BOOM_ERROR("[ASSET] Failed to load dance.fbx!");
-            }
-            //script asset ...
-            auto sphereAsset{ m_Context->assets->AddModel(RandomU64(), "sphere.fbx") };
-            auto cubeAsset{ m_Context->assets->AddModel(RandomU64(), "cube.fbx") };
+            //auto skyboxAsset{ m_Context->assets->AddSkybox(RandomU64(), "Skybox/sky.hdr", 2048) };
+            //auto robotAsset{ m_Context->assets->AddModel(RandomU64(), "dance.fbx", true) };
+            //if (!robotAsset || !robotAsset->data) {
+            //    BOOM_ERROR("[ASSET] Failed to load dance.fbx!");
+            //}
+            ////script asset ...
+            //auto sphereAsset{ m_Context->assets->AddModel(RandomU64(), "sphere.fbx") };
+            //auto cubeAsset{ m_Context->assets->AddModel(RandomU64(), "cube.fbx") };
 
-            auto cubeAsset2{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy.fbx") };
-            auto cubeAsset3{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (2).fbx") };
-            auto cubeAsset4{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (3).fbx") };
-            auto cubeAsset5{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (4).fbx") };
-            auto cubeAsset6{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (5).fbx") };
+            //auto cubeAsset2{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy.fbx") };
+            //auto cubeAsset3{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (2).fbx") };
+            //auto cubeAsset4{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (3).fbx") };
+            //auto cubeAsset5{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (4).fbx") };
+            //auto cubeAsset6{ m_Context->assets->AddModel(RandomU64(), "Cube - Copy (5).fbx") };
 
-            //materials
-            auto albedoTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/albedo.png") };
-            auto normalTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/normal.png") };
-            auto roughnessTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/roughness.png") };
-            std::array<AssetID, 6> marbleMat{
-                albedoTexAsset->uid,
-                normalTexAsset->uid,
-                roughnessTexAsset->uid,
-                EMPTY_ASSET,
-                EMPTY_ASSET,
-                EMPTY_ASSET,
-            };
-            auto mat1Asset{ m_Context->assets->AddMaterial(RandomU64(), "Marble", marbleMat) };
+            ////materials
+            //auto albedoTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/albedo.png") };
+            //auto normalTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/normal.png") };
+            //auto roughnessTexAsset{ m_Context->assets->AddTexture(RandomU64(), "Marble/roughness.png") };
+            //std::array<AssetID, 6> marbleMat{
+            //    albedoTexAsset->uid,
+            //    normalTexAsset->uid,
+            //    roughnessTexAsset->uid,
+            //    EMPTY_ASSET,
+            //    EMPTY_ASSET,
+            //    EMPTY_ASSET,
+            //};
+            //auto mat1Asset{ m_Context->assets->AddMaterial(RandomU64(), "Marble", marbleMat) };
 
-            //camera
-            Entity camera{ &m_Context->scene };
-            camera.Attach<InfoComponent>().name = "camera";
-            camera.Attach<TransformComponent>();
-            camera.Attach<CameraComponent>();
+            ////camera
+            //Entity camera{ &m_Context->scene };
+            //camera.Attach<InfoComponent>().name = "camera";
+            //camera.Attach<TransformComponent>();
+            //camera.Attach<CameraComponent>();
 
-            //skybox
-            Entity skybox{ &m_Context->scene };
-            skybox.Attach<InfoComponent>().name = "skybox";
-            skybox.Attach<SkyboxComponent>().skyboxID = skyboxAsset->uid;
-            skybox.Attach<TransformComponent>();
+            ////skybox
+            //Entity skybox{ &m_Context->scene };
+            //skybox.Attach<InfoComponent>().name = "skybox";
+            //skybox.Attach<SkyboxComponent>().skyboxID = skyboxAsset->uid;
+            //skybox.Attach<TransformComponent>();
 
-            //dance boi
-            Entity robot{ &m_Context->scene };
-            robot.Attach<InfoComponent>().name = "dance boi";
-            auto& robotModel{ robot.Attach<ModelComponent>() };
-            robotModel.materialID = mat1Asset->uid;
-            robotModel.modelID = robotAsset->uid;
-            auto& rt{ robot.Attach<TransformComponent>().transform };
-            rt.translate = glm::vec3(0.f, -1.5f, 0.f);
-            rt.scale = glm::vec3(0.01f);
-            robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
+            ////dance boi
+            //Entity robot{ &m_Context->scene };
+            //robot.Attach<InfoComponent>().name = "dance boi";
+            //auto& robotModel{ robot.Attach<ModelComponent>() };
+            //robotModel.materialID = mat1Asset->uid;
+            //robotModel.modelID = robotAsset->uid;
+            //auto& rt{ robot.Attach<TransformComponent>().transform };
+            //rt.translate = glm::vec3(0.f, -1.5f, 0.f);
+            //rt.scale = glm::vec3(0.01f);
+            //robot.Attach<AnimatorComponent>().animator = std::dynamic_pointer_cast<SkeletalModel>(robotAsset->data)->GetAnimator();
 
-            //sphere 
-            Entity sphereEn{ &m_Context->scene };
-            sphereEn.Attach<InfoComponent>().name = "sphere";
-            auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
-            sphereModel.modelID = sphereAsset->uid;
-            sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
+            ////sphere 
+            //Entity sphereEn{ &m_Context->scene };
+            //sphereEn.Attach<InfoComponent>().name = "sphere";
+            //auto& sphereModel{ sphereEn.Attach<ModelComponent>() };
+            //sphereModel.modelID = sphereAsset->uid;
+            //sphereEn.Attach<TransformComponent>().transform.translate = glm::vec3(0.f, 1.f, 0.f);
 
             //ground
 			//Entity ground{ &m_Context->scene };
@@ -448,7 +447,7 @@ namespace Boom
 			Entity directionalLight{ &m_Context->scene };
 			auto& info2 = directionalLight.Attach<InfoComponent>();
 			info2.name = "Directional Light";
-			directionalLight.Attach<TransformComponent>().transform.rotate = glm::vec3(-45.f, 0.f, 0.f);
+			directionalLight.Attach<TransformComponent>().transform.rotate = glm::vec3(6.f, 0.f, 0.f);
 			auto& dirLightComp = directionalLight.Attach<DirectLightComponent>();
 			dirLightComp.light = DirectionalLight({ 1.f, 1.f, 0.9f }, 3.0f);
 
@@ -457,7 +456,12 @@ namespace Boom
 			info3.name = "Spot Light";
 			spotLight.Attach<TransformComponent>().transform.translate = glm::vec3(2.f, 2.f, 2.f);
 			auto& spotLightComp = spotLight.Attach<SpotLightComponent>();   
-			spotLightComp.light = SpotLight{ { 0.7f, 0.8f, 1.f }, 15.f, glm::cos(glm::radians(12.5f)), glm::cos(glm::radians(17.5f)) };
+            spotLightComp.light = SpotLight(
+                { 0.7f, 0.8f, 1.f }, // radiance
+                15.f,              // intensity
+                17.5f,             // fall (outer angle, degrees)
+                12.5f              // cut (inner angle, degrees)
+            );
 
         }
 
