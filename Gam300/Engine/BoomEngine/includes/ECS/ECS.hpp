@@ -10,6 +10,10 @@ namespace Boom {
 	using EntityID = entt::entity;
 	constexpr EntityID NENTT = entt::null;
 
+
+    //NOTE FROM AMOS
+	//When createing new components, make sure to add serialization functions in ComponentSerializer.cpp
+	//Should be pretty straightforward, just follow the format of the other components or use GPT to help you
   
 
     // transform component
