@@ -88,4 +88,49 @@ extern "C" {
         ScriptRuntime::UpdateAll(dt);
     }
 
+    BOOM_API void script_physics_set_gravity(ScriptVec3 g)
+    {
+        if (ScriptRuntime::Hooks().PhysicsSetGravity)
+            ScriptRuntime::Hooks().PhysicsSetGravity(Boom::Vec3{ g.x, g.y, g.z });
+    }
+
+    BOOM_API void script_add_rigidbody(ScriptEntityId e, float mass)
+    {
+        if (ScriptRuntime::Hooks().AddRigidbody)
+            ScriptRuntime::Hooks().AddRigidbody(to_engine_id(e), mass);
+    }
+
+    BOOM_API void script_add_box_collider(ScriptEntityId e, ScriptVec3 he)
+    {
+        if (ScriptRuntime::Hooks().AddBoxCollider)
+            ScriptRuntime::Hooks().AddBoxCollider(to_engine_id(e), Boom::Vec3{ he.x, he.y, he.z });
+    }
+
+    BOOM_API void script_add_sphere_collider(ScriptEntityId e, float radius)
+    {
+        if (ScriptRuntime::Hooks().AddSphereCollider)
+            ScriptRuntime::Hooks().AddSphereCollider(to_engine_id(e), radius);
+    }
+
+    BOOM_API void script_set_linear_velocity(ScriptEntityId e, ScriptVec3 v)
+    {
+        if (ScriptRuntime::Hooks().SetLinearVelocity)
+            ScriptRuntime::Hooks().SetLinearVelocity(to_engine_id(e), Boom::Vec3{ v.x, v.y, v.z });
+    }
+
+    BOOM_API ScriptVec3 script_get_linear_velocity(ScriptEntityId e)
+    {
+        if (ScriptRuntime::Hooks().GetLinearVelocity) {
+            Boom::Vec3 v = ScriptRuntime::Hooks().GetLinearVelocity(to_engine_id(e));
+            return ScriptVec3{ v.x, v.y, v.z };
+        }
+        return ScriptVec3{ 0, 0, 0 };
+    }
+
+    BOOM_API void script_physics_step(float dt)
+    {
+        if (ScriptRuntime::Hooks().PhysicsStep)
+            ScriptRuntime::Hooks().PhysicsStep(dt);
+    }
+
 } // extern "C"

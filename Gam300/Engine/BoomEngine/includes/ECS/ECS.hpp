@@ -6,15 +6,15 @@
 #include "Physics/Utilities.h"  
 
 namespace Boom {
-	using EntityRegistry = entt::registry;  
-	using EntityID = entt::entity;
-	constexpr EntityID NENTT = entt::null;
+    using EntityRegistry = entt::registry;
+    using EntityID = entt::entity;
+    constexpr EntityID NENTT = entt::null;
 
 
     //NOTE FROM AMOS
-	//When createing new components, make sure to add serialization functions in ComponentSerializer.cpp
-	//Should be pretty straightforward, just follow the format of the other components or use GPT to help you
-  
+    //When createing new components, make sure to add serialization functions in ComponentSerializer.cpp
+    //Should be pretty straightforward, just follow the format of the other components or use GPT to help you
+
 
     // transform component
     struct TransformComponent
@@ -72,26 +72,26 @@ namespace Boom {
         std::string name = "Entity";
     };
 
-	struct MeshComponent
-	{
-		BOOM_INLINE MeshComponent(const MeshComponent&) = default;
-		BOOM_INLINE MeshComponent() = default;
-		Mesh3D mesh;
-	};
-    
+    struct MeshComponent
+    {
+        BOOM_INLINE MeshComponent(const MeshComponent&) = default;
+        BOOM_INLINE MeshComponent() = default;
+        Mesh3D mesh;
+    };
+
     struct RigidBodyComponent
     {
         BOOM_INLINE RigidBodyComponent(const RigidBodyComponent&) = default;
         BOOM_INLINE RigidBodyComponent() = default;
         RigidBody3D RigidBody;
-	};
+    };
 
     struct ColliderComponent
     {
         BOOM_INLINE ColliderComponent(const ColliderComponent&) = default;
         BOOM_INLINE ColliderComponent() = default;
         Collider3D Collider;
-	};
+    };
 
     ////Model Component
     struct ModelComponent {
@@ -99,16 +99,16 @@ namespace Boom {
         AssetID modelID{ EMPTY_ASSET };
         std::string modelName;
         std::string materialName;
-        std::string modelSource;      
-        std::string materialSource;   
+        std::string modelSource;
+        std::string materialSource;
     };
 
-	//Animator Component
+    //Animator Component
     struct AnimatorComponent
     {
-		BOOM_INLINE AnimatorComponent(const AnimatorComponent&) = default;
-		BOOM_INLINE AnimatorComponent() = default;
-		Animator3D animator;
+        BOOM_INLINE AnimatorComponent(const AnimatorComponent&) = default;
+        BOOM_INLINE AnimatorComponent() = default;
+        Animator3D animator;
     };
 
     struct SkyboxComponent {
@@ -122,7 +122,7 @@ namespace Boom {
         std::string name{ "Entity" };
         AssetID uid{ RandomU64() };
 
-       
+
     };
 
     struct DirectLightComponent
@@ -142,7 +142,7 @@ namespace Boom {
         BOOM_INLINE SpotLightComponent(const SpotLightComponent&) = default;
         BOOM_INLINE SpotLightComponent() = default;
         SpotLight light;
-	};
+    };
 
     //Chris I have no idea how your sound component works
     struct SoundComponent
@@ -167,6 +167,40 @@ namespace Boom {
             if (j.contains("loop")) j.at("loop").get_to(loop);
             if (j.contains("volume")) j.at("volume").get_to(volume);
             if (j.contains("playOnStart")) j.at("playOnStart").get_to(playOnStart);
+        }
+    };
+
+    struct ScriptComponent
+    {
+        // Managed type name in C# (e.g., "PhysicsDropDemo" or "MyGame.PlayerController")
+        std::string TypeName;
+
+        // Runtime handle returned by script_create_instance(...).
+        // Do NOT serialize this; it’s valid only while the game is running.
+        uint64_t InstanceId = 0;
+
+        // Allow toggling without removing the component
+        bool Enabled = true;
+
+        nlohmann::json Params = nlohmann::json::object();
+
+        // ---- Serialization (save only authoring data) ----
+        void serialize(nlohmann::json& j) const {
+            j["TypeName"] = TypeName;
+            j["Enabled"] = Enabled;
+            if (!Params.is_null() && !Params.empty())
+                j["Params"] = Params;
+
+            // NOTE: InstanceId is intentionally NOT serialized (runtime only)
+        }
+
+        void deserialize(const nlohmann::json& j) {
+            if (j.contains("TypeName")) j.at("TypeName").get_to(TypeName);
+            if (j.contains("Enabled"))  j.at("Enabled").get_to(Enabled);
+            if (j.contains("Params"))   j.at("Params").get_to(Params);
+
+            // Ensure runtime handle starts cleared when loading a scene
+            InstanceId = 0;
         }
     };
 
@@ -236,7 +270,7 @@ namespace Boom {
         {
             return m_Registry->get<T>(m_EnttID);
         }
-    
+
     protected:
         EntityRegistry* m_Registry = nullptr;
         EntityID m_EnttID = NENTT;

@@ -29,6 +29,15 @@ extern "C" {
     BOOM_API void           script_set_position(ScriptEntityId e, ScriptVec3 p);
     BOOM_API ScriptVec3     script_get_position(ScriptEntityId e);
 
+    /* -------- Physics -------- */
+    BOOM_API void           script_physics_set_gravity(ScriptVec3 g);
+    BOOM_API void           script_add_rigidbody(ScriptEntityId e, float mass);
+    BOOM_API void           script_add_box_collider(ScriptEntityId e, ScriptVec3 halfextents);
+    BOOM_API void           script_add_sphere_collider(ScriptEntityId e, float radius);
+    BOOM_API void           script_set_linear_velocity(ScriptEntityId e, ScriptVec3 v);
+    BOOM_API ScriptVec3     script_get_linear_velocity(ScriptEntityId e);
+    BOOM_API void           script_physics_step(float dt);
+
     /* -------- Registration & lifetime -------- */
     BOOM_API void           script_register_type(const char* typeName,
         ScriptCreateFn c,
@@ -39,6 +48,8 @@ extern "C" {
     BOOM_API void           script_destroy_instance(uint64_t instanceId);
     BOOM_API void           script_update_instance(uint64_t instanceId, float dt);
     BOOM_API void           script_update_all(float dt);
+
+
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -73,7 +73,7 @@ namespace Boom {
 			//user data
 			glfwSetWindowUserPointer(windowPtr.get(), this);
 			//enable a-vsync
-			glfwSwapInterval(-1);
+			glfwSwapInterval(0);
 			SetupCallbacks(windowPtr.get());
 
 			//initial window color
@@ -162,7 +162,7 @@ namespace Boom {
 		}
 		BOOM_INLINE static void OnMouse(GLFWwindow* win, int32_t button, int32_t action, int32_t) {
 			AppWindow* self{ GetUserData(win) };
-			
+
 			if (button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST) {
 				switch (action) {
 				case GLFW_RELEASE:
@@ -195,7 +195,7 @@ namespace Boom {
 		}
 		BOOM_INLINE static void OnMotion(GLFWwindow* win, double x, double y) {
 			AppWindow* self{ GetUserData(win) };
-			
+
 			//camera yaw and pitch
 			if (self->isRightClickDown) {
 				self->camRot.x = (float)(self->prevMousePos.y - y) * CONSTANTS::CAM_PAN_SPEED;
@@ -207,7 +207,7 @@ namespace Boom {
 					(self->prevMousePos.x - x) / (double)self->width,
 					(y - self->prevMousePos.y) / (double)self->height} };
 
-				self->camMoveDir.y = pan.y * self->camFOV * 0.1f; 
+				self->camMoveDir.y = pan.y * self->camFOV * 0.1f;
 				self->camMoveDir.x = pan.x * self->camFOV * 0.09f;
 			}
 			/*
@@ -286,7 +286,7 @@ namespace Boom {
 					}
 				}
 			}
-			
+
 
 			if (key >= 0 && key <= GLFW_KEY_LAST) {
 				switch (action) {
@@ -323,11 +323,11 @@ namespace Boom {
 		}
 		[[nodiscard]] BOOM_INLINE int32_t& Height() noexcept {
 			return height;
-		} 
+		}
 		[[nodiscard]] BOOM_INLINE std::shared_ptr<GLFWwindow> Handle() const {
 			return windowPtr;
 		}
-		
+
 		BOOM_INLINE bool PollEvents() {
 			glfwPollEvents();
 			dispatcher->PollEvents();
@@ -351,7 +351,7 @@ namespace Boom {
 			camFOV = glm::clamp(fov, CONSTANTS::MIN_FOV, CONSTANTS::MAX_FOV);
 			BOOM_DEBUG("fov:{}", camFOV);
 		}
-		
+
 	private:
 		int32_t width;
 		int32_t height;
