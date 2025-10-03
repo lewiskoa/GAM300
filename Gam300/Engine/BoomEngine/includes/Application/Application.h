@@ -487,12 +487,19 @@ namespace Boom
             // Clear the ECS scene
             m_Context->scene.clear();
 
-            // PRESERVE PREFABS - Save them before clearing
+            // PRESERVE PREFABS - but only those that exist on disk
             std::unordered_map<AssetID, std::shared_ptr<Asset>> savedPrefabs;
             auto& prefabMap = m_Context->assets->GetMap<PrefabAsset>();
             for (auto& [uid, asset] : prefabMap) {
                 if (uid != EMPTY_ASSET) {
-                    savedPrefabs[uid] = asset;
+                    // Check if the prefab file exists on disk
+                    std::string filepath = "Prefabs/" + asset->name + ".prefab";
+                    if (std::filesystem::exists(filepath)) {
+                        savedPrefabs[uid] = asset;
+                    }
+                    else {
+                        BOOM_INFO("[Scene] Skipping prefab '{}' - file not found on disk", asset->name);
+                    }
                 }
             }
             BOOM_INFO("[Scene] Preserved {} prefabs", savedPrefabs.size());

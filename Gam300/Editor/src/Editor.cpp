@@ -1249,7 +1249,7 @@ private:
     bool m_ShowPrefabBrowser = true;
     bool m_ShowAudio = true;
     bool m_ShowPerformance = true;
-	bool m_ShowSavePrefabDialog = true;
+	bool m_ShowSavePrefabDialog = false;
 
 	//prefab browser UI state
     char m_PrefabNameBuffer[256] = "NewPrefab";
