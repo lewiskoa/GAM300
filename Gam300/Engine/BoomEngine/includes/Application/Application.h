@@ -502,7 +502,9 @@ namespace Boom
                     }
                 }
             }
+#if defined(_DEBUG)
             BOOM_INFO("[Scene] Preserved {} prefabs", savedPrefabs.size());
+#endif
 
             // Reset asset registry (keeping EMPTY_ASSET sentinels)
             *m_Context->assets = AssetRegistry();
@@ -511,8 +513,9 @@ namespace Boom
             for (auto& [uid, asset] : savedPrefabs) {
                 m_Context->assets->GetMap<PrefabAsset>()[uid] = std::static_pointer_cast<PrefabAsset>(asset);
             }
+#if defined(_DEBUG)
             BOOM_INFO("[Scene] Restored {} prefabs", savedPrefabs.size());
-
+#endif
             BOOM_INFO("[Scene] Scene cleanup complete");
         }
 

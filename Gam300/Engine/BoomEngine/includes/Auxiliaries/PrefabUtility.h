@@ -83,7 +83,11 @@ namespace Boom
             }
             catch (const std::exception& e)
             {
+#if defined(_DEBUG)
                 BOOM_ERROR("[PrefabUtility] Failed to save prefab: {}", e.what());
+#else
+                std::cerr << "[PrefabUtility] Failed to save prefab: " << e.what() << std::endl;
+#endif
                 return false;
             }
         }
@@ -110,7 +114,11 @@ namespace Boom
             }
             catch (const YAML::Exception& e)
             {
+#if defined(_DEBUG)
                 BOOM_ERROR("[PrefabUtility] Failed to load prefab: {}", e.what());
+#else
+                std::cerr << "[PrefabUtility] Failed to load prefab: " << e.what() << std::endl;
+#endif
                 return EMPTY_ASSET;
             }
         }
@@ -147,7 +155,11 @@ namespace Boom
             }
             catch (const YAML::Exception& e)
             {
+#if defined(_DEBUG)
                 BOOM_ERROR("[PrefabUtility] Failed to instantiate prefab {}: {}", prefabID, e.what());
+#else
+				std::cerr << "[PrefabUtility] Failed to instantiate prefab " << prefabID << ": " << e.what() << std::endl;
+#endif
                 return entt::null;
             }
         }
