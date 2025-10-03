@@ -103,6 +103,24 @@ namespace Boom
             }
         );
 
+        // === PREFAB ===
+        registry.RegisterAssetSerializer(
+            AssetType::PREFAB,
+            // Serialize
+            [](YAML::Emitter& e, Asset* asset) {
+                auto prefab = static_cast<PrefabAsset*>(asset);
+                e << YAML::Key << "Properties" << YAML::Value << YAML::BeginMap;
+                e << YAML::Key << "SerializedData" << YAML::Value << YAML::Literal << prefab->serializedData;
+                e << YAML::EndMap;
+            },
+            // Deserialize
+            [](AssetRegistry& reg, AssetID uid, const std::string& src, const YAML::Node& props) -> Asset* {
+                auto prefab = reg.AddPrefab(uid, src);
+                prefab->serializedData = props["SerializedData"].as<std::string>();
+                return static_cast<Asset*>(prefab.get());
+            }
+        );
+
         // === SCENE ===
         registry.RegisterAssetSerializer(
             AssetType::SCENE,

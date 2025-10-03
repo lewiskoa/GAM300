@@ -40,6 +40,8 @@ public:
         }
 
         m_Context->window->isEditor = true;
+
+        LoadAllPrefabsFromDisk();
     }
 
     BOOM_INLINE void OnUpdate() override
@@ -87,11 +89,13 @@ private:
         RenderPerformance();
         RenderResources();
         RenderPlaybackControls();
+        RenderPrefabBrowser();
         if (m_ShowConsole)
             m_Console.OnShow(this);
         RenderAudioPanel();
         // Render scene management dialogs
         RenderSceneDialogs();
+		RenderPrefabDialogs();
 
 
         // End frame and render
@@ -327,16 +331,32 @@ private:
             }
 
             if (ImGui::BeginMenu("GameObjects")) {
-                if (ImGui::MenuItem("Create New Object")) {
-                    //type entt::entity
-                    m_SelectedEntity = PrefabSystem::InstantiatePrefab(
-                        m_Context->scene,
-                        *m_Context->assets,
-                        "src/Prefab/gameobject.prefab");
+                if (ImGui::MenuItem("Create Empty Object")) {
+                    Entity newEntity{ &m_Context->scene };
+                    newEntity.Attach<InfoComponent>().name = "GameObject";
+                    newEntity.Attach<TransformComponent>();
+                    m_SelectedEntity = newEntity.ID();
                 }
+
+                if (ImGui::MenuItem("Create From Prefab...")) {
+                    m_ShowPrefabBrowser = true;
+                }
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Save Selected as Prefab")) {
+                    if (m_SelectedEntity != entt::null) {
+                        m_ShowSavePrefabDialog = true;
+                    }
+                }
+
+                ImGui::Separator();
+
                 if (ImGui::MenuItem("Delete Selected")) {
-                    m_Context->scene.destroy(m_SelectedEntity);
-                    m_SelectedEntity = entt::null;
+                    if (m_SelectedEntity != entt::null) {
+                        m_Context->scene.destroy(m_SelectedEntity);
+                        m_SelectedEntity = entt::null;
+                    }
                 }
                 ImGui::EndMenu();
             }
@@ -344,6 +364,7 @@ private:
             ImGui::EndMainMenuBar();
         }
     }
+
     BOOM_INLINE void RenderPerformance()
     {
         if (!m_ShowPerformance) return;
@@ -862,6 +883,314 @@ private:
         }
     }
 
+    BOOM_INLINE void RenderPrefabDialogs()
+    {
+        // Save Prefab Dialog
+        if (m_ShowSavePrefabDialog) {
+            ImGui::OpenPopup("Save as Prefab");
+            m_ShowSavePrefabDialog = false;
+        }
+
+        if (ImGui::BeginPopupModal("Save as Prefab", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Save selected entity as prefab:");
+            ImGui::Separator();
+
+            bool enterPressed = ImGui::InputText("Prefab Name", m_PrefabNameBuffer, sizeof(m_PrefabNameBuffer),
+                ImGuiInputTextFlags_EnterReturnsTrue);
+
+            ImGui::Separator();
+
+            bool saveClicked = ImGui::Button("Save", ImVec2(80, 0));
+            ImGui::SameLine();
+            bool cancelClicked = ImGui::Button("Cancel", ImVec2(80, 0));
+
+            if ((saveClicked || enterPressed) && strlen(m_PrefabNameBuffer) > 0) {
+                AssetID prefabID = RandomU64();
+                auto prefab = PrefabUtility::CreatePrefabFromEntity(
+                    *m_Context->assets,
+                    prefabID,
+                    std::string(m_PrefabNameBuffer),
+                    m_Context->scene,
+                    m_SelectedEntity
+                );
+
+                if (prefab) {
+                    std::string filepath = "Prefabs/" + std::string(m_PrefabNameBuffer) + ".prefab";
+                    bool saved = PrefabUtility::SavePrefab(*prefab, filepath);
+                    if (saved) {
+                        BOOM_INFO("[Editor] Saved prefab '{}'", m_PrefabNameBuffer);
+                        RefreshPrefabList();
+                    }
+                }
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (cancelClicked) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+
+        // Delete Prefab Dialog
+        if (m_ShowDeletePrefabDialog) {
+            ImGui::OpenPopup("Delete Prefab?");
+            m_ShowDeletePrefabDialog = false;
+            m_DeleteFromDisk = false; // Reset checkbox
+        }
+
+        if (ImGui::BeginPopupModal("Delete Prefab?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            auto& asset = m_Context->assets->Get<PrefabAsset>(m_PrefabToDelete);
+            ImGui::Text("Delete prefab '%s'?", asset.name.c_str());
+            ImGui::Spacing();
+
+            ImGui::Checkbox("Delete from disk", &m_DeleteFromDisk);
+            if (m_DeleteFromDisk) {
+                ImGui::TextColored(ImVec4(1, 0.3f, 0, 1), "Warning: This cannot be undone!");
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Delete", ImVec2(120, 0))) {
+                // SAVE the filepath BEFORE erasing the asset
+                std::string filepath = "Prefabs/" + asset.name + ".prefab";
+                std::string name = asset.name;
+
+                // Remove from memory FIRST
+                m_Context->assets->GetMap<PrefabAsset>().erase(m_PrefabToDelete);
+
+                // NOW delete from disk (using the saved filepath)
+                if (m_DeleteFromDisk) {
+                    if (std::filesystem::exists(filepath)) {
+                        std::filesystem::remove(filepath);
+                        BOOM_INFO("[Editor] Deleted prefab file: {}", filepath);
+                    }
+                    else {
+                        BOOM_WARN("[Editor] Prefab file not found: {}", filepath);
+                    }
+                }
+
+                BOOM_INFO("[Editor] Deleted prefab '{}' from memory", name);
+                RefreshPrefabList();
+
+                if (m_SelectedPrefabID == m_PrefabToDelete) {
+                    m_SelectedPrefabID = EMPTY_ASSET;
+                }
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
+
+    BOOM_INLINE void RenderPrefabBrowser()
+    {
+        if (!m_ShowPrefabBrowser) return;
+
+        ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
+
+        if (ImGui::Begin("Prefab Browser", &m_ShowPrefabBrowser)) {
+
+            // Toolbar
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.8f, 1.0f));
+            if (ImGui::Button("Refresh", ImVec2(80, 0))) {
+                RefreshPrefabList();
+                LoadAllPrefabsFromDisk();
+            }
+            ImGui::PopStyleColor();
+
+            ImGui::SameLine();
+            ImGui::TextDisabled("|");
+            ImGui::SameLine();
+            ImGui::Text("Prefabs: %d", (int)m_LoadedPrefabs.size());
+
+            ImGui::Separator();
+
+            // Search bar
+            static char searchBuffer[256] = "";
+            ImGui::SetNextItemWidth(-1);
+            ImGui::InputTextWithHint("##Search", "Search prefabs...", searchBuffer, sizeof(searchBuffer));
+
+            ImGui::Separator();
+
+            // Prefab grid/list
+            ImGui::BeginChild("PrefabList", ImVec2(0, -40), true);
+
+            auto& prefabMap = m_Context->assets->GetMap<PrefabAsset>();
+            std::string search = searchBuffer;
+            std::transform(search.begin(), search.end(), search.begin(),
+                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+            int count = 0;
+            for (auto& [uid, asset] : prefabMap) {
+                if (uid == EMPTY_ASSET) continue;
+
+                // Filter by search
+                std::string name = asset->name;
+                std::string nameLower = name;
+                // FIX: Use lambda here too
+                std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(),
+                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                if (!search.empty() && nameLower.find(search) == std::string::npos) {
+                    continue;
+                }
+
+                count++;
+                ImGui::PushID((int)uid);
+
+                // Selectable prefab item
+                bool selected = (m_SelectedPrefabID == uid);
+                if (ImGui::Selectable(("## " + name).c_str(), selected, 0, ImVec2(0, 40))) {
+                    m_SelectedPrefabID = uid;
+                }
+
+                // Double-click to instantiate
+                if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                    EntityID newEntity = PrefabUtility::Instantiate(m_Context->scene, *m_Context->assets, uid);
+                    if (newEntity != entt::null) {
+                        m_SelectedEntity = newEntity;
+                        BOOM_INFO("[Editor] Instantiated prefab '{}'", name);
+                    }
+                }
+
+                // Right-click context menu
+                if (ImGui::BeginPopupContextItem()) {
+                    if (ImGui::MenuItem("Instantiate")) {
+                        EntityID newEntity = PrefabUtility::Instantiate(m_Context->scene, *m_Context->assets, uid);
+                        if (newEntity != entt::null) {
+                            m_SelectedEntity = newEntity;
+                        }
+                    }
+                    if (ImGui::MenuItem("Save to Disk")) {
+                        std::string path = "Prefabs/" + name + ".prefab";
+                        PrefabUtility::SavePrefab(*static_cast<PrefabAsset*>(asset.get()), path);
+                        BOOM_INFO("[Editor] Saved prefab '{}'", name);
+                    }
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Delete", nullptr, false, true)) {
+                        m_PrefabToDelete = uid;
+                        m_ShowDeletePrefabDialog = true;
+                    }
+                    ImGui::EndPopup();
+                }
+
+                // Draw the item content (same line as selectable)
+                ImVec2 p = ImGui::GetItemRectMin();
+                ImDrawList* draw = ImGui::GetWindowDrawList();
+
+                // Icon placeholder
+                ImVec2 iconMin = ImVec2(p.x + 5, p.y + 5);
+                ImVec2 iconMax = ImVec2(p.x + 35, p.y + 35);
+                draw->AddRectFilled(iconMin, iconMax, IM_COL32(80, 120, 180, 255), 4.0f);
+                draw->AddText(ImVec2(iconMin.x + 8, iconMin.y + 8), IM_COL32(255, 255, 255, 255), "P");
+
+                // Name
+                draw->AddText(ImVec2(p.x + 45, p.y + 5), IM_COL32(255, 255, 255, 255), name.c_str());
+
+                // Metadata
+                char metaText[128];
+                snprintf(metaText, sizeof(metaText), "ID: ...%llu", (unsigned long long)(uid % 100000));
+                draw->AddText(ImVec2(p.x + 45, p.y + 22), IM_COL32(150, 150, 150, 255), metaText);
+
+                ImGui::PopID();
+            }
+
+            if (count == 0) {
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 50);
+                ImGui::TextDisabled("No prefabs found");
+                ImGui::TextDisabled("Create one via: GameObject > Save Selected as Prefab");
+            }
+
+            ImGui::EndChild();
+
+            // Bottom toolbar
+            ImGui::Separator();
+            if (m_SelectedPrefabID != EMPTY_ASSET) {
+                auto& asset = m_Context->assets->Get<PrefabAsset>(m_SelectedPrefabID);
+                ImGui::Text("Selected: %s", asset.name.c_str());
+                ImGui::SameLine(ImGui::GetContentRegionAvail().x - 100);
+                if (ImGui::Button("Instantiate", ImVec2(100, 0))) {
+                    EntityID newEntity = PrefabUtility::Instantiate(m_Context->scene, *m_Context->assets, m_SelectedPrefabID);
+                    if (newEntity != entt::null) {
+                        m_SelectedEntity = newEntity;
+                        BOOM_INFO("[Editor] Instantiated prefab '{}'", asset.name);
+                    }
+                }
+            }
+            else {
+                ImGui::TextDisabled("No prefab selected");
+            }
+        }
+        ImGui::End();
+    }
+
+    BOOM_INLINE void RefreshPrefabList()
+    {
+        m_LoadedPrefabs.clear();
+        auto& prefabMap = m_Context->assets->GetMap<PrefabAsset>();
+        for (auto& [uid, asset] : prefabMap) {
+            if (uid != EMPTY_ASSET) {
+                m_LoadedPrefabs.push_back({ asset->name, uid });
+            }
+        }
+    }
+
+    BOOM_INLINE void LoadAllPrefabsFromDisk()
+    {
+        namespace fs = std::filesystem;
+
+        BOOM_INFO("[Editor] Starting to load prefabs from disk...");
+
+        if (!fs::exists("Prefabs/")) {
+            BOOM_WARN("[Editor] Prefabs directory doesn't exist, creating it...");
+            fs::create_directory("Prefabs/");
+            return;
+        }
+
+        BOOM_INFO("[Editor] Prefabs directory exists, scanning...");
+
+        int loadedCount = 0;
+        int fileCount = 0;
+
+        for (const auto& entry : fs::directory_iterator("Prefabs/")) {
+            fileCount++;
+            std::string filepath = entry.path().string();
+            std::string extension = entry.path().extension().string();
+
+            BOOM_INFO("[Editor] Found file: {} (extension: {})", filepath, extension);
+
+            if (entry.is_regular_file() && extension == ".prefab") {
+                BOOM_INFO("[Editor] Attempting to load prefab: {}", filepath);
+
+                AssetID prefabID = PrefabUtility::LoadPrefab(*m_Context->assets, filepath);
+
+                if (prefabID != EMPTY_ASSET) {
+                    loadedCount++;
+                    BOOM_INFO("[Editor] Successfully loaded prefab ID: {}", prefabID);
+                }
+                else {
+                    BOOM_ERROR("[Editor] Failed to load prefab from: {}", filepath);
+                }
+            }
+        }
+
+        BOOM_INFO("[Editor] Scanned {} files, loaded {} prefabs", fileCount, loadedCount);
+        RefreshPrefabList();
+
+        // Debug: Print what's in the registry
+        auto& prefabMap = m_Context->assets->GetMap<PrefabAsset>();
+        BOOM_INFO("[Editor] Prefabs in registry: {}", prefabMap.size() - 1); // -1 for EMPTY_ASSET
+        for (auto& [uid, asset] : prefabMap) {
+            if (uid != EMPTY_ASSET) {
+                BOOM_INFO("[Editor]   - {} (ID: {})", asset->name, uid);
+            }
+        }
+    }
 
     // Add keyboard shortcut handling:
     BOOM_INLINE void HandleKeyboardShortcuts()
@@ -920,6 +1249,15 @@ private:
     bool m_ShowPrefabBrowser = true;
     bool m_ShowAudio = true;
     bool m_ShowPerformance = true;
+	bool m_ShowSavePrefabDialog = true;
+
+	//prefab browser UI state
+    char m_PrefabNameBuffer[256] = "NewPrefab";
+    std::vector<std::pair<std::string, uint64_t>> m_LoadedPrefabs;
+    AssetID m_SelectedPrefabID = EMPTY_ASSET;
+    AssetID m_PrefabToDelete = EMPTY_ASSET;
+    bool m_ShowDeletePrefabDialog = false;
+    bool m_DeleteFromDisk = false;
 
     // Scene management UI state
     bool m_ShowSaveDialog = false;

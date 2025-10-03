@@ -133,14 +133,65 @@ namespace Boom
                     e << YAML::Key << "ModelComponent" << YAML::Value << YAML::BeginMap;
                     e << YAML::Key << "ModelID" << YAML::Value << modelComp.modelID;
                     e << YAML::Key << "MaterialID" << YAML::Value << modelComp.materialID;
+                    e << YAML::Key << "ModelSource" << YAML::Value << modelComp.modelSource;
+                    e << YAML::Key << "MaterialSource" << YAML::Value << modelComp.materialSource;
                     e << YAML::EndMap;
                 }
             },
             // Deserialize
-            [](const YAML::Node& data, EntityRegistry& reg, EntityID ent, AssetRegistry&) {
+            [](const YAML::Node& data, EntityRegistry& reg, EntityID ent, AssetRegistry& assets) {
                 auto& comp = reg.emplace<ModelComponent>(ent);
                 comp.materialID = data["MaterialID"].as<AssetID>();
                 comp.modelID = data["ModelID"].as<AssetID>();
+
+                // Try to load source paths from YAML (for prefabs)
+                if (data["ModelSource"]) {
+                    comp.modelSource = data["ModelSource"].as<std::string>();
+                }
+                if (data["MaterialSource"]) {
+                    comp.materialSource = data["MaterialSource"].as<std::string>();
+                }
+
+                // If source paths weren't in YAML, get them from the loaded assets
+                if (comp.modelSource.empty() && comp.modelID != EMPTY_ASSET) {
+                    ModelAsset& modelAsset = assets.Get<ModelAsset>(comp.modelID);
+                    comp.modelSource = modelAsset.source;
+                    comp.modelName = modelAsset.name;
+                }
+
+                if (comp.materialSource.empty() && comp.materialID != EMPTY_ASSET) {
+                    MaterialAsset& materialAsset = assets.Get<MaterialAsset>(comp.materialID);
+                    comp.materialSource = materialAsset.source;
+                    comp.materialName = materialAsset.name;
+                }
+
+                // If source was specified (from prefab) but asset doesn't match, load correct asset
+                if (!comp.modelSource.empty()) {
+                    ModelAsset& currentAsset = assets.Get<ModelAsset>(comp.modelID);
+                    if (currentAsset.source != comp.modelSource) {
+                        BOOM_WARN("[ModelComponent] Asset mismatch. Looking for '{}'", comp.modelSource);
+
+                        // Find or load the correct model
+                        AssetID correctID = EMPTY_ASSET;
+                        auto& modelMap = assets.GetMap<ModelAsset>();
+                        for (auto& [uid, asset] : modelMap) {
+                            if (uid != EMPTY_ASSET && asset->source == comp.modelSource) {
+                                correctID = uid;
+                                break;
+                            }
+                        }
+
+                        // If not found, load it
+                        if (correctID == EMPTY_ASSET) {
+                            correctID = RandomU64();
+                            ModelAsset& refAsset = assets.Get<ModelAsset>(comp.modelID);
+                            assets.AddModel(correctID, comp.modelSource, refAsset.hasJoints);
+                            BOOM_INFO("[ModelComponent] Loaded '{}' as new asset", comp.modelSource);
+                        }
+
+                        comp.modelID = correctID;
+                    }
+                }
             }
         );
 
@@ -164,13 +215,25 @@ namespace Boom
                     ModelAsset& modelAsset = assets.Get<ModelAsset>(modelComp.modelID);
 
                     if (modelAsset.hasJoints) {
-                        auto& animatorComp = reg.emplace<AnimatorComponent>(ent);
-                        animatorComp.animator = std::dynamic_pointer_cast<SkeletalModel>(modelAsset.data)->GetAnimator();
+                        auto skeletalModel = std::dynamic_pointer_cast<SkeletalModel>(modelAsset.data);
 
+                        // Clone the animator
+                        auto newAnimator = skeletalModel->GetAnimator()->Clone();
+
+                        // Get prefab's animation state
                         int32_t sequence = data["Sequence"].as<int32_t>();
                         float time = data["Time"].as<float>();
-                        animatorComp.animator->SetSequence(sequence);
-                        animatorComp.animator->SetTime(time);
+
+                        // Log what we're loading
+                        BOOM_INFO("[AnimatorComponent] Prefab wants sequence: {}, time: {}", sequence, time);
+                        BOOM_INFO("[AnimatorComponent] Source animator has sequence: {}",
+                            skeletalModel->GetAnimator()->GetSequence());
+
+                        newAnimator->SetSequence(sequence);
+                        newAnimator->SetTime(time);
+
+                        auto& animatorComp = reg.emplace<AnimatorComponent>(ent);
+                        animatorComp.animator = newAnimator;
                     }
                 }
             }

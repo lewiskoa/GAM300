@@ -99,6 +99,8 @@ namespace Boom {
         AssetID modelID{ EMPTY_ASSET };
         std::string modelName;
         std::string materialName;
+        std::string modelSource;      
+        std::string materialSource;   
     };
 
 	//Animator Component

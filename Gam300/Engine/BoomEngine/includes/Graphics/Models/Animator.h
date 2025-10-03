@@ -157,6 +157,19 @@ namespace Boom
             }
         }
 
+public:
+        BOOM_INLINE std::shared_ptr<Animator> Clone() const
+        {
+            auto clone = std::make_shared<Animator>();
+            clone->m_GlobalTransform = m_GlobalTransform;
+            clone->m_Animations = m_Animations;
+            clone->m_Root = m_Root;
+            clone->m_Transforms.resize(m_Transforms.size());
+            clone->m_Sequence = m_Sequence;
+            clone->m_Time = m_Time;
+            return clone;
+        }
+
     private:
         std::vector<Animation> m_Animations{};   //!< Animation clips (durations, speeds, joint keys).
         std::vector<glm::mat4> m_Transforms{};   //!< Final per-joint transforms (skinning matrices).

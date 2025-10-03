@@ -1,0 +1,19 @@
+PrefabName: Dance
+UID: 5076640578672151242
+EntityData: |
+  InfoComponent:
+    UID: 18299148976802030936
+    Name: Player
+    Parent: 0
+  TransformComponent:
+    Translate: [0, -1.20000005, 0]
+    Rotate: [0, 0, 0]
+    Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+  ModelComponent:
+    ModelID: 12185416543001335231
+    MaterialID: 11573253777835523025
+    ModelSource: dance.fbx
+    MaterialSource: Marble
+  AnimatorComponent:
+    Sequence: 0
+    Time: 832.96283

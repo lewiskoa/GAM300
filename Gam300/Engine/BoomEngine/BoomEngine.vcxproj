@@ -157,7 +157,6 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir)src\Vendors\xproperty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4273</DisableSpecificWarnings>
-      <AdditionalOptions>/wd5260 %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -176,6 +175,7 @@
     <ClInclude Include="includes\Audio\Audio.hpp" />
     <ClInclude Include="includes\Auxiliaries\Assets.h" />
     <ClInclude Include="includes\Auxiliaries\DataSerializer.h" />
+    <ClInclude Include="includes\Auxiliaries\PrefabUtility.h" />
     <ClInclude Include="includes\Auxiliaries\Profiler.h" />
     <ClInclude Include="includes\Auxiliaries\SerializationRegistry.h" />
     <ClInclude Include="includes\BoomEngine.h" />

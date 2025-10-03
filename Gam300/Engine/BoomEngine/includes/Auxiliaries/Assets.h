@@ -16,7 +16,8 @@ namespace Boom {
 		SKYBOX,
 		SCRIPT,
 		SCENE,
-		MODEL
+		MODEL,
+		PREFAB
 	};
 
 	struct Asset {
@@ -56,6 +57,10 @@ namespace Boom {
 		bool hasJoints{};
 	};
 
+	struct PrefabAsset : Asset {
+		std::string serializedData{};
+	};
+
 	//TODO(other uncompleted/custom types):
 	struct ScriptAsset : Asset {
 
@@ -74,7 +79,7 @@ namespace Boom {
 			AddEmpty<TextureAsset>();
 			AddEmpty<SkyboxAsset>();
 			AddEmpty<ModelAsset>();
-
+			AddEmpty<PrefabAsset>();
 			AddEmpty<ScriptAsset>();
 			AddEmpty<SceneAsset>();
 		}
@@ -85,7 +90,6 @@ namespace Boom {
 			const uint32_t type{ TypeID<T>() };
 			if (registry[type].count(uid)) {
 				auto& asset = (T&)(*registry[type][uid]);
-				BOOM_INFO("[AssetRegistry::Get] Found asset UID: {}, Name: '{}'", uid, asset.name);
 				return asset;
 			}
 			BOOM_ERROR("[AssetRegistry::Get] Asset UID {} not found! Returning EMPTY_ASSET", uid);
@@ -116,6 +120,14 @@ namespace Boom {
 		}
 
 	public: //custom and specific assets
+
+		BOOM_INLINE auto AddPrefab(AssetID uid, std::string const& path) {
+			auto asset{ std::make_shared<PrefabAsset>() };
+			asset->type = AssetType::PREFAB;
+			Add(uid, path, asset);
+			return asset;
+		}
+
 		//file path starts from Textures folder
 		BOOM_INLINE auto AddSkybox(
 			AssetID uid,

@@ -6,6 +6,7 @@
 #include "Physics/Context.h"
 #include "Audio/Audio.hpp"   
 #include "Auxiliaries/DataSerializer.h"
+#include "Auxiliaries/PrefabUtility.h"
 
 namespace Boom
 {
@@ -188,7 +189,6 @@ namespace Boom
             glm::dvec2 prevMP{};
             while (m_Context->window->PollEvents() && !m_ShouldExit)
             {
-                BOOM_INFO("[MainLoop] Frame starting"); // ADD THIS
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
 
                 glfwMakeContextCurrent(engineWindow.get());
@@ -475,8 +475,8 @@ namespace Boom
         bool m_SceneLoaded = false;
 
         /**
-     * @brief Cleans up the current scene and physics actors
-     */
+        * @brief Cleans up the current scene and physics actors
+        */
         BOOM_INLINE void CleanupCurrentScene()
         {
             BOOM_INFO("[Scene] Cleaning up current scene...");
@@ -487,11 +487,24 @@ namespace Boom
             // Clear the ECS scene
             m_Context->scene.clear();
 
+            // PRESERVE PREFABS - Save them before clearing
+            std::unordered_map<AssetID, std::shared_ptr<Asset>> savedPrefabs;
+            auto& prefabMap = m_Context->assets->GetMap<PrefabAsset>();
+            for (auto& [uid, asset] : prefabMap) {
+                if (uid != EMPTY_ASSET) {
+                    savedPrefabs[uid] = asset;
+                }
+            }
+            BOOM_INFO("[Scene] Preserved {} prefabs", savedPrefabs.size());
+
             // Reset asset registry (keeping EMPTY_ASSET sentinels)
             *m_Context->assets = AssetRegistry();
 
-            // Reset any scene-specific state
-            
+            // RESTORE PREFABS after registry reset
+            for (auto& [uid, asset] : savedPrefabs) {
+                m_Context->assets->GetMap<PrefabAsset>()[uid] = std::static_pointer_cast<PrefabAsset>(asset);
+            }
+            BOOM_INFO("[Scene] Restored {} prefabs", savedPrefabs.size());
 
             BOOM_INFO("[Scene] Scene cleanup complete");
         }
