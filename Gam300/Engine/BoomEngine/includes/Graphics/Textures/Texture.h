@@ -10,9 +10,6 @@ namespace Boom {
 		void Bind();
 		void UnBind();
 
-		void LoadUnCompressed(std::string const& filename, bool isFlipY, bool isHDR);
-		void LoadCompressed(std::string const& filename, bool isFlipY);
-
 	public: //member manipulators
 		operator uint32_t() const noexcept;
 		int32_t Height() const noexcept;
@@ -20,6 +17,9 @@ namespace Boom {
 
 	protected: //helpers
 		std::string GetExtension(std::string const& filename);
+
+		void LoadUnCompressed(std::string const& filename, bool isFlipY, bool isHDR);
+		void LoadCompressed(std::string const& filename, bool isFlipY);
 
 	private:
 		int32_t height;

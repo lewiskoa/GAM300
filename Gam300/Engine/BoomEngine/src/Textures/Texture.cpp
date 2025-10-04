@@ -3,12 +3,11 @@
 #include "GlobalConstants.h"
 
 #pragma warning(push)
-#pragma warning(disable : 4244 4267) //stb_image's int to short, int to unsigned char warnings
+#pragma warning(disable : 4244 4267 4458 4100 5054 4189) //library warnings ignored
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#pragma warning(pop)
-
 #include <gli/gli.hpp>
+#pragma warning(pop)
 
 namespace Boom {
 	Texture2D::Texture2D(std::string filename, bool isFlipY, bool isHDR)
