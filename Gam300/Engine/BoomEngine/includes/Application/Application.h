@@ -66,22 +66,6 @@ namespace Boom
             m_Context = new AppContext();
             RegisterEventCallbacks();
 
-            auto& hooks = ScriptRuntime::Hooks();
-
-            hooks.AddModel = [this](Boom::EntityId id, uint32_t modelId, uint32_t materialId) {
-                Entity e{ &m_Context->scene, (entt::entity)id };
-                if (!e.Has<TransformComponent>()) e.Attach<TransformComponent>();
-                auto& mc = e.Attach<ModelComponent>();
-                mc.modelID = modelId;
-                mc.materialID = materialId;
-                };
-
-            hooks.SetScale = [this](Boom::EntityId id, Boom::Vec3 s) {
-                Entity e{ &m_Context->scene, (entt::entity)id };
-                if (!e.Has<TransformComponent>()) e.Attach<TransformComponent>();
-                e.Get<TransformComponent>().transform.scale = { s.x, s.y, s.z };
-                };
-
             AttachCallback<WindowResizeEvent>([this](auto e) {
                 m_Context->renderer->Resize(e.width, e.height);
                 }
