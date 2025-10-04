@@ -26,6 +26,8 @@ namespace ScriptRuntime {
         void (*SetLinearVelocity)(Boom::EntityId, Boom::Vec3) = nullptr;
         Boom::Vec3(*GetLinearVelocity)(Boom::EntityId) = nullptr;
         void (*PhysicsStep)(float dt) = nullptr;
+        std::function<void(Boom::EntityId /*e*/, uint32_t /*modelId*/, uint32_t /*materialId*/)> AddModel; // NEW
+        std::function<void(Boom::EntityId /*e*/, Boom::Vec3 /*scale*/)> SetScale;
     };
 
     // ---- Hooks accessors (declared here, defined once in .cpp) ----

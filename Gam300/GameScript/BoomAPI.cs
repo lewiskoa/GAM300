@@ -46,5 +46,11 @@ namespace BoomDotNet
         // Optional if scripting may tick PhysX
         [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
         public static extern void script_physics_step(float dt);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void script_add_model(uint e, uint modelId, uint materialId);
+
+        [DllImport(Dll, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void script_set_scale(uint e, ScriptVec3 s);
     }
 }

@@ -29,6 +29,10 @@ extern "C" {
     BOOM_API void           script_set_position(ScriptEntityId e, ScriptVec3 p);
     BOOM_API ScriptVec3     script_get_position(ScriptEntityId e);
 
+    // Rendering hookups
+    BOOM_API void script_add_model(uint32_t e, uint32_t modelId, uint32_t materialId);
+    BOOM_API void script_set_scale(uint32_t e, ScriptVec3 s);
+
     /* -------- Physics -------- */
     BOOM_API void           script_physics_set_gravity(ScriptVec3 g);
     BOOM_API void           script_add_rigidbody(ScriptEntityId e, float mass);

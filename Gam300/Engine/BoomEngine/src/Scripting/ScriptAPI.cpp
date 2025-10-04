@@ -133,4 +133,21 @@ extern "C" {
             ScriptRuntime::Hooks().PhysicsStep(dt);
     }
 
+    // Attach/replace a ModelComponent so the renderer draws this entity.
+    BOOM_API void script_add_model(ScriptEntityId e, uint32_t modelId, uint32_t materialId) // NEW
+    {
+        if (ScriptRuntime::Hooks().AddModel)
+            ScriptRuntime::Hooks().AddModel(to_engine_id(e), modelId, materialId);
+    }
+
+    // Set Transform scale from script (useful for sizing primitives).
+    BOOM_API void script_set_scale(ScriptEntityId e, ScriptVec3 s) // NEW
+    {
+        if (ScriptRuntime::Hooks().SetScale)
+            ScriptRuntime::Hooks().SetScale(to_engine_id(e), Boom::Vec3{ s.x, s.y, s.z });
+    }
+
+
+
 } // extern "C"
+
