@@ -43,6 +43,8 @@ public:
         m_Context->window->isEditor = true;
 
         LoadAllPrefabsFromDisk();
+
+        RefreshSceneList(true);
     }
 
     BOOM_INLINE void OnUpdate() override
@@ -76,6 +78,14 @@ private:
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
+
+        if (m_AutoScanScenes) {
+            m_ScanTimer += ImGui::GetIO().DeltaTime;
+            if (m_ScanTimer >= m_ScanInterval) {
+                m_ScanTimer = 0.0;
+                RefreshSceneList(false);  // will only rebuild if changes detected
+            }
+        }
 
         // Handle keyboard shortcuts
         HandleKeyboardShortcuts();
@@ -266,6 +276,7 @@ private:
                 if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
                     if (m_Application) {
                         m_Application->NewScene("UntitledScene");
+                        RefreshSceneList(true);
                         BOOM_INFO("[Editor] Created new scene");
                     }
                 }
@@ -276,6 +287,7 @@ private:
                     m_ShowSaveDialog = true;
                     // Set current scene name as default
                     if (m_Application && m_Application->IsSceneLoaded()) {
+                        RefreshSceneList(true);
                         std::string currentPath = m_Application->GetCurrentScenePath();
                         if (!currentPath.empty()) {
                             // Extract scene name from path
@@ -675,17 +687,64 @@ private:
         rw.OnShow(this);
     }
 
-    BOOM_INLINE void RefreshSceneList()
+    BOOM_INLINE void RefreshSceneList(bool force = false)
     {
+        namespace fs = std::filesystem;
+
+        if (!fs::exists(m_ScenesDir)) {
+            BOOM_WARN("[Editor] '{}' directory doesn't exist, creating it...", m_ScenesDir);
+            fs::create_directory(m_ScenesDir);
+        }
+
+        // Scan directory and build a new stamp map
+        std::unordered_map<std::string, fs::file_time_type> newStamp;
+
+        auto accept = [](const fs::path& p) {
+            auto ext = p.extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(),
+                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+            if (ext != ".yaml" && ext != ".scene")
+                return false;
+
+            // ignore *_assets.yaml
+            std::string stem = p.stem().string();
+            if (stem.size() > 7 && stem.rfind("_assets") == stem.size() - 7)
+                return false;
+
+            return true;
+            };
+
+        for (const auto& entry : fs::directory_iterator(m_ScenesDir)) {
+            if (!entry.is_regular_file()) continue;
+            if (!accept(entry.path()))    continue;
+
+            const std::string stem = entry.path().stem().string();  // scene name w/o extension
+            newStamp[stem] = fs::last_write_time(entry.path());
+        }
+
+        // Detect changes (size mismatch or any (name,timestamp) mismatch)
+        bool changed = force || (newStamp.size() != m_SceneStamp.size());
+        if (!changed) {
+            for (auto& [name, ts] : newStamp) {
+                auto it = m_SceneStamp.find(name);
+                if (it == m_SceneStamp.end() || it->second != ts) { changed = true; break; }
+            }
+        }
+        if (!changed) return;
+
+        // Rebuild the visible list (sorted)
+        m_SceneStamp = std::move(newStamp);
         m_AvailableScenes.clear();
+        m_AvailableScenes.reserve(m_SceneStamp.size());
+        for (auto& [name, _] : m_SceneStamp) m_AvailableScenes.push_back(name);
+        std::sort(m_AvailableScenes.begin(), m_AvailableScenes.end());
 
-        // For now, add some default scenes - you can implement directory scanning later
-        m_AvailableScenes.push_back("default");
-        m_AvailableScenes.push_back("test");
-        //m_AvailableScenes.push_back("demo_level");
+        // Keep selection valid
+        if (m_SelectedSceneIndex >= (int)m_AvailableScenes.size()) m_SelectedSceneIndex = (int)m_AvailableScenes.size() - 1;
+        if (m_SelectedSceneIndex < 0) m_SelectedSceneIndex = 0;
 
-        // TODO: Implement actual directory scanning for .yaml files in Scenes/ folder
-        // This would require platform-specific code or a library like std::filesystem
+        BOOM_INFO("[Editor] Scene list refreshed ({} items).", (int)m_AvailableScenes.size());
     }
 
     BOOM_INLINE void RenderAudioPanel()
@@ -806,6 +865,7 @@ private:
                 if (m_Application) {
                     bool success = m_Application->SaveScene(std::string(m_SceneNameBuffer));
                     if (success) {
+                        RefreshSceneList(true);
                         BOOM_INFO("[Editor] Scene '{}' saved successfully", m_SceneNameBuffer);
                     }
                     else {
@@ -852,6 +912,7 @@ private:
                                 if (success) {
                                     BOOM_INFO("[Editor] Scene '{}' loaded successfully", selectedScene);
                                     m_SelectedEntity = entt::null;
+                                    RefreshSceneList(true);
                                 }
                                 else {
                                     BOOM_ERROR("[Editor] Failed to load scene '{}'", selectedScene);
@@ -1298,6 +1359,11 @@ private:
 	Application* m_Application = nullptr; //To access application functions if needed
     bool m_ShowPlaybackControls = true;
 
+    std::string m_ScenesDir = "Scenes";   // change if you use another folder
+    bool        m_AutoScanScenes = true;  // toggle live refresh
+    double      m_ScanInterval = 1.0;   // seconds
+    double      m_ScanTimer = 0.0;   // accumulates delta time
+    std::unordered_map<std::string, std::filesystem::file_time_type> m_SceneStamp;
 
     //remove when editor.cpp completed
     ResourceWindow rw{this};
