@@ -30,11 +30,7 @@ namespace Boom
      * Inherits from AppInterface to receive the same lifecycle hooks
      * and gain access to the shared AppContext.
      */
-    struct
-
-
-
-    Application: AppInterface
+    struct Application: AppInterface
     {
         template<typename EntityType, typename... Components, typename Fn>
         BOOM_INLINE void EnttView(Fn && fn) {
@@ -44,7 +40,6 @@ namespace Boom
             }
         }
 
-        double m_SphereTimer = 0.0;
 
         // Application state management
         ApplicationState m_AppState = ApplicationState::RUNNING;
@@ -53,6 +48,10 @@ namespace Boom
         bool m_ShouldExit = false;  // Flag for graceful shutdown
         float m_TestRot = 0.0f;
 
+        // Temporary for showing physics
+        //double m_SphereTimer = 0.0;
+        //double m_SphereResetInterval = 5.0; 
+        //glm::vec3 m_SphereInitialPosition = { 2.5f, 1.2f, 0.0f }; 
 
         /**
          * @brief Constructs the Application, assigns its unique ID, and allocates the AppContext.
@@ -211,6 +210,19 @@ namespace Boom
                     RunPhysicsSimulation();
                 }
                 // When paused, m_TestRot stays at its current value
+
+                // Update sphere timer
+                //m_SphereTimer += m_Context->DeltaTime;
+
+                //if (m_SphereTimer >= m_SphereResetInterval) {
+                //    // Find the sphere entity by name (or UID)
+                //    EnttView<Entity, InfoComponent, TransformComponent>([this](auto entity, InfoComponent& info, TransformComponent& transform) {
+                //        if (info.name == "Sphere") {
+                //            transform.transform.translate = m_SphereInitialPosition;
+                //        }
+                //        });
+                //    m_SphereTimer = 0.0;
+                //}
 
 
                 //lights (always set up)
