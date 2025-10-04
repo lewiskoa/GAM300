@@ -17,7 +17,17 @@ namespace ScriptRuntime {
         void (*DestroyEntity)(Boom::EntityId e) = nullptr;
         void (*SetPosition)(Boom::EntityId e, Boom::Vec3 p) = nullptr;
         Boom::Vec3(*GetPosition)(Boom::EntityId e) = nullptr;
-        // add more as your engine surface grows (Get/SetRotation, FindByName, etc.)
+
+        // Physics Hooks
+        void (*PhysicsSetGravity)(Boom::Vec3) = nullptr;
+        void (*AddRigidbody)(Boom::EntityId, float mass) = nullptr;          // 0=static, >0=dynamic
+        void (*AddBoxCollider)(Boom::EntityId, Boom::Vec3 halfExtents) = nullptr;
+        void (*AddSphereCollider)(Boom::EntityId, float radius) = nullptr;
+        void (*SetLinearVelocity)(Boom::EntityId, Boom::Vec3) = nullptr;
+        Boom::Vec3(*GetLinearVelocity)(Boom::EntityId) = nullptr;
+        void (*PhysicsStep)(float dt) = nullptr;
+        std::function<void(Boom::EntityId /*e*/, uint32_t /*modelId*/, uint32_t /*materialId*/)> AddModel; // NEW
+        std::function<void(Boom::EntityId /*e*/, Boom::Vec3 /*scale*/)> SetScale;
     };
 
     // ---- Hooks accessors (declared here, defined once in .cpp) ----

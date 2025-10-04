@@ -1,0 +1,25 @@
+Version: 1.0
+ENTITIES:
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - {}
+  - InfoComponent:
+      UID: 11748930441258648790
+      Name: Entity
+      Parent: 0
+    TransformComponent:
+      Translate: [0, 0, 0]
+      Rotate: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      NearPlane: 0.300000012
+      FarPlane: 1000
+      FOV: 45

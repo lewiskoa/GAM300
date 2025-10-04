@@ -14,6 +14,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "ImGuizmo.h"
 #include "Context/Profiler.hpp"
+#include "AppWindow.h"
 
 using namespace Boom;
 bool m_ShowPrefabBrowser = true;
@@ -42,6 +43,8 @@ public:
         m_Context->window->isEditor = true;
 
         LoadAllPrefabsFromDisk();
+
+        RefreshSceneList(true);
     }
 
     BOOM_INLINE void OnUpdate() override
@@ -76,6 +79,14 @@ private:
         ImGui::NewFrame();
         ImGuizmo::BeginFrame();
 
+        if (m_AutoScanScenes) {
+            m_ScanTimer += ImGui::GetIO().DeltaTime;
+            if (m_ScanTimer >= m_ScanInterval) {
+                m_ScanTimer = 0.0;
+                RefreshSceneList(false);  // will only rebuild if changes detected
+            }
+        }
+
         // Handle keyboard shortcuts
         HandleKeyboardShortcuts();
 
@@ -85,7 +96,6 @@ private:
         RenderViewport();
         RenderHierarchy();
         RenderInspector();
-        RenderGizmo();
         RenderPerformance();
         RenderResources();
         RenderPlaybackControls();
@@ -266,6 +276,7 @@ private:
                 if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
                     if (m_Application) {
                         m_Application->NewScene("UntitledScene");
+                        RefreshSceneList(true);
                         BOOM_INFO("[Editor] Created new scene");
                     }
                 }
@@ -276,6 +287,7 @@ private:
                     m_ShowSaveDialog = true;
                     // Set current scene name as default
                     if (m_Application && m_Application->IsSceneLoaded()) {
+                        RefreshSceneList(true);
                         std::string currentPath = m_Application->GetCurrentScenePath();
                         if (!currentPath.empty()) {
                             // Extract scene name from path
@@ -445,7 +457,6 @@ private:
             // Get frame texture from engine
             uint32_t frameTexture = GetSceneFrame();
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-
             float aspectRatio = (viewportSize.y > 0) ? viewportSize.x / viewportSize.y : 1.0f;
 
             if (frameTexture > 0 && viewportSize.x > 0 && viewportSize.y > 0) {
@@ -455,24 +466,97 @@ private:
 
                 m_Console.TrackLastItemAsViewport("Viewport");
 
-                glm::mat4 cameraProjection{};
-                auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
-                if (view.begin() != view.end()) {
-                    auto entityID = view.front();
-                    auto& camComp = view.get<Boom::CameraComponent>(entityID);
-                    cameraProjection = camComp.camera.Projection(aspectRatio);
+                ImVec2 itemMin = ImGui::GetItemRectMin();
+                ImVec2 itemMax = ImGui::GetItemRectMax();
+                m_VP_TopLeft = itemMin;
+                m_VP_Size = ImVec2(itemMax.x - itemMin.x, itemMax.y - itemMin.y);
+                m_VP_Hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+                m_VP_Focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && m_VP_Hovered;
+
+                // Convert ImGui screen-space rect -> GLFW window client-space rect
+                ImVec2 mainPos = ImGui::GetMainViewport()->Pos; // top-left of GLFW client area in screen space
+                double localX = (double)(m_VP_TopLeft.x - mainPos.x);
+                double localY = (double)(m_VP_TopLeft.y - mainPos.y);
+                double localW = (double)m_VP_Size.x;
+                double localH = (double)m_VP_Size.y;
+
+                // Allow camera look only when viewport is both focused and hovered (your policy)
+                bool allowCamera = (m_VP_Hovered && m_VP_Focused);
+
+                // Push region & permission to the window (each frame)
+                m_Context->window->SetCameraInputRegion(localX, localY, localW, localH, allowCamera);
+
+                if ((m_VP_Focused || m_VP_Hovered) && !ImGuizmo::IsUsing()) {
+                    // Top row
+                    if (ImGui::IsKeyPressed(ImGuiKey_1)) m_GizmoOperation = ImGuizmo::TRANSLATE;
+                    if (ImGui::IsKeyPressed(ImGuiKey_2)) m_GizmoOperation = ImGuizmo::ROTATE;
+                    if (ImGui::IsKeyPressed(ImGuiKey_3)) m_GizmoOperation = ImGuizmo::SCALE;
+
+                    // Numpad (optional)
+                    if (ImGui::IsKeyPressed(ImGuiKey_Keypad1)) m_GizmoOperation = ImGuizmo::TRANSLATE;
+                    if (ImGui::IsKeyPressed(ImGuiKey_Keypad2)) m_GizmoOperation = ImGuizmo::ROTATE;
+                    if (ImGui::IsKeyPressed(ImGuiKey_Keypad3)) m_GizmoOperation = ImGuizmo::SCALE;
+
+                    // Toggle local/world
+                    if (ImGui::IsKeyPressed(ImGuiKey_L))
+                        m_gizmoMode = (m_gizmoMode == ImGuizmo::LOCAL) ? ImGuizmo::WORLD : ImGuizmo::LOCAL;
                 }
 
-                // Add viewport interaction info
-                if (ImGui::IsItemHovered()) {
+                // Tooltip & debug
+                if (m_VP_Hovered) {
                     ImGui::SetTooltip("Engine Viewport - Scene render output");
                 }
-
-                // Debug info (remove later)
                 static int debugCount = 0;
-                if (++debugCount % 300 == 0) {  // Every 5 seconds
-                    BOOM_INFO("Viewport - Texture ID: {}, Size: {}x{}",
-                        frameTexture, viewportSize.x, viewportSize.y);
+                if (++debugCount % 300 == 0) {
+                    BOOM_INFO("Viewport - Texture ID: {}, Size: {}x{}", frameTexture, viewportSize.x, viewportSize.y);
+                }
+
+                // Build camera matrices using the VIEWPORT aspect
+                glm::mat4 cameraView(1.0f);
+                glm::mat4 cameraProj(1.0f);
+                {
+                    auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
+                    if (view.begin() != view.end()) {
+                        auto eid = view.front();
+                        auto& camComp = view.get<Boom::CameraComponent>(eid);
+                        auto& trans = view.get<Boom::TransformComponent>(eid);
+                        cameraView = camComp.camera.View(trans.transform);
+                        cameraProj = camComp.camera.Projection(aspectRatio);
+                    }
+                }
+
+                // --------- GIZMO DRAW & MANIPULATE (inside viewport) ----------
+                if (m_SelectedEntity != entt::null) {
+                    Boom::Entity selected{ &m_Context->scene, m_SelectedEntity };
+                    if (selected.Has<Boom::TransformComponent>()) {
+                        auto& tc = selected.Get<Boom::TransformComponent>();
+                        glm::mat4 model = tc.transform.Matrix();
+
+                        // Set up ImGuizmo to draw in this window & rect only
+                        ImGuizmo::SetOrthographic(false);
+                        ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+                        ImGuizmo::SetRect(m_VP_TopLeft.x, m_VP_TopLeft.y, m_VP_Size.x, m_VP_Size.y);
+
+                        // Allow interaction only when hovered & focused
+                        ImGuizmo::Enable(m_VP_Hovered && m_VP_Focused);
+
+                        if (ImGuizmo::Manipulate(glm::value_ptr(cameraView),
+                            glm::value_ptr(cameraProj),
+                            m_GizmoOperation,
+                            m_gizmoMode,
+                            glm::value_ptr(model))) {
+                            // Decompose back into TRS (ImGuizmo outputs degrees for rotation)
+                            glm::vec3 t, rDeg, s;
+                            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model),
+                                glm::value_ptr(t),
+                                glm::value_ptr(rDeg),
+                                glm::value_ptr(s));
+                            // If your engine stores radians, convert rDeg -> radians here.
+                            tc.transform.translate = t;
+                            tc.transform.rotate = rDeg;   // or glm::radians(rDeg)
+                            tc.transform.scale = s;
+                        }
+                    }
                 }
             }
             else {
@@ -494,6 +578,11 @@ private:
                     drawList->AddText(ImVec2(canvasPos.x + 10, canvasPos.y + 10),
                         IM_COL32(255, 255, 255, 255), "Engine Viewport");
                 }
+
+                m_VP_TopLeft = canvasPos;
+                m_VP_Size = canvasSize;
+                m_VP_Hovered = false;
+                m_VP_Focused = false;
             }
         }
 
@@ -501,71 +590,7 @@ private:
         ImGui::End();
     }
 
-    BOOM_INLINE void RenderGizmo()
-    {
-        // Do nothing if no entity is selected
-        if (m_SelectedEntity == entt::null) {
-            return;
-        }
 
-        // --- 1. Handle Keyboard Shortcuts to Change Operation ---
-        if (ImGui::IsKeyPressed(ImGuiKey_W)) {
-            m_GizmoOperation = ImGuizmo::TRANSLATE;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_E)) {
-            m_GizmoOperation = ImGuizmo::ROTATE;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_R)) {
-            m_GizmoOperation = ImGuizmo::SCALE;
-        }
-
-        // --- 2. Get Camera View and Projection Matrices ---
-        glm::mat4 cameraView, cameraProjection;
-        {
-            int width, height;
-            glfwGetWindowSize(m_Context->window->Handle().get(), &width, &height);
-            float aspectRatio = (height > 0) ? (float)width / (float)height : 1.0f;
-
-            auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
-            if (view.begin() != view.end()) { // Check if a camera exists
-                auto entityID = view.front();
-                auto& camComp = view.get<Boom::CameraComponent>(entityID);
-                auto& transComp = view.get<Boom::TransformComponent>(entityID);
-                cameraView = camComp.camera.View(transComp.transform);
-                cameraProjection = camComp.camera.Projection(aspectRatio);
-            }
-            else {
-                // Handle the case where no camera is found
-                BOOM_WARN("No camera found in the scene for gizmo rendering.");
-                // You might want to use a default or identity matrix here
-                cameraView = glm::mat4(1.0f);
-                cameraProjection = glm::mat4(1.0f);
-            }
-        }
-
-        // --- 3. Prepare for Drawing the Gizmo ---
-        ImGuizmo::SetOrthographic(false);
-        ImGuizmo::SetRect(ImGui::GetMainViewport()->Pos.x, ImGui::GetMainViewport()->Pos.y, ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y);
-
-        // --- 4. Get the Selected Entity's Matrix ---
-        Boom::Entity selectedEntity{ &m_Context->scene, m_SelectedEntity };
-        auto& transformComp = selectedEntity.Get<Boom::TransformComponent>();
-        glm::mat4 modelMatrix = transformComp.transform.Matrix();
-
-        // --- 5. Draw the Gizmo and Update the Transform ---
-        if (ImGuizmo::Manipulate(glm::value_ptr(cameraView),
-            glm::value_ptr(cameraProjection),
-            m_GizmoOperation,
-            ImGuizmo::LOCAL,
-            glm::value_ptr(modelMatrix)))
-        {
-            // If the user moved the gizmo, decompose the new matrix back into TRS
-            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelMatrix),
-                glm::value_ptr(transformComp.transform.translate),
-                glm::value_ptr(transformComp.transform.rotate),
-                glm::value_ptr(transformComp.transform.scale));
-        }
-    }
 
     // In your Editor class
     BOOM_INLINE void RenderHierarchy()
@@ -662,17 +687,64 @@ private:
         rw.OnShow(this);
     }
 
-    BOOM_INLINE void RefreshSceneList()
+    BOOM_INLINE void RefreshSceneList(bool force = false)
     {
+        namespace fs = std::filesystem;
+
+        if (!fs::exists(m_ScenesDir)) {
+            BOOM_WARN("[Editor] '{}' directory doesn't exist, creating it...", m_ScenesDir);
+            fs::create_directory(m_ScenesDir);
+        }
+
+        // Scan directory and build a new stamp map
+        std::unordered_map<std::string, fs::file_time_type> newStamp;
+
+        auto accept = [](const fs::path& p) {
+            auto ext = p.extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(),
+                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+            if (ext != ".yaml" && ext != ".scene")
+                return false;
+
+            // ignore *_assets.yaml
+            std::string stem = p.stem().string();
+            if (stem.size() > 7 && stem.rfind("_assets") == stem.size() - 7)
+                return false;
+
+            return true;
+            };
+
+        for (const auto& entry : fs::directory_iterator(m_ScenesDir)) {
+            if (!entry.is_regular_file()) continue;
+            if (!accept(entry.path()))    continue;
+
+            const std::string stem = entry.path().stem().string();  // scene name w/o extension
+            newStamp[stem] = fs::last_write_time(entry.path());
+        }
+
+        // Detect changes (size mismatch or any (name,timestamp) mismatch)
+        bool changed = force || (newStamp.size() != m_SceneStamp.size());
+        if (!changed) {
+            for (auto& [name, ts] : newStamp) {
+                auto it = m_SceneStamp.find(name);
+                if (it == m_SceneStamp.end() || it->second != ts) { changed = true; break; }
+            }
+        }
+        if (!changed) return;
+
+        // Rebuild the visible list (sorted)
+        m_SceneStamp = std::move(newStamp);
         m_AvailableScenes.clear();
+        m_AvailableScenes.reserve(m_SceneStamp.size());
+        for (auto& [name, _] : m_SceneStamp) m_AvailableScenes.push_back(name);
+        std::sort(m_AvailableScenes.begin(), m_AvailableScenes.end());
 
-        // For now, add some default scenes - you can implement directory scanning later
-        m_AvailableScenes.push_back("default");
-        m_AvailableScenes.push_back("test");
-        //m_AvailableScenes.push_back("demo_level");
+        // Keep selection valid
+        if (m_SelectedSceneIndex >= (int)m_AvailableScenes.size()) m_SelectedSceneIndex = (int)m_AvailableScenes.size() - 1;
+        if (m_SelectedSceneIndex < 0) m_SelectedSceneIndex = 0;
 
-        // TODO: Implement actual directory scanning for .yaml files in Scenes/ folder
-        // This would require platform-specific code or a library like std::filesystem
+        BOOM_INFO("[Editor] Scene list refreshed ({} items).", (int)m_AvailableScenes.size());
     }
 
     BOOM_INLINE void RenderAudioPanel()
@@ -793,6 +865,7 @@ private:
                 if (m_Application) {
                     bool success = m_Application->SaveScene(std::string(m_SceneNameBuffer));
                     if (success) {
+                        RefreshSceneList(true);
                         BOOM_INFO("[Editor] Scene '{}' saved successfully", m_SceneNameBuffer);
                     }
                     else {
@@ -839,6 +912,7 @@ private:
                                 if (success) {
                                     BOOM_INFO("[Editor] Scene '{}' loaded successfully", selectedScene);
                                     m_SelectedEntity = entt::null;
+                                    RefreshSceneList(true);
                                 }
                                 else {
                                     BOOM_ERROR("[Editor] Failed to load scene '{}'", selectedScene);
@@ -1251,6 +1325,12 @@ private:
     bool m_ShowPerformance = true;
 	bool m_ShowSavePrefabDialog = false;
 
+    // Viewport State
+    ImVec2 m_VP_TopLeft = { 0, 0 };
+    ImVec2 m_VP_Size = { 0, 0 };
+    bool   m_VP_Hovered = false;
+    bool   m_VP_Focused = false;
+
 	//prefab browser UI state
     char m_PrefabNameBuffer[256] = "NewPrefab";
     std::vector<std::pair<std::string, uint64_t>> m_LoadedPrefabs;
@@ -1279,6 +1359,11 @@ private:
 	Application* m_Application = nullptr; //To access application functions if needed
     bool m_ShowPlaybackControls = true;
 
+    std::string m_ScenesDir = "Scenes";   // change if you use another folder
+    bool        m_AutoScanScenes = true;  // toggle live refresh
+    double      m_ScanInterval = 1.0;   // seconds
+    double      m_ScanTimer = 0.0;   // accumulates delta time
+    std::unordered_map<std::string, std::filesystem::file_time_type> m_SceneStamp;
 
     //remove when editor.cpp completed
     ResourceWindow rw{this};

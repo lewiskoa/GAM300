@@ -7,6 +7,8 @@
 #include "Audio/Audio.hpp"   
 #include "Auxiliaries/DataSerializer.h"
 #include "Auxiliaries/PrefabUtility.h"
+#include "Scripting/ScriptAPI.h"
+#include "Scripting/ScriptRuntime.h"
 
 namespace Boom
 {
@@ -28,20 +30,20 @@ namespace Boom
      * Inherits from AppInterface to receive the same lifecycle hooks
      * and gain access to the shared AppContext.
      */
-    struct 
-        
-        
-        
-    Application : AppInterface
+    struct
+
+
+
+    Application: AppInterface
     {
         template<typename EntityType, typename... Components, typename Fn>
-        BOOM_INLINE void EnttView(Fn&& fn) {
+        BOOM_INLINE void EnttView(Fn && fn) {
             auto view = m_Context->scene.view<Components...>();
             for (auto e : view) {
                 fn(EntityType{ &m_Context->scene, e }, m_Context->scene.get<Components>(e)...);
             }
         }
-        
+
         double m_SphereTimer = 0.0;
 
         // Application state management
@@ -63,7 +65,6 @@ namespace Boom
             m_LayerID = TypeID<Application>();
             m_Context = new AppContext();
             RegisterEventCallbacks();
-			
 
             AttachCallback<WindowResizeEvent>([this](auto e) {
                 m_Context->renderer->Resize(e.width, e.height);
@@ -184,6 +185,8 @@ namespace Boom
                 m_Context->renderer->InitSkybox(skybox.data, skybox.envMap, skybox.size);
                 });
 
+            CreateScriptInstancesFromScene();
+
             //temp input for mouse motion
             glm::dvec2 curMP{};
             glm::dvec2 prevMP{};
@@ -204,9 +207,11 @@ namespace Boom
 
                 // Only update rotation when running
                 if (m_AppState == ApplicationState::RUNNING) {
-                    
+                    script_update_all(static_cast<float>(m_Context->DeltaTime));
+                    RunPhysicsSimulation();
                 }
                 // When paused, m_TestRot stays at its current value
+
 
                 //lights (always set up)
                /* m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
@@ -219,7 +224,7 @@ namespace Boom
 
                 m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
                 m_Context->renderer->SetSpotLightCount(0);*/
-               
+
                 {
                     int points = 0;
                     EnttView<Entity, PointLightComponent, TransformComponent>(
@@ -229,25 +234,25 @@ namespace Boom
                         });
                     m_Context->renderer->SetPointLightCount(points);
                 }
-				{
-					int directs = 0;
-					EnttView<Entity, DirectLightComponent, TransformComponent>(
-						[this, &directs](auto, DirectLightComponent& dlc, TransformComponent& tc)
-						{
-							m_Context->renderer->SetLight(dlc.light, tc.transform, directs++);
-						});
-					m_Context->renderer->SetDirectionalLightCount(directs);
-				}
-				{
-					int spots = 0;
-					EnttView<Entity, SpotLightComponent, TransformComponent>(
-						[this, &spots](auto, SpotLightComponent& slc, TransformComponent& tc)
-						{
-							m_Context->renderer->SetLight(slc.light, tc.transform, spots++);
-						});
-					m_Context->renderer->SetSpotLightCount(spots);
-				}               
-             
+                {
+                    int directs = 0;
+                    EnttView<Entity, DirectLightComponent, TransformComponent>(
+                        [this, &directs](auto, DirectLightComponent& dlc, TransformComponent& tc)
+                        {
+                            m_Context->renderer->SetLight(dlc.light, tc.transform, directs++);
+                        });
+                    m_Context->renderer->SetDirectionalLightCount(directs);
+                }
+                {
+                    int spots = 0;
+                    EnttView<Entity, SpotLightComponent, TransformComponent>(
+                        [this, &spots](auto, SpotLightComponent& slc, TransformComponent& tc)
+                        {
+                            m_Context->renderer->SetLight(slc.light, tc.transform, spots++);
+                        });
+                    m_Context->renderer->SetSpotLightCount(spots);
+                }
+
 
                 //temp input for mouse motion
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
@@ -507,7 +512,7 @@ namespace Boom
 #endif
 
             // Reset asset registry (keeping EMPTY_ASSET sentinels)
-            *m_Context->assets = AssetRegistry();
+            * m_Context->assets = AssetRegistry();
 
             // RESTORE PREFABS after registry reset
             for (auto& [uid, asset] : savedPrefabs) {
@@ -516,6 +521,13 @@ namespace Boom
 #if defined(_DEBUG)
             BOOM_INFO("[Scene] Restored {} prefabs", savedPrefabs.size());
 #endif
+            // Destroy script instances first
+            DestroyScriptInstancesFromScene();
+
+            // Reset any scene-specific state
+
+
+
             BOOM_INFO("[Scene] Scene cleanup complete");
         }
 
@@ -536,6 +548,9 @@ namespace Boom
             EnttView<Entity, RigidBodyComponent>([this](auto entity, auto&) {
                 m_Context->Physics->AddRigidBody(entity, *m_Context->assets);
                 });
+
+            // Recreate script instances for newly loaded entities
+            CreateScriptInstancesFromScene();
 
             BOOM_INFO("[Scene] Scene systems reinitialization complete");
         }
@@ -623,6 +638,29 @@ namespace Boom
                         transform.translate = PxToVec3(pose.p);
                     });
             }
+        }
+
+
+        BOOM_INLINE void CreateScriptInstancesFromScene()
+        {
+            EnttView<Entity, ScriptComponent>([this](auto entity, ScriptComponent& sc) {
+                if (sc.TypeName.empty()) return;
+                // Create a managed instance and remember its ID on the component
+                sc.InstanceId = script_create_instance(sc.TypeName.c_str(),static_cast<ScriptEntityId>(entity.ID()));
+                BOOM_INFO("[Scripting] Created instance '{}' -> entt {}",
+                    sc.TypeName,
+                    static_cast<uint32_t>(entity.ID()));
+                });
+        }
+
+        BOOM_INLINE void DestroyScriptInstancesFromScene()
+        {
+            EnttView<Entity, ScriptComponent>([this](auto, ScriptComponent& sc) {
+                if (sc.InstanceId) {
+                    script_destroy_instance(sc.InstanceId);
+                    sc.InstanceId = 0;
+                }
+                });
         }
     };
 
