@@ -42,14 +42,14 @@ namespace Boom
 
             // Search the context’s layer list by matching the LayerID
             auto it = std::find_if(
-                m_Context->Layers.begin(),
-                m_Context->Layers.end(),
+                m_Context->layers.begin(),
+                m_Context->layers.end(),
                 [](AppInterface* layer)
                 {
                     return layer->m_LayerID == TypeID<Layer>();
                 });
 
-            return (it != m_Context->Layers.end())
+            return (it != m_Context->layers.end())
                 ? static_cast<Layer*>(*it)
                 : nullptr;
         }
@@ -72,7 +72,7 @@ namespace Boom
             }
 
             auto layer = new Layer(std::forward<Args>(args)...);
-            m_Context->Layers.push_back(layer);
+            m_Context->layers.push_back(layer);
 
             layer->m_LayerID = TypeID<Layer>();
             layer->m_Context = m_Context;

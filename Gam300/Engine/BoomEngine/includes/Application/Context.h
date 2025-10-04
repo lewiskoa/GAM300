@@ -26,7 +26,7 @@ namespace Boom
 			, window{ std::make_unique<AppWindow>(&dispatcher, CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT, "Boom Engine") }
 			, renderer{ std::make_unique<GraphicsRenderer>(CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT) }
 			, assets{ std::make_unique<AssetRegistry>() }
-			, Physics{ std::make_unique<PhysicsContext>() }
+			, physics{ std::make_unique<PhysicsContext>() }
 			, scene{}
 		{
 		}
@@ -37,7 +37,7 @@ namespace Boom
 		//BOOM_INLINE ~AppContext()
 		//{
 		//	// Iterate and delete each layer, then null out pointer
-		//	for (AppInterface*& layer : Layers)
+		//	for (AppInterface*& layer : layers)
 		//	{
 		//		BOOM_DELETE(layer);
 		//	}
@@ -49,12 +49,12 @@ namespace Boom
 		 * Stores pointers to AppInterface-derived layers. Pointers
 		 * are managed manually and cleaned up in the destructor.
 		 */
-		std::vector<AppInterface*> Layers; //Use of pointers within containers to prevent memory leaks and promote safe practice
+		std::vector<AppInterface*> layers; //Use of pointers within containers to prevent memory leaks and promote safe practice
 		EventDispatcher dispatcher;
 		std::unique_ptr<AppWindow> window;
 		std::unique_ptr<GraphicsRenderer> renderer;
 		std::unique_ptr<AssetRegistry> assets;
-		std::unique_ptr<PhysicsContext> Physics; //physics context
+		std::unique_ptr<PhysicsContext> physics; //physics context
 		Boom::Profiler profiler;
 		double DeltaTime{};
 		EntityRegistry scene;

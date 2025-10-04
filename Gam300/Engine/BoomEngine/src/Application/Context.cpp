@@ -6,7 +6,7 @@ namespace Boom
 {
     AppContext::~AppContext()
     {
-        for (AppInterface*& layer : Layers)
+        for (AppInterface*& layer : layers)
         {
             BOOM_DELETE(layer);
         }

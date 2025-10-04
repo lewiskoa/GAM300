@@ -361,7 +361,7 @@ namespace Boom
                 m_Context->renderer->ShowFrame(showFrame);
 
 
-                for (auto layer : m_Context->Layers)
+                for (auto layer : m_Context->layers)
                 {
                     layer->OnUpdate();
                 }
@@ -546,7 +546,7 @@ namespace Boom
 
             // Only reinitialize physics
             EnttView<Entity, RigidBodyComponent>([this](auto entity, auto&) {
-                m_Context->Physics->AddRigidBody(entity, *m_Context->assets);
+                m_Context->physics->AddRigidBody(entity, *m_Context->assets);
                 });
 
             // Recreate script instances for newly loaded entities
@@ -574,7 +574,7 @@ namespace Boom
         BOOM_INLINE void RegisterEventCallbacks()
         {
             // Set physics event callback (mark unused param to avoid warnings)
-            m_Context->Physics->SetEventCallback([this](auto e)
+            m_Context->physics->SetEventCallback([this](auto e)
                 {
                     (void)e;
                     // Scripting/event logic can be added here
@@ -628,7 +628,7 @@ namespace Boom
             // Only simulate physics if running
             if (m_AppState == ApplicationState::RUNNING)
             {
-                m_Context->Physics->Simulate(1, static_cast<float>(m_Context->DeltaTime));
+                m_Context->physics->Simulate(1, static_cast<float>(m_Context->DeltaTime));
                 EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
                     {
                         auto& transform = entity.template Get<TransformComponent>().transform;
