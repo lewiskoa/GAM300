@@ -85,7 +85,6 @@ private:
         RenderViewport();
         RenderHierarchy();
         RenderInspector();
-        RenderGizmo();
         RenderPerformance();
         RenderResources();
         RenderPlaybackControls();
@@ -445,7 +444,6 @@ private:
             // Get frame texture from engine
             uint32_t frameTexture = GetSceneFrame();
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-
             float aspectRatio = (viewportSize.y > 0) ? viewportSize.x / viewportSize.y : 1.0f;
 
             if (frameTexture > 0 && viewportSize.x > 0 && viewportSize.y > 0) {
@@ -455,24 +453,68 @@ private:
 
                 m_Console.TrackLastItemAsViewport("Viewport");
 
-                glm::mat4 cameraProjection{};
-                auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
-                if (view.begin() != view.end()) {
-                    auto entityID = view.front();
-                    auto& camComp = view.get<Boom::CameraComponent>(entityID);
-                    cameraProjection = camComp.camera.Projection(aspectRatio);
-                }
+                ImVec2 itemMin = ImGui::GetItemRectMin();
+                ImVec2 itemMax = ImGui::GetItemRectMax();
+                m_VP_TopLeft = itemMin;
+                m_VP_Size = ImVec2(itemMax.x - itemMin.x, itemMax.y - itemMin.y);
+                m_VP_Hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+                m_VP_Focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && m_VP_Hovered;
 
-                // Add viewport interaction info
-                if (ImGui::IsItemHovered()) {
+                // Tooltip & debug
+                if (m_VP_Hovered) {
                     ImGui::SetTooltip("Engine Viewport - Scene render output");
                 }
-
-                // Debug info (remove later)
                 static int debugCount = 0;
-                if (++debugCount % 300 == 0) {  // Every 5 seconds
-                    BOOM_INFO("Viewport - Texture ID: {}, Size: {}x{}",
-                        frameTexture, viewportSize.x, viewportSize.y);
+                if (++debugCount % 300 == 0) {
+                    BOOM_INFO("Viewport - Texture ID: {}, Size: {}x{}", frameTexture, viewportSize.x, viewportSize.y);
+                }
+
+                // Build camera matrices using the VIEWPORT aspect
+                glm::mat4 cameraView(1.0f);
+                glm::mat4 cameraProj(1.0f);
+                {
+                    auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
+                    if (view.begin() != view.end()) {
+                        auto eid = view.front();
+                        auto& camComp = view.get<Boom::CameraComponent>(eid);
+                        auto& trans = view.get<Boom::TransformComponent>(eid);
+                        cameraView = camComp.camera.View(trans.transform);
+                        cameraProj = camComp.camera.Projection(aspectRatio);
+                    }
+                }
+
+                // --------- GIZMO DRAW & MANIPULATE (inside viewport) ----------
+                if (m_SelectedEntity != entt::null) {
+                    Boom::Entity selected{ &m_Context->scene, m_SelectedEntity };
+                    if (selected.Has<Boom::TransformComponent>()) {
+                        auto& tc = selected.Get<Boom::TransformComponent>();
+                        glm::mat4 model = tc.transform.Matrix();
+
+                        // Set up ImGuizmo to draw in this window & rect only
+                        ImGuizmo::SetOrthographic(false);
+                        ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+                        ImGuizmo::SetRect(m_VP_TopLeft.x, m_VP_TopLeft.y, m_VP_Size.x, m_VP_Size.y);
+
+                        // Allow interaction only when hovered & focused
+                        ImGuizmo::Enable(m_VP_Hovered && m_VP_Focused);
+
+                        if (ImGuizmo::Manipulate(glm::value_ptr(cameraView),
+                            glm::value_ptr(cameraProj),
+                            m_GizmoOperation,
+                            m_gizmoMode,
+                            glm::value_ptr(model))) {
+                            // Decompose back into TRS (ImGuizmo outputs degrees for rotation)
+                            glm::vec3 t, rDeg, s;
+                            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model),
+                                glm::value_ptr(t),
+                                glm::value_ptr(rDeg),
+                                glm::value_ptr(s));
+                            // If your engine stores radians, convert rDeg -> radians here.
+                            tc.transform.translate = t;
+                            tc.transform.rotate = rDeg;   // or glm::radians(rDeg)
+                            tc.transform.scale = s;
+                        }
+                    }
                 }
             }
             else {
@@ -494,6 +536,11 @@ private:
                     drawList->AddText(ImVec2(canvasPos.x + 10, canvasPos.y + 10),
                         IM_COL32(255, 255, 255, 255), "Engine Viewport");
                 }
+
+                m_VP_TopLeft = canvasPos;
+                m_VP_Size = canvasSize;
+                m_VP_Hovered = false;
+                m_VP_Focused = false;
             }
         }
 
@@ -501,71 +548,7 @@ private:
         ImGui::End();
     }
 
-    BOOM_INLINE void RenderGizmo()
-    {
-        // Do nothing if no entity is selected
-        if (m_SelectedEntity == entt::null) {
-            return;
-        }
 
-        // --- 1. Handle Keyboard Shortcuts to Change Operation ---
-        if (ImGui::IsKeyPressed(ImGuiKey_W)) {
-            m_GizmoOperation = ImGuizmo::TRANSLATE;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_E)) {
-            m_GizmoOperation = ImGuizmo::ROTATE;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_R)) {
-            m_GizmoOperation = ImGuizmo::SCALE;
-        }
-
-        // --- 2. Get Camera View and Projection Matrices ---
-        glm::mat4 cameraView, cameraProjection;
-        {
-            int width, height;
-            glfwGetWindowSize(m_Context->window->Handle().get(), &width, &height);
-            float aspectRatio = (height > 0) ? (float)width / (float)height : 1.0f;
-
-            auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
-            if (view.begin() != view.end()) { // Check if a camera exists
-                auto entityID = view.front();
-                auto& camComp = view.get<Boom::CameraComponent>(entityID);
-                auto& transComp = view.get<Boom::TransformComponent>(entityID);
-                cameraView = camComp.camera.View(transComp.transform);
-                cameraProjection = camComp.camera.Projection(aspectRatio);
-            }
-            else {
-                // Handle the case where no camera is found
-                BOOM_WARN("No camera found in the scene for gizmo rendering.");
-                // You might want to use a default or identity matrix here
-                cameraView = glm::mat4(1.0f);
-                cameraProjection = glm::mat4(1.0f);
-            }
-        }
-
-        // --- 3. Prepare for Drawing the Gizmo ---
-        ImGuizmo::SetOrthographic(false);
-        ImGuizmo::SetRect(ImGui::GetMainViewport()->Pos.x, ImGui::GetMainViewport()->Pos.y, ImGui::GetMainViewport()->Size.x, ImGui::GetMainViewport()->Size.y);
-
-        // --- 4. Get the Selected Entity's Matrix ---
-        Boom::Entity selectedEntity{ &m_Context->scene, m_SelectedEntity };
-        auto& transformComp = selectedEntity.Get<Boom::TransformComponent>();
-        glm::mat4 modelMatrix = transformComp.transform.Matrix();
-
-        // --- 5. Draw the Gizmo and Update the Transform ---
-        if (ImGuizmo::Manipulate(glm::value_ptr(cameraView),
-            glm::value_ptr(cameraProjection),
-            m_GizmoOperation,
-            ImGuizmo::LOCAL,
-            glm::value_ptr(modelMatrix)))
-        {
-            // If the user moved the gizmo, decompose the new matrix back into TRS
-            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelMatrix),
-                glm::value_ptr(transformComp.transform.translate),
-                glm::value_ptr(transformComp.transform.rotate),
-                glm::value_ptr(transformComp.transform.scale));
-        }
-    }
 
     // In your Editor class
     BOOM_INLINE void RenderHierarchy()
@@ -1250,6 +1233,12 @@ private:
     bool m_ShowAudio = true;
     bool m_ShowPerformance = true;
 	bool m_ShowSavePrefabDialog = false;
+
+    // Viewport State
+    ImVec2 m_VP_TopLeft = { 0, 0 };
+    ImVec2 m_VP_Size = { 0, 0 };
+    bool   m_VP_Hovered = false;
+    bool   m_VP_Focused = false;
 
 	//prefab browser UI state
     char m_PrefabNameBuffer[256] = "NewPrefab";

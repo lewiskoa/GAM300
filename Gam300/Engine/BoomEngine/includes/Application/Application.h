@@ -647,7 +647,9 @@ namespace Boom
                 if (sc.TypeName.empty()) return;
                 // Create a managed instance and remember its ID on the component
                 sc.InstanceId = script_create_instance(sc.TypeName.c_str(),static_cast<ScriptEntityId>(entity.ID()));
-                BOOM_INFO("[Scripting] Created instance '{}' -> ent {}", sc.TypeName, entity.ID());
+                BOOM_INFO("[Scripting] Created instance '{}' -> entt {}",
+                    sc.TypeName,
+                    static_cast<uint32_t>(entity.ID()));
                 });
         }
 
