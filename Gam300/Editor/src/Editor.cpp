@@ -14,6 +14,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "ImGuizmo.h"
 #include "Context/Profiler.hpp"
+#include "AppWindow.h"
 
 using namespace Boom;
 bool m_ShowPrefabBrowser = true;
@@ -459,6 +460,35 @@ private:
                 m_VP_Size = ImVec2(itemMax.x - itemMin.x, itemMax.y - itemMin.y);
                 m_VP_Hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
                 m_VP_Focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && m_VP_Hovered;
+
+                // Convert ImGui screen-space rect -> GLFW window client-space rect
+                ImVec2 mainPos = ImGui::GetMainViewport()->Pos; // top-left of GLFW client area in screen space
+                double localX = (double)(m_VP_TopLeft.x - mainPos.x);
+                double localY = (double)(m_VP_TopLeft.y - mainPos.y);
+                double localW = (double)m_VP_Size.x;
+                double localH = (double)m_VP_Size.y;
+
+                // Allow camera look only when viewport is both focused and hovered (your policy)
+                bool allowCamera = (m_VP_Hovered && m_VP_Focused);
+
+                // Push region & permission to the window (each frame)
+                m_Context->window->SetCameraInputRegion(localX, localY, localW, localH, allowCamera);
+
+                if ((m_VP_Focused || m_VP_Hovered) && !ImGuizmo::IsUsing()) {
+                    // Top row
+                    if (ImGui::IsKeyPressed(ImGuiKey_1)) m_GizmoOperation = ImGuizmo::TRANSLATE;
+                    if (ImGui::IsKeyPressed(ImGuiKey_2)) m_GizmoOperation = ImGuizmo::ROTATE;
+                    if (ImGui::IsKeyPressed(ImGuiKey_3)) m_GizmoOperation = ImGuizmo::SCALE;
+
+                    // Numpad (optional)
+                    if (ImGui::IsKeyPressed(ImGuiKey_Keypad1)) m_GizmoOperation = ImGuizmo::TRANSLATE;
+                    if (ImGui::IsKeyPressed(ImGuiKey_Keypad2)) m_GizmoOperation = ImGuizmo::ROTATE;
+                    if (ImGui::IsKeyPressed(ImGuiKey_Keypad3)) m_GizmoOperation = ImGuizmo::SCALE;
+
+                    // Toggle local/world
+                    if (ImGui::IsKeyPressed(ImGuiKey_L))
+                        m_gizmoMode = (m_gizmoMode == ImGuizmo::LOCAL) ? ImGuizmo::WORLD : ImGuizmo::LOCAL;
+                }
 
                 // Tooltip & debug
                 if (m_VP_Hovered) {

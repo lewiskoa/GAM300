@@ -166,26 +166,23 @@ namespace Boom {
 			if (button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST) {
 				switch (action) {
 				case GLFW_RELEASE:
-					//self->dispatcher->PostEvent<MouseReleaseEvent>(button);
-					//self->inputs.Mouse.reset(button);
-
-					if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-						self->isRightClickDown = false;
-					}
-					if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-						self->isMiddleClickDown = false;
-					}
+					if (button == GLFW_MOUSE_BUTTON_RIGHT)  self->isRightClickDown = false;
+					if (button == GLFW_MOUSE_BUTTON_MIDDLE) self->isMiddleClickDown = false;
 					break;
 
 				case GLFW_PRESS:
-					//self->dispatcher->PostEvent<MouseDownEvent>(button);
-					//self->inputs.Mouse.set(button);
-
 					if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-						self->isRightClickDown = true;
+						// Only enable camera look if we're allowed AND the cursor is inside the scene viewport
+						if (self->camInputEnabled && self->IsMouseInCameraRegion(win)) {
+							self->isRightClickDown = true;
+						}
+						else {
+							self->isRightClickDown = false; // hard block
+						}
 					}
 					if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-						self->isMiddleClickDown = true;
+						// Middle-button panning can be likewise gated (optional)
+						self->isMiddleClickDown = self->camInputEnabled && self->IsMouseInCameraRegion(win);
 					}
 					break;
 				}
@@ -193,35 +190,29 @@ namespace Boom {
 			}
 			BOOM_ERROR("AppWindow::OnMouse() invalid keycode: [{}]", button);
 		}
+
 		BOOM_INLINE static void OnMotion(GLFWwindow* win, double x, double y) {
 			AppWindow* self{ GetUserData(win) };
 
-			//camera yaw and pitch
-			if (self->isRightClickDown) {
+			const bool inRegion = self->IsMouseInCameraRegion(win);
+
+			// camera yaw/pitch
+			if (self->isRightClickDown && self->camInputEnabled && inRegion) {
 				self->camRot.x = (float)(self->prevMousePos.y - y) * CONSTANTS::CAM_PAN_SPEED;
 				self->camRot.y = (float)(self->prevMousePos.x - x) * CONSTANTS::CAM_PAN_SPEED;
 			}
-			//panning camera position
-			else if (self->isMiddleClickDown) {
+
+			else if (self->isMiddleClickDown && self->camInputEnabled && inRegion) {
 				glm::vec2 pan{ glm::dvec2{
 					(self->prevMousePos.x - x) / (double)self->width,
-					(y - self->prevMousePos.y) / (double)self->height} };
-
+					(y - self->prevMousePos.y) / (double)self->height } };
 				self->camMoveDir.y = pan.y * self->camFOV * 0.1f;
 				self->camMoveDir.x = pan.x * self->camFOV * 0.09f;
 			}
-			/*
-			//AppWindow* self{ GetUserData(win) };
-			//self->dispatcher->PostEvent<MouseMotionEvent>(x, y);
-			if (self->inputs.Mouse.test(GLFW_MOUSE_BUTTON_LEFT)) {
-				//directional distance between new pos and old pos
-				self->dispatcher->PostEvent<MouseDragEvent>(self->inputs.MouseX - x, self->inputs.MouseY - y);
-			}
-			self->inputs.MouseX = x;
-			self->inputs.MouseY = y;
-			*/
+
 			self->prevMousePos = { x, y };
 		}
+
 		BOOM_INLINE static void OnKey(GLFWwindow* win, int32_t key, int32_t, int32_t action, int32_t) {
 			AppWindow* self{ GetUserData(win) };
 
@@ -313,6 +304,9 @@ namespace Boom {
 			return static_cast<AppWindow*>(glfwGetWindowUserPointer(window));
 		}
 
+		
+
+
 	public:
 		BOOM_INLINE void SetWindowTitle(std::string const& title) {
 			glfwSetWindowTitle(windowPtr.get(), title.c_str());
@@ -351,6 +345,15 @@ namespace Boom {
 			camFOV = glm::clamp(fov, CONSTANTS::MIN_FOV, CONSTANTS::MAX_FOV);
 			BOOM_DEBUG("fov:{}", camFOV);
 		}
+		BOOM_INLINE void SetCameraInputRegion(double x, double y, double w, double h, bool enabled) {
+			camRegionX = x; camRegionY = y; camRegionW = w; camRegionH = h; camInputEnabled = enabled;
+		}
+
+		BOOM_INLINE bool IsMouseInCameraRegion(GLFWwindow* win) const {
+			double mx, my; glfwGetCursorPos(win, &mx, &my); // client-area coords
+			return (mx >= camRegionX && mx <= camRegionX + camRegionW &&
+				my >= camRegionY && my <= camRegionY + camRegionH);
+		}
 
 	private:
 		int32_t width;
@@ -379,6 +382,9 @@ namespace Boom {
 		float camFOV{ CONSTANTS::MIN_FOV };
 		float camMoveMultiplier{ 0.5f };
 
+		// Making sure that the rotation on happens in the viewport
+		double camRegionX{ 0.0 }, camRegionY{ 0.0 }, camRegionW{ 0.0 }, camRegionH{ 0.0 };
+		bool   camInputEnabled{ false };
 		bool isEditor{}; //needed due to imgui's weird resizing bug
 	};
 }
