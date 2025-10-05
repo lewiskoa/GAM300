@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #ifndef APPLICATION_H
 #define APPLICATION_H
 #include "Interface.h"
@@ -49,9 +49,9 @@ namespace Boom
         float m_TestRot = 0.0f;
 
         // Temporary for showing physics
-        //double m_SphereTimer = 0.0;
-        //double m_SphereResetInterval = 5.0; 
-        //glm::vec3 m_SphereInitialPosition = { 2.5f, 1.2f, 0.0f }; 
+        double m_SphereTimer = 0.0;
+        double m_SphereResetInterval = 5.0; 
+        glm::vec3 m_SphereInitialPosition = { 2.5f, 1.2f, 0.0f }; 
 
         /**
          * @brief Constructs the Application, assigns its unique ID, and allocates the AppContext.
@@ -208,6 +208,12 @@ namespace Boom
                 if (m_AppState == ApplicationState::RUNNING) {
                     script_update_all(static_cast<float>(m_Context->DeltaTime));
                     RunPhysicsSimulation();
+                }
+
+                m_SphereTimer += m_Context->DeltaTime;
+                if (m_SphereTimer >= m_SphereResetInterval) {
+                    ResetSphere();
+                    m_SphereTimer = 0.0;
                 }
                 // When paused, m_TestRot stays at its current value
 
@@ -617,6 +623,36 @@ namespace Boom
             sLastTime = currentTime;
         }
 
+        BOOM_INLINE void ResetSphere()
+        {
+            EnttView<Entity, InfoComponent, TransformComponent, RigidBodyComponent>(
+                [this](auto entity, InfoComponent& info, TransformComponent& transform, RigidBodyComponent& rb)
+                {
+                    (void)entity;
+                    if (info.name != "Sphere") return;
+
+                    auto* dyn = rb.RigidBody.actor->is<physx::PxRigidDynamic>();
+                    if (!dyn) return;
+
+                    const physx::PxVec3 p(
+                        m_SphereInitialPosition.x,
+                        m_SphereInitialPosition.y,
+                        m_SphereInitialPosition.z
+                    );
+
+                    const physx::PxQuat q(0.f, 0.f, 0.f, 1.f); // identity quaternion
+
+                    const physx::PxTransform pose(p, q);
+                    dyn->setGlobalPose(pose);
+                    dyn->setLinearVelocity(physx::PxVec3(0.f, 0.f, 0.f));
+                    dyn->setAngularVelocity(physx::PxVec3(0.f, 0.f, 0.f));
+
+                    // Mirror to ECS transform immediately (prevents 1-frame hitch)
+                    transform.transform.translate = m_SphereInitialPosition;
+                    transform.transform.rotate = glm::vec3(0.0f);
+                });
+        }
+
         BOOM_INLINE void DestroyPhysicsActors()
         {
             EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
@@ -640,6 +676,7 @@ namespace Boom
             // Only simulate physics if running
             if (m_AppState == ApplicationState::RUNNING)
             {
+                
                 m_Context->physics->Simulate(1, static_cast<float>(m_Context->DeltaTime));
                 EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
                     {

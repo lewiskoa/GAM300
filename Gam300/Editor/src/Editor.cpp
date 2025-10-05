@@ -1346,6 +1346,8 @@ private:
     std::vector<std::string> m_AvailableScenes;
     int m_SelectedSceneIndex = 0;
 
+
+
     ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
 
