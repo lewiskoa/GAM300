@@ -8,6 +8,7 @@
 #include<assert.h>
 #include<variant>
 #include<format>
+//#include <span>
 
 namespace xproperty
 {

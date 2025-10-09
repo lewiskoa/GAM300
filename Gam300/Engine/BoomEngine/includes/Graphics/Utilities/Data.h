@@ -37,9 +37,9 @@ namespace Boom {
 
 		XPROPERTY_DEF
 		("Transform3D", Transform3D
-			, obj_member<"translate", &Transform3D::translate>
-			, obj_member<"rotate", &Transform3D::rotate>
-			, obj_member<"scale", &Transform3D::scale>
+			, obj_member<"Translate", &Transform3D::translate>
+			, obj_member<"Rotate", &Transform3D::rotate>
+			, obj_member<"Scale", &Transform3D::scale>
 		)
 
 	};
@@ -71,8 +71,8 @@ namespace Boom {
 
 		XPROPERTY_DEF(
 			"Camera3D", Camera3D,
-			obj_member<"nearPlane", &Camera3D::nearPlane>,
-			obj_member<"farPlane", &Camera3D::farPlane>,
+			obj_member<"NearPlane", &Camera3D::nearPlane>,
+			obj_member<"FarPlane", &Camera3D::farPlane>,
 			obj_member<"FOV", &Camera3D::FOV>
 		)
 	};
@@ -142,8 +142,8 @@ namespace Boom {
 		// ===== PointLight =====
 		XPROPERTY_DEF(
 			"PointLight", PointLight,
-			obj_member<"radiance", &PointLight::radiance>,
-			obj_member<"intensity", &PointLight::intensity>
+			obj_member<"Radiance", &PointLight::radiance>,
+			obj_member<"Intensity", &PointLight::intensity>
 		)
 
 	};
@@ -160,8 +160,8 @@ namespace Boom {
 		// ===== DirectionalLight =====
 		XPROPERTY_DEF(
 			"DirectionalLight", DirectionalLight,
-			obj_member<"radiance", &DirectionalLight::radiance>,
-			obj_member<"intensity", &DirectionalLight::intensity>
+			obj_member<"Radiance", &DirectionalLight::radiance>,
+			obj_member<"Intensity", &DirectionalLight::intensity>
 		)
 
 	};
@@ -190,10 +190,10 @@ namespace Boom {
 		// ===== SpotLight =====
 		XPROPERTY_DEF(
 			"SpotLight", SpotLight,
-			obj_member<"radiance", &SpotLight::radiance>,
-			obj_member<"intensity", &SpotLight::intensity>,
-			obj_member<"fallOff", &SpotLight::fallOff>,  // stored in radians
-			obj_member<"cutOff", &SpotLight::cutOff>    // stored in radians
+			obj_member<"Radiance", &SpotLight::radiance>,
+			obj_member<"Intensity", &SpotLight::intensity>,
+			obj_member<"FallOff", &SpotLight::fallOff>,  // stored in radians
+			obj_member<"CutOff", &SpotLight::cutOff>    // stored in radians
 		)
 
 	};
@@ -204,7 +204,7 @@ namespace Boom {
 		// ===== Skybox =====
 		XPROPERTY_DEF(
 			"Skybox", Skybox,
-			obj_member<"cubeMap", &Skybox::cubeMap>
+			obj_member<"CubeMap", &Skybox::cubeMap>
 		)
 
 

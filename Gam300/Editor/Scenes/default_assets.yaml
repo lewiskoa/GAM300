@@ -16,6 +16,52 @@ ASSETS:
       Roughness: 0.400000006
       Occlusion: 1
       Emissive: [0, 0, 0]
+  - Type: PREFAB
+    UID: 18004803294149376765
+    Name: Walk
+    Source: Prefabs/Walk.prefab
+    Properties:
+      SerializedData: |
+        InfoComponent:
+          UID: 18299148976802030936
+          Name: Model walk
+          Parent: 0
+        TransformComponent:
+          Translate: [0, -1.5, 0]
+          Rotate: [0, 0, 0]
+          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+        ModelComponent:
+          ModelID: 12185416543001335231
+          MaterialID: 11573253777835523025
+          ModelSource: walking.fbx
+          MaterialSource: Marble
+        AnimatorComponent:
+          Sequence: 0
+          Time: 30.0344028
+
+  - Type: PREFAB
+    UID: 5076640578672151242
+    Name: Dance
+    Source: Prefabs/Dance.prefab
+    Properties:
+      SerializedData: |
+        InfoComponent:
+          UID: 18299148976802030936
+          Name: Player
+          Parent: 0
+        TransformComponent:
+          Translate: [0, -1.20000005, 0]
+          Rotate: [0, 0, 0]
+          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+        ModelComponent:
+          ModelID: 12185416543001335231
+          MaterialID: 11573253777835523025
+          ModelSource: dance.fbx
+          MaterialSource: Marble
+        AnimatorComponent:
+          Sequence: 0
+          Time: 832.96283
+
   - Type: TEXTURE
     UID: 356508722382236238
     Name: albedo
@@ -76,15 +122,15 @@ ASSETS:
     Properties:
       HasJoints: false
   - Type: MODEL
-    UID: 14642322846606299060
-    Name: Cube - Copy (2)
-    Source: Cube - Copy (2).fbx
-    Properties:
-      HasJoints: false
-  - Type: MODEL
     UID: 11186732660022374532
     Name: Cube - Copy
     Source: Cube - Copy.fbx
+    Properties:
+      HasJoints: false
+  - Type: MODEL
+    UID: 14642322846606299060
+    Name: Cube - Copy (2)
+    Source: Cube - Copy (2).fbx
     Properties:
       HasJoints: false
   - Type: MODEL

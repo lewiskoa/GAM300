@@ -159,9 +159,6 @@
     <ClInclude Include="includes\Common\BoomProperties.h">
       <Filter>includes</Filter>
     </ClInclude>
-    <ClInclude Include="includes\Common\xproperty.h">
-      <Filter>includes</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">

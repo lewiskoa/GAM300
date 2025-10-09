@@ -23,9 +23,9 @@ namespace Boom {
 
         XPROPERTY_DEF
         ("TransformComponent", TransformComponent
-            , obj_member<"transform", &TransformComponent::transform>
+            , obj_member<"Transform", &TransformComponent::transform>
         )
-    }; XPROPERTY_REG(TransformComponent)
+    }; 
 
     // camera component
     struct CameraComponent
@@ -33,12 +33,24 @@ namespace Boom {
         BOOM_INLINE CameraComponent(const CameraComponent&) = default;
         BOOM_INLINE CameraComponent() = default;
         Camera3D camera;
+
+        // CameraComponent
+        XPROPERTY_DEF(
+            "CameraComponent", CameraComponent,
+            obj_member<"camera", &CameraComponent::camera>
+        )
     };
 
     struct EnttComponent {
         BOOM_INLINE EnttComponent(const EnttComponent&) = default;
         BOOM_INLINE EnttComponent() = default;
         std::string name = "Entity";
+
+        // EnttComponent
+        XPROPERTY_DEF(
+            "EnttComponent", EnttComponent,
+            obj_member<"name", &EnttComponent::name>
+        )
     };
 
     struct MeshComponent
@@ -46,6 +58,12 @@ namespace Boom {
         BOOM_INLINE MeshComponent(const MeshComponent&) = default;
         BOOM_INLINE MeshComponent() = default;
         Mesh3D mesh;
+
+        // MeshComponent
+        //XPROPERTY_DEF(
+        //    "MeshComponent", MeshComponent,
+        //    obj_member<"mesh", &MeshComponent::mesh>
+        //)
     };
 
     struct RigidBodyComponent
@@ -53,6 +71,12 @@ namespace Boom {
         BOOM_INLINE RigidBodyComponent(const RigidBodyComponent&) = default;
         BOOM_INLINE RigidBodyComponent() = default;
         RigidBody3D RigidBody;
+
+        // RigidBodyComponent
+        XPROPERTY_DEF(
+            "RigidBodyComponent", RigidBodyComponent,
+            obj_member<"RigidBody", &RigidBodyComponent::RigidBody>
+        )
     };
 
     struct ColliderComponent
@@ -60,16 +84,36 @@ namespace Boom {
         BOOM_INLINE ColliderComponent(const ColliderComponent&) = default;
         BOOM_INLINE ColliderComponent() = default;
         Collider3D Collider;
+
+        // ColliderComponent
+        XPROPERTY_DEF(
+            "ColliderComponent", ColliderComponent,
+            obj_member<"Collider", &ColliderComponent::Collider>
+        )
     };
 
     ////Model Component
     struct ModelComponent {
-        AssetID materialID{ EMPTY_ASSET };
+
+        //using AssetID = uint64_t;
+
         AssetID modelID{ EMPTY_ASSET };
+        AssetID materialID{ EMPTY_ASSET };
         std::string modelName;
         std::string materialName;
         std::string modelSource;
         std::string materialSource;
+
+        XPROPERTY_DEF(
+            "ModelComponent", ModelComponent,
+            obj_member<"ModelID", &ModelComponent::modelID>,
+            obj_member<"MaterialID", &ModelComponent::materialID>,
+            obj_member<"ModelName", &ModelComponent::modelName>,
+            obj_member<"MaterialName", &ModelComponent::materialName>,
+            obj_member<"ModelSource", &ModelComponent::modelSource>,
+            obj_member<"MaterialSource", &ModelComponent::materialSource>
+        )
+
     };
 
     //Animator Component
@@ -82,6 +126,11 @@ namespace Boom {
 
     struct SkyboxComponent {
         AssetID skyboxID{ EMPTY_ASSET };
+
+        XPROPERTY_DEF(
+            "SkyboxComponent", SkyboxComponent,
+            obj_member<"SkyboxID", &SkyboxComponent::skyboxID>
+        )
     };
 
     //helpful for encapsulating information about an entity
@@ -91,7 +140,12 @@ namespace Boom {
         std::string name{ "Entity" };
         AssetID uid{ RandomU64() };
 
-
+        XPROPERTY_DEF(
+            "InfoComponent", InfoComponent,
+            obj_member<"Parent", &InfoComponent::parent>,
+            obj_member<"Name", &InfoComponent::name>,
+            obj_member<"UID", &InfoComponent::uid>
+        )
     };
 
     struct DirectLightComponent
@@ -99,18 +153,35 @@ namespace Boom {
         BOOM_INLINE DirectLightComponent(const DirectLightComponent&) = default;
         BOOM_INLINE DirectLightComponent() = default;
         DirectionalLight light;
+
+        XPROPERTY_DEF(
+            "DirectLightComponent", DirectLightComponent,
+            obj_member<"Light", &DirectLightComponent::light>
+        )
     };
+
     struct PointLightComponent
     {
         BOOM_INLINE PointLightComponent(const PointLightComponent&) = default;
         BOOM_INLINE PointLightComponent() = default;
         PointLight light;
+
+        XPROPERTY_DEF(
+            "PointLightComponent", PointLightComponent,
+            obj_member<"Light", &PointLightComponent::light>
+        )
     };
+
     struct SpotLightComponent
     {
         BOOM_INLINE SpotLightComponent(const SpotLightComponent&) = default;
         BOOM_INLINE SpotLightComponent() = default;
         SpotLight light;
+
+        XPROPERTY_DEF(
+            "SpotLightComponent", SpotLightComponent,
+            obj_member<"Light", &SpotLightComponent::light>
+        )
     };
 
     //Chris I have no idea how your sound component works
