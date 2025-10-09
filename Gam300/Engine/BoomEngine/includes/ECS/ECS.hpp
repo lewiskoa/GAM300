@@ -4,16 +4,14 @@
 #include "Graphics/Utilities/Data.h"
 #include "Auxiliaries/Assets.h"
 #include "Physics/Utilities.h"  
+#include "BoomProperties.h"
+
+
 
 namespace Boom {
     using EntityRegistry = entt::registry;
     using EntityID = entt::entity;
     constexpr EntityID NENTT = entt::null;
-
-
-    //NOTE FROM AMOS
-    //When createing new components, make sure to add serialization functions in ComponentSerializer.cpp
-    //Should be pretty straightforward, just follow the format of the other components or use GPT to help you
 
 
     // transform component
@@ -23,40 +21,11 @@ namespace Boom {
         BOOM_INLINE TransformComponent() = default;
         Transform3D transform;
 
-        void serialize(nlohmann::json& j) const {
-            j["translate"] = { transform.translate.x, transform.translate.y, transform.translate.z };
-            j["rotate"] = { transform.rotate.x, transform.rotate.y, transform.rotate.z };
-            j["scale"] = { transform.scale.x, transform.scale.y, transform.scale.z };
-        }
-        void deserialize(const nlohmann::json& j) {
-            if (j.contains("translate")) {
-                // Step 1: Read into a simple array
-                std::array<float, 3> data;
-                j.at("translate").get_to(data);
-
-                // Step 2: Manually assign to the glm::vec3 members
-                transform.translate.x = data[0];
-                transform.translate.y = data[1];
-                transform.translate.z = data[2];
-            }
-
-            if (j.contains("rotate")) {
-                std::array<float, 3> data;
-                j.at("rotate").get_to(data);
-                transform.rotate.x = data[0];
-                transform.rotate.y = data[1];
-                transform.rotate.z = data[2];
-            }
-
-            if (j.contains("scale")) {
-                std::array<float, 3> data;
-                j.at("scale").get_to(data);
-                transform.scale.x = data[0];
-                transform.scale.y = data[1];
-                transform.scale.z = data[2];
-            }
-        }
-    };
+        XPROPERTY_DEF
+        ("TransformComponent", TransformComponent
+            , obj_member<"transform", &TransformComponent::transform>
+        )
+    }; XPROPERTY_REG(TransformComponent)
 
     // camera component
     struct CameraComponent

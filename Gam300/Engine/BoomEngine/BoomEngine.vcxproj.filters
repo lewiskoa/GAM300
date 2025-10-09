@@ -156,6 +156,12 @@
     <ClInclude Include="includes\Auxiliaries\PrefabUtility.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Common\BoomProperties.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Common\xproperty.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">
@@ -192,6 +198,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Auxiliaries\SerializerInit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Auxiliaries\RegisterProperties.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -179,9 +179,11 @@
     <ClInclude Include="includes\Auxiliaries\Profiler.h" />
     <ClInclude Include="includes\Auxiliaries\SerializationRegistry.h" />
     <ClInclude Include="includes\BoomEngine.h" />
+    <ClInclude Include="includes\Common\BoomProperties.h" />
     <ClInclude Include="includes\Common\Events.h" />
     <ClInclude Include="includes\Common\framework.h" />
     <ClInclude Include="includes\Common\Core.h" />
+    <ClInclude Include="includes\Common\xproperty.h" />
     <ClInclude Include="includes\Common\YAML.h" />
     <ClInclude Include="includes\ECS\ECS.hpp" />
     <ClInclude Include="includes\GlobalConstants.h" />
@@ -226,6 +228,7 @@
     <ClCompile Include="src\Auxiliaries\ComponentSerializer.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Auxiliaries\RegisterProperties.cpp" />
     <ClCompile Include="src\Auxiliaries\SerializationRegistry.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
