@@ -118,6 +118,23 @@ ENTITIES:
       StaticFriction: 0.5
       Restitution: 0.6
       Type: SPHERE
+
+  - InfoComponent:
+      Parent: 0
+      Name: TestBall
+      UID: 6042260349840611439
+    TransformComponent:
+      Transform:
+        Translate: [0, 1, 0]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
+    ModelComponent:
+      ModelID: 6147709962160563775
+      MaterialID: 0
+      ModelName: sphere
+      MaterialName: ""
+      ModelSource: walking.fbx
+      MaterialSource: Marble
   - InfoComponent:
       UID: 10000000000000000002
       Name: Ground

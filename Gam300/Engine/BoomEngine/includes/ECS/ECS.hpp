@@ -37,7 +37,7 @@ namespace Boom {
         // CameraComponent
         XPROPERTY_DEF(
             "CameraComponent", CameraComponent,
-            obj_member<"camera", &CameraComponent::camera>
+            obj_member<"Camera", &CameraComponent::camera>
         )
     };
 

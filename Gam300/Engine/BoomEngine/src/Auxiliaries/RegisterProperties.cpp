@@ -30,3 +30,9 @@ XPROPERTY_REG(InfoComponent)
 XPROPERTY_REG(DirectLightComponent)
 XPROPERTY_REG(PointLightComponent)
 XPROPERTY_REG(SpotLightComponent)
+
+//===============ASSETS================= 
+XPROPERTY_REG(MaterialAsset)
+XPROPERTY_REG(TextureAsset)
+XPROPERTY_REG(ModelAsset)
+XPROPERTY_REG(SkyboxAsset)

@@ -117,13 +117,7 @@ namespace Boom {
 			obj_member<"albedo", &PbrMaterial::albedo>,
 			obj_member<"roughness", &PbrMaterial::roughness>,
 			obj_member<"metallic", &PbrMaterial::metallic>,
-			obj_member<"occlusion", &PbrMaterial::occlusion>,
-			obj_member<"occlusionMap", &PbrMaterial::occlusionMap>,
-			obj_member<"roughnessMap", &PbrMaterial::roughnessMap>,
-			obj_member<"metallicMap", &PbrMaterial::metallicMap>,
-			obj_member<"emissiveMap", &PbrMaterial::emissiveMap>,
-			obj_member<"albedoMap", &PbrMaterial::albedoMap>,
-			obj_member<"normalMap", &PbrMaterial::normalMap>
+			obj_member<"occlusion", &PbrMaterial::occlusion>
 		)
 
 
