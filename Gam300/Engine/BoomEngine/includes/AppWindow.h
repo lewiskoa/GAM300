@@ -167,7 +167,10 @@ namespace Boom {
 				switch (action) {
 				case GLFW_RELEASE:
 					if (button == GLFW_MOUSE_BUTTON_RIGHT)  self->isRightClickDown = false;
-					if (button == GLFW_MOUSE_BUTTON_MIDDLE) self->isMiddleClickDown = false;
+					if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
+						self->isMiddleClickDown = false;
+						self->camMoveDir = {};
+					}
 					break;
 
 				case GLFW_PRESS:
