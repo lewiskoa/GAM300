@@ -13,7 +13,6 @@ yaml-cpp/0.8.0
 magic_enum/0.9.6
 nlohmann_json/3.11.3
 imguizmo/1.83
-compressonator/4.5.52
 
 [generators]
 MSBuildDeps
@@ -24,5 +23,3 @@ glfw/3.3.8:shared=True
 glew/2.2.0:shared=True
 physx/4.1.1:shared=True
 yaml-cpp/0.8.0:shared=False
-compressonator/4.5.52:shared=False
-compressonator/4.5.52:enable_gpu=True
