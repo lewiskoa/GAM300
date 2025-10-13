@@ -9,6 +9,8 @@
 #include <gli/gli.hpp>
 #pragma warning(pop)
 
+#include <compressonator.h>
+
 namespace Boom {
 	Texture2D::Texture2D(std::string filename, bool isFlipY, bool isHDR)
 		: height{}, width{}, id{}
@@ -28,6 +30,19 @@ namespace Boom {
 	}
 
 	void Texture2D::LoadUnCompressed(std::string const& filename, bool isFlipY, bool isHDR) {
+		//test compressonator
+		{
+			CMP_Texture srcTexture = { 0 };
+			CMP_Texture dstTexture = { 0 };
+			CMP_CompressOptions options = { 0 };
+			CMP_ConvertTexture(&srcTexture, &dstTexture, &options, nullptr);
+			if (!srcTexture.pData) {
+				BOOM_DEBUG("its working!!");
+			}
+		}
+		
+
+
 		//flip y axis (needed operation for many image types)
 		stbi_set_flip_vertically_on_load(isFlipY);
 

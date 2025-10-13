@@ -114,9 +114,10 @@ echo [INFO] FMOD_DIR = "%FMOD_DIR%"
 REM ---- Compressonator in repo root ----
 set "COMPRESSONATOR_DIR=%REPO_ROOT%\Compressonator"
 
-if not exist "%COMPRESSONATOR_DIR%\Compressonator_MT.lib" (
+if not exist "%COMPRESSONATOR_DIR%\Compressonator_MD.lib" (
    echo [ERROR] COMPRESSONATOR API not found at: "%COMPRESSONATOR_DIR%"
-   echo		Expect: Compressonator_MT.lib, include
+   echo         Expect: Compressonator_MD.lib, Compressonator_MDd.lib, include\cmp_core.h, include\compressonator.h
+   pause & exit /b 1
 )
 echo [INFO] COMPRESSONATOR_DIR = "%COMPRESSONATOR_DIR"
 

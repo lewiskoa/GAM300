@@ -31,6 +31,16 @@
 			%(AdditionalDependencies)
 		</AdditionalDependencies>
 	</PropertyGroup>
+
+	<PropertyGroup Label="Compressonator">
+		<!-- ..\ because Directory.Build.props sits next to the .sln in Gam300\ -->
+		<CompressonatorRoot>$(SolutionDir)..\Compressonator</CompressonatorRoot>
+		<CompressonatorInc>$(CompressonatorRoot)\include</CompressonatorInc>
+		<CompressonatorLibDir>$(CompressonatorRoot)</CompressonatorLibDir>
+
+		<!-- Debug builds use the 'd' suffixed lib -->
+		<CompressonatorDebugSuffix Condition="'$(Configuration)'=='Debug'">d</CompressonatorDebugSuffix>
+	</PropertyGroup>
 	
 	<PropertyGroup Label="FMOD">
 		<!-- ..\ because Directory.Build.props sits next to the .sln in Gam300\ -->
@@ -43,19 +53,23 @@
 		<!-- Debug builds use the 'L' suffixed libs/DLLs -->
 		<FMODDebugSuffix Condition="'$(Configuration)'=='Debug'">L</FMODDebugSuffix>
 	</PropertyGroup>
+	
 	<ItemDefinitionGroup>
 		<ClCompile>
 			<AdditionalIncludeDirectories>
+				$(CompressonatorInc);
 				$(FMODCoreInc);$(FMODStudioInc);%(AdditionalIncludeDirectories)
 			</AdditionalIncludeDirectories>
 		</ClCompile>
 
 		<Link>
 			<AdditionalLibraryDirectories>
+				$(CompressonatorLibDir);
 				$(FMODCoreLibDir);$(FMODStudioLibDir);%(AdditionalLibraryDirectories)
 			</AdditionalLibraryDirectories>
 			<!-- Studio pulls in Core API; keep both to be explicit -->
 			<AdditionalDependencies>
+				Compressonator_MD$(CompressonatorDebugSuffix).lib;
 				fmod$(FMODDebugSuffix)_vc.lib;fmodstudio$(FMODDebugSuffix)_vc.lib;%(AdditionalDependencies)
 			</AdditionalDependencies>
 		</Link>
