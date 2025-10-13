@@ -111,6 +111,15 @@ if not exist "%FMOD_DIR%\core\lib\x64\fmod_vc.lib" (
 )
 echo [INFO] FMOD_DIR = "%FMOD_DIR%"
 
+REM ---- Compressonator in repo root ----
+set "COMPRESSONATOR_DIR=%REPO_ROOT%\Compressonator"
+
+if not exist "%COMPRESSONATOR_DIR%\Compressonator_MT.lib" (
+   echo [ERROR] COMPRESSONATOR API not found at: "%COMPRESSONATOR_DIR%"
+   echo		Expect: Compressonator_MT.lib, include
+)
+echo [INFO] COMPRESSONATOR_DIR = "%COMPRESSONATOR_DIR"
+
 REM ------------------------------------------------------------------------
 REM 6) Install dependencies for both configurations
 REM ------------------------------------------------------------------------
