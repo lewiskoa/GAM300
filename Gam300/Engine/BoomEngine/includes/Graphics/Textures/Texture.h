@@ -22,14 +22,14 @@ namespace Boom {
 
 		//call this when importing new textures with the editor
 		//contains exception handling due to memory manipulation
-		void CompressTextureForEditor(std::string const& inputPng, std::string const& fullPath, bool forceAlpha = true);
+		void CompressTextureForEditor(std::string const& inputPng, std::string const& fullPath);
 
 	protected: //helpers
 		std::string GetExtension(std::string const& filename);
 
 		void LoadUnCompressed(std::string const& filename, bool isFlipY, bool isHDR);
 		void LoadCompressed(std::string const& filename, bool isFlipY);
-		void CompressTexture(std::string const& inputPng, std::string const& outputDDS, bool forceAlpha);
+		void CompressTexture(std::string const& inputPng, std::string const& outputDDS);
 
 	private:
 		int32_t height;
