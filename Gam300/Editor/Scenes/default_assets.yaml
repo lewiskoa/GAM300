@@ -19,7 +19,7 @@ ASSETS:
   - Type: TEXTURE
     UID: 356508722382236238
     Name: albedo
-    Source: Marble/albedo.png
+    Source: Marble/albedo.dds
     Properties:
       IsHDR: false
       IsFlipY: true

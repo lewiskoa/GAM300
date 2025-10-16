@@ -15,32 +15,31 @@ namespace Boom {
 	Texture2D::Texture2D(std::string filename, bool isFlipY, bool isHDR)
 		: height{}, width{}, id{}
 	{
-		(void)isFlipY; (void)isHDR;
-
+		//(void)isHDR;
 		filename = CONSTANTS::TEXTURES_LOCATION.data() + filename;
 
-		//temporary testing
 		try {
-			std::string marbleName{ CONSTANTS::TEXTURES_LOCATION.data() };
-			marbleName += "Marble/albedo.dds";
-			CompressTexture(filename.c_str(), marbleName.c_str());
+			std::string ext{ GetExtension(filename) };
+			/*
+			if (ext != "dds") {
+				std::string outName{ filename.substr(0, filename.find_last_of('.')) + ".dds" };
+				CompressTexture(filename, outName);
+				filename = outName;
+			}*/
+			if (ext != "dds")
+				LoadUnCompressed(filename, isFlipY, isHDR);
+			else
+				LoadCompressed(filename, isFlipY);
 		}
 		catch (std::exception e) {
-			BOOM_ERROR("Texture2D oopsies: {}", e.what());
+			char const* tmp{ e.what() };
+			BOOM_ERROR("Texture2D error: {}", tmp);
 		}
-		std::exit(0);
-
-		/*
-		std::string ext{ GetExtension(filename) };
-		if (ext == "dds") {
-			LoadCompressed(filename, isFlipY);
-		}
-		else {
-			LoadUnCompressed(filename, isFlipY, isHDR);
-		}*/
 	}
 	Texture2D::~Texture2D() {
-		glDeleteTextures(1, &id);
+		if (id != 0) {
+			glDeleteTextures(1, &id);
+		}
 	}
 
 	void Texture2D::CompressTextureForEditor(std::string const& inputPng, std::string const& fullPath) {
@@ -59,7 +58,8 @@ namespace Boom {
 			CompressTexture(inputPng, fullPath);
 		}
 		catch (std::exception const& e) {
-			BOOM_ERROR("Error Compressing Texture: {}", e.what());
+			char const* tmp{ e.what() };
+			BOOM_ERROR("Error Compressing Texture: {}", tmp);
 			//std::exit(0);
 		}
 	}
@@ -118,8 +118,16 @@ namespace Boom {
 		}
 		gli::gl gl(gli::gl::PROFILE_GL33); // Adjust for your OpenGL version
 		gli::gl::format format = gl.translate(texture.format(), texture.swizzles());
-		if (format.Internal != gli::gl::INTERNAL_RGBA_DXT1) {
-			BOOM_ERROR("failed Texture2D::Load({}) - DDS must be DXT1 format", filename);
+
+		GLenum internalFormat;
+		if (format.Internal == gli::gl::INTERNAL_RGBA_DXT1) {
+			internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+		}
+		else if (format.Internal == gli::gl::INTERNAL_RGB_BP_UNORM) {
+			internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM;
+		}
+		else {
+			BOOM_ERROR("failed Texture2D::Load({}) - DDS must be BC1/DXT1 or BC7 format", filename);
 			return;
 		}
 
@@ -132,18 +140,16 @@ namespace Boom {
 		}
 		width = (int32_t)tex2D.extent().x;
 		height = (int32_t)tex2D.extent().y;
-		GLsizei compressed_size = (GLsizei)tex2D.size(0);
-		const void* compressed_data = tex2D.data(0, 0, 0);
 
 		glCompressedTexImage2D(
 			GL_TEXTURE_2D,
 			0,
-			GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
+			internalFormat,
 			width,
 			height,
 			0,
-			compressed_size,
-			compressed_data
+			(GLsizei)tex2D.size(),
+			tex2D.data(0, 0, 0)
 		);
 
 		if (glGetError() != GL_NO_ERROR) {
@@ -152,7 +158,32 @@ namespace Boom {
 			return;
 		}
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		/*
+		for (size_t level{}; level < tex2D.levels(); ++level) {
+			GLsizei mipWidth{ (GLsizei)tex2D.extent(level).x };
+			GLsizei mipHeight{ (GLsizei)tex2D.extent(level).y };
+			GLsizei compressedSize{ (GLsizei)tex2D.size(level) };
+			void const* compressedData{ tex2D.data(0, 0, level) };
+
+			glCompressedTexImage2D(
+				GL_TEXTURE_2D,
+				(GLint)level,
+				internalFormat,
+				mipWidth,
+				mipHeight,
+				0,
+				compressedSize,
+				compressedData
+			);
+
+			if (glGetError() != GL_NO_ERROR) {
+				BOOM_ERROR("failed Texture2D::Load({}) - OpenGL error during DDS upload", filename);
+				glDeleteTextures(1, &id);
+				return;
+			}
+		}*/
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex2D.levels() > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -161,39 +192,48 @@ namespace Boom {
 	}
 
 	void Texture2D::CompressTexture(std::string const& inputPng, std::string const& outputDDS) {
-		CMP_FORMAT destFormat{ CMP_FORMAT_BC7 };
+		CMP_InitFramework();
+		
+		CMP_FORMAT destFormat{ CMP_FORMAT_BC1 };
 		float fQuality{ 1.f };
 
-		CMP_MipSet mipIn;
-		memset(&mipIn, 0, sizeof(CMP_MipSet));
+		CMP_MipSet mipIn{};
 		CMP_ERROR status{ CMP_LoadTexture(inputPng.c_str(), &mipIn) };
 		if (status != CMP_OK) {
 			throw std::exception("CMP_LoadTexture() - error_code: " + status);
 		}
 
 		if (mipIn.m_nMipLevels <= 1) {
-			CMP_INT requestLevels{ 10 };
-			CMP_INT minSize{ CMP_CalcMinMipSize(mipIn.m_nHeight, mipIn.m_nWidth, requestLevels) };
-			CMP_GenerateMIPLevels(&mipIn, minSize);
+			CMP_INT minMipSize{ CMP_CalcMinMipSize(mipIn.m_nHeight, mipIn.m_nWidth, 10) };
+			CMP_GenerateMIPLevels(&mipIn, minMipSize);
 		}
 
-		KernelOptions kOpt;
-		memset(&kOpt, 0, sizeof(KernelOptions));
-		kOpt.height = mipIn.m_nHeight;
-		kOpt.width = mipIn.m_nWidth;
-		kOpt.fquality = fQuality;
+		KernelOptions kOpt{};
 		kOpt.format = destFormat;
-		kOpt.encodeWith = CMP_HPC;
+		kOpt.fquality = fQuality;
+		kOpt.useSRGBFrames = true;
 		kOpt.threads = 0;
 
-		CMP_MipSet mipOut;
-		memset(&mipOut, 0, sizeof(CMP_MipSet));
+		//set bc15 props //TODO modify to descriptor reading
+		kOpt.bc15.useAlphaThreshold = true;
+		kOpt.bc15.alphaThreshold = 128;
+		kOpt.bc15.useChannelWeights = true;
+		kOpt.bc15.channelWeights[0] = 0.3086f;
+		kOpt.bc15.channelWeights[1] = 0.6094f;
+		kOpt.bc15.channelWeights[2] = 0.0820f;
 
+		//kOpt.height = mipIn.m_nHeight;
+		//kOpt.width = mipIn.m_nWidth;
+		kOpt.encodeWith = CMP_HPC;
+
+		BOOM_INFO("Compressing File:{}", inputPng);
 		auto ComCallback = [](float fProg, CMP_DWORD_PTR, CMP_DWORD_PTR) -> bool {
-			BOOM_INFO("Compression Progress: {}%", fProg);
-			return true;
+			(void)fProg;
+			//BOOM_INFO("Compression Progress: {}%", fProg);
+			return false;
 		};
 
+		CMP_MipSet mipOut{};
 		status = CMP_ProcessTexture(&mipIn, &mipOut, kOpt, ComCallback);
 		if (status != CMP_OK) {
 			CMP_FreeMipSet(&mipIn);
