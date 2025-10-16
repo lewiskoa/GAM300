@@ -26,21 +26,21 @@ ASSETS:
   - Type: TEXTURE
     UID: 436545047596730240
     Name: normal
-    Source: Marble/normal.png
+    Source: Marble/normal.dds
     Properties:
       IsHDR: false
       IsFlipY: true
   - Type: TEXTURE
     UID: 16314464286324216731
     Name: roughness
-    Source: Marble/roughness.png
+    Source: Marble/roughness.dds
     Properties:
       IsHDR: false
       IsFlipY: true
   - Type: SKYBOX
     UID: 12730153547297182823
     Name: sky
-    Source: Skybox/sky.hdr
+    Source: Skybox/sky.dds
     Properties:
       Size: 2048
       IsHDR: true

@@ -9,7 +9,7 @@ namespace Boom {
 
 		Texture2D() = default;
 		//file path starts from Textures folder
-		Texture2D(std::string filename, bool isFlipY = true, bool isHDR = false);
+		Texture2D(std::string filename, bool isHDR = false);
 		~Texture2D();
 		void Use(int32_t uniform, int32_t unit);
 		void Bind();
@@ -27,14 +27,22 @@ namespace Boom {
 	protected: //helpers
 		std::string GetExtension(std::string const& filename);
 
-		void LoadUnCompressed(std::string const& filename, bool isFlipY, bool isHDR);
-		void LoadCompressed(std::string const& filename, bool isFlipY);
+		void LoadUnCompressed(std::string const& filename, bool isHDR);
+		void LoadCompressed(std::string const& filename);
 		void CompressTexture(std::string const& inputPng, std::string const& outputDDS);
 
 	private:
 		int32_t height;
 		int32_t width;
 		uint32_t id;
+
+	private: //descriptions
+		float quality;
+		int32_t alphaThreshold;
+		int32_t mipLevel;
+		bool isGamma;
+		//std::string assetfilepath
+		//std::string assetname
 	};
 
 	using Texture = std::shared_ptr<Texture2D>;

@@ -23,6 +23,7 @@ in vec3 worldPosition;
 uniform samplerCube map;
 
 void main() {
-    fragColor = vec4(texture(map, worldPosition).rgb, 1.0);
+    vec3 flipYPos = vec3(worldPosition.x, -worldPosition.y, worldPosition.z);
+    fragColor = vec4(texture(map, flipYPos).rgb, 1.0);
 }
 ==FRAGMENT==

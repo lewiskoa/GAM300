@@ -10,26 +10,33 @@
 #pragma warning(pop)
 
 #include <compressonator.h>
+#include <iostream>
 
 namespace Boom {
-	Texture2D::Texture2D(std::string filename, bool isFlipY, bool isHDR)
+	Texture2D::Texture2D(std::string filename, bool isHDR)
 		: height{}, width{}, id{}
+		, quality{0.5f}
+		, alphaThreshold{128}
+		, mipLevel{10}
+		, isGamma{true}
 	{
-		//(void)isHDR;
 		filename = CONSTANTS::TEXTURES_LOCATION.data() + filename;
 
 		try {
 			std::string ext{ GetExtension(filename) };
-			/*
 			if (ext != "dds") {
+				(void)isHDR;
 				std::string outName{ filename.substr(0, filename.find_last_of('.')) + ".dds" };
 				CompressTexture(filename, outName);
 				filename = outName;
-			}*/
+			}
+			LoadCompressed(filename);
+			/*
 			if (ext != "dds")
-				LoadUnCompressed(filename, isFlipY, isHDR);
+				LoadUnCompressed(filename, isHDR);
 			else
-				LoadCompressed(filename, isFlipY);
+				LoadCompressed(filename);
+			*/
 		}
 		catch (std::exception e) {
 			char const* tmp{ e.what() };
@@ -42,20 +49,20 @@ namespace Boom {
 		}
 	}
 
-	void Texture2D::CompressTextureForEditor(std::string const& inputPng, std::string const& fullPath) {
+	void Texture2D::CompressTextureForEditor(std::string const& inputPngPath, std::string const& outputDDSPath) {
 		try {
 			//validation
-			if (!std::filesystem::exists(inputPng)) {
-				throw std::runtime_error("Input PNG non-existant: " + inputPng);
+			if (!std::filesystem::exists(inputPngPath)) {
+				throw std::runtime_error("Input PNG non-existant: " + inputPngPath);
 			}
 
 			//create out dir if missing
-			std::filesystem::path outDir{ std::filesystem::path(fullPath).parent_path() };
+			std::filesystem::path outDir{ std::filesystem::path(outputDDSPath).parent_path() };
 			if (!outDir.empty() && !std::filesystem::exists(outDir)) {
 				std::filesystem::create_directories(outDir);
 			}
 
-			CompressTexture(inputPng, fullPath);
+			CompressTexture(inputPngPath, outputDDSPath);
 		}
 		catch (std::exception const& e) {
 			char const* tmp{ e.what() };
@@ -64,9 +71,7 @@ namespace Boom {
 		}
 	}
 
-	void Texture2D::LoadUnCompressed(std::string const& filename, bool isFlipY, bool isHDR) {
-		//flip y axis (needed operation for many image types)
-		stbi_set_flip_vertically_on_load(isFlipY);
+	void Texture2D::LoadUnCompressed(std::string const& filename, bool isHDR) {
 
 		//texture data
 		void* pixels{};
@@ -103,7 +108,8 @@ namespace Boom {
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-	void Texture2D::LoadCompressed(std::string const& filename, bool isFlipY) {
+	void Texture2D::LoadCompressed(std::string const& filename) {
+		
 		// Load DDS using GLI
 		gli::texture texture = gli::load(filename);
 		if (texture.empty()) {
@@ -120,14 +126,17 @@ namespace Boom {
 		gli::gl::format format = gl.translate(texture.format(), texture.swizzles());
 
 		GLenum internalFormat;
-		if (format.Internal == gli::gl::INTERNAL_RGBA_DXT1) {
+		if (format.Internal == gli::gl::INTERNAL_RGBA_DXT1) { //BC1 or DXT1
 			internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 		}
-		else if (format.Internal == gli::gl::INTERNAL_RGB_BP_UNORM) {
+		else if (format.Internal == gli::gl::INTERNAL_RGB_BP_UNORM) { //BC7
 			internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM;
 		}
+		else if (format.Internal == gli::gl::INTERNAL_RGB_BP_UNSIGNED_FLOAT) { //HDR
+			internalFormat = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT;
+		}
 		else {
-			BOOM_ERROR("failed Texture2D::Load({}) - DDS must be BC1/DXT1 or BC7 format", filename);
+			BOOM_ERROR("failed Texture2D::Load({}) - unknown DDS format", filename);
 			return;
 		}
 
@@ -135,30 +144,9 @@ namespace Boom {
 		glBindTexture(GL_TEXTURE_2D, id);
 
 		gli::texture2d tex2D(texture);
-		if (isFlipY) {
-			tex2D = gli::flip(tex2D);
-		}
 		width = (int32_t)tex2D.extent().x;
 		height = (int32_t)tex2D.extent().y;
 
-		glCompressedTexImage2D(
-			GL_TEXTURE_2D,
-			0,
-			internalFormat,
-			width,
-			height,
-			0,
-			(GLsizei)tex2D.size(),
-			tex2D.data(0, 0, 0)
-		);
-
-		if (glGetError() != GL_NO_ERROR) {
-			BOOM_ERROR("failed Texture2D::Load({}) - OpenGL error during DDS upload", filename);
-			glDeleteTextures(1, &id);
-			return;
-		}
-
-		/*
 		for (size_t level{}; level < tex2D.levels(); ++level) {
 			GLsizei mipWidth{ (GLsizei)tex2D.extent(level).x };
 			GLsizei mipHeight{ (GLsizei)tex2D.extent(level).y };
@@ -181,55 +169,54 @@ namespace Boom {
 				glDeleteTextures(1, &id);
 				return;
 			}
-		}*/
+		}
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex2D.levels() > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(tex2D.levels() - 1));
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
-	void Texture2D::CompressTexture(std::string const& inputPng, std::string const& outputDDS) {
+	void Texture2D::CompressTexture(std::string const& inputFile, std::string const& outputDDS) {
 		CMP_InitFramework();
-		
-		CMP_FORMAT destFormat{ CMP_FORMAT_BC1 };
-		float fQuality{ 1.f };
+
+		//BC7 is best compression
+		CMP_FORMAT destFormat{ CMP_FORMAT_BC7 }; 
 
 		CMP_MipSet mipIn{};
-		CMP_ERROR status{ CMP_LoadTexture(inputPng.c_str(), &mipIn) };
+		CMP_ERROR status{ CMP_LoadTexture(inputFile.c_str(), &mipIn) };
 		if (status != CMP_OK) {
 			throw std::exception("CMP_LoadTexture() - error_code: " + status);
 		}
 
 		if (mipIn.m_nMipLevels <= 1) {
-			CMP_INT minMipSize{ CMP_CalcMinMipSize(mipIn.m_nHeight, mipIn.m_nWidth, 10) };
+			CMP_INT minMipSize{ CMP_CalcMinMipSize(mipIn.m_nHeight, mipIn.m_nWidth, mipLevel) };
 			CMP_GenerateMIPLevels(&mipIn, minMipSize);
 		}
 
 		KernelOptions kOpt{};
 		kOpt.format = destFormat;
-		kOpt.fquality = fQuality;
-		kOpt.useSRGBFrames = true;
+		kOpt.fquality = quality;
+		kOpt.useSRGBFrames = isGamma;
 		kOpt.threads = 0;
+		kOpt.encodeWith = CMP_HPC;
 
 		//set bc15 props //TODO modify to descriptor reading
 		kOpt.bc15.useAlphaThreshold = true;
-		kOpt.bc15.alphaThreshold = 128;
+		kOpt.bc15.alphaThreshold = alphaThreshold;
 		kOpt.bc15.useChannelWeights = true;
 		kOpt.bc15.channelWeights[0] = 0.3086f;
 		kOpt.bc15.channelWeights[1] = 0.6094f;
 		kOpt.bc15.channelWeights[2] = 0.0820f;
 
-		//kOpt.height = mipIn.m_nHeight;
-		//kOpt.width = mipIn.m_nWidth;
-		kOpt.encodeWith = CMP_HPC;
-
-		BOOM_INFO("Compressing File:{}", inputPng);
+		BOOM_INFO("Compressing File:{}", inputFile);
 		auto ComCallback = [](float fProg, CMP_DWORD_PTR, CMP_DWORD_PTR) -> bool {
-			(void)fProg;
-			//BOOM_INFO("Compression Progress: {}%", fProg);
+			//(void)fProg;
+			BOOM_INFO("Compression Progress: {}%", fProg);
 			return false;
 		};
 

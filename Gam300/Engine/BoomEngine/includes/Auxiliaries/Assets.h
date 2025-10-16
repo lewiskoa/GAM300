@@ -138,7 +138,7 @@ namespace Boom {
 		{
 			auto asset{ std::make_shared<SkyboxAsset>() };
 			asset->type = AssetType::SKYBOX;
-			asset->envMap = std::make_shared<Texture2D>(path, isFlipY, isHDR);
+			asset->envMap = std::make_shared<Texture2D>(path, isHDR);
 			asset->isHDR = isHDR;
 			asset->isFlipY = isFlipY;
 			asset->size = size;
@@ -154,7 +154,7 @@ namespace Boom {
 		{
 			auto asset{ std::make_shared<TextureAsset>() };
 			asset->type = AssetType::TEXTURE;
-			asset->data = std::make_shared<Texture2D>(path, isFlipY, isHDR);
+			asset->data = std::make_shared<Texture2D>(path, isHDR);
 			asset->isFlipY = isFlipY;
 			asset->isHDR = isHDR;
 			Add(uid, path, asset);

@@ -37,7 +37,7 @@ void main() {
         }
     }
 
-    vertex.uv = uv;
+    vertex.uv = vec2(uv.x, 1.0 - uv.y); //flip vertically due to opengl rendering logic
     transform = modelMat * transform;
     vertex.normal = mat3(transform) * normal;
     vertex.position = (transform * vec4(position, 1.0)).xyz;
