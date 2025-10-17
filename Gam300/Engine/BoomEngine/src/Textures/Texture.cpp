@@ -10,46 +10,44 @@
 #pragma warning(pop)
 
 #include <compressonator.h>
-#include <iostream>
 
 namespace Boom {
-	Texture2D::Texture2D(std::string filename, bool isHDR)
-		: height{}, width{}, id{}
-		, quality{0.5f}
-		, alphaThreshold{128}
-		, mipLevel{10}
-		, isGamma{true}
+	Texture2D::Texture2D() : height{}, width{}, id{}
+		, quality{ 0.5f }
+		, alphaThreshold{ 128 }
+		, mipLevel{ 10 }
+		, isGamma{ true } 
+	{
+	}
+
+	Texture2D::Texture2D(std::string filename, bool shouldCompress)
+		: Texture2D()
 	{
 		filename = CONSTANTS::TEXTURES_LOCATION.data() + filename;
 
 		try {
 			std::string ext{ GetExtension(filename) };
-			if (ext != "dds") {
-				(void)isHDR;
-				std::string outName{ filename.substr(0, filename.find_last_of('.')) + ".dds" };
-				CompressTexture(filename, outName);
-				filename = outName;
+			if (ext != "dds" && !shouldCompress) {
+				LoadUnCompressed(filename);
 			}
-			LoadCompressed(filename);
-			/*
-			if (ext != "dds")
-				LoadUnCompressed(filename, isHDR);
-			else
+			else {
+				if (ext != "dds") {
+					std::string outName{ filename.substr(0, filename.find_last_of('.')) + ".dds" };
+					CompressTexture(filename, outName);
+					filename = outName;
+				}
 				LoadCompressed(filename);
-			*/
+			}
 		}
 		catch (std::exception e) {
 			char const* tmp{ e.what() };
-			BOOM_ERROR("Texture2D error: {}", tmp);
-		}
-	}
-	Texture2D::~Texture2D() {
-		if (id != 0) {
-			glDeleteTextures(1, &id);
+			BOOM_ERROR("ERROR_Texture2D: {}", tmp);
 		}
 	}
 
-	void Texture2D::CompressTextureForEditor(std::string const& inputPngPath, std::string const& outputDDSPath) {
+	Texture2D::Texture2D(std::string const& inputPngPath, std::string const& outputDDSPath)
+		: Texture2D() 
+	{
 		try {
 			//validation
 			if (!std::filesystem::exists(inputPngPath)) {
@@ -63,64 +61,59 @@ namespace Boom {
 			}
 
 			CompressTexture(inputPngPath, outputDDSPath);
+			LoadCompressed(outputDDSPath);
 		}
 		catch (std::exception const& e) {
 			char const* tmp{ e.what() };
-			BOOM_ERROR("Error Compressing Texture: {}", tmp);
-			//std::exit(0);
+			BOOM_ERROR("ERROR_Texture2D: {}", tmp);
+		}
+	}
+	Texture2D::~Texture2D() {
+		if (id != 0) {
+			glDeleteTextures(1, &id);
 		}
 	}
 
-	void Texture2D::LoadUnCompressed(std::string const& filename, bool isHDR) {
+	void Texture2D::LoadUnCompressed(std::string const& filename) {
 
 		//texture data
-		void* pixels{};
+		void* pixels{ stbi_load(filename.c_str(), &width, &height, nullptr, 4) };
 
-		if (isHDR) {
-			int32_t channels{};
-			pixels = stbi_loadf(filename.c_str(), &width, &height, &channels, 0);
-		}
-		else {
-			pixels = stbi_load(filename.c_str(), &width, &height, nullptr, 4);
-		}
 		if (pixels == nullptr) {
-			BOOM_ERROR("failed Texture2D::Load({})", filename);
-			return;
+			throw std::exception(("stbi_load(" + filename + ") failed.").c_str());
 		}
 
 		//texture buffers
 		glGenTextures(1, &id);
 		glBindTexture(GL_TEXTURE_2D, id);
-		if (isHDR) {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, (float*)pixels);
-		}
-		else {
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (uint32_t*)pixels);
-		}
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (uint32_t*)pixels);
 		stbi_image_free(pixels);
 
-		//options and optimization
+		//options
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		//glGenerateMipmap(GL_TEXTURE_2D); //mipmaps should not be needed for uncompressed anymore (small size)
 
 		glBindTexture(GL_TEXTURE_2D, 0);
+
+		//initial .HDR loading
+		//int32_t channels{};
+		//pixels = stbi_loadf(filename.c_str(), &width, &height, &channels, 0);
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, (float*)pixels);
 	}
 	void Texture2D::LoadCompressed(std::string const& filename) {
 		
 		// Load DDS using GLI
 		gli::texture texture = gli::load(filename);
 		if (texture.empty()) {
-			BOOM_ERROR("failed Texture2D::Load({}) - Could not load DDS file", filename);
-			return;
+			throw std::exception(("gli::load(" + filename + ") failed.").c_str());
 		}
 
 		// Ensure it's a 2D texture and DXT1 format
 		if (texture.target() != gli::TARGET_2D) {
-			BOOM_ERROR("failed Texture2D::Load({}) - Only 2D DDS textures supported", filename);
-			return;
+			throw std::exception("texture.target != TARGET_2D");
 		}
 		gli::gl gl(gli::gl::PROFILE_GL33); // Adjust for your OpenGL version
 		gli::gl::format format = gl.translate(texture.format(), texture.swizzles());
@@ -132,12 +125,11 @@ namespace Boom {
 		else if (format.Internal == gli::gl::INTERNAL_RGB_BP_UNORM) { //BC7
 			internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM;
 		}
-		else if (format.Internal == gli::gl::INTERNAL_RGB_BP_UNSIGNED_FLOAT) { //HDR
+		else if (format.Internal == gli::gl::INTERNAL_RGB_BP_UNSIGNED_FLOAT) { //HDR/EXR
 			internalFormat = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT;
 		}
 		else {
-			BOOM_ERROR("failed Texture2D::Load({}) - unknown DDS format", filename);
-			return;
+			throw std::exception(("gli::gl::format UNKNOWN - supported:(BC1/DXT1, BC7, BC6H)"));
 		}
 
 		glGenTextures(1, &id);
@@ -147,6 +139,7 @@ namespace Boom {
 		width = (int32_t)tex2D.extent().x;
 		height = (int32_t)tex2D.extent().y;
 
+		//load textures according to mipmap levels
 		for (size_t level{}; level < tex2D.levels(); ++level) {
 			GLsizei mipWidth{ (GLsizei)tex2D.extent(level).x };
 			GLsizei mipHeight{ (GLsizei)tex2D.extent(level).y };
@@ -165,13 +158,13 @@ namespace Boom {
 			);
 
 			if (glGetError() != GL_NO_ERROR) {
-				BOOM_ERROR("failed Texture2D::Load({}) - OpenGL error during DDS upload", filename);
 				glDeleteTextures(1, &id);
-				return;
+				throw std::exception("glCompressedTexImage2D() upload error.");
 			}
 		}
 
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		//textures has different options if they have multiple levels of mipmaps
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex2D.levels() > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(tex2D.levels() - 1));
@@ -184,13 +177,13 @@ namespace Boom {
 	void Texture2D::CompressTexture(std::string const& inputFile, std::string const& outputDDS) {
 		CMP_InitFramework();
 
-		//BC7 is best compression
+		//BC7 is best compression (could be expanded if nesassary)
 		CMP_FORMAT destFormat{ CMP_FORMAT_BC7 }; 
 
 		CMP_MipSet mipIn{};
 		CMP_ERROR status{ CMP_LoadTexture(inputFile.c_str(), &mipIn) };
 		if (status != CMP_OK) {
-			throw std::exception("CMP_LoadTexture() - error_code: " + status);
+			throw std::exception(("CMP_LoadTexture() - error_code: " + std::to_string(status)).c_str());
 		}
 
 		if (mipIn.m_nMipLevels <= 1) {
@@ -213,18 +206,18 @@ namespace Boom {
 		kOpt.bc15.channelWeights[1] = 0.6094f;
 		kOpt.bc15.channelWeights[2] = 0.0820f;
 
-		BOOM_INFO("Compressing File:{}", inputFile);
 		auto ComCallback = [](float fProg, CMP_DWORD_PTR, CMP_DWORD_PTR) -> bool {
 			//(void)fProg;
 			BOOM_INFO("Compression Progress: {}%", fProg);
 			return false;
 		};
 
+		BOOM_INFO("======Compressing {}========", inputFile);
 		CMP_MipSet mipOut{};
 		status = CMP_ProcessTexture(&mipIn, &mipOut, kOpt, ComCallback);
 		if (status != CMP_OK) {
 			CMP_FreeMipSet(&mipIn);
-			throw std::exception("CMP_ProcessTexture() - error_code: " + status);
+			throw std::exception(("CMP_ProcessTexture() - error_code: " + std::to_string(status)).c_str());
 		}
 
 		status = CMP_SaveTexture(outputDDS.c_str(), &mipOut);
@@ -234,7 +227,7 @@ namespace Boom {
 		CMP_FreeMipSet(&mipOut);
 
 		if (status != CMP_OK) {
-			throw std::exception("CMP_SaveTexture() - error_code: " + status);
+			throw std::exception(("CMP_SaveTexture() - error_code: " + std::to_string(status)).c_str());
 		}
 	}
 

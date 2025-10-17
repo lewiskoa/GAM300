@@ -6,10 +6,15 @@
 #pragma once
 namespace Boom {
 	struct BOOM_API Texture2D {
-
-		Texture2D() = default;
+		Texture2D();
 		//file path starts from Textures folder
-		Texture2D(std::string filename, bool isHDR = false);
+		//textures that shouldn't compress are often already really small in size, like icons
+		Texture2D(std::string filename, bool shouldCompress = true);
+
+		//use this overload when importing new textures(.png) with the editor
+		//will output a (BC7 .dds) compressed texture and load it setting ID
+		//contains exception handling due to memory manipulation
+		Texture2D(std::string const& inputPngPath, std::string const& outputDDSPath);
 		~Texture2D();
 		void Use(int32_t uniform, int32_t unit);
 		void Bind();
@@ -20,14 +25,10 @@ namespace Boom {
 		int32_t Height() const noexcept;
 		int32_t Width() const noexcept;
 
-		//call this when importing new textures with the editor
-		//contains exception handling due to memory manipulation
-		void CompressTextureForEditor(std::string const& inputPng, std::string const& fullPath);
-
 	protected: //helpers
 		std::string GetExtension(std::string const& filename);
 
-		void LoadUnCompressed(std::string const& filename, bool isHDR);
+		void LoadUnCompressed(std::string const& filename);
 		void LoadCompressed(std::string const& filename);
 		void CompressTexture(std::string const& inputPng, std::string const& outputDDS);
 
@@ -39,7 +40,7 @@ namespace Boom {
 	private: //descriptions
 		float quality;
 		int32_t alphaThreshold;
-		int32_t mipLevel;
+		int32_t mipLevel; //will not be enforced if too big
 		bool isGamma;
 		//std::string assetfilepath
 		//std::string assetname

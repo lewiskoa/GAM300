@@ -4,7 +4,7 @@
 struct ResourceWindow : IWidget {
 	BOOM_INLINE ResourceWindow(AppInterface* context) 
 		: IWidget{ context }
-		, iconImage{"Icons/asset.png"}
+		, iconImage{"Icons/asset.png", false}
 		, icon{ (ImTextureID)iconImage }
 	{}
 

@@ -39,8 +39,6 @@ namespace Boom {
 
 	struct TextureAsset : Asset {
 		Texture data{};
-		bool isHDR{};
-		bool isFlipY{true};
 	};
 
 	struct SkyboxAsset : Asset
@@ -48,8 +46,6 @@ namespace Boom {
 		Skybox data{};
 		Texture envMap{};
 		int32_t size{ 2048 };
-		bool isHDR{ true };
-		bool isFlipY{ true };
 	};
 
 	struct ModelAsset : Asset {
@@ -132,15 +128,11 @@ namespace Boom {
 		BOOM_INLINE auto AddSkybox(
 			AssetID uid,
 			std::string const& path,
-			int32_t size,
-			bool isHDR = true,
-			bool isFlipY = true)
+			int32_t size)
 		{
 			auto asset{ std::make_shared<SkyboxAsset>() };
 			asset->type = AssetType::SKYBOX;
-			asset->envMap = std::make_shared<Texture2D>(path, isHDR);
-			asset->isHDR = isHDR;
-			asset->isFlipY = isFlipY;
+			asset->envMap = std::make_shared<Texture2D>(path);
 			asset->size = size;
 			Add(uid, path, asset);
 			return asset;
@@ -148,15 +140,11 @@ namespace Boom {
 		//file path starts from Textures folder
 		BOOM_INLINE auto AddTexture(
 			AssetID uid,
-			std::string const& path,
-			bool isHDR = false,
-			bool isFlipY = true)
+			std::string const& path)
 		{
 			auto asset{ std::make_shared<TextureAsset>() };
 			asset->type = AssetType::TEXTURE;
-			asset->data = std::make_shared<Texture2D>(path, isHDR);
-			asset->isFlipY = isFlipY;
-			asset->isHDR = isHDR;
+			asset->data = std::make_shared<Texture2D>(path);
 			Add(uid, path, asset);
 			return asset;
 		}
