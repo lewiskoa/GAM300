@@ -50,18 +50,14 @@ namespace Boom
         registry.RegisterAssetSerializer(
             AssetType::TEXTURE,
             // Serialize
-            [](YAML::Emitter& e, Asset* asset) {
-                auto tex = static_cast<TextureAsset*>(asset);
+            [](YAML::Emitter& e, Asset*) {
+                //auto tex = static_cast<TextureAsset*>(asset);
                 e << YAML::Key << "Properties" << YAML::Value << YAML::BeginMap;
-                e << YAML::Key << "IsHDR" << YAML::Value << tex->isHDR;
-                e << YAML::Key << "IsFlipY" << YAML::Value << tex->isFlipY;
                 e << YAML::EndMap;
             },
             // Deserialize
-            [](AssetRegistry& reg, AssetID uid, const std::string& src, const YAML::Node& props) -> Asset* {
-                bool isHDR = props["IsHDR"].as<bool>();
-                bool isFlipY = props["IsFlipY"].as<bool>();
-                return static_cast<Asset*>(reg.AddTexture(uid, src, isHDR, isFlipY).get());
+            [](AssetRegistry& reg, AssetID uid, const std::string& src, const YAML::Node&) -> Asset* {
+                return static_cast<Asset*>(reg.AddTexture(uid, src).get());
             }
         );
 
@@ -73,16 +69,12 @@ namespace Boom
                 auto skybox = static_cast<SkyboxAsset*>(asset);
                 e << YAML::Key << "Properties" << YAML::Value << YAML::BeginMap;
                 e << YAML::Key << "Size" << YAML::Value << skybox->size;
-                e << YAML::Key << "IsHDR" << YAML::Value << skybox->isHDR;
-                e << YAML::Key << "IsFlipY" << YAML::Value << skybox->isFlipY;
                 e << YAML::EndMap;
             },
             // Deserialize
             [](AssetRegistry& reg, AssetID uid, const std::string& src, const YAML::Node& props) -> Asset* {
                 int32_t size = props["Size"].as<int32_t>();
-                bool isHDR = props["IsHDR"].as<bool>();
-                bool isFlipY = props["IsFlipY"].as<bool>();
-                return static_cast<Asset*>(reg.AddSkybox(uid, src, size, isHDR, isFlipY).get());
+                return static_cast<Asset*>(reg.AddSkybox(uid, src, size).get());
             }
         );
 
