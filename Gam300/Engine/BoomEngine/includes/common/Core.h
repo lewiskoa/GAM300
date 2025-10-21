@@ -3,6 +3,8 @@
 // This also affects IntelliSense performance, including code completion and many code browsing features.
 // However, files listed here are ALL re-compiled if any one of them is updated between builds.
 // Do not add files here that you will be updating frequently as this negates the performance advantage.
+#define _SILENCE_CXX20_CISO646_REMOVED_WARNING
+#define _SILENCE_ALL_CXX20_DEPRECATION_WARNINGS
 #pragma once 
 #ifndef CORE_H
 #define CORE_H
