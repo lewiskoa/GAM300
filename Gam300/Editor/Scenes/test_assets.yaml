@@ -48,30 +48,25 @@ ASSETS:
     Name: albedo
     Source: Marble/albedo.dds
     Properties:
-      IsHDR: false
-      IsFlipY: true
+      {}
   - Type: TEXTURE
     UID: 436545047596730240
     Name: normal
     Source: Marble/normal.dds
     Properties:
-      IsHDR: false
-      IsFlipY: true
+      {}
   - Type: TEXTURE
     UID: 16314464286324216731
     Name: roughness
     Source: Marble/roughness.dds
     Properties:
-      IsHDR: false
-      IsFlipY: true
+      {}
   - Type: SKYBOX
     UID: 12730153547297182823
     Name: sky
     Source: Skybox/sky.dds
     Properties:
       Size: 2048
-      IsHDR: true
-      IsFlipY: true
   - Type: MODEL
     UID: 8858230097853058436
     Name: Cube - Copy (4)
@@ -103,15 +98,15 @@ ASSETS:
     Properties:
       HasJoints: false
   - Type: MODEL
-    UID: 11186732660022374532
-    Name: Cube - Copy
-    Source: Cube - Copy.fbx
-    Properties:
-      HasJoints: false
-  - Type: MODEL
     UID: 14642322846606299060
     Name: Cube - Copy (2)
     Source: Cube - Copy (2).fbx
+    Properties:
+      HasJoints: false
+  - Type: MODEL
+    UID: 11186732660022374532
+    Name: Cube - Copy
+    Source: Cube - Copy.fbx
     Properties:
       HasJoints: false
   - Type: MODEL

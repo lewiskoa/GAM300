@@ -153,6 +153,7 @@ namespace Boom
         RegisterPropertyAsset<TextureAsset>(
             AssetType::TEXTURE,
             [](AssetRegistry& reg, AssetID uid, const std::string& src, const YAML::Node& props) {
+				(void)props; // Unused
 
                 return reg.AddTexture(uid, src);
             }

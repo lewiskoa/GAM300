@@ -52,11 +52,9 @@ namespace Boom {
 	struct TextureAsset : Asset {
 		Texture data{};		//Runtime only, no need to serialize
 
-		// XPROPERTY_DEF(
-		// 	"TextureAsset", TextureAsset,
-		// 	obj_member<"IsHDR", &TextureAsset::isHDR>,
-		// 	obj_member<"IsFlipY", &TextureAsset::isFlipY>
-		// )
+		 XPROPERTY_DEF(
+		 	"TextureAsset", TextureAsset
+		 )
 
 	};
 
@@ -69,7 +67,7 @@ namespace Boom {
 		XPROPERTY_DEF(
 			"SkyboxAsset", SkyboxAsset,
 			obj_member<"Data", &SkyboxAsset::data>,
-			obj_member<"Size", &SkyboxAsset::size>,
+			obj_member<"Size", &SkyboxAsset::size>
 		)
 
 	};
