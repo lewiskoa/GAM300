@@ -241,6 +241,7 @@ if exist "$(glew_BIN_DIRS)" xcopy /y /i "$(glew_BIN_DIRS)\*.dll" "$(TargetDir)"<
     <ClInclude Include="src\Vendors\imgui\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="src\Windows\AudioPanel.h" />
     <ClInclude Include="src\Windows\Console.h" />
+    <ClInclude Include="src\Windows\Directory.h" />
     <ClInclude Include="src\Windows\Hierarchy.h" />
     <ClInclude Include="src\Windows\Inspector.h" />
     <ClInclude Include="src\Windows\MenuBar.h" />

@@ -6,6 +6,7 @@ struct ResourceWindow : IWidget {
 		: IWidget{ context }
 		, iconImage{"Icons/asset.png", false}
 		, icon{ (ImTextureID)iconImage }
+		, selected{}
 	{}
 
 	BOOM_INLINE void OnShow(AppInterface* context) override {
