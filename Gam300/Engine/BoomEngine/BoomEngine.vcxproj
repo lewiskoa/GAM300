@@ -177,6 +177,7 @@
     <ClInclude Include="includes\Auxiliaries\DataSerializer.h" />
     <ClInclude Include="includes\Auxiliaries\PrefabUtility.h" />
     <ClInclude Include="includes\Auxiliaries\Profiler.h" />
+    <ClInclude Include="includes\Auxiliaries\PropertyAPI.h" />
     <ClInclude Include="includes\Auxiliaries\SerializationRegistry.h" />
     <ClInclude Include="includes\BoomEngine.h" />
     <ClInclude Include="includes\Common\BoomProperties.h" />
@@ -226,6 +227,9 @@
     </ClCompile>
     <ClCompile Include="src\Auxiliaries\ComponentSerializer.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Auxiliaries\PropertyAPI.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Auxiliaries\RegisterProperties.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>

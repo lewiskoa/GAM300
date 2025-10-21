@@ -1,6 +1,7 @@
 #pragma once
 #include"Core.h"
 #include "Application/Application.h"
+#include "Auxiliaries/PropertyAPI.h"
 
 using namespace Boom;   
 //trying out

@@ -1,5 +1,5 @@
 PrefabName: Dancing Model
-UID: 7846215101016755014
+UID: 8959324902145137880
 EntityData: |
   InfoComponent:
     Parent: 0
@@ -19,4 +19,4 @@ EntityData: |
     MaterialSource: ""
   AnimatorComponent:
     Sequence: 0
-    Time: 642.190796
+    Time: 870.897278
