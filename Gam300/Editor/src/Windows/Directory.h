@@ -11,7 +11,7 @@ struct DirectoryWindow : IWidget {
 	}
 
 	BOOM_INLINE void OnShow(AppInterface* context) override {
-		if (ImGui::Begin(ICON_FA_FOLDER_OPEN "\tResources")) {
+		if (ImGui::Begin(ICON_FA_FOLDER_OPEN "\tProject")) {
 			int32_t colNo{ (int32_t)((ImGui::GetContentRegionAvail().x) / (ASSET_SIZE + ImGui::GetStyle().ItemSpacing.x)) };
 			colNo = glm::max(1, colNo);
 
