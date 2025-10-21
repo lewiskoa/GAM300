@@ -1,6 +1,7 @@
 #pragma once
 #include "../Buffers/Mesh.h"
 #include "../Textures/Texture.h"
+#include "BoomProperties.h"
 
 
 //helper functions
@@ -34,9 +35,14 @@ namespace Boom {
 		glm::vec3 rotate;
 		glm::vec3 scale;
 
+		XPROPERTY_DEF
+		("Transform3D", Transform3D
+			, obj_member<"Translate", &Transform3D::translate>
+			, obj_member<"Rotate", &Transform3D::rotate>
+			, obj_member<"Scale", &Transform3D::scale>
+		)
 
 	};
-
 
 	struct Camera3D {
 		//transform here refers to the camera's transformation variables
@@ -62,6 +68,13 @@ namespace Boom {
 		float nearPlane{0.3000f};
 		float farPlane{1000.f};
 		float FOV{45.f};
+
+		XPROPERTY_DEF(
+			"Camera3D", Camera3D,
+			obj_member<"NearPlane", &Camera3D::nearPlane>,
+			obj_member<"FarPlane", &Camera3D::farPlane>,
+			obj_member<"FOV", &Camera3D::FOV>
+		)
 	};
 
 	struct PbrMaterial {
@@ -96,6 +109,18 @@ namespace Boom {
 		Texture emissiveMap;
 		Texture albedoMap;
 		Texture normalMap;
+
+		// ===== PbrMaterial =====
+		XPROPERTY_DEF(
+			"PbrMaterial", PbrMaterial,
+			obj_member<"emissive", &PbrMaterial::emissive>,
+			obj_member<"albedo", &PbrMaterial::albedo>,
+			obj_member<"roughness", &PbrMaterial::roughness>,
+			obj_member<"metallic", &PbrMaterial::metallic>,
+			obj_member<"occlusion", &PbrMaterial::occlusion>
+		)
+
+
 	};
 
 	struct PointLight {
@@ -107,6 +132,14 @@ namespace Boom {
 
 		glm::vec3 radiance;
 		float intensity;
+
+		// ===== PointLight =====
+		XPROPERTY_DEF(
+			"PointLight", PointLight,
+			obj_member<"Radiance", &PointLight::radiance>,
+			obj_member<"Intensity", &PointLight::intensity>
+		)
+
 	};
 
 	struct DirectionalLight {
@@ -117,6 +150,14 @@ namespace Boom {
 
 		glm::vec3 radiance;
 		float intensity;
+
+		// ===== DirectionalLight =====
+		XPROPERTY_DEF(
+			"DirectionalLight", DirectionalLight,
+			obj_member<"Radiance", &DirectionalLight::radiance>,
+			obj_member<"Intensity", &DirectionalLight::intensity>
+		)
+
 	};
 
 	struct SpotLight {
@@ -139,9 +180,27 @@ namespace Boom {
 		float intensity;
 		float fallOff;
 		float cutOff;
+
+		// ===== SpotLight =====
+		XPROPERTY_DEF(
+			"SpotLight", SpotLight,
+			obj_member<"Radiance", &SpotLight::radiance>,
+			obj_member<"Intensity", &SpotLight::intensity>,
+			obj_member<"FallOff", &SpotLight::fallOff>,  // stored in radians
+			obj_member<"CutOff", &SpotLight::cutOff>    // stored in radians
+		)
+
 	};
 
 	struct Skybox {
 		uint32_t cubeMap{};
+
+		// ===== Skybox =====
+		XPROPERTY_DEF(
+			"Skybox", Skybox,
+			obj_member<"CubeMap", &Skybox::cubeMap>
+		)
+
+
 	};
 }

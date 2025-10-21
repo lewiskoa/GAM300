@@ -2,6 +2,7 @@
 #include "Graphics/Models/Model.h"
 #include "Graphics/Textures/Texture.h"
 #include "Graphics/Utilities/Data.h"
+#include "BoomProperties.h"
 
 //#include <unordered_map>
 
@@ -28,29 +29,59 @@ namespace Boom {
 	};
 
 	struct MaterialAsset : Asset {
-		PbrMaterial data{};
+		PbrMaterial data{};						//Already has XPROPERTY_DEF defined
 		AssetID albedoMapID{ EMPTY_ASSET };
 		AssetID normalMapID{ EMPTY_ASSET };
 		AssetID roughnessMapID{ EMPTY_ASSET };
 		AssetID metallicMapID{ EMPTY_ASSET };
 		AssetID occlusionMapID{ EMPTY_ASSET };
 		AssetID emissiveMapID{ EMPTY_ASSET };
+
+		XPROPERTY_DEF(
+			"MaterialAsset", MaterialAsset,
+			obj_member<"Data", &MaterialAsset::data>,                    
+			obj_member<"AlbedoMapID", &MaterialAsset::albedoMapID>,
+			obj_member<"NormalMapID", &MaterialAsset::normalMapID>,
+			obj_member<"RoughnessMapID", &MaterialAsset::roughnessMapID>,
+			obj_member<"MetallicMapID", &MaterialAsset::metallicMapID>,
+			obj_member<"OcclusionMapID", &MaterialAsset::occlusionMapID>,
+			obj_member<"EmissiveMapID", &MaterialAsset::emissiveMapID>
+		)
 	};
 
 	struct TextureAsset : Asset {
-		Texture data{};
+		Texture data{};		//Runtime only, no need to serialize
+
+		// XPROPERTY_DEF(
+		// 	"TextureAsset", TextureAsset,
+		// 	obj_member<"IsHDR", &TextureAsset::isHDR>,
+		// 	obj_member<"IsFlipY", &TextureAsset::isFlipY>
+		// )
+
 	};
 
 	struct SkyboxAsset : Asset
 	{
-		Skybox data{};
+		Skybox data{};		//Already has XPROPERTY_DEF defined
 		Texture envMap{};
 		int32_t size{ 2048 };
+
+		XPROPERTY_DEF(
+			"SkyboxAsset", SkyboxAsset,
+			obj_member<"Data", &SkyboxAsset::data>,
+			obj_member<"Size", &SkyboxAsset::size>,
+		)
+
 	};
 
 	struct ModelAsset : Asset {
-		Model3D data{};
+		Model3D data{};		//Runtime only, no need to serialize
 		bool hasJoints{};
+
+		XPROPERTY_DEF(
+			"ModelAsset", ModelAsset,
+			obj_member<"HasJoints", &ModelAsset::hasJoints>
+		)
 	};
 
 	struct PrefabAsset : Asset {

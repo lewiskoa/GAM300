@@ -10,7 +10,6 @@
 #include "Windows/Console.h"
 #include "Windows/AudioPanel.h"
 #include "Context/DebugHelpers.h"
-#include "Prefab/PrefabSystem.h"
 #include <glm/gtc/type_ptr.hpp>
 #include "ImGuizmo.h"
 #include "Context/Profiler.hpp"

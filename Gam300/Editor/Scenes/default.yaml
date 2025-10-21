@@ -1,4 +1,4 @@
-﻿Version: 1.0
+Version: 1.0
 ENTITIES:
   - {}
   - {}
@@ -7,9 +7,10 @@ ENTITIES:
       Name: Entity
       Parent: 0
     TransformComponent:
-      Translate: [0, 1, 0]
-      Rotate: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [0, 1, 0]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
     ModelComponent:
       ModelID: 6147709962160563775
       MaterialID: 0
@@ -18,9 +19,10 @@ ENTITIES:
       Name: Player
       Parent: 0
     TransformComponent:
-      Translate: [0, -1.20000005, 0]
-      Rotate: [0, 0, 0]
-      Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+      Transform:
+        Translate: [0, -1.20000005, 0]
+        Rotate: [0, 0, 0]
+        Scale: [0.00999999978, 0.00999999978, 0.00999999978]
     ModelComponent:
       ModelID: 12185416543001335231
       MaterialID: 11573253777835523025
@@ -32,9 +34,10 @@ ENTITIES:
       Name: Entity
       Parent: 0
     TransformComponent:
-      Translate: [0, 0, 0]
-      Rotate: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [0, 0, 0]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
     SkyboxComponent:
       SkyboxID: 12730153547297182823
   - InfoComponent:
@@ -42,9 +45,10 @@ ENTITIES:
       Name: Entity
       Parent: 0
     TransformComponent:
-      Translate: [-1.95089293, 0, 2.40915275]
-      Rotate: [0, -39, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [-1.95089293, 0, 2.40915275]
+        Rotate: [0, -39, 0]
+        Scale: [1, 1, 1]
     CameraComponent:
       NearPlane: 0.300000012
       FarPlane: 1000
@@ -55,47 +59,57 @@ ENTITIES:
       Name: Point Light
       Parent: 0
     TransformComponent:
-      Translate: [0, 0.5, 0]
-      Rotate: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [0, 0.5, 0]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
     PointLightComponent:
-      Intensity: 10
-      Radiance: [1, 0.899999976, 0.699999988]
+      Light:
+        Intensity: 10
+        Radiance: [1, 0.899999976, 0.699999988]
   - InfoComponent:
       UID: 16395980114807373968
       Name: Directional Light
       Parent: 0
     TransformComponent:
-      Translate: [0, 0, 0]
-      Rotate: [6, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [0, 0, 0]
+        Rotate: [6, 0, 0]
+        Scale: [1, 1, 1]
     DirectLightComponent:
-      Intensity: 3
-      Radiance: [1, 1, 0.899999976]
+      Light:
+        Intensity: 3
+        Radiance: [1, 1, 0.899999976]
   - InfoComponent:
       UID: 12363776012929465708
       Name: Spot Light
       Parent: 0
     TransformComponent:
-      Translate: [2, 2, 2]
-      Rotate: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [2, 2, 2]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
     SpotLightComponent:
-      Intensity: 15
-      Radiance: [0.699999988, 0.800000012, 1]
-      Falloff: 0.305432618
-      Cutoff: 0.218166158
+      Light:
+        Intensity: 15
+        Radiance: [0.699999988, 0.800000012, 1]
+        Falloff: 0.305432618
+        Cutoff: 0.218166158
   - InfoComponent:
       UID: 10000000000000000001
       Name: Sphere
       Parent: 0
     TransformComponent:
-      Translate: [2.5, 1.2, 0]
-      Rotate: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [2.5, 1.2, 0]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
     ModelComponent:
       ModelID: 6147709962160563775
       MaterialID: 11573253777835523025
+      ModelName: "sphere"
+      ModelSource: "sphere.fbx"
+      MaterialSource: "Marble"
     RigidBodyComponent:
       Density: 1.0
       Type: DYNAMIC
@@ -104,23 +118,48 @@ ENTITIES:
       StaticFriction: 0.5
       Restitution: 0.6
       Type: SPHERE
+
+  - InfoComponent:
+      Parent: 0
+      Name: TestBall
+      UID: 6042260349840611439
+    TransformComponent:
+      Transform:
+        Translate: [0, 1, 0]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
+    ModelComponent:
+      ModelID: 6147709962160563775
+      MaterialID: 0
+      ModelName: sphere
+      MaterialName: ""
+      ModelSource: walking.fbx
+      MaterialSource: Marble
   - InfoComponent:
       UID: 10000000000000000002
       Name: Ground
       Parent: 0
     TransformComponent:
-      Translate: [0, -1.30, 0]         # under the Player at y ≈ -1.2
-      Rotate: [0, 0, 0]
-      Scale: [20, 0.20, 20]            # wide & thin = “plane”
+      Transform:
+        Translate: [0, -1.30, 0]         # under the Player at y ? -1.2
+        Rotate: [0, 0, 0]
+        Scale: [20, 0.20, 20]            # wide & thin = �plane�
     ModelComponent:
       ModelID: 3843189617850929280     # keep your existing cube mesh; now it looks like a plane
       MaterialID: 11573253777835523025
+      ModelName: "Cube"
+      ModelSource: "Cube.fbx"
+      MaterialSource: "Marble"
     RigidBodyComponent:
-      Density: 1.0
-      Type: STATIC                      # ground should be STATIC
+      RigidBody:
+        Density: 1
+        Mass: 0
+        InitialVelocity: [0, 0, 0]
+        Type: STATIC
     ColliderComponent:
-      DynamicFriction: 0.5
-      StaticFriction: 0.5
-      Restitution: 0.0                  # less bouncy for ground feel
-      Type: BOX                         # box collider matches the flattened mesh
+      Collider:
+        DynamicFriction: 0.5
+        StaticFriction: 0.5
+        Restitution: 0.0                  # less bouncy for ground feel
+        Type: BOX                         # box collider matches the flattened mesh
   - {}

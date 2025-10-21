@@ -130,7 +130,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>Core.h</PrecompiledHeaderFile>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)\Core</PrecompiledHeaderOutputFile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -179,6 +179,7 @@
     <ClInclude Include="includes\Auxiliaries\Profiler.h" />
     <ClInclude Include="includes\Auxiliaries\SerializationRegistry.h" />
     <ClInclude Include="includes\BoomEngine.h" />
+    <ClInclude Include="includes\Common\BoomProperties.h" />
     <ClInclude Include="includes\Common\Events.h" />
     <ClInclude Include="includes\Common\framework.h" />
     <ClInclude Include="includes\Common\Core.h" />
@@ -225,6 +226,10 @@
     </ClCompile>
     <ClCompile Include="src\Auxiliaries\ComponentSerializer.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Auxiliaries\RegisterProperties.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Auxiliaries\SerializationRegistry.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
