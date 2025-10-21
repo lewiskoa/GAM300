@@ -11,7 +11,7 @@ namespace Boom {
 }
 
 namespace Boom {
-	
+
 
 	struct Transform3D {
 		BOOM_INLINE Transform3D() : translate{}, rotate{}, scale{ 1.f } {}
@@ -48,20 +48,20 @@ namespace Boom {
 			glm::quat rotQuat{ glm::radians(transform.rotate) };
 			glm::vec3 forward{ rotQuat * glm::vec3{0.f, 0.f, -1.f} };
 			glm::vec3 up{ rotQuat * glm::vec3{0.f, 1.f, 0.f} };
-			
+
 			return glm::lookAt(
 				transform.translate,			//position
 				transform.translate + forward, 	//target
 				up								//upwards direction
-				);
+			);
 		}
 		BOOM_INLINE glm::mat4 Projection(float ratio) const {
 			return glm::perspective(glm::radians(FOV), ratio, nearPlane, farPlane);
 		}
 
-		float nearPlane{0.3000f};
-		float farPlane{1000.f};
-		float FOV{45.f};
+		float nearPlane{ 0.3000f };
+		float farPlane{ 1000.f };
+		float FOV{ 45.f };
 	};
 
 	struct PbrMaterial {
@@ -100,9 +100,9 @@ namespace Boom {
 
 	struct PointLight {
 		BOOM_INLINE PointLight(glm::vec3 radi = glm::vec3(1.f), float intense = 1.f)
-			: radiance{ radi }, intensity{ intense } 
+			: radiance{ radi }, intensity{ intense }
 		{
-		
+
 		}
 
 		glm::vec3 radiance;
@@ -111,7 +111,7 @@ namespace Boom {
 
 	struct DirectionalLight {
 		BOOM_INLINE DirectionalLight(glm::vec3 radi = glm::vec3(1.f), float intense = 2.f)
-			: radiance{ radi }, intensity{ intense } 
+			: radiance{ radi }, intensity{ intense }
 		{
 		}
 
@@ -143,5 +143,11 @@ namespace Boom {
 
 	struct Skybox {
 		uint32_t cubeMap{};
+	};
+
+	struct Bounds {
+		//Sphere
+		glm::vec3 localCentre{};
+		float localRadius{ 0.f };
 	};
 }

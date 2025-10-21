@@ -156,6 +156,12 @@
     <ClInclude Include="includes\Auxiliaries\PrefabUtility.h">
       <Filter>includes</Filter>
     </ClInclude>
+    <ClInclude Include="includes\Graphics\Utilities\Culling.h">
+      <Filter>includes</Filter>
+    </ClInclude>
+    <ClInclude Include="includes\Window\InputSystem.h">
+      <Filter>includes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BoomEngine.cpp">
