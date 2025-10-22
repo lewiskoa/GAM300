@@ -20,6 +20,19 @@ namespace Boom {
             DYNAMIC = 0,
             STATIC,
         } type;
+
+
+        // RigidBody3D
+        XPROPERTY_DEF(
+            "RigidBody3D", Boom::RigidBody3D,
+            obj_member<"Density", &Boom::RigidBody3D::density>,
+            obj_member<"Mass", &Boom::RigidBody3D::mass>,
+            obj_member<"InitialVelocity", &Boom::RigidBody3D::initialVelocity>,
+            obj_member<"Type", &Boom::RigidBody3D::type,
+            member_enum_value<"DYNAMIC", Boom::RigidBody3D::Type::DYNAMIC>,
+            member_enum_value<"STATIC", Boom::RigidBody3D::Type::STATIC>
+            >
+        )
     };
 
     struct Collider3D
@@ -49,5 +62,19 @@ namespace Boom {
             SPHERE,
             MESH
         } type;
+
+
+        // Collider3D
+        XPROPERTY_DEF(
+            "Collider3D", Boom::Collider3D,
+            obj_member<"DynamicFriction", &Boom::Collider3D::dynamicFriction>,
+            obj_member<"StaticFriction", &Boom::Collider3D::staticFriction>,
+            obj_member<"Restitution", &Boom::Collider3D::restitution>,
+            obj_member<"Type", &Boom::Collider3D::type,
+            member_enum_value<"BOX", Boom::Collider3D::Type::BOX>,
+            member_enum_value<"SPHERE", Boom::Collider3D::Type::SPHERE>,
+            member_enum_value<"MESH", Boom::Collider3D::Type::MESH>
+            >
+        )
     };
 }

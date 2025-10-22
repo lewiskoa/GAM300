@@ -9,7 +9,7 @@
 #include "Auxiliaries/PrefabUtility.h"
 #include "Scripting/ScriptAPI.h"
 #include "Scripting/ScriptRuntime.h"
-
+#include "../Graphics/Utilities/Culling.h"
 namespace Boom
 {
     /**
@@ -296,7 +296,7 @@ namespace Boom
                     m_Context->renderer->SetCamera(comp.camera, transform);
                 });
                 prevMP = curMP;
-
+               
                 //pbr ecs (always render)
                 EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
                     static int renderCount = 0;
@@ -395,7 +395,8 @@ namespace Boom
             }
         }
 
-
+		
+		
 
         /**
      * @brief Saves the current scene and assets to files

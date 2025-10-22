@@ -219,87 +219,52 @@ namespace Boom {
 		BOOM_INLINE static void OnKey(GLFWwindow* win, int32_t key, int32_t, int32_t action, int32_t) {
 			AppWindow* self{ GetUserData(win) };
 
-			//temporary force close...
 			if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-				//self->dispatcher->PostEvent<WindowCloseEvent>();
 				glfwSetWindowShouldClose(win, GLFW_TRUE);
 				return;
 			}
 
-			//camera strafing and hovering
-			if (self->isRightClickDown) {
-				float spd{ CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier };
-				if (self->isShiftDown) {
-					spd *= CONSTANTS::CAM_RUN_MULTIPLIER;
-				}
+			// Ignore weird scancodes
+			if (key < 0 || key > GLFW_KEY_LAST) return;
 
-				if (action == GLFW_PRESS) {
-					switch (key) {
-					case GLFW_KEY_LEFT_SHIFT:
-						self->isShiftDown = true;
-						break;
+			// Update state
+			const bool down = (action != GLFW_RELEASE);
+			self->inputs.Keys.set(static_cast<size_t>(key), down);
 
-					case GLFW_KEY_W:
-						self->camMoveDir.z = -spd;
-						break;
-					case GLFW_KEY_S:
-						self->camMoveDir.z = spd;
-						break;
-					case GLFW_KEY_A:
-						self->camMoveDir.x = -spd;
-						break;
-					case GLFW_KEY_D:
-						self->camMoveDir.x = spd;
-						break;
-					case GLFW_KEY_Q:
-						self->camMoveDir.y = -spd;
-						break;
-					case GLFW_KEY_E:
-						self->camMoveDir.y = spd;
-						break;
-					}
-				}
-				else if (action == GLFW_RELEASE) {
-					switch (key) {
-					case GLFW_KEY_W:
-					case GLFW_KEY_S:
-						self->camMoveDir.z = 0.f;
-						break;
-					case GLFW_KEY_A:
-					case GLFW_KEY_D:
-						self->camMoveDir.x = 0.f;
-						break;
-					case GLFW_KEY_Q:
-					case GLFW_KEY_E:
-						self->camMoveDir.y = 0.f;
-						break;
+			
+			const bool run = self->inputs.Keys.test(GLFW_KEY_LEFT_SHIFT);
 
-					case GLFW_KEY_LEFT_SHIFT:
-						self->isShiftDown = false;
-						break;
-					}
-				}
+			// Axis from state (pos - neg) -> {-1,0,1}
+			auto axis = [&](int pos, int neg) -> float {
+				return float(self->inputs.Keys.test(pos)) - float(self->inputs.Keys.test(neg));
+				};
+
+			// Build movement vector from current state 
+			const float base = CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier;
+			const float spd = base * (run ? CONSTANTS::CAM_RUN_MULTIPLIER : 1.f);
+
+			glm::vec3 dir{
+				axis(GLFW_KEY_D, GLFW_KEY_A),   // X: +D, -A
+				axis(GLFW_KEY_E, GLFW_KEY_Q),   // Y: +E, -Q
+				axis(GLFW_KEY_S, GLFW_KEY_W)    // Z: +S, -W  
+			};
+
+			// Optional: normalize diagonal so WASD diagonals aren’t faster
+			if (glm::length2(dir) > 1e-6f) {
+				dir = glm::normalize(dir);
 			}
 
+			self->camMoveDir = dir * spd;
 
-			if (key >= 0 && key <= GLFW_KEY_LAST) {
-				switch (action) {
-				case GLFW_RELEASE:
-					//self->dispatcher->PostEvent<KeyReleaseEvent>(key);
-					break;
-
-				case GLFW_PRESS:
-					//...
-					break;
-
-				case GLFW_REPEAT:
-					break;
-				}
-				return;
+			// (Optional) keep your events for other systems
+			switch (action) {
+			case GLFW_PRESS:  self->dispatcher->PostEvent<KeyPressEvent>(key);  break;
+			case GLFW_RELEASE:self->dispatcher->PostEvent<KeyReleaseEvent>(key); break;
+			case GLFW_REPEAT: self->dispatcher->PostEvent<KeyRepeatEvent>(key); break;
 			}
-
-			BOOM_ERROR("AppWindow::OnKey() invalid keycode: [{}]", key);
 		}
+
+
 
 		//to be called explicitly to reference window from application
 		//example: GetUserData(win)->isFullscreen 
@@ -332,9 +297,8 @@ namespace Boom {
 			return !glfwWindowShouldClose(windowPtr.get());
 		}
 		BOOM_INLINE bool IsKey(int32_t key) const {
-			if (key >= 0 && key <= GLFW_KEY_LAST)
-				return true; //inputs.Keys.test(key);
-			return false;
+			return key >= 0 && key <= GLFW_KEY_LAST
+				&& inputs.Keys.test(static_cast<size_t>(key));
 		}
 		BOOM_INLINE bool IsMouse(int32_t button) const {
 			if (button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST)
@@ -369,7 +333,7 @@ namespace Boom {
 		GLFWvidmode const* modePtr;
 		std::shared_ptr<GLFWwindow> windowPtr;
 		EventDispatcher* dispatcher;
-		//WindowInputs inputs;
+		WindowInputs inputs;
 
 	public: //usage for basic glew input to move camera in editor
 		bool isRightClickDown{};

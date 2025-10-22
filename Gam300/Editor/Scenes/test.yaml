@@ -4,102 +4,110 @@ ENTITIES:
   - {}
   - {}
   - {}
+  - {}
+  - {}
   - InfoComponent:
-      UID: 6042260349840611439
-      Name: Entity
       Parent: 0
+      Name: Shere
+      UID: 6042260349840611439
     TransformComponent:
-      Translate: [0, 1, 0]
-      Rotate: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [0, 1, 0]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
     ModelComponent:
       ModelID: 6147709962160563775
-      MaterialID: 0
+      MaterialID: 11573253777835523025
+      ModelName: sphere
+      MaterialName: ""
       ModelSource: sphere.fbx
-      MaterialSource: ""
+      MaterialSource: Marble
   - InfoComponent:
-      UID: 18299148976802030936
-      Name: Model walk
       Parent: 0
+      Name: Model walk
+      UID: 18299148976802030936
     TransformComponent:
-      Translate: [0, -1.5, 0]
-      Rotate: [0, 0, 0]
-      Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+      Transform:
+        Translate: [0, -1.5, 0]
+        Rotate: [0, 0, 0]
+        Scale: [0.00999999978, 0.00999999978, 0.00999999978]
     ModelComponent:
       ModelID: 12185416543001335231
       MaterialID: 11573253777835523025
+      ModelName: ""
+      MaterialName: ""
       ModelSource: walking.fbx
       MaterialSource: Marble
     AnimatorComponent:
       Sequence: 0
-      Time: 5.36163998
+      Time: 8.78044701
   - InfoComponent:
-      UID: 3009173759421305309
-      Name: Entity
       Parent: 0
+      Name: Entity
+      UID: 3009173759421305309
     TransformComponent:
-      Translate: [0, 0, 0]
-      Rotate: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [0, 0, 0]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
     SkyboxComponent:
       SkyboxID: 12730153547297182823
   - InfoComponent:
-      UID: 9201024860084647067
-      Name: Entity
       Parent: 0
-    TransformComponent:
-      Translate: [2.37473726, 0, -1.99264193]
-      Rotate: [0, -230, 0]
-      Scale: [1, 1, 1]
-    CameraComponent:
-      NearPlane: 0.300000012
-      FarPlane: 1000
-      FOV: 45
-  - InfoComponent:
+      Name: Camera
       UID: 9201024860084647067
-      Name: Entity
-      Parent: 0
     TransformComponent:
-      Translate: [2.37473726, 0, -1.99264193]
-      Rotate: [0, -230, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [3.86300015, 0.646016777, 0.0942699835]
+        Rotate: [-9, -253.25, 0]
+        Scale: [1, 1, 1]
     CameraComponent:
-      NearPlane: 0.300000012
-      FarPlane: 1000
-      FOV: 45
+      Camera:
+        NearPlane: 0.300000012
+        FarPlane: 1000
+        FOV: 65
   - InfoComponent:
-      UID: 5315588240363654174
+      Parent: 0
       Name: Point Light
-      Parent: 0
+      UID: 5315588240363654174
     TransformComponent:
-      Translate: [0, 0.5, 0]
-      Rotate: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [0, 0, 0]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
     PointLightComponent:
-      Intensity: 10
-      Radiance: [1, 0.899999976, 0.699999988]
+      Light:
+        Radiance: [1, 1, 1]
+        Intensity: 1
   - InfoComponent:
-      UID: 16395980114807373968
+      Parent: 0
       Name: Directional Light
-      Parent: 0
+      UID: 16395980114807373968
     TransformComponent:
-      Translate: [0, 0, 0]
-      Rotate: [6, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [0, 0, 0]
+        Rotate: [6, 0, 0]
+        Scale: [1, 1, 1]
     DirectLightComponent:
-      Intensity: 3
-      Radiance: [1, 1, 0.899999976]
+      Light:
+        Radiance: [1, 1, 1]
+        Intensity: 2
   - InfoComponent:
-      UID: 12363776012929465708
-      Name: Spot Light
       Parent: 0
+      Name: Spot Light
+      UID: 12363776012929465708
     TransformComponent:
-      Translate: [2, 2, 2]
-      Rotate: [0, 0, 0]
-      Scale: [1, 1, 1]
+      Transform:
+        Translate: [2, 2, 2]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
     SpotLightComponent:
-      Intensity: 15
-      Radiance: [0.699999988, 0.800000012, 1]
-      Falloff: 0.305432618
-      Cutoff: 0.218166158
+      Light:
+        Radiance: [1, 1, 1]
+        Intensity: 3.5
+        FallOff: 1.05592418
+        CutOff: 0.34906584
+  - {}
+  - {}
+  - {}
   - {}
