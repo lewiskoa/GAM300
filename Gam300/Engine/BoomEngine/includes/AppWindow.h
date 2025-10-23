@@ -156,7 +156,7 @@ namespace Boom {
 				}
 				self->camMoveMultiplier = glm::clamp(self->camMoveMultiplier + sum, 0.01f, 100.f);
 			}
-			else {
+			else if (self->IsMouseInCameraRegion(win)) {
 				self->SetFOV(self->camFOV - (float)y);
 			}
 		}

@@ -5,6 +5,7 @@
 #include "Windows/Inspector.h"
 #include "Windows/Hierarchy.h"
 #include "Windows/Resource.h"
+#include "Windows/Directory.h"
 #include "Windows/Viewport.h"
 #include "Windows/MenuBar.h"
 #include "Windows/Console.h"
@@ -97,6 +98,7 @@ private:
         RenderInspector();
         RenderPerformance();
         RenderResources();
+        dw.OnShow(this);
         RenderPlaybackControls();
         RenderPrefabBrowser();
         if (m_ShowConsole)
@@ -1620,7 +1622,8 @@ private:
     std::unordered_map<std::string, std::filesystem::file_time_type> m_SceneStamp;
 
     //remove when editor.cpp completed
-    ResourceWindow rw{this};
+    ResourceWindow rw{ this };
+    DirectoryWindow dw{ this };
 };
 
 // Updated main function
