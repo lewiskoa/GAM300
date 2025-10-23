@@ -10,6 +10,7 @@
 #include "Scripting/ScriptAPI.h"
 #include "Scripting/ScriptRuntime.h"
 #include "../Graphics/Utilities/Culling.h"
+#include "Input/CameraManager.h"
 namespace Boom
 {
     /**
@@ -177,7 +178,16 @@ namespace Boom
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
             LoadScene("default");
-
+            CameraController camera(
+                m_Context->window.get(),
+                CameraController::Config{
+                    .mouseSensitivityX = 0.12f,
+                    .mouseSensitivityY = 0.12f,
+                    .multiplierStep = 0.01f,
+                    .gateToViewportRect = true,
+                    .gateToRMB = true
+                }
+            );
             ////init skybox
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
                 SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
@@ -274,7 +284,7 @@ namespace Boom
 
                 //temp input for mouse motion
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
-
+                camera.update(static_cast<float>(m_Context->DeltaTime));
                 //camera (always set up, but rotation freezes when paused)
                 EnttView<Entity, CameraComponent>([this, &curMP, &prevMP](auto entity, CameraComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };

@@ -1,0 +1,90 @@
+// CameraManager.h
+#pragma once
+
+
+#include "AppWindow.h"          // AppWindow, SetFOV(), IsMouseInCameraRegion()
+
+namespace Boom {
+    class CameraController {
+    public:
+        struct Config {
+            float mouseSensitivityX = 1.0f;
+            float mouseSensitivityY = 1.0f;
+            float multiplierStep = 0.01f;
+            float minFov = CONSTANTS::MIN_FOV;
+            float maxFov = CONSTANTS::MAX_FOV;
+            bool  gateToViewportRect = true;
+            bool  gateToRMB = true;
+            bool  normalizeDiagonal = true;
+            bool  clampPitch = true;
+            float minPitchDeg = -89.f;
+            float maxPitchDeg = 89.f;
+        };
+
+        explicit CameraController(AppWindow* window, Config cfg = {})
+            : m_app(window), m_cfg(cfg) {
+        }
+
+        BOOM_INLINE void update(float /*dt*/) {
+            if (!m_app) return;
+
+            auto& input = m_app->input;
+            const auto& s = input.current();
+
+            const bool inRegion = !m_cfg.gateToViewportRect || m_app->IsMouseInCameraRegion(m_app->Handle().get());
+            const bool rmb = !m_cfg.gateToRMB || s.Mouse.test(GLFW_MOUSE_BUTTON_RIGHT);
+            const bool canUse = m_app->camInputEnabled && inRegion && rmb;
+
+            glm::vec3 wish{
+                input.axis(GLFW_KEY_A, GLFW_KEY_D), //A is left, D is right
+				input.axis(GLFW_KEY_Q, GLFW_KEY_E), // Q is Up, E is Down
+				input.axis(GLFW_KEY_S, GLFW_KEY_W)  // S is back, W is forward
+            };
+            if (m_cfg.normalizeDiagonal && glm::length2(wish) > 1e-6f)
+                wish = glm::normalize(wish);
+
+            const bool running = s.Keys.test(GLFW_KEY_LEFT_SHIFT) || s.Keys.test(GLFW_KEY_RIGHT_SHIFT);
+            const float base = CONSTANTS::CAM_PAN_SPEED * m_app->camMoveMultiplier;
+            const float spd = base * (running ? CONSTANTS::CAM_RUN_MULTIPLIER : 1.f);
+
+            if (canUse) {
+                const float yaw = glm::radians(m_app->camRot.y);
+                const float pitch = glm::radians(m_app->camRot.x);
+                const float sy = std::sinf(yaw), cy = std::cosf(yaw);
+                const float sp = std::sinf(pitch), cp = std::cosf(pitch);
+
+                const glm::vec3 forward{ cp * sy, sp, cp * cy };
+                const glm::vec3 worldUp{ 0,1,0 };
+                const glm::vec3 right = glm::normalize(glm::cross(forward, worldUp));
+                const glm::vec3 up = glm::normalize(glm::cross(right, forward));
+
+                glm::vec3 moveWorld = right * wish.x + up * wish.y + forward * wish.z;
+                if (glm::length2(moveWorld) > 1e-6f) moveWorld = glm::normalize(moveWorld);
+
+                m_app->camMoveDir = moveWorld * spd;
+
+                glm::vec2 md = input.mouseDelta();
+                m_app->camRot.y += md.x * m_cfg.mouseSensitivityX;
+                m_app->camRot.x += md.y * m_cfg.mouseSensitivityY;
+
+                if (m_cfg.clampPitch)
+                    m_app->camRot.x = std::clamp(m_app->camRot.x, m_cfg.minPitchDeg, m_cfg.maxPitchDeg);
+            }
+            else {
+                m_app->camMoveDir = {};
+            }
+
+            const glm::vec2 sd = input.scrollDelta();
+            if (rmb && inRegion) {
+                m_app->camMoveMultiplier = std::clamp(m_app->camMoveMultiplier + sd.y * m_cfg.multiplierStep, 0.01f, 100.0f);
+            }
+            else {
+                m_app->SetFOV(std::clamp(m_app->camFOV - sd.y, m_cfg.minFov, m_cfg.maxFov));
+            }
+        }
+
+    private:
+        AppWindow* m_app = nullptr;
+        Config     m_cfg{};
+    };
+}
