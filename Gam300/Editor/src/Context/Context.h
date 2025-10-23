@@ -176,7 +176,7 @@ struct GuiContext : AppInterface
             for (auto& window : m_Windows)
             {
                 if (window) {
-                    window->OnShow(this);
+                    window->OnShow();
                 }
             }
 
@@ -379,7 +379,7 @@ struct GuiContextNoSwitch : AppInterface
             // Show windows
             for (auto& vwindow : m_Windows) {
                 if (vwindow) {
-                    vwindow->OnShow(this);
+                    vwindow->OnShow();
                 }
             }
 

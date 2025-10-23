@@ -22,10 +22,11 @@ namespace Boom {
 	};
 
 	struct Asset {
-		AssetID uid{ EMPTY_ASSET };
-		std::string source{};
-		std::string name{};
-		AssetType type{};
+		virtual ~Asset() = default;
+		AssetID uid{ EMPTY_ASSET }; //unique id
+		std::string source{}; //source path of asset
+		std::string name{};  //file name of asset
+		AssetType type{}; //type of asset
 	};
 
 	struct MaterialAsset : Asset {
@@ -53,7 +54,8 @@ namespace Boom {
 		Texture data{};		//Runtime only, no need to serialize
 
 		 XPROPERTY_DEF(
-		 	"TextureAsset", TextureAsset
+		 	"TextureAsset", TextureAsset,
+			 obj_member<"Data", &TextureAsset::data>
 		 )
 
 	};

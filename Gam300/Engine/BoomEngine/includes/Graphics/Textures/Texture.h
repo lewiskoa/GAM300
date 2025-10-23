@@ -1,7 +1,8 @@
 //texture should all be already be in .dds file format(BC1/BC7) depending on no-alpha/alpha .png
 //CompressTextureForEditor(in,out) should be called when importing new textures within editor in .png 
 // to convert to .dds format
-//
+
+#include "BoomProperties.h"
 
 #pragma once
 namespace Boom {
@@ -42,8 +43,17 @@ namespace Boom {
 		int32_t alphaThreshold;
 		int32_t mipLevel; //will not be enforced if too big
 		bool isGamma;
-		//std::string assetfilepath
-		//std::string assetname
+		//std::string assetFilePath;
+		//std::string assetName;
+
+	public:
+		XPROPERTY_DEF(
+			"Texture", Texture2D,
+			obj_member<"quality", &Texture2D::quality>,
+			obj_member<"alphaThreshold", &Texture2D::alphaThreshold>,
+			obj_member<"mipLevel", &Texture2D::mipLevel>,
+			obj_member<"isGamma", &Texture2D::isGamma>
+		)
 	};
 
 	using Texture = std::shared_ptr<Texture2D>;

@@ -45,6 +45,8 @@ public:
         LoadAllPrefabsFromDisk();
 
         RefreshSceneList(true);
+
+        dw.Init();
     }
 
     BOOM_INLINE void OnUpdate() override
@@ -97,12 +99,12 @@ private:
         RenderHierarchy();
         RenderInspector();
         RenderPerformance();
-        RenderResources();
-        dw.OnShow(this);
+        rw.OnShow();
+        dw.OnShow();
         RenderPlaybackControls();
         RenderPrefabBrowser();
         if (m_ShowConsole)
-            m_Console.OnShow(this);
+            m_Console.OnShow();
         RenderAudioPanel();
         // Render scene management dialogs
         RenderSceneDialogs();
@@ -936,10 +938,6 @@ private:
 
         ImGui::End();
     }
-    
-    BOOM_INLINE void RenderResources() {
-        rw.OnShow(this);
-    }
 
     BOOM_INLINE void RefreshSceneList(bool force = false)
     {
@@ -1031,7 +1029,7 @@ private:
                 for (int i = 0; i < (int)kTracks.size(); ++i) {
                     bool isSel = (i == selected);
                     if (ImGui::Selectable(kTracks[i].first.c_str(), isSel)) selected = i;
-                    if (isSel) ImGui::SetItemDefaultFocus();
+                    //if (isSel) ImGui::SetItemDefaultFocus();
                 }
                 ImGui::EndCombo();
             }

@@ -145,6 +145,21 @@ namespace Boom
             m_Context->assets->View([&](auto asset) { task(asset); });
         }
 
+        //Task should be of type [&](TextureAsset* )
+        template<typename Task>
+        BOOM_INLINE void AssetTextureView(Task&& task) {
+            auto& map = m_Context->assets->GetMap<TextureAsset>();
+            for (auto& [uid, asset] : map) {
+                if (uid != EMPTY_ASSET) {
+                    TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset.get()) };
+                    if (!tex) continue;
+                    task(tex);
+                }
+            }
+        }
+
+        BOOM_INLINE double GetDeltaTime() const noexcept { return m_Context->DeltaTime; }
+
         BOOM_INLINE std::shared_ptr<GLFWwindow> GetWindowHandle()
         {
             return m_Context->window->Handle();

@@ -16,33 +16,42 @@ namespace Boom {
 		, quality{ 0.5f }
 		, alphaThreshold{ 128 }
 		, mipLevel{ 10 }
-		, isGamma{ true } 
+		, isGamma{ true }
 	{
 	}
 
-	Texture2D::Texture2D(std::string filename, bool shouldCompress)
+	Texture2D::Texture2D(std::string filename, bool)
 		: Texture2D()
 	{
 		filename = CONSTANTS::TEXTURES_LOCATION.data() + filename;
 
+		std::string ext{ GetExtension(filename) };
+		if (ext == "dds") {
+			LoadCompressed(filename);
+		}
+		else {
+			LoadUnCompressed(filename);
+		}
+		
+		//Compressonator is working, will be implemented for compiling textures as compressed for base game
+		/*
 		try {
-			std::string ext{ GetExtension(filename) };
 			if (ext != "dds" && !shouldCompress) {
-				LoadUnCompressed(filename);
+				LoadUnCompressed(assetFilePath);
 			}
 			else {
 				if (ext != "dds") {
-					std::string outName{ filename.substr(0, filename.find_last_of('.')) + ".dds" };
-					CompressTexture(filename, outName);
-					filename = outName;
+					std::string outName{ assetFilePath.substr(0, assetFilePath.find_last_of('.')) + ".dds" };
+					CompressTexture(assetFilePath, outName);
+					assetFilePath = outName;
 				}
-				LoadCompressed(filename);
+				LoadCompressed(assetFilePath);
 			}
 		}
 		catch (std::exception e) {
 			char const* tmp{ e.what() };
 			BOOM_ERROR("ERROR_Texture2D: {}", tmp);
-		}
+		}*/
 	}
 
 	Texture2D::Texture2D(std::string const& inputPngPath, std::string const& outputDDSPath)

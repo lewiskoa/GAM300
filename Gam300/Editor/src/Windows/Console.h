@@ -13,7 +13,7 @@
 // can log mouse local coords & clicks for the last ImGui item (the Image).
 struct ConsoleWindow : IWidget
 {
-    BOOM_INLINE ConsoleWindow(AppInterface* context) : IWidget(context)
+    BOOM_INLINE ConsoleWindow(AppInterface* c) : IWidget(c)
     {
         DEBUG_DLL_BOUNDARY("ConsoleWindow::Constructor");
         DEBUG_POINTER(context, "AppInterface");
@@ -95,7 +95,7 @@ struct ConsoleWindow : IWidget
     // ---------------------------
     // IWidget overrides
     // ---------------------------
-    BOOM_INLINE void OnShow(AppInterface* context) override
+    BOOM_INLINE void OnShow() override
     {
         //DEBUG_DLL_BOUNDARY("ConsoleWindow::OnShow");
 

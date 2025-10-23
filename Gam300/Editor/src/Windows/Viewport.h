@@ -4,7 +4,7 @@
 
 struct ViewportWindow : IWidget
 {
-	BOOM_INLINE ViewportWindow(AppInterface* context) : IWidget(context)
+	BOOM_INLINE ViewportWindow(AppInterface* c) : IWidget(c)
 	{
 		DEBUG_DLL_BOUNDARY("ViewportWindow::Constructor");
 		DEBUG_POINTER(context, "AppInterface");
@@ -26,7 +26,7 @@ struct ViewportWindow : IWidget
 			frameId, (void*)m_Frame);
 	}
 
-	BOOM_INLINE void OnShow(AppInterface* context) override
+	BOOM_INLINE void OnShow() override
 	{
 		DEBUG_DLL_BOUNDARY("ViewportWindow::OnShow");
 
