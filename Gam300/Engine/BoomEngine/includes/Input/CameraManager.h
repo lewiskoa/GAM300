@@ -35,13 +35,13 @@ namespace Boom {
             const bool rmb = !m_cfg.gateToRMB || s.Mouse.test(GLFW_MOUSE_BUTTON_RIGHT);
             const bool canUse = m_app->camInputEnabled && inRegion && rmb;
 
-            glm::vec3 wish{
+            glm::vec3 movements{
                 input.axis(GLFW_KEY_A, GLFW_KEY_D), //A is left, D is right
 				input.axis(GLFW_KEY_Q, GLFW_KEY_E), // Q is Up, E is Down
 				input.axis(GLFW_KEY_S, GLFW_KEY_W)  // S is back, W is forward
             };
-            if (m_cfg.normalizeDiagonal && glm::length2(wish) > 1e-6f)
-                wish = glm::normalize(wish);
+            if (m_cfg.normalizeDiagonal && glm::length2(movements) > 1e-6f)
+                movements = glm::normalize(movements);
 
             const bool running = s.Keys.test(GLFW_KEY_LEFT_SHIFT) || s.Keys.test(GLFW_KEY_RIGHT_SHIFT);
             const float base = CONSTANTS::CAM_PAN_SPEED * m_app->camMoveMultiplier;
@@ -58,7 +58,7 @@ namespace Boom {
                 const glm::vec3 right = glm::normalize(glm::cross(forward, worldUp));
                 const glm::vec3 up = glm::normalize(glm::cross(right, forward));
 
-                glm::vec3 moveWorld = right * wish.x + up * wish.y + forward * wish.z;
+                glm::vec3 moveWorld = right * movements.x + up * movements.y + forward * movements.z;
                 if (glm::length2(moveWorld) > 1e-6f) moveWorld = glm::normalize(moveWorld);
 
                 m_app->camMoveDir = moveWorld * spd;
