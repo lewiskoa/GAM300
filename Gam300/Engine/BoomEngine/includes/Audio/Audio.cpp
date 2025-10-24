@@ -2,10 +2,11 @@
 #include "Audio.hpp"
 #include <iostream>
 #include <filesystem>
+#include <mutex>
 
 static FMOD::ChannelGroup* sMasterGroup = nullptr;
-static FMOD::ChannelGroup* sMusicGroup = nullptr;
-static FMOD::ChannelGroup* sSFXGroup = nullptr;
+static FMOD::ChannelGroup* sMusicGroup  = nullptr;
+static FMOD::ChannelGroup* sSFXGroup    = nullptr;
 
 static inline bool FMODCheck(FMOD_RESULT result, const char* context) {
     if (result != FMOD_OK) {
@@ -45,7 +46,88 @@ BOOM_API bool SoundEngine::Init() {
     if (sMasterGroup && sMusicGroup) sMasterGroup->addGroup(sMusicGroup);
     if (sMasterGroup && sSFXGroup)   sMasterGroup->addGroup(sSFXGroup);
 
+    {
+        std::scoped_lock lock(mMutex);
+        mChannelGroups["Master"] = sMasterGroup;
+        mChannelGroups["Music"] = sMusicGroup;
+        mChannelGroups["SFX"] = sSFXGroup;
+    }
+
     return true;
+}
+
+BOOM_API bool SoundEngine::CreateChannelGroup(const std::string& groupName, const std::string& parentGroup)
+{
+    if (!mSystem) return false;
+    if (groupName.empty()) return false;
+
+    std::scoped_lock lock(mMutex);
+
+    if (mChannelGroups.find(groupName) != mChannelGroups.end()) { return false; }
+
+    FMOD::ChannelGroup* newGroup = nullptr;
+    FMOD_RESULT result = mSystem->createChannelGroup(groupName.c_str(), &newGroup);
+    if (result != FMOD_OK || !newGroup) 
+    {
+        std::cerr << "[SoundEngine] createChannelGroup failed for " << groupName << " error: " << result << std::endl;
+        return false;
+    }
+
+    FMOD::ChannelGroup* parent = nullptr;
+    auto it = mChannelGroups.find(parentGroup);
+    if (it != mChannelGroups.end()) parent = it->second;
+    if (!parent) parent = sMasterGroup;
+
+    if (parent && newGroup) parent->addGroup(newGroup);
+
+    mChannelGroups[groupName] = newGroup;
+    return true;
+}
+
+BOOM_API bool SoundEngine::RemoveChannelGroup(const std::string& groupName)
+{
+    if (groupName.empty() || groupName == "Master") return false;
+
+    std::scoped_lock lock(mMutex);
+
+    auto it = mChannelGroups.find(groupName);
+    if (it == mChannelGroups.end()) return false;
+
+    FMOD::ChannelGroup* group = it->second;
+
+    for (auto& [name, ch] : mChannels) 
+    {
+        if (ch) 
+        {
+            FMOD::ChannelGroup* current = nullptr;
+            ch->getChannelGroup(&current);
+            if (current == group) { ch->stop(); }
+        }
+    }
+
+    if (group) { group->release(); }
+
+    mChannelGroups.erase(it);
+    return true;
+}
+
+BOOM_API void SoundEngine::SetGroupVolume(const std::string& groupName, float volume)
+{
+    std::scoped_lock lock(mMutex);
+    auto it = mChannelGroups.find(groupName);
+    if (it != mChannelGroups.end() && it->second) { it->second->setVolume(volume); }
+
+    else { std::cerr << "[SoundEngine] Unknown group '" << groupName << "'\n"; }
+}
+
+BOOM_API float SoundEngine::GetGroupVolume(const std::string& groupName) const
+{
+    std::scoped_lock lock(mMutex);
+    float vol = 0.0f;
+    auto it = mChannelGroups.find(groupName);
+
+    if (it != mChannelGroups.end() && it->second) { it->second->getVolume(&vol); }
+    return vol;
 }
 
 BOOM_API void SoundEngine::Update() {
@@ -70,12 +152,31 @@ BOOM_API void SoundEngine::Shutdown() {
     for (auto& [name, sound] : mSounds) { if (sound) sound->release(); }
     mSounds.clear();
 
-    // Release channel groups
-    if (sMusicGroup) { sMusicGroup->release(); sMusicGroup = nullptr; }
-    if (sSFXGroup) { sSFXGroup->release();   sSFXGroup = nullptr; }
-    sMasterGroup = nullptr; // master is owned by system
+    // Release custom channel groups (skip Master - owned by system)
+    {
+        std::scoped_lock lock(mMutex);
+        for (auto it = mChannelGroups.begin(); it != mChannelGroups.end(); ) 
+        {
+            const std::string& n = it->first;
+            FMOD::ChannelGroup* g = it->second;
+            if (n != "Master" && g) 
+            {
+                g->release();
+                it = mChannelGroups.erase(it);
+            }
 
-    if (mSystem) {
+            else { ++it; }
+        }
+        mChannelGroups.clear();
+    }
+
+    sMusicGroup = nullptr;
+    sSFXGroup = nullptr;
+    sMasterGroup = nullptr; 
+
+
+    if (mSystem) 
+    {
         mSystem->close();
         mSystem->release();
         mSystem = nullptr;
@@ -184,3 +285,56 @@ BOOM_API void SoundEngine::StopAllExcept(const std::string& keepName) {
             ++it;
     }
 }
+
+BOOM_API bool SoundEngine::PreloadSound(const std::string& name, const std::string& filePath, bool stream, bool loop)
+{
+    if (!mSystem) return false;
+
+    std::scoped_lock lock(mMutex);
+
+    auto it = mSounds.find(name);
+    if (it != mSounds.end()) 
+    {
+        mSoundRefCount[name] += 1;
+        return true;
+    }
+
+    FMOD_MODE mode = FMOD_DEFAULT | FMOD_2D;
+    if (stream) mode = static_cast<FMOD_MODE>(mode | FMOD_CREATESTREAM);
+    mode = static_cast<FMOD_MODE>(mode | (loop ? FMOD_LOOP_NORMAL : FMOD_LOOP_OFF));
+
+    FMOD::Sound* sound = nullptr;
+    FMOD_RESULT result = mSystem->createSound(filePath.c_str(), mode, nullptr, &sound);
+
+    if (result != FMOD_OK) 
+    {
+        std::cerr << "FMOD failed to preload " << filePath << " error: " << result << std::endl;
+        return false;
+    }
+
+    mSounds[name] = sound;
+    mSoundRefCount[name] = 1;
+    return true;
+}
+
+BOOM_API void SoundEngine::UnloadSound(const std::string& name)
+{
+    std::scoped_lock lock(mMutex);
+
+    auto rcIt = mSoundRefCount.find(name);
+    if (rcIt == mSoundRefCount.end()) { return; }
+
+    rcIt->second -= 1;
+    if (rcIt->second > 0) { return; }
+
+    mSoundRefCount.erase(rcIt);
+
+    auto sIt = mSounds.find(name);
+    if (sIt != mSounds.end()) 
+    {
+        if (sIt->second) { sIt->second->release(); }
+
+        mSounds.erase(sIt);
+    }
+}
+

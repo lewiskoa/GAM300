@@ -23,8 +23,24 @@ public:
     BOOM_API  void  SetLooping(const std::string& name, bool loop);
     BOOM_API void  StopAllExcept(const std::string& keepName);
 
+    BOOM_API bool  PreloadSound(const std::string& name, const std::string& filePath, bool stream = false, bool loop = false);
+    BOOM_API void  UnloadSound(const std::string& name);
+
+    BOOM_API bool  CreateChannelGroup(const std::string& groupName, const std::string& parentGroup = "Master"); 
+    BOOM_API bool  RemoveChannelGroup(const std::string& groupName);
+    BOOM_API bool  HasChannelGroup(const std::string& groupName) const;
+
+    BOOM_API void  SetGroupVolume(const std::string& groupName, float volume);
+    BOOM_API float GetGroupVolume(const std::string& groupName) const;
+
+
 private:
     FMOD::System* mSystem = nullptr;
     std::unordered_map<std::string, FMOD::Sound*>   mSounds;
     std::unordered_map<std::string, FMOD::Channel*> mChannels;
+
+    std::unordered_map<std::string, FMOD::ChannelGroup*> mChannelGroups;
+
+    std::unordered_map<std::string, int> mSoundRefCount;
+    mutable std::mutex mMutex;
 };
