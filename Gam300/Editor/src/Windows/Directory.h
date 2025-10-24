@@ -19,12 +19,16 @@ public:
 		, selectedPath{}
 		, rTimer{}
 		, dropTargetPath{}
+		, showDeleteConfirm{}
+		, showDeleteError{}
+		, deleteErrorMessage{}
 	{}
 
 	//must be called to use drag and drop feature
 	BOOM_INLINE void Init() {
 		rootNode = BuildDirectoryTree();
 		glfwSetDropCallback(context->GetWindowHandle().get(), OnDrop);
+		treeNodeOpenStatus[ROOT_PATH.string()] = true;
 	}
 
 	BOOM_INLINE void OnShow() override {
@@ -36,20 +40,9 @@ public:
 			if (rootNode) {
 				RenderDirectoryTree(rootNode);
 			}
-
-			//refresh button to reload directory linked list
-			if (ImGui::Button("Refresh") || (rTimer += context->GetDeltaTime()) > AUTO_REFRESH_TIMER ) {
-				rootNode = BuildDirectoryTree();
-				rTimer = 0.0;
-			}
-
-			//preview selection with text info
-			ImGui::Separator();
-			ImGui::Text("Selected: %s", selectedPath.empty() ? "None" : selectedPath.c_str());
-			if (!selectedPath.empty() && std::filesystem::exists(selectedPath)) {
-				ImGui::Text("Size: %lld bytes", std::filesystem::file_size(selectedPath));
-				// Add more details, e.g., preview image if it's a texture
-			}
+			RefreshUpdate();
+			PrintSelectedInfo();
+			DeleteUpdate();
 		}
 		ImGui::End();
 
@@ -63,7 +56,72 @@ public:
 		}
 	}
 
-private: //k-tree linked list of nodes containing children directories and files
+private: //seperated imgui logic
+	BOOM_INLINE void RefreshUpdate() {
+		//refresh button to reload directory linked list
+		if (ImGui::Button("Refresh") || (rTimer += context->GetDeltaTime()) > AUTO_REFRESH_TIMER) {
+			rootNode = BuildDirectoryTree();
+			rTimer = 0.0;
+		}
+	}
+	BOOM_INLINE void DeleteUpdate() {
+		//delete option for selected file/directory
+		if (!selectedPath.empty() && ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+			showDeleteConfirm = true;
+		}
+		if (showDeleteConfirm) {
+			ImGui::OpenPopup("Confirm Delete");
+			ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		}
+		if (ImGui::BeginPopupModal("Confirm Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+			ImGui::Text("Are you sure you want to delete:\n%s?", selectedPath.c_str());
+			ImGui::Separator();
+			if (ImGui::Button("Yes", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
+				if (DeletePath(selectedPath)) {
+					selectedPath.clear(); // Clear selection after deletion
+				}
+				else {
+					showDeleteError = true;
+					deleteErrorMessage = "Failed to delete: " + selectedPath;
+				}
+				showDeleteConfirm = false;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("No", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+				showDeleteConfirm = false;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		// Error popup
+		if (showDeleteError) {
+			ImGui::OpenPopup("Delete Error");
+			ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+		}
+		if (ImGui::BeginPopupModal("Delete Error", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+			ImGui::Text("%s", deleteErrorMessage.c_str());
+			ImGui::Separator();
+			if (ImGui::Button("OK", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+				showDeleteError = false;
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+	}
+	BOOM_INLINE void PrintSelectedInfo() {
+		//preview selection with text info
+		ImGui::Separator();
+		ImGui::Text("Selected: %s", selectedPath.empty() ? "None" : selectedPath.c_str());
+		if (!selectedPath.empty() && std::filesystem::exists(selectedPath)) {
+			ImGui::Text("Size: %lld bytes", std::filesystem::file_size(selectedPath));
+			// Add more details, e.g., preview image if it's a texture
+		}
+	}
+
+private: //directory tree
+	//k-tree linked list of nodes containing children directories and files
 	//every fileNode should have an icon to represent what it is
 	// sprite for folders, textures
 	// everything else represented by asset.png
@@ -146,7 +204,7 @@ private: //k-tree linked list of nodes containing children directories and files
 		bool isOpen{ treeNodeOpenStatus[root->fullPath.string()] };
 		//new directories
 		if (root->isDirectory && treeNodeOpenStatus.find(root->fullPath.string()) == treeNodeOpenStatus.end()) {
-			isOpen = false;
+			isOpen = (root->fullPath == ROOT_PATH);
 		}
 		//assets
 		if (!root->isDirectory) {
@@ -165,7 +223,7 @@ private: //k-tree linked list of nodes containing children directories and files
 
 		bool nodeOpen{ ImGui::TreeNodeEx((void*)(intptr_t)root.get(), flags, root->isDirectory ? "%s/" : "%s", root->name.c_str()) };
 		
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly | ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly | ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem)) {
 			root->isHovered = true;
 			if (root->isDirectory) {
 				dropTargetPath = root->fullPath;
@@ -197,6 +255,7 @@ private: //k-tree linked list of nodes containing children directories and files
 		ImGui::PopID();
 	}
 
+private: //filesystem logic
 	//logic behind copying of files into specified directory
 	BOOM_INLINE void CopyFilesToDirectory(const std::vector<std::string>& filePaths, const std::filesystem::path& targetDir) {
 		for (const auto& filePath : filePaths) {
@@ -227,6 +286,25 @@ private: //k-tree linked list of nodes containing children directories and files
 		rootNode = BuildDirectoryTree();
 	}
 
+	BOOM_INLINE bool DeletePath(const std::filesystem::path& path) {
+		try {
+			if (!std::filesystem::exists(path)) return false;
+			if (std::filesystem::is_directory(path)) {
+				std::filesystem::remove_all(path); // Delete directory and contents
+			}
+			else {
+				std::filesystem::remove(path); // Delete file
+			}
+			rootNode = BuildDirectoryTree(); // Refresh tree
+			return true;
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			char const* dodo{ e.what() };
+			BOOM_ERROR("Directory.h_DeletePath:{}", dodo);
+			return false;
+		}
+	}
+
 private: //glfw callback for drag and drop
 	BOOM_INLINE static void OnDrop(GLFWwindow*, int32_t count, char const** paths) {
 		droppedFiles.clear();
@@ -253,4 +331,9 @@ private:
 	inline static std::vector<std::string> droppedFiles{}; //paths of files to be dropped
 	inline static bool filesDropped{ false }; //forced inline not allowed
 	std::filesystem::path dropTargetPath;
+
+	//deletion
+	bool showDeleteConfirm;
+	bool showDeleteError;
+	std::string deleteErrorMessage;
 };
