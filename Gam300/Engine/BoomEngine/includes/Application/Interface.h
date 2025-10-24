@@ -170,7 +170,6 @@ namespace Boom
 			return m_Context->renderer->GetFrame();
         }
 
-
     protected:
         /** @brief  Called once when the layer is attached. Override to initialize. */
         BOOM_INLINE virtual void OnStart() {}

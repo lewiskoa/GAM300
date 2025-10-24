@@ -264,17 +264,11 @@ namespace Boom {
 			}
 		}
 
-
-
 		//to be called explicitly to reference window from application
 		//example: GetUserData(win)->isFullscreen 
 		BOOM_INLINE static AppWindow* GetUserData(GLFWwindow* window) {
 			return static_cast<AppWindow*>(glfwGetWindowUserPointer(window));
 		}
-
-		
-
-
 	public:
 		BOOM_INLINE void SetWindowTitle(std::string const& title) {
 			glfwSetWindowTitle(windowPtr.get(), title.c_str());
@@ -286,7 +280,7 @@ namespace Boom {
 		[[nodiscard]] BOOM_INLINE int32_t& Height() noexcept {
 			return height;
 		}
-		[[nodiscard]] BOOM_INLINE std::shared_ptr<GLFWwindow> Handle() const {
+		BOOM_INLINE std::shared_ptr<GLFWwindow> Handle() const {
 			return windowPtr;
 		}
 

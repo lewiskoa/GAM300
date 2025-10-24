@@ -9,21 +9,26 @@ private:
 	const std::filesystem::path ROOT_PATH{ "Resources" };
 	const uint32_t MAX_DEPTH{ 7 };
 	const double AUTO_REFRESH_TIMER{ 3.0 }; //count in seconds
+	const std::string_view CUSTOM_PAYLOAD_TYPE{"_GLFW_DROP"};
 public:
 	BOOM_INLINE DirectoryWindow(AppInterface* c)
 		: IWidget{ c }
-		, rootNode{}
-		, selectedPath{}
 		, folderIcon{ "Icons/folder.png", false }
 		, assetIcon{ "Icons/asset.png", false }
+		, rootNode{}
+		, selectedPath{}
 		, rTimer{}
+		, dropTargetPath{}
 	{}
 
+	//must be called to use drag and drop feature
 	BOOM_INLINE void Init() {
 		rootNode = BuildDirectoryTree();
+		glfwSetDropCallback(context->GetWindowHandle().get(), OnDrop);
 	}
 
 	BOOM_INLINE void OnShow() override {
+		dropTargetPath.clear();
 		if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_HorizontalScrollbar)) {
 			ImGui::Separator();
 
@@ -47,6 +52,15 @@ public:
 			}
 		}
 		ImGui::End();
+
+		//process dropped files
+		if (filesDropped && !droppedFiles.empty()) {
+			std::filesystem::path targetDir{ dropTargetPath.empty() ? ROOT_PATH : dropTargetPath };
+			CopyFilesToDirectory(droppedFiles, targetDir);
+			droppedFiles.clear();
+			dropTargetPath.clear();
+			filesDropped = false;
+		}
 	}
 
 private: //k-tree linked list of nodes containing children directories and files
@@ -59,9 +73,10 @@ private: //k-tree linked list of nodes containing children directories and files
 		std::vector<std::unique_ptr<FileNode>> children;
 		std::filesystem::path fullPath;
 		GLuint texId;
+		bool isHovered; //for drag & drop code logic
 
 		FileNode(const std::string& n, bool dir, const std::filesystem::path& path, GLuint id = 0)
-			: name{n}, isDirectory{dir}, fullPath{path}, texId{id} {
+			: name{ n }, isDirectory{ dir }, fullPath{ path }, texId{ id }, isHovered{} {
 		}
 	};
 
@@ -85,11 +100,9 @@ private: //k-tree linked list of nodes containing children directories and files
 					std::string ext{ path.extension().string() };
 					if (ext == ".dds" || ext == ".png") {
 						//finds the texture id to draw
-						std::string pathStr{ path.generic_string() };
 						context->AssetTextureView([&path, &texId](TextureAsset* tex){
-							std::string tmp{ std::string(CONSTANTS::TEXTURES_LOCATION) + tex->source };
-							std::string tmp2{ path.generic_string() };
-							if (tmp == tmp2) {
+							std::string texPath{ std::string(CONSTANTS::TEXTURES_LOCATION) + tex->source };
+							if (texPath == path.generic_string()) {
 								texId = static_cast<GLuint>(*tex->data.get());
 								return;
 							}
@@ -143,6 +156,7 @@ private: //k-tree linked list of nodes containing children directories and files
 			flags |= ImGuiTreeNodeFlags_DefaultOpen;
 		}
 
+		root->isHovered = false;
 
 		if (root->texId) {
 			ImGui::Image((void*)(intptr_t)root->texId, ImVec2(32, 32)); // Icon size: 16x16
@@ -150,6 +164,18 @@ private: //k-tree linked list of nodes containing children directories and files
 		}
 
 		bool nodeOpen{ ImGui::TreeNodeEx((void*)(intptr_t)root.get(), flags, root->isDirectory ? "%s/" : "%s", root->name.c_str()) };
+		
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly | ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
+			root->isHovered = true;
+			if (root->isDirectory) {
+				dropTargetPath = root->fullPath;
+				ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.3f, 0.6f, 0.4f));
+			}
+			else {
+				dropTargetPath = root->fullPath.parent_path(); //output to same directory
+			}
+		}
+		
 		if (ImGui::IsItemClicked()) {
 			selectedPath = root->fullPath.string();  // Select on click (like Unity)
 		}
@@ -164,17 +190,67 @@ private: //k-tree linked list of nodes containing children directories and files
 			}
 			ImGui::TreePop();
 		}
+
+		if (root->isHovered && root->isDirectory) {
+			ImGui::PopStyleColor();
+		}
 		ImGui::PopID();
 	}
 
-private:
-	std::unique_ptr<FileNode> rootNode;
-	std::string selectedPath;
+	//logic behind copying of files into specified directory
+	BOOM_INLINE void CopyFilesToDirectory(const std::vector<std::string>& filePaths, const std::filesystem::path& targetDir) {
+		for (const auto& filePath : filePaths) {
+			std::filesystem::path srcPath(filePath);
+			if (!std::filesystem::exists(srcPath)) continue;
 
+			std::filesystem::path destPath = targetDir / srcPath.filename();
+			try {
+				if (std::filesystem::exists(destPath)) {
+					// Handle conflict: append a number to filename (e.g., "file (1).txt")
+					std::string baseName{ destPath.stem().string() };
+					std::string ext{ destPath.extension().string() };
+					int counter{ 1 };
+					do {
+						destPath = targetDir / (baseName + " (" + std::to_string(counter) + ")" + ext);
+						counter++;
+					} while (std::filesystem::exists(destPath));
+				}
+				std::filesystem::copy(srcPath, destPath, std::filesystem::copy_options::recursive);
+			}
+			catch (const std::filesystem::filesystem_error& e) {
+				char const* dodo{ e.what() };
+				BOOM_ERROR("Directory.h_CopyFilesToDirectory:{}", dodo);
+				continue;
+			}
+		}
+		// Rebuild tree to reflect new files
+		rootNode = BuildDirectoryTree();
+	}
+
+private: //glfw callback for drag and drop
+	BOOM_INLINE static void OnDrop(GLFWwindow*, int32_t count, char const** paths) {
+		droppedFiles.clear();
+		for (int i{}; i < count; ++i) {
+			droppedFiles.push_back(paths[i]);
+		}
+		filesDropped = true;
+	}
+
+private:
+	//default icon textures(TODO: should be loaded into asset manager instead of directly init here)
 	Texture2D folderIcon; //folder/directories
 	Texture2D assetIcon; //represents other no-sprite icons
 
-	double rTimer;
+	//directory
+	std::unique_ptr<FileNode> rootNode;
+	std::string selectedPath;
 
+	//auto refresh
+	double rTimer;
 	std::unordered_map<std::string, bool> treeNodeOpenStatus;
+
+	//drag & drop
+	inline static std::vector<std::string> droppedFiles{}; //paths of files to be dropped
+	inline static bool filesDropped{ false }; //forced inline not allowed
+	std::filesystem::path dropTargetPath;
 };
