@@ -37,6 +37,7 @@ namespace Boom {
 
 			, jointsLoc{ GetUniformVar("hasJoints") }
 			, isDebugModeLoc{ GetUniformVar("isDebugMode") }
+			, ditherThresholdLoc{GetUniformVar("ditherThreshold")}
 		{
 		}
 
@@ -180,6 +181,10 @@ namespace Boom {
 				SetUniform(GetUniformVar(uniform.c_str()), transforms[i]);
 			}
 		}
+
+		BOOM_INLINE void SetDitherThreshold(float threshold) {
+			SetUniform(ditherThresholdLoc, threshold);
+		}
 	private:
 		int32_t noSpotLightLoc;
 		int32_t noDirLightLoc;
@@ -211,5 +216,6 @@ namespace Boom {
 
 		int32_t jointsLoc;
 		int32_t isDebugModeLoc;
+		int32_t ditherThresholdLoc;
 	};
 }

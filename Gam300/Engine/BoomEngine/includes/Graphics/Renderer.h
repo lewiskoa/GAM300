@@ -41,7 +41,7 @@ namespace Boom {
 			finalShader = std::make_unique<FinalShader>("final.glsl", w, h);
 			pbrShader = std::make_unique<PBRShader>("pbr.glsl");
 			bloom = std::make_unique<BloomShader>("bloom.glsl", w, h);	
-			frame = std::make_unique<FrameBuffer>(w, h);
+			frame = std::make_unique<FrameBuffer>(w, h, true);
 
 			skyboxMesh = CreateSkyboxMesh();
 		}
@@ -60,6 +60,11 @@ namespace Boom {
 		}
 		BOOM_INLINE void SetDirectionalLightCount(int32_t count) {
 			pbrShader->SetDirectionalLightCount(count);
+		}
+
+	public: //dither
+		BOOM_INLINE void SetDitherThreshold(float threshold) {
+			pbrShader->SetDitherThreshold(threshold);
 		}
 
 	public: //skybox
@@ -103,7 +108,7 @@ namespace Boom {
 		}
 
 		BOOM_INLINE void NewFrame() {
-			frame->Begin();
+			frame->Begin(true);
 			pbrShader->Use();
 		}
 		BOOM_INLINE void EndFrame() {
@@ -118,7 +123,7 @@ namespace Boom {
 
 		BOOM_INLINE void ShowFrame(bool useFBO) {
 			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, !isDrawDebugMode); //enable/disable bloom here
+			finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, false); //enable/disable bloom here
 		}
 
 		bool& IsDrawDebugMode() {

@@ -271,6 +271,7 @@ namespace Boom
                     m_Context->renderer->SetSpotLightCount(spots);
                 }
 
+                m_Context->renderer->SetDitherThreshold(m_Context->window->ditherThreshold);
 
                 //temp input for mouse motion
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
