@@ -60,6 +60,7 @@ namespace Boom {
         enum Type{
             BOX = 0,
             SPHERE,
+            CAPSULE,
             MESH
         } type;
 

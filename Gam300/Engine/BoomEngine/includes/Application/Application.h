@@ -9,8 +9,13 @@
 #include "Auxiliaries/PrefabUtility.h"
 #include "Scripting/ScriptAPI.h"
 #include "Scripting/ScriptRuntime.h"
+<<<<<<< HEAD
 #include "../Graphics/Utilities/Culling.h"
 #include "Input/CameraManager.h"
+=======
+#include "Graphics/Shaders/DebugLines.h"
+
+>>>>>>> Added debug for colliders but need to fix weird solid sphere for camera
 namespace Boom
 {
     /**
@@ -31,10 +36,10 @@ namespace Boom
      * Inherits from AppInterface to receive the same lifecycle hooks
      * and gain access to the shared AppContext.
      */
-    struct Application: AppInterface
+    struct Application : AppInterface
     {
         template<typename EntityType, typename... Components, typename Fn>
-        BOOM_INLINE void EnttView(Fn && fn) {
+        BOOM_INLINE void EnttView(Fn&& fn) {
             auto view = m_Context->scene.view<Components...>();
             for (auto e : view) {
                 fn(EntityType{ &m_Context->scene, e }, m_Context->scene.get<Components>(e)...);
@@ -49,10 +54,13 @@ namespace Boom
         bool m_ShouldExit = false;  // Flag for graceful shutdown
         float m_TestRot = 0.0f;
 
+        // NEW: PhysX debug visualization toggle
+        bool m_PhysDebugViz = true;
+
         // Temporary for showing physics
         double m_SphereTimer = 0.0;
-        double m_SphereResetInterval = 5.0; 
-        glm::vec3 m_SphereInitialPosition = { 2.5f, 1.2f, 0.0f }; 
+        double m_SphereResetInterval = 5.0;
+        glm::vec3 m_SphereInitialPosition = { 2.5f, 1.2f, 0.0f };
 
         /**
          * @brief Constructs the Application, assigns its unique ID, and allocates the AppContext.
@@ -192,7 +200,12 @@ namespace Boom
 
             CreateScriptInstancesFromScene();
 
-            //temp input for mouse motion
+            m_DebugLinesShader = std::make_unique<Boom::DebugLinesShader>("debug_lines.glsl");
+
+            // NEW: turn on PhysX debug visualization once at startup
+            m_Context->physics->EnableDebugVisualization(m_PhysDebugViz, 1.0f);
+
+            // temp input for mouse motion
             glm::dvec2 curMP{};
             glm::dvec2 prevMP{};
             while (m_Context->window->PollEvents() && !m_ShouldExit)
@@ -212,6 +225,34 @@ namespace Boom
                 // 2) Attach BEFORE update so scroll/pan use this camera's FOV in this frame
                 if (activeCam) camera.attachCamera(activeCam);
                 glfwMakeContextCurrent(engineWindow.get());
+
+                // NEW: runtime toggle with F9
+                {
+                    static bool prevF9 = false;
+                    bool f9Pressed = glfwGetKey(engineWindow.get(), GLFW_KEY_F9) == GLFW_PRESS;
+                    if (f9Pressed && !prevF9)
+                    {
+                        m_PhysDebugViz = !m_PhysDebugViz;
+                        m_Context->physics->EnableDebugVisualization(m_PhysDebugViz, 1.0f);
+                        BOOM_INFO("[PhysX] Debug visualization: {}", m_PhysDebugViz ? "ON" : "OFF");
+                    }
+                    prevF9 = f9Pressed;
+                }
+
+                // NEW: toggle debug rigidbodies with F10
+                {
+                    static bool prevF10 = false;
+                    bool f10Pressed = glfwGetKey(engineWindow.get(), GLFW_KEY_F10) == GLFW_PRESS;
+                    if (f10Pressed && !prevF10)
+                    {
+                        m_DebugRigidBodiesOnly = !m_DebugRigidBodiesOnly;
+                        // Turn off PhysX global viz when we use RB-only to avoid duplication
+                        m_Context->physics->EnableDebugVisualization(!m_DebugRigidBodiesOnly && m_PhysDebugViz, 1.0f);
+                        BOOM_INFO("[Debug] Rigidbody-only collider viz: {}", m_DebugRigidBodiesOnly ? "ON" : "OFF");
+                    }
+                    prevF10 = f10Pressed;
+                }
+
 
                 // Always update delta time, but adjust for pause state
                 ComputeFrameDeltaTime();
@@ -250,16 +291,16 @@ namespace Boom
 
 
                 //lights (always set up)
-               /* m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
-                m_Context->renderer->SetPointLightCount(0);
+                /* m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
+                 m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
+                 m_Context->renderer->SetPointLightCount(0);
 
-                glm::vec3 testDir{ -.7f, -.3f, .3f };
-                m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
-                m_Context->renderer->SetDirectionalLightCount(1);
+                 glm::vec3 testDir{ -.7f, -.3f, .3f };
+                 m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
+                 m_Context->renderer->SetDirectionalLightCount(1);
 
-                m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                m_Context->renderer->SetSpotLightCount(0);*/
+                 m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
+                 m_Context->renderer->SetSpotLightCount(0);*/
 
                 {
                     int points = 0;
@@ -291,10 +332,22 @@ namespace Boom
 
                 //temp input for mouse motion
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
+<<<<<<< HEAD
                 camera.update(static_cast<float>(m_Context->DeltaTime));
                 //camera (always set up, but rotation freezes when paused)
                 //EnttView<Entity, CameraComponent>([this, &curMP, &prevMP](auto entity, CameraComponent& comp) {
                 //    //Transform3D& transform{ entity.template Get<TransformComponent>().transform };
+=======
+
+                // ADD: Per-frame debug view/proj used by debug line renderer
+                glm::mat4 dbgView(1.0f);
+                glm::mat4 dbgProj(1.0f);
+                glm::vec3 dbgCamPos(0.0f);
+
+                //camera (always set up, but rotation freezes when paused)
+                EnttView<Entity, CameraComponent>([this, &curMP, &prevMP, &dbgView, &dbgProj, &dbgCamPos](auto entity, CameraComponent& comp) {
+                    Transform3D& transform{ entity.template Get<TransformComponent>().transform };
+>>>>>>> Added debug for colliders but need to fix weird solid sphere for camera
 
                 //    ////get dir vector of current camera
                 //    //transform.rotate.x += m_Context->window->camRot.x;
@@ -332,11 +385,24 @@ namespace Boom
                         // Submit camera to renderer
                         m_Context->renderer->SetCamera(comp.camera, transform);
                     }
+<<<<<<< HEAD
                 );
 				prevMP = curMP;
                
+=======
+
+                    m_Context->renderer->SetCamera(comp.camera, transform);
+
+                    // Cache matrices and camera world position
+                    dbgView = comp.camera.View(transform);
+                    dbgProj = comp.camera.Projection(m_Context->renderer->Aspect());
+                    dbgCamPos = transform.translate;
+                    });
+                prevMP = curMP;
+
+>>>>>>> Added debug for colliders but need to fix weird solid sphere for camera
                 //pbr ecs (always render)
-                EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
+                EnttView<Entity, ModelComponent>([this, &dbgView, &dbgProj, &dbgCamPos](auto entity, ModelComponent& comp) {
                     static int renderCount = 0;
                     static bool debugModelsPrinted = false;
 
@@ -363,7 +429,6 @@ namespace Boom
                     }
 
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
-                    //ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
 
                     if (!debugModelsPrinted && renderCount < 5) {
                         BOOM_INFO("[Render] Transform position: ({}, {}, {}), scale: ({}, {}, {})",
@@ -398,6 +463,46 @@ namespace Boom
                         m_Context->renderer->Draw(model.data, transform, material.data);
                     }
 
+                    // PhysX debug lines (optional overlay)
+                    if (m_DebugRigidBodiesOnly)
+                    {
+                        DrawRigidBodiesDebugOnly(dbgView, dbgProj);
+                    }
+                    else if (m_PhysDebugViz && m_DebugLinesShader)
+                    {
+                        m_Context->physics->CollectDebugLines(m_PhysLinesCPU);
+                        if (!m_PhysLinesCPU.empty())
+                        {
+                            std::vector<Boom::LineVert> lineVerts;
+                            lineVerts.reserve(m_PhysLinesCPU.size() * 2);
+                            for (const auto& l : m_PhysLinesCPU)
+                            {
+                                lineVerts.push_back(Boom::LineVert{ l.p0, l.c0 });
+                                lineVerts.push_back(Boom::LineVert{ l.p1, l.c1 });
+                            }
+
+                            // Cull any segments that sit right at the camera position (remove “ball in face”)
+                            std::vector<Boom::LineVert> filtered;
+                            filtered.reserve(lineVerts.size());
+                            const float camCullRadius = 0.4f;
+                            for (size_t i = 0; i + 1 < lineVerts.size(); i += 2)
+                            {
+                                const auto& a = lineVerts[i + 0];
+                                const auto& b = lineVerts[i + 1];
+                                const bool bothNear =
+                                    glm::distance(a.pos, dbgCamPos) < camCullRadius &&
+                                    glm::distance(b.pos, dbgCamPos) < camCullRadius;
+                                if (!bothNear) {
+                                    filtered.push_back(a);
+                                    filtered.push_back(b);
+                                }
+                            }
+
+                            if (!filtered.empty())
+                                m_DebugLinesShader->Draw(dbgView, dbgProj, filtered, 1.5f);
+                        }
+                    }
+
                     renderCount++;
                     if (renderCount >= 5) debugModelsPrinted = true;
                     });
@@ -416,7 +521,6 @@ namespace Boom
                 //draw the updated frame
                 m_Context->renderer->ShowFrame(showFrame);
 
-
                 for (auto layer : m_Context->layers)
                 {
                     layer->OnUpdate();
@@ -433,8 +537,7 @@ namespace Boom
             }
         }
 
-		
-		
+
 
         /**
          * @brief Saves the current scene and assets to files
@@ -533,8 +636,13 @@ namespace Boom
 
     private:
 
+        std::unique_ptr<Boom::DebugLinesShader> m_DebugLinesShader;
+        std::vector<Boom::PhysicsContext::DebugLine> m_PhysLinesCPU;
         char m_CurrentScenePath[512] = "\0";
         bool m_SceneLoaded = false;
+
+        // Toggle: draw only entities that have RigidBodyComponent (+ColliderComponent)
+        bool m_DebugRigidBodiesOnly = true; // F10 toggles this at runtime
 
         /**
         * @brief Cleans up the current scene and physics actors
@@ -717,15 +825,17 @@ namespace Boom
             // Only simulate physics if running
             if (m_AppState == ApplicationState::RUNNING)
             {
-                
+
                 m_Context->physics->Simulate(1, static_cast<float>(m_Context->DeltaTime));
                 EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
                     {
                         auto& transform = entity.template Get<TransformComponent>().transform;
                         auto pose = comp.RigidBody.actor->getGlobalPose();
-                        glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
-                        transform.rotate = glm::degrees(glm::eulerAngles(rot));
-                        transform.translate = PxToVec3(pose.p);
+                        if (comp.RigidBody.actor->is<physx::PxRigidDynamic>()) {
+                            glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
+                            transform.rotate = glm::degrees(glm::eulerAngles(rot));
+                            transform.translate = PxToVec3(pose.p);
+                        }
                     });
             }
         }
@@ -736,7 +846,7 @@ namespace Boom
             EnttView<Entity, ScriptComponent>([this](auto entity, ScriptComponent& sc) {
                 if (sc.TypeName.empty()) return;
                 // Create a managed instance and remember its ID on the component
-                sc.InstanceId = script_create_instance(sc.TypeName.c_str(),static_cast<ScriptEntityId>(entity.ID()));
+                sc.InstanceId = script_create_instance(sc.TypeName.c_str(), static_cast<ScriptEntityId>(entity.ID()));
                 BOOM_INFO("[Scripting] Created instance '{}' -> entt {}",
                     sc.TypeName,
                     static_cast<uint32_t>(entity.ID()));
@@ -751,6 +861,160 @@ namespace Boom
                     sc.InstanceId = 0;
                 }
                 });
+        }
+
+        BOOM_INLINE static glm::mat4 PxToGlm(const physx::PxTransform& t)
+        {
+            // GLM expects (w,x,y,z) ctor, PhysX stores (x,y,z,w)
+            glm::quat q(t.q.w, t.q.x, t.q.y, t.q.z);
+            glm::mat4 m = glm::mat4_cast(q);
+            m[3] = glm::vec4(t.p.x, t.p.y, t.p.z, 1.0f);
+            return m;
+        }
+
+        BOOM_INLINE static void AppendLine(std::vector<Boom::LineVert>& out,
+            const glm::vec3& a, const glm::vec3& b,
+            const glm::vec4& cA, const glm::vec4& cB)
+        {
+            out.push_back(Boom::LineVert{ a, cA });
+            out.push_back(Boom::LineVert{ b, cB });
+        }
+
+        BOOM_INLINE static void AppendBoxWire(const physx::PxBoxGeometry& g,
+            const physx::PxTransform& world,
+            std::vector<Boom::LineVert>& out,
+            const glm::vec4& color)
+        {
+            const glm::vec3 he(g.halfExtents.x, g.halfExtents.y, g.halfExtents.z);
+            const glm::mat4 M = PxToGlm(world);
+
+            const glm::vec3 c[8] = {
+                {-he.x, -he.y, -he.z}, { he.x, -he.y, -he.z},
+                { he.x,  he.y, -he.z}, {-he.x,  he.y, -he.z},
+                {-he.x, -he.y,  he.z}, { he.x, -he.y,  he.z},
+                { he.x,  he.y,  he.z}, {-he.x,  he.y,  he.z}
+            };
+            auto X = [&](glm::vec3 p) { return glm::vec3(M * glm::vec4(p, 1)); };
+
+            const int e[12][2] = {
+                {0,1},{1,2},{2,3},{3,0},
+                {4,5},{5,6},{6,7},{7,4},
+                {0,4},{1,5},{2,6},{3,7}
+            };
+            for (auto& pair : e)
+                AppendLine(out, X(c[pair[0]]), X(c[pair[1]]), color, color);
+        }
+
+        BOOM_INLINE static void AppendCircle(const glm::mat4& M, float r,
+            int segments, int axis, // 0=X,1=Y,2=Z
+            float yOffset,
+            std::vector<Boom::LineVert>& out,
+            const glm::vec4& color)
+        {
+            auto P = [&](float a)->glm::vec3 {
+                float s = sinf(a), c = cosf(a);
+                glm::vec3 p;
+                if (axis == 0)      p = glm::vec3(0, r * c, r * s);
+                else if (axis == 1) p = glm::vec3(r * c, 0, r * s);
+                else                p = glm::vec3(r * c, r * s, 0);
+                p.y += (axis == 1 ? 0.0f : yOffset);
+                return glm::vec3(M * glm::vec4(p, 1));
+                };
+            const float step = glm::two_pi<float>() / (float)segments;
+            for (int i = 0; i < segments; ++i) {
+                glm::vec3 a = P(i * step);
+                glm::vec3 b = P((i + 1) * step);
+                AppendLine(out, a, b, color, color);
+            }
+        }
+
+        BOOM_INLINE static void AppendSphereWire(float radius,
+            const physx::PxTransform& world,
+            std::vector<Boom::LineVert>& out,
+            const glm::vec4& color)
+        {
+            const glm::mat4 M = PxToGlm(world);
+            const int seg = 24;
+            // 3 great circles
+            AppendCircle(M, radius, seg, 0, 0.0f, out, color); // YZ plane
+            AppendCircle(M, radius, seg, 1, 0.0f, out, color); // XZ plane
+            AppendCircle(M, radius, seg, 2, 0.0f, out, color); // XY plane
+        }
+
+        BOOM_INLINE static void AppendCapsuleWire(float radius, float halfHeight,
+            const physx::PxTransform& world,
+            std::vector<Boom::LineVert>& out,
+            const glm::vec4& color)
+        {
+            // Approximate: 3 rings + side rails
+            const glm::mat4 M = PxToGlm(world);
+            const int seg = 24;
+            // Middle ring (around capsule center)
+            AppendCircle(M, radius, seg, 1, 0.0f, out, color);
+            // Top and bottom rings (offset along local X in PhysX default)
+            // Our AddRigidBody may rotate capsules, but we draw simple hints:
+            {
+                glm::mat4 Mt = glm::translate(M, glm::vec3(halfHeight, 0, 0));
+                glm::mat4 Mb = glm::translate(M, glm::vec3(-halfHeight, 0, 0));
+                // Rings perpendicular to major axis (approx)
+                AppendCircle(Mt, radius, seg, 1, 0.0f, out, color);
+                AppendCircle(Mb, radius, seg, 1, 0.0f, out, color);
+                // Side rails (four)
+                const int rails = 4;
+                for (int i = 0; i < rails; ++i) {
+                    float a = i * glm::half_pi<float>() / (rails / 2);
+                    glm::vec3 dir(0, radius * cos(a), radius * sin(a));
+                    glm::vec3 A = glm::vec3(Mb * glm::vec4(dir, 1));
+                    glm::vec3 B = glm::vec3(Mt * glm::vec4(dir, 1));
+                    AppendLine(out, A, B, color, color);
+                }
+            }
+        }
+
+        BOOM_INLINE void DrawRigidBodiesDebugOnly(const glm::mat4& view, const glm::mat4& proj)
+        {
+            if (!m_DebugLinesShader) return;
+
+            std::vector<Boom::LineVert> verts;
+            verts.reserve(1024);
+            const glm::vec4 color(0.1f, 1.0f, 0.1f, 1.0f);
+
+            EnttView<Entity, RigidBodyComponent>([&](auto entity, RigidBodyComponent& rb) {
+                if (!entity.template Has<ColliderComponent>()) return;
+
+                physx::PxRigidActor* actor = rb.RigidBody.actor;
+                if (!actor) return;
+
+                PxU32 n = actor->getNbShapes();
+                if (!n) return;
+                std::vector<physx::PxShape*> shapes(n);
+                actor->getShapes(shapes.data(), n);
+
+                const physx::PxTransform actorPose = actor->getGlobalPose();
+                for (auto* shape : shapes)
+                {
+                    const physx::PxTransform world = actorPose * shape->getLocalPose();
+                    physx::PxGeometryHolder gh = shape->getGeometry();
+                    switch (gh.getType())
+                    {
+                    case physx::PxGeometryType::eBOX:
+                        AppendBoxWire(gh.box(), world, verts, color);
+                        break;
+                    case physx::PxGeometryType::eSPHERE:
+                        AppendSphereWire(gh.sphere().radius, world, verts, color);
+                        break;
+                    case physx::PxGeometryType::eCAPSULE:
+                        AppendCapsuleWire(gh.capsule().radius, gh.capsule().halfHeight, world, verts, color);
+                        break;
+                    default:
+                        // For mesh/convex/etc. you can add more if needed; skip for now.
+                        break;
+                    }
+                }
+                });
+
+            if (!verts.empty())
+                m_DebugLinesShader->Draw(view, proj, verts, 1.5f);
         }
     };
 

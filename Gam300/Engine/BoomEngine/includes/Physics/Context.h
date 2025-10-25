@@ -3,9 +3,19 @@
 #include "Utilities.h"
 #include "Auxiliaries/Assets.h"
 #include <iostream>
+#include "PxPhysicsAPI.h"
 
 namespace Boom {
     struct PhysicsContext {
+
+        // Simple line primitive for debug rendering
+        struct DebugLine {
+            glm::vec3 p0;
+            glm::vec3 p1;
+            glm::vec4 c0;
+            glm::vec4 c1;
+        };
+
         BOOM_INLINE PhysicsContext() {
             // sinitialize physX SDK
             m_Foundation = PxCreateFoundation(PX_PHYSICS_VERSION, m_AllocatorCallback, m_ErrorCallback);
@@ -45,6 +55,9 @@ namespace Boom {
                 m_Foundation->release();
                 return;
             }
+
+            // Debug visualization disabled by default
+            m_DebugVisEnabled = false;
         }
 
         BOOM_INLINE ~PhysicsContext() {
@@ -54,8 +67,89 @@ namespace Boom {
             if (m_Foundation) { m_Foundation->release(); }
         }
 
+        // Enable/disable PhysX scene debug visualization and which primitives to emit
+        BOOM_INLINE void EnableDebugVisualization(bool enable, float scale = 1.0f)
+        {
+            m_DebugVisEnabled = enable;
+
+            // Global scale. Set to 0.0f to turn off all visualization.
+            m_Scene->setVisualizationParameter(PxVisualizationParameter::eSCALE, enable ? scale : 0.0f);
+
+            if (!enable) return;
+
+            // Keep shapes only; turn off extra clutter that can block view.
+            m_Scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
+            m_Scene->setVisualizationParameter(PxVisualizationParameter::eACTOR_AXES, 1.0f);
+            m_Scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
+            m_Scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL, 1.0f);
+            // Common extras, enable as needed:
+            // m_Scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_AABBS, 1.0f);
+            // m_Scene->setVisualizationParameter(PxVisualizationParameter::eBODY_MASS_AXES, 1.0f);
+            // m_Scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LOCAL_FRAMES, 1.0f);
+            // m_Scene->setVisualizationParameter(PxVisualizationParameter::eJOINT_LIMITS, 1.0f);
+        }
+
+        // Convert PhysX' color (ARGB packed) to glm::vec4 RGBA
+        BOOM_INLINE static glm::vec4 UnpackPxColor(PxU32 c)
+        {
+            float a = ((c >> 24) & 0xFF) / 255.0f;
+            float r = ((c >> 16) & 0xFF) / 255.0f;
+            float g = ((c >> 8) & 0xFF) / 255.0f;
+            float b = ((c >> 0) & 0xFF) / 255.0f;
+            return { r, g, b, a };
+        }
+
+        // Gather current PhysX debug buffer as line segments to feed your renderer
+        BOOM_INLINE void CollectDebugLines(std::vector<DebugLine>& outLines) const
+        {
+            outLines.clear();
+            if (!m_DebugVisEnabled || !m_Scene) return;
+
+            const PxRenderBuffer& rb = m_Scene->getRenderBuffer();
+
+            // Lines
+            const PxU32 nLines = rb.getNbLines();
+            const PxDebugLine* lines = rb.getLines();
+            for (PxU32 i = 0; i < nLines; ++i) {
+                DebugLine dl;
+                dl.p0 = { lines[i].pos0.x, lines[i].pos0.y, lines[i].pos0.z };
+                dl.p1 = { lines[i].pos1.x, lines[i].pos1.y, lines[i].pos1.z };
+                dl.c0 = UnpackPxColor(lines[i].color0);
+                dl.c1 = UnpackPxColor(lines[i].color1);
+                outLines.push_back(dl);
+            }
+
+            // Triangles (emit 3 edges)
+            const PxU32 nTris = rb.getNbTriangles();
+            const PxDebugTriangle* tris = rb.getTriangles();
+            for (PxU32 i = 0; i < nTris; ++i) {
+                glm::vec3 a{ tris[i].pos0.x, tris[i].pos0.y, tris[i].pos0.z };
+                glm::vec3 b{ tris[i].pos1.x, tris[i].pos1.y, tris[i].pos1.z };
+                glm::vec3 c{ tris[i].pos2.x, tris[i].pos2.y, tris[i].pos2.z };
+                glm::vec4 ca = UnpackPxColor(tris[i].color0);
+                glm::vec4 cb = UnpackPxColor(tris[i].color1);
+                glm::vec4 cc = UnpackPxColor(tris[i].color2);
+
+                outLines.push_back(DebugLine{ a, b, ca, cb });
+                outLines.push_back(DebugLine{ b, c, cb, cc });
+                outLines.push_back(DebugLine{ c, a, cc, ca });
+            }
+
+            // Points (draw as tiny axis-cross lines)
+            const PxU32 nPts = rb.getNbPoints();
+            const PxDebugPoint* pts = rb.getPoints();
+            const float s = 0.02f; // point cross half-size
+            for (PxU32 i = 0; i < nPts; ++i) {
+                glm::vec3 p{ pts[i].pos.x, pts[i].pos.y, pts[i].pos.z };
+                glm::vec4 c = UnpackPxColor(pts[i].color);
+
+                outLines.push_back(DebugLine{ p + glm::vec3(-s, 0, 0), p + glm::vec3(+s, 0, 0), c, c });
+                outLines.push_back(DebugLine{ p + glm::vec3(0, -s, 0), p + glm::vec3(0, +s, 0), c, c });
+                outLines.push_back(DebugLine{ p + glm::vec3(0, 0, -s), p + glm::vec3(0, 0, +s), c, c });
+            }
+        }
+
         // Rigid Body
-                // Rigid Body
         BOOM_INLINE void AddRigidBody(Entity& entity, AssetRegistry& assetRegistry) {
             auto& transform = entity.Get<TransformComponent>().transform;
             auto& body = entity.Get<RigidBodyComponent>().RigidBody;
@@ -65,7 +159,13 @@ namespace Boom {
 
             // create rigidbody transformation
             PxTransform pose(ToPxVec3(transform.translate));
-            glm::quat rot(transform.rotate);
+
+            glm::vec3 eulerRadians = glm::radians(transform.rotate);
+            glm::quat rot = glm::quat(eulerRadians);
+
+            // Normalize the quaternion to ensure it's valid
+            rot = glm::normalize(rot);
+
             pose.q = PxQuat(rot.x, rot.y, rot.z, rot.w);
 
             // create a rigid body actor
@@ -90,7 +190,62 @@ namespace Boom {
                     PxSphereGeometry
                         sphere(transform.scale.x / 2.0f);
                     collider.Shape = m_Physics->createShape(sphere, *collider.material);
+                    PxTransform relativePose(PxQuat(0, PxVec3(0, 0, 1)));
+                    collider.Shape->setLocalPose(relativePose);
                 }
+                else if (collider.type == Collider3D::CAPSULE) {
+                    if (!m_Physics) {
+                        return;
+                    }
+                    if (!collider.material) {
+                        return;
+                    }
+
+                    // Decide which axis the capsule should align to.
+                    // PhysX capsules extend along +X by default. We rotate to align to Y or Z when needed.
+                    const glm::vec3 s = glm::abs(transform.scale);
+                    enum Axis { AXIS_X = 0, AXIS_Y = 1, AXIS_Z = 2 };
+                    Axis majorAxis = AXIS_X;
+                    float major = s.x;
+                    if (s.y > major) { majorAxis = AXIS_Y; major = s.y; }
+                    if (s.z > major) { majorAxis = AXIS_Z; major = s.z; }
+
+                    // Radius comes from the two minor axes; halfHeight comes from the major axis.
+                    float minorA = (majorAxis == AXIS_X) ? s.y : s.x;
+                    float minorB = (majorAxis == AXIS_Z) ? s.y : s.z;
+                    if (majorAxis == AXIS_Y) { minorA = s.x; minorB = s.z; }
+
+                    float radius = 0.5f * std::max(minorA, minorB);
+                    float halfHeight = 0.5f * major - radius;
+
+                    // Enforce positive dimensions
+                    const float kMin = 0.01f;
+                    if (radius <= 0.0f)      radius = kMin;
+                    if (halfHeight <= 0.0f)  halfHeight = kMin;
+
+                    PxCapsuleGeometry capsule(radius, halfHeight);
+                    PX_ASSERT(capsule.isValid());
+
+                    collider.Shape = m_Physics->createShape(capsule, *collider.material);
+                    if (!collider.Shape) {
+                        BOOM_ERROR("PxPhysics::createShape failed for capsule");
+                        return;
+                    }
+
+                    // Rotate from PhysX's +X axis to our chosen major axis
+                    PxQuat localQ = PxQuat(PxIdentity); // no rotation for X
+                    if (majorAxis == AXIS_Y) {
+                        // Rotate +90 degrees around Z to map X -> Y
+                        localQ = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
+                    }
+                    else if (majorAxis == AXIS_Z) {
+                        // Rotate -90 degrees around Y to map X -> Z
+                        localQ = PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f));
+                    }
+
+                    collider.Shape->setLocalPose(PxTransform(PxVec3(0.0f), localQ));
+                }
+
                 else if (collider.type == Collider3D::MESH) {
                     std::cout << "Creating MESH collider from actual model geometry..." << std::endl;
 
@@ -155,6 +310,11 @@ namespace Boom {
                     return;
                 }
 
+                // Ensure shape is included in debug viz
+                if (collider.Shape) {
+                    collider.Shape->setFlag(PxShapeFlag::eVISUALIZATION, true);
+                }
+
                 // create actor instanace
 
                 if (body.type == RigidBody3D::DYNAMIC)
@@ -194,6 +354,9 @@ namespace Boom {
                 BOOM_ERROR("Error creating dynamic actor");
                 return;
             }
+
+            // Opt-in the actor to debug visualization
+            body.actor->setActorFlag(PxActorFlag::eVISUALIZATION, true);
 
             // set user data to entt id
             body.actor->userData = new EntityID(entity.ID());
@@ -297,5 +460,7 @@ namespace Boom {
         PxFoundation* m_Foundation;
         PxPhysics* m_Physics;
         PxScene* m_Scene;
+
+        bool m_DebugVisEnabled; // new
     };
 }
