@@ -74,6 +74,7 @@ namespace Boom {
             obj_member<"Type", &Boom::Collider3D::type,
             member_enum_value<"BOX", Boom::Collider3D::Type::BOX>,
             member_enum_value<"SPHERE", Boom::Collider3D::Type::SPHERE>,
+			member_enum_value<"CAPSULE", Boom::Collider3D::Type::CAPSULE>,
             member_enum_value<"MESH", Boom::Collider3D::Type::MESH>
             >
         )

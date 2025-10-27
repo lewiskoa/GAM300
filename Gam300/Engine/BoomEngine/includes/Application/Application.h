@@ -449,11 +449,7 @@ namespace Boom
                 // =========================================================================
                 // CORRECTED SECTION: Physics debug drawing is now here, outside the model loop
                 // =========================================================================
-                if (m_DebugRigidBodiesOnly)
-                {
-                    DrawRigidBodiesDebugOnly(dbgView, dbgProj);
-                }
-                else if (m_PhysDebugViz && m_DebugLinesShader)
+                if (m_PhysDebugViz && m_DebugLinesShader)
                 {
                     m_Context->physics->CollectDebugLines(m_PhysLinesCPU);
                     if (!m_PhysLinesCPU.empty())
@@ -783,7 +779,7 @@ namespace Boom
 
                     const physx::PxTransform pose(p, q);
                     dyn->setGlobalPose(pose);
-                    dyn->setLinearVelocity(physx::PxVec3(0.f, 0.f, 0.f));
+                    dyn->setLinearVelocity(physx::PxVec3(2.f, 0.f, 0.f));
                     dyn->setAngularVelocity(physx::PxVec3(0.f, 0.f, 0.f));
 
                     // Mirror to ECS transform immediately (prevents 1-frame hitch)
@@ -822,7 +818,7 @@ namespace Boom
                         auto& transform = entity.template Get<TransformComponent>().transform;
                         auto pose = comp.RigidBody.actor->getGlobalPose();
                         if (comp.RigidBody.actor->is<physx::PxRigidDynamic>()) {
-                            glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
+                            glm::quat rot(pose.q.w, pose.q.x, pose.q.y, pose.q.z); // This is CORRECT
                             transform.rotate = glm::degrees(glm::eulerAngles(rot));
                             transform.translate = PxToVec3(pose.p);
                         }
@@ -931,33 +927,74 @@ namespace Boom
             AppendCircle(M, radius, seg, 2, 0.0f, out, color); // XY plane
         }
 
+        BOOM_INLINE static void AppendSemiCircle(const glm::mat4& M, float r,
+            int segments, int axis, // 0=X,1=Y,2=Z
+            bool positiveHalf,      // which half to draw
+            std::vector<Boom::LineVert>& out,
+            const glm::vec4& color)
+        {
+            auto P = [&](float a)->glm::vec3 {
+                float s = sinf(a), c = cosf(a);
+                glm::vec3 p;
+                if (axis == 0)      p = glm::vec3(0, r * c, r * s); // YZ plane circle
+                else if (axis == 1) p = glm::vec3(r * c, 0, r * s); // XZ plane circle
+                else                p = glm::vec3(r * c, r * s, 0); // XY plane circle
+                return glm::vec3(M * glm::vec4(p, 1));
+                };
+
+            const float step = glm::pi<float>() / (float)segments; // Step over 180 degrees
+            const float offset = positiveHalf ? 0.0f : glm::pi<float>();
+
+            for (int i = 0; i < segments; ++i) {
+                glm::vec3 a = P(offset + i * step);
+                glm::vec3 b = P(offset + (i + 1) * step);
+                AppendLine(out, a, b, color, color);
+            }
+        }
+
         BOOM_INLINE static void AppendCapsuleWire(float radius, float halfHeight,
             const physx::PxTransform& world,
             std::vector<Boom::LineVert>& out,
             const glm::vec4& color)
         {
-            // Approximate: 3 rings + side rails
             const glm::mat4 M = PxToGlm(world);
-            const int seg = 24;
-            // Middle ring (around capsule center)
-            AppendCircle(M, radius, seg, 1, 0.0f, out, color);
-            // Top and bottom rings (offset along local X in PhysX default)
-            // Our AddRigidBody may rotate capsules, but we draw simple hints:
-            {
-                glm::mat4 Mt = glm::translate(M, glm::vec3(halfHeight, 0, 0));
-                glm::mat4 Mb = glm::translate(M, glm::vec3(-halfHeight, 0, 0));
-                // Rings perpendicular to major axis (approx)
-                AppendCircle(Mt, radius, seg, 1, 0.0f, out, color);
-                AppendCircle(Mb, radius, seg, 1, 0.0f, out, color);
-                // Side rails (four)
-                const int rails = 4;
-                for (int i = 0; i < rails; ++i) {
-                    float a = i * glm::half_pi<float>() / (rails / 2);
-                    glm::vec3 dir(0, radius * cos(a), radius * sin(a));
-                    glm::vec3 A = glm::vec3(Mb * glm::vec4(dir, 1));
-                    glm::vec3 B = glm::vec3(Mt * glm::vec4(dir, 1));
-                    AppendLine(out, A, B, color, color);
-                }
+            const int seg = 12; // Segments for a semi-circle
+
+            // --- Create transforms for the two hemisphere centers by translating in LOCAL space ---
+            // A PhysX capsule's length is ALWAYS along its local X-axis.
+            glm::mat4 M_end_pos_x = M * glm::translate(glm::mat4(1.0f), glm::vec3(halfHeight, 0, 0));
+            glm::mat4 M_end_neg_x = M * glm::translate(glm::mat4(1.0f), glm::vec3(-halfHeight, 0, 0));
+
+            // --- Draw the two hemispheres ---
+            // For an X-aligned capsule, the "equator" is a circle in the YZ plane.
+            // The other two semi-circles provide the 3D volume.
+
+            // Positive X Hemisphere
+            AppendCircle(M_end_pos_x, radius, seg * 2, 0, 0.0f, out, color);     // Equator circle (YZ plane)
+            AppendSemiCircle(M_end_pos_x, radius, seg, 1, true, out, color);  // Top arc (XZ plane)
+            AppendSemiCircle(M_end_pos_x, radius, seg, 2, true, out, color);  // Side arc (XY plane)
+
+            // Negative X Hemisphere
+            AppendCircle(M_end_neg_x, radius, seg * 2, 0, 0.0f, out, color);     // Equator circle (YZ plane)
+            AppendSemiCircle(M_end_neg_x, radius, seg, 1, false, out, color); // Bottom arc (XZ plane)
+            AppendSemiCircle(M_end_neg_x, radius, seg, 2, false, out, color); // Side arc (XY plane)
+
+            // --- Draw four side rails connecting the equators ---
+            for (int i = 0; i < 4; ++i) {
+                float angle = glm::half_pi<float>() * i;
+
+                // Points on the circumference of the capsule's equator (in the YZ plane)
+                glm::vec3 p_on_circ(0, radius * cos(angle), radius * sin(angle));
+
+                // Define the local start and end points of the rail along the X-axis
+                glm::vec3 rail_start_local = glm::vec3(-halfHeight, 0, 0) + p_on_circ;
+                glm::vec3 rail_end_local = glm::vec3(halfHeight, 0, 0) + p_on_circ;
+
+                // Transform these local points to the final world space using the main transform M
+                glm::vec3 A = glm::vec3(M * glm::vec4(rail_start_local, 1.0f));
+                glm::vec3 B = glm::vec3(M * glm::vec4(rail_end_local, 1.0f));
+
+                AppendLine(out, A, B, color, color);
             }
         }
 

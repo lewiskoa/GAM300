@@ -194,34 +194,45 @@ namespace Boom {
                     collider.Shape->setLocalPose(relativePose);
                 }
                 else if (collider.type == Collider3D::CAPSULE) {
-                    if (!m_Physics) {
-                        return;
-                    }
-                    if (!collider.material) {
+                    if (!m_Physics || !collider.material) {
                         return;
                     }
 
-                    // Decide which axis the capsule should align to.
-                    // PhysX capsules extend along +X by default. We rotate to align to Y or Z when needed.
+                    // Decide which axis the capsule should align to based on the largest scale component.
                     const glm::vec3 s = glm::abs(transform.scale);
                     enum Axis { AXIS_X = 0, AXIS_Y = 1, AXIS_Z = 2 };
                     Axis majorAxis = AXIS_X;
-                    float major = s.x;
-                    if (s.y > major) { majorAxis = AXIS_Y; major = s.y; }
-                    if (s.z > major) { majorAxis = AXIS_Z; major = s.z; }
+                    if (s.y > s.x && s.y > s.z) {
+                        majorAxis = AXIS_Y;
+                    }
+                    else if (s.z > s.x && s.z > s.y) {
+                        majorAxis = AXIS_Z;
+                    }
 
-                    // Radius comes from the two minor axes; halfHeight comes from the major axis.
-                    float minorA = (majorAxis == AXIS_X) ? s.y : s.x;
-                    float minorB = (majorAxis == AXIS_Z) ? s.y : s.z;
-                    if (majorAxis == AXIS_Y) { minorA = s.x; minorB = s.z; }
+                    float radius, halfHeight;
 
-                    float radius = 0.5f * std::max(minorA, minorB);
-                    float halfHeight = 0.5f * major - radius;
+                    // Correctly calculate radius and half-height based on the major axis.
+                    if (majorAxis == AXIS_Y) { // Y is the longest axis
+                        radius = 0.5f * std::max(s.x, s.z);
+                        halfHeight = 0.5f * s.y;
+                    }
+                    else if (majorAxis == AXIS_Z) { // Z is the longest axis
+                        radius = 0.5f * std::max(s.x, s.y);
+                        halfHeight = 0.5f * s.z;
+                    }
+                    else { // X is the longest axis (or it's a uniform scale)
+                        radius = 0.5f * std::max(s.y, s.z);
+                        halfHeight = 0.5f * s.x;
+                    }
 
-                    // Enforce positive dimensions
+                    // The halfHeight parameter for PhysX is for the CYLINDRICAL part only.
+                    // We must subtract the radius from the half-length of the major axis.
+                    halfHeight = halfHeight - radius;
+
+                    // Enforce positive dimensions to prevent invalid geometry.
                     const float kMin = 0.01f;
-                    if (radius <= 0.0f)      radius = kMin;
-                    if (halfHeight <= 0.0f)  halfHeight = kMin;
+                    if (radius <= 0.0f)     radius = kMin;
+                    if (halfHeight <= 0.0f) halfHeight = kMin; // For a sphere, this will be kMin.
 
                     PxCapsuleGeometry capsule(radius, halfHeight);
                     PX_ASSERT(capsule.isValid());
@@ -232,8 +243,8 @@ namespace Boom {
                         return;
                     }
 
-                    // Rotate from PhysX's +X axis to our chosen major axis
-                    PxQuat localQ = PxQuat(PxIdentity); // no rotation for X
+                    // Rotate the capsule from PhysX's default +X axis to our chosen major axis.
+                    PxQuat localQ = PxQuat(PxIdentity); // Default rotation for X-axis alignment
                     if (majorAxis == AXIS_Y) {
                         // Rotate +90 degrees around Z to map X -> Y
                         localQ = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
@@ -316,15 +327,19 @@ namespace Boom {
                 }
 
                 // create actor instanace
-
                 if (body.type == RigidBody3D::DYNAMIC)
                 {
                     body.actor = PxCreateDynamic(*m_Physics, pose, *collider.Shape, body.density);
+
+                    // --- SOLUTION: Add this line ---
+                    // Recalculate the mass and inertia tensor based on the final, rotated capsule shape.
+                    PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidBody*>(body.actor), body.density);
+
                     body.actor->setActorFlag(PxActorFlag::eSEND_SLEEP_NOTIFIES, true);
 
                     PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(body.actor);
                     if (dyn) {
-                        dyn->setMass(body.mass);
+                        // You can remove dyn->setMass(body.mass); as updateMassAndInertia handles it.
                         dyn->setLinearVelocity(PxVec3(body.initialVelocity.x, body.initialVelocity.y, body.initialVelocity.z));
                     }
                 }
