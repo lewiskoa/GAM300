@@ -111,13 +111,15 @@ ENTITIES:
       ModelSource: "sphere.fbx"
       MaterialSource: "Marble"
     RigidBodyComponent:
-      Density: 1.0
-      Type: DYNAMIC
+      RigidBody:
+        Density: 1.0
+        Type: DYNAMIC
     ColliderComponent:
-      DynamicFriction: 0.5
-      StaticFriction: 0.5
-      Restitution: 0.6
-      Type: SPHERE
+      Collider:
+        DynamicFriction: 0.5
+        StaticFriction: 0.5
+        Restitution: 0.6
+        Type: SPHERE
 
   - InfoComponent:
       Parent: 0

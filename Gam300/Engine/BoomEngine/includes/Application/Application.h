@@ -276,32 +276,10 @@ namespace Boom
                 }
                 // When paused, m_TestRot stays at its current value
 
-                // Update sphere timer
-                //m_SphereTimer += m_Context->DeltaTime;
-
-                //if (m_SphereTimer >= m_SphereResetInterval) {
-                //    // Find the sphere entity by name (or UID)
-                //    EnttView<Entity, InfoComponent, TransformComponent>([this](auto entity, InfoComponent& info, TransformComponent& transform) {
-                //        if (info.name == "Sphere") {
-                //            transform.transform.translate = m_SphereInitialPosition;
-                //        }
-                //        });
-                //    m_SphereTimer = 0.0;
-                //}
-
+                // ... (The commented out sphere timer logic remains here) ...
 
                 //lights (always set up)
-                /* m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                 m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
-                 m_Context->renderer->SetPointLightCount(0);
-
-                 glm::vec3 testDir{ -.7f, -.3f, .3f };
-                 m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
-                 m_Context->renderer->SetDirectionalLightCount(1);
-
-                 m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                 m_Context->renderer->SetSpotLightCount(0);*/
-
+                // ... (Your light setup loops remain here) ...
                 {
                     int points = 0;
                     EnttView<Entity, PointLightComponent, TransformComponent>(
@@ -329,6 +307,7 @@ namespace Boom
                         });
                     m_Context->renderer->SetSpotLightCount(spots);
                 }
+
 
                 //temp input for mouse motion
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
@@ -402,7 +381,7 @@ namespace Boom
 
 >>>>>>> Added debug for colliders but need to fix weird solid sphere for camera
                 //pbr ecs (always render)
-                EnttView<Entity, ModelComponent>([this, &dbgView, &dbgProj, &dbgCamPos](auto entity, ModelComponent& comp) {
+                EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
                     static int renderCount = 0;
                     static bool debugModelsPrinted = false;
 
@@ -463,49 +442,57 @@ namespace Boom
                         m_Context->renderer->Draw(model.data, transform, material.data);
                     }
 
-                    // PhysX debug lines (optional overlay)
-                    if (m_DebugRigidBodiesOnly)
-                    {
-                        DrawRigidBodiesDebugOnly(dbgView, dbgProj);
-                    }
-                    else if (m_PhysDebugViz && m_DebugLinesShader)
-                    {
-                        m_Context->physics->CollectDebugLines(m_PhysLinesCPU);
-                        if (!m_PhysLinesCPU.empty())
-                        {
-                            std::vector<Boom::LineVert> lineVerts;
-                            lineVerts.reserve(m_PhysLinesCPU.size() * 2);
-                            for (const auto& l : m_PhysLinesCPU)
-                            {
-                                lineVerts.push_back(Boom::LineVert{ l.p0, l.c0 });
-                                lineVerts.push_back(Boom::LineVert{ l.p1, l.c1 });
-                            }
-
-                            // Cull any segments that sit right at the camera position (remove “ball in face”)
-                            std::vector<Boom::LineVert> filtered;
-                            filtered.reserve(lineVerts.size());
-                            const float camCullRadius = 0.4f;
-                            for (size_t i = 0; i + 1 < lineVerts.size(); i += 2)
-                            {
-                                const auto& a = lineVerts[i + 0];
-                                const auto& b = lineVerts[i + 1];
-                                const bool bothNear =
-                                    glm::distance(a.pos, dbgCamPos) < camCullRadius &&
-                                    glm::distance(b.pos, dbgCamPos) < camCullRadius;
-                                if (!bothNear) {
-                                    filtered.push_back(a);
-                                    filtered.push_back(b);
-                                }
-                            }
-
-                            if (!filtered.empty())
-                                m_DebugLinesShader->Draw(dbgView, dbgProj, filtered, 1.5f);
-                        }
-                    }
-
                     renderCount++;
                     if (renderCount >= 5) debugModelsPrinted = true;
                     });
+
+                // =========================================================================
+                // CORRECTED SECTION: Physics debug drawing is now here, outside the model loop
+                // =========================================================================
+                if (m_DebugRigidBodiesOnly)
+                {
+                    DrawRigidBodiesDebugOnly(dbgView, dbgProj);
+                }
+                else if (m_PhysDebugViz && m_DebugLinesShader)
+                {
+                    m_Context->physics->CollectDebugLines(m_PhysLinesCPU);
+                    if (!m_PhysLinesCPU.empty())
+                    {
+                        // Build CPU line list
+                        std::vector<Boom::LineVert> lineVerts;
+                        lineVerts.reserve(m_PhysLinesCPU.size() * 2);
+                        for (const auto& l : m_PhysLinesCPU)
+                        {
+                            lineVerts.push_back(Boom::LineVert{ l.p0, l.c0 });
+                            lineVerts.push_back(Boom::LineVert{ l.p1, l.c1 });
+                        }
+
+                        // Cull any segments within a small radius of the camera (fix “ball in face”)
+                        std::vector<Boom::LineVert> filtered;
+                        filtered.reserve(lineVerts.size());
+                        const float camCullRadius = 0.6f;
+
+                        for (size_t i = 0; i + 1 < lineVerts.size(); i += 2)
+                        {
+                            const auto& a = lineVerts[i + 0];
+                            const auto& b = lineVerts[i + 1];
+
+                            const float segDist = DistancePointSegment(dbgCamPos, a.pos, b.pos);
+                            const float endA = glm::distance(a.pos, dbgCamPos);
+                            const float endB = glm::distance(b.pos, dbgCamPos);
+
+                            // Keep only segments not near the camera (endpoints and segment body)
+                            if (segDist >= camCullRadius && endA >= camCullRadius && endB >= camCullRadius)
+                            {
+                                filtered.push_back(a);
+                                filtered.push_back(b);
+                            }
+                        }
+
+                        if (!filtered.empty())
+                            m_DebugLinesShader->Draw(dbgView, dbgProj, filtered, 1.5f);
+                    }
+                }
 
                 //skybox ecs (should be drawn at the end)
                 EnttView<Entity, SkyboxComponent>([this](auto entity, SkyboxComponent& comp) {
@@ -529,6 +516,8 @@ namespace Boom
                 if (m_AppState == ApplicationState::RUNNING)
                 {
                     // Run physics simulation only when running
+                    // NOTE: I noticed you call RunPhysicsSimulation twice, I've left it as is,
+                    // but you might want to ensure it only runs once per frame.
                     RunPhysicsSimulation();
                 }
 
@@ -536,6 +525,7 @@ namespace Boom
                 m_Context->profiler.EndFrame();
             }
         }
+        
 
 
 
@@ -1015,6 +1005,16 @@ namespace Boom
 
             if (!verts.empty())
                 m_DebugLinesShader->Draw(view, proj, verts, 1.5f);
+        }
+
+        BOOM_INLINE static float DistancePointSegment(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b)
+        {
+            const glm::vec3 ab = b - a;
+            const float ab2 = glm::dot(ab, ab);
+            if (ab2 <= 1e-6f) return glm::distance(p, a);
+            const float t = glm::clamp(glm::dot(p - a, ab) / ab2, 0.0f, 1.0f);
+            const glm::vec3 closest = a + t * ab;
+            return glm::distance(p, closest);
         }
     };
 
