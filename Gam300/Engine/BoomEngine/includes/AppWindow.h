@@ -246,7 +246,7 @@ namespace Boom {
 		}
 		BOOM_INLINE void SetFOV(float fov) {
 			camFOV = glm::clamp(fov, CONSTANTS::MIN_FOV, CONSTANTS::MAX_FOV);
-			BOOM_DEBUG("fov:{}", camFOV);
+			//BOOM_DEBUG("fov:{}", camFOV);
 		}
 		BOOM_INLINE void SetCameraInputRegion(double x, double y, double w, double h, bool enabled) {
 			camRegionX = x; camRegionY = y; camRegionW = w; camRegionH = h; camInputEnabled = enabled;
