@@ -38,7 +38,7 @@ namespace Boom {
             const bool canPan = m_app->camInputEnabled && inRegion && middleMouse;  // MMB pan
 
             // Read once per frame
-            const glm::vec2 md = input.mouseDelta();
+            const glm::vec2 md = input.mouseDeltaLast();
 
             // WASD movement vector (camera-local intent)
             glm::vec3 movements{
