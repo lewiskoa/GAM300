@@ -253,7 +253,12 @@ namespace Boom {
 			return (mx >= camRegionX && mx <= camRegionX + camRegionW &&
 				my >= camRegionY && my <= camRegionY + camRegionH);
 		}
-
+		BOOM_INLINE int getWidth() {
+			return width;
+		}
+		BOOM_INLINE int getHeight() {
+			return height;
+		}	
 	private:
 		int32_t width;
 		int32_t height;
@@ -268,19 +273,21 @@ namespace Boom {
 		WindowInputs inputs;
 
 	public: //usage for basic glew input to move camera in editor
-		bool isRightClickDown{};
+		bool isRightClickDown{};   // optional legacy flags if you still want them
 		bool isMiddleClickDown{};
 		bool isShiftDown{};
-		//x - strafe right/left
-		//y - hover  up/down
-		//z - zoom   front/back
-		glm::vec3 camMoveDir{};
-		glm::dvec2 prevMousePos{};
-		//around x/y
-		glm::vec2 camRot{};
-		float camFOV{ CONSTANTS::MIN_FOV }; //removed later
-		float camMoveMultiplier{ 0.5f };
 
+		// x - strafe right/left, y - hover up/down, z - forward/back
+		glm::vec3  camMoveDir{};
+
+		// Kept for completeness; not needed if you use InputSystem mouse deltas
+		glm::dvec2 prevMousePos{};
+
+		// around x/y (x=pitch, y=yaw) in degrees
+		glm::vec2  camRot{};
+
+		float camFOV{ CONSTANTS::MIN_FOV };
+		float camMoveMultiplier{ 0.5f };
 		// Making sure that the rotation on happens in the viewport
 		double camRegionX{ 0.0 }, camRegionY{ 0.0 }, camRegionW{ 0.0 }, camRegionH{ 0.0 };
 		bool   camInputEnabled{ false };

@@ -178,16 +178,18 @@ namespace Boom
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
             LoadScene("default");
+     
             CameraController camera(
                 m_Context->window.get(),
                 CameraController::Config{
-                    .mouseSensitivityX = 0.12f,
-                    .mouseSensitivityY = 0.12f,
+                    .mouseSensitivityX = 0.01f,
+                    .mouseSensitivityY = 0.01f,
                     .multiplierStep = 0.01f,
                     .gateToViewportRect = true,
                     .gateToRMB = true
                 }
             );
+         
             ////init skybox
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
                 SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };

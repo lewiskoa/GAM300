@@ -78,13 +78,14 @@ namespace Boom {
         }
 
         void onCursorPos(double x, double y) {
-           
             if (m_firstMouseThisFrame) {
                 m_firstMouseThisFrame = false;
-                m_mouseDelta = { 0.0f, 0.0f };
+                // First event of this frame: compare to last frame's position
+                m_mouseDelta += glm::vec2{ float(x - m_prev.MouseX), float(y - m_prev.MouseY) };
             }
             else {
-                m_mouseDelta += glm::vec2{ float(x - m_cur.MouseX), float(y - m_cur.MouseY) };
+                // Subsequent events: compare to the last event this frame
+                m_mouseDelta += glm::vec2{ float(x - m_cur.MouseX),  float(y - m_cur.MouseY) };
             }
             m_cur.MouseX = x;
             m_cur.MouseY = y;
