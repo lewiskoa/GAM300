@@ -114,6 +114,7 @@ uniform int noSpotLight;
 uniform vec3 viewPos;
 
 uniform bool isDebugMode;
+uniform bool showNormalTexture;
 
 //this effect influences the appearance of surfaces
 // for example, higher reflectivity at grazing angles than dielectrics
@@ -161,8 +162,12 @@ uniform float ditherThreshold;
 
 void main() {
     if (isDebugMode) {
-        //                                       green            strength
+        //                                       green                strength
         out_fragment = vec4(mix(material.albedo, vec3(0.0, 1.0, 0.0), 0.75), 1.0);
+        return;
+    }
+    if (showNormalTexture){
+        out_fragment = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
         return;
     }
     vec3 V = normalize(vertex.position - viewPos);
@@ -205,11 +210,10 @@ void main() {
     int col = int(mod(gl_FragCoord.x, 8));
     int row = int(mod(gl_FragCoord.y, 8));
     float threshold = float(bayer64[col + 8 * row]) / 64.0;
-    if (length(color - quanColor) <= threshold * ditherThreshold) color /= 1.8;
+    if (length(color - quanColor) <= threshold * ditherThreshold) color = quanColor;
 
     out_fragment = vec4(color, 1.0);
     
-    //fragColor = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
 }
 
 vec3 FresnelSchlick(float cosTheta, vec3 f0) {

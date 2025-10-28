@@ -227,22 +227,10 @@ namespace Boom {
 			// Ignore weird scancodes
 			if (key < 0 || key > GLFW_KEY_LAST) return;
 
-			if (action == GLFW_PRESS || action == GLFW_REPEAT) {
-				if (key == GLFW_KEY_EQUAL) {
-					self->ditherThreshold = glm::min(self->ditherThreshold + 0.01f, 1.f);
-					BOOM_INFO("{}", self->ditherThreshold);
-				}
-				if (key == GLFW_KEY_MINUS) {
-					self->ditherThreshold = glm::max(self->ditherThreshold - 0.01f, 0.f);
-					BOOM_INFO("{}", self->ditherThreshold);
-				}
-			}
-
 			// Update state
 			const bool down = (action != GLFW_RELEASE);
 			self->inputs.Keys.set(static_cast<size_t>(key), down);
 
-			
 			const bool run = self->inputs.Keys.test(GLFW_KEY_LEFT_SHIFT);
 
 			// Axis from state (pos - neg) -> {-1,0,1}
@@ -358,7 +346,5 @@ namespace Boom {
 		double camRegionX{ 0.0 }, camRegionY{ 0.0 }, camRegionW{ 0.0 }, camRegionH{ 0.0 };
 		bool   camInputEnabled{ false };
 		bool isEditor{}; //needed due to imgui's weird resizing bug
-
-		float ditherThreshold{ 1.0 };
 	};
 }
