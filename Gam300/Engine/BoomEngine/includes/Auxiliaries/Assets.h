@@ -54,8 +54,8 @@ namespace Boom {
 		Texture data{};		//Runtime only, no need to serialize
 
 		 XPROPERTY_DEF(
-		 	"TextureAsset", TextureAsset,
-			 obj_member<"Data", &TextureAsset::data>
+		 	"TextureAsset", TextureAsset
+			 //, obj_member<"Data", &TextureAsset::data>
 		 )
 
 	};
