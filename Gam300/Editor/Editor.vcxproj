@@ -215,6 +215,17 @@ if exist "$(glew_BIN_DIRS)" xcopy /y /i "$(glew_BIN_DIRS)\*.dll" "$(TargetDir)"<
     <!-- Core ImGui -->
     <ClCompile Include="src\Context\Profiler.hpp" />
     <ClCompile Include="src\Editor.cpp" />
+    <ClCompile Include="src\Editor\Editor.cpp" />
+    <ClCompile Include="src\Editor\main.cpp" />
+    <ClCompile Include="src\Panels\AudioPanel.cpp" />
+    <ClCompile Include="src\Panels\ConsolePanel.cpp" />
+    <ClCompile Include="src\Panels\DirectoryPanel.cpp" />
+    <ClCompile Include="src\Panels\HierarchyPanel.cpp" />
+    <ClCompile Include="src\Panels\InspectorPanel.cpp" />
+    <ClCompile Include="src\Panels\MenuBarPanel.cpp" />
+    <ClCompile Include="src\Panels\PrefabBrowser.cpp" />
+    <ClCompile Include="src\Panels\ResourcePanel.cpp" />
+    <ClCompile Include="src\Panels\ViewportPanel.cpp" />
     <ClCompile Include="src\Vendors\imgui\imgui.cpp" />
     <ClCompile Include="src\Vendors\imgui\imgui_draw.cpp" />
     <ClCompile Include="src\Vendors\imgui\imgui_tables.cpp" />
@@ -232,6 +243,16 @@ if exist "$(glew_BIN_DIRS)" xcopy /y /i "$(glew_BIN_DIRS)\*.dll" "$(TargetDir)"<
     <ClInclude Include="src\Context\Helpers.h" />
     <ClInclude Include="src\Context\Inputs.h" />
     <ClInclude Include="src\Context\Widgets.h" />
+    <ClInclude Include="src\Editor\Editor.h" />
+    <ClInclude Include="src\Panels\AudioPanel.h" />
+    <ClInclude Include="src\Panels\ConsolePanel.h" />
+    <ClInclude Include="src\Panels\DirectoryPanel.h" />
+    <ClInclude Include="src\Panels\HierarchyPanel.h" />
+    <ClInclude Include="src\Panels\InspectorPanel.h" />
+    <ClInclude Include="src\Panels\MenuBarPanel.h" />
+    <ClInclude Include="src\Panels\PrefabBrowser.h" />
+    <ClInclude Include="src\Panels\ResourcePanel.h" />
+    <ClInclude Include="src\Panels\ViewportPanel.h" />
     <ClInclude Include="src\Vendors\FA.h" />
     <ClInclude Include="src\Vendors\imgui\imgui.h" />
     <ClInclude Include="src\Vendors\imgui\imgui_internal.h" />

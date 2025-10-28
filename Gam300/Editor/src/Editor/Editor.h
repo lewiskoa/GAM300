@@ -6,7 +6,7 @@
 #include "Editor/EditorPCH.h"
 
 // Panel interfaces (included here so Editor.cpp can construct them)
-#include "Panel/MenuBarPanel.h"
+#include "Panels/MenuBarPanel.h"
 #include "Panels/HierarchyPanel.h"
 #include "Panels/InspectorPanel.h"
 #include "Panels/ConsolePanel.h"
