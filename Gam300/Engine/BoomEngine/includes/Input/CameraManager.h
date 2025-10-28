@@ -66,14 +66,14 @@ namespace Boom {
             }
             else if (canUse) {
                 // Look (RMB) using the same md
-                m_app->camRot.y += md.x * m_cfg.mouseSensitivityX;
-                m_app->camRot.x += md.y * m_cfg.mouseSensitivityY;
+                m_app->camRot.y -= md.x *( m_cfg.mouseSensitivityX*CONSTANTS::CAM_PAN_SPEED);
+                m_app->camRot.x -= md.y *( m_cfg.mouseSensitivityY*CONSTANTS::CAM_PAN_SPEED);
                 if (m_cfg.clampPitch)
                     m_app->camRot.x = std::clamp(m_app->camRot.x, m_cfg.minPitchDeg, m_cfg.maxPitchDeg);
 
                 // Move (WASD) in camera-local forward/right/up
-                const float yaw = glm::radians(m_app->camRot.y);
-                const float pitch = glm::radians(m_app->camRot.x);
+                const float yaw = m_cfg.mouseSensitivityX / float(m_app->getWidth());   // deg per pixel
+                const float pitch = m_cfg.mouseSensitivityY / float(m_app->getHeight());  // deg per pixel
                 const float sy = std::sinf(yaw), cy = std::cosf(yaw);
                 const float sp = std::sinf(pitch), cp = std::cosf(pitch);
 
