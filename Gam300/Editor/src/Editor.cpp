@@ -341,7 +341,15 @@ private:
             }
 
             if (ImGui::BeginMenu("Options")) {
-                ImGui::MenuItem("Debug Draw", nullptr, &m_Context->renderer->IsDrawDebugMode());
+                ImGui::MenuItem("Debug Draw", nullptr, &m_Context->renderer->isDrawDebugMode);
+                ImGui::MenuItem("Normal View", nullptr, &m_Context->renderer->showNormalTexture);
+                if (ImGui::BeginMenu("Low poly mode")) {
+                    ImGui::Checkbox("Enabled", &m_Context->renderer->showLowPoly);
+                    if (m_Context->renderer->showLowPoly) {
+                        ImGui::SliderFloat("Dither Threshold", &m_Context->renderer->DitherThreshold(), 0.0f, 1.0f);
+					}
+                    ImGui::EndMenu();
+                }
                 ImGui::EndMenu();
             }
 

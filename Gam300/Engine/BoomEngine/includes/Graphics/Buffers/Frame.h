@@ -5,9 +5,10 @@
 namespace Boom {
 	class FrameBuffer {
 	public:
-		BOOM_INLINE FrameBuffer(int32_t w, int32_t h)
-			: buffId{}, render{}, color{},
-			width{ w }, height{ h }
+		BOOM_INLINE FrameBuffer(int32_t w, int32_t h, bool lowRes = false)
+			: buffId{}, render{}, color{}
+			, width{ w }, height{ h }
+			, isLowPoly{lowRes}
 		{
 			//glSampleCoverage(1.f, GL_FALSE); //for multisampling
 			glGenFramebuffers(1, &buffId);
@@ -56,8 +57,7 @@ namespace Boom {
 
 			//resize brightness attachment
 			glBindTexture(GL_TEXTURE_2D, brightness);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F,
-				width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 			glBindTexture(GL_TEXTURE_2D, 0);
 
 			//resize render buffer
@@ -71,22 +71,41 @@ namespace Boom {
 		
 		BOOM_INLINE void Begin() {
 			glBindFramebuffer(GL_FRAMEBUFFER, buffId);
-			glViewport(0, 0, width, height);
+			
+			if (isLowPoly) {
+				glViewport(0, 0, 320, 240);
+				glDisable(GL_MULTISAMPLE);
+				glDisable(GL_POINT_SMOOTH);
+				glDisable(GL_LINE_SMOOTH);
+				glDisable(GL_POLYGON_SMOOTH);
+				glHint(GL_POINT_SMOOTH_HINT, GL_DONT_CARE);
+				glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
+				glHint(GL_POLYGON_SMOOTH_HINT, GL_DONT_CARE);
+			}
+			else {
+				glViewport(0, 0, width, height);
+			}
 			std::apply(glClearColor, CONSTANTS::DEFAULT_BACKGROUND_COLOR);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glEnable(GL_DEPTH_TEST);
 			glEnable(GL_SAMPLES);
-			//glEnable(GL_MULTISAMPLE);
 		}
 		BOOM_INLINE void End() {
-			//glDisable(GL_MULTISAMPLE);
+			if (isLowPoly) {
+				glEnable(GL_MULTISAMPLE);
+				glEnable(GL_POINT_SMOOTH);
+				glEnable(GL_LINE_SMOOTH);
+				glEnable(GL_POLYGON_SMOOTH);
+				glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+				glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+				glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+			}
 			glDisable(GL_SAMPLES);
 			glDisable(GL_DEPTH_TEST);
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		}
-		BOOM_INLINE uint32_t GetBrightnessMap()
-		{
+		BOOM_INLINE uint32_t GetBrightnessMap() {
 			return brightness;
 		}
 		BOOM_INLINE int32_t GetWidth() const {
@@ -100,11 +119,11 @@ namespace Boom {
 		BOOM_INLINE void CreateColorAttachment() {
 			glGenTextures(1, &color);
 			glBindTexture(GL_TEXTURE_2D, color);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, isLowPoly ? GL_NEAREST : GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, isLowPoly ? GL_NEAREST : GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, isLowPoly ? 320 : width, isLowPoly ? 240 : height, 0, GL_RGBA, GL_FLOAT, NULL);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color, 0);
 		}
 		BOOM_INLINE void CreateRenderBuffer() {
@@ -116,8 +135,8 @@ namespace Boom {
 		BOOM_INLINE void CreateBrightnessAttachment() {
 			glGenTextures(1, &brightness);
 			glBindTexture(GL_TEXTURE_2D, brightness);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, isLowPoly ? GL_NEAREST : GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, isLowPoly ? GL_NEAREST : GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -131,5 +150,7 @@ namespace Boom {
 		uint32_t color;
 		int32_t width;
 		int32_t height;
+
+		bool isLowPoly;
 	};
 }

@@ -2,7 +2,7 @@
 #include "Core.h" //used for variables and error handling
 #include "common/Events.h"
 #include "GlobalConstants.h"
-
+#include "Input/InputHandler.h"
 namespace Boom {
 	struct AppWindow {
 	public:
@@ -143,126 +143,63 @@ namespace Boom {
 			//assuming might carry over
 		}
 
-		BOOM_INLINE static void OnWheel(GLFWwindow* win, double x, double y) {
-			(void)x;
-			/*
-			GetUserData(win)->dispatcher->PostEvent<MouseWheelEvent>(x, y);
-			*/
-			AppWindow* self{ GetUserData(win) };
-			if (self->isRightClickDown) {
-				float sum{ (float)y * 0.01f };
-				if (self->isShiftDown) {
-					sum *= 10.f;
-				}
-				self->camMoveMultiplier = glm::clamp(self->camMoveMultiplier + sum, 0.01f, 100.f);
-			}
-			else if (self->IsMouseInCameraRegion(win)) {
-				self->SetFOV(self->camFOV - (float)y);
-			}
-		}
-		BOOM_INLINE static void OnMouse(GLFWwindow* win, int32_t button, int32_t action, int32_t) {
-			AppWindow* self{ GetUserData(win) };
-
-			if (button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST) {
-				switch (action) {
-				case GLFW_RELEASE:
-					if (button == GLFW_MOUSE_BUTTON_RIGHT)  self->isRightClickDown = false;
-					if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-						self->isMiddleClickDown = false;
-						self->camMoveDir = {};
-					}
-					break;
-
-				case GLFW_PRESS:
-					if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-						// Only enable camera look if we're allowed AND the cursor is inside the scene viewport
-						if (self->camInputEnabled && self->IsMouseInCameraRegion(win)) {
-							self->isRightClickDown = true;
-						}
-						else {
-							self->isRightClickDown = false; // hard block
-						}
-					}
-					if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
-						// Middle-button panning can be likewise gated (optional)
-						self->isMiddleClickDown = self->camInputEnabled && self->IsMouseInCameraRegion(win);
-					}
-					break;
-				}
-				return;
-			}
-			BOOM_ERROR("AppWindow::OnMouse() invalid keycode: [{}]", button);
+		// Scroll
+		BOOM_INLINE static void OnWheel(GLFWwindow* win, double sx, double sy) {
+			auto* self = GetUserData(win);
+			if (!self) return;
+			self->input.onScroll(sx, sy);
+			// Optional: also emit your event type
+			if (self->dispatcher) self->dispatcher->PostEvent<MouseWheelEvent>(sx, sy);
 		}
 
+		// Mouse buttons
+		BOOM_INLINE static void OnMouse(GLFWwindow* win, int32_t button, int32_t action, int32_t mods) {
+			auto* self = GetUserData(win);
+			if (!self) return;
+			self->input.onMouseButton(button, action, mods);
+
+			// Optional: your event types
+			if (!self->dispatcher) return;
+			if (action == GLFW_PRESS)   self->dispatcher->PostEvent<MouseDownEvent>(button);
+			if (action == GLFW_RELEASE) self->dispatcher->PostEvent<MouseReleaseEvent>(button);
+		}
+
+		// Mouse motion
 		BOOM_INLINE static void OnMotion(GLFWwindow* win, double x, double y) {
-			AppWindow* self{ GetUserData(win) };
-
-			const bool inRegion = self->IsMouseInCameraRegion(win);
-
-			// camera yaw/pitch
-			if (self->isRightClickDown && self->camInputEnabled && inRegion) {
-				self->camRot.x = (float)(self->prevMousePos.y - y) * CONSTANTS::CAM_PAN_SPEED;
-				self->camRot.y = (float)(self->prevMousePos.x - x) * CONSTANTS::CAM_PAN_SPEED;
+			auto* self = GetUserData(win);
+			if (!self) return;
+			self->input.onCursorPos(x, y);
+			// Optional: motion/drag events
+			self->dispatcher->PostEvent<MouseMotionEvent>(x, y);
+			if (self->input.current().Mouse.any()) {
+				// per-event delta (since last motion). If you want exact deltas, track last x/y here.
+				self->dispatcher->PostEvent<MouseDragEvent>(0.0, 0.0);
 			}
-
-			else if (self->isMiddleClickDown && self->camInputEnabled && inRegion) {
-				glm::vec2 pan{ glm::dvec2{
-					(self->prevMousePos.x - x) / (double)self->width,
-					(y - self->prevMousePos.y) / (double)self->height } };
-				self->camMoveDir.y = pan.y * self->camFOV * 0.1f;
-				self->camMoveDir.x = pan.x * self->camFOV * 0.09f;
-			}
-
-			self->prevMousePos = { x, y };
 		}
 
-		BOOM_INLINE static void OnKey(GLFWwindow* win, int32_t key, int32_t, int32_t action, int32_t) {
-			AppWindow* self{ GetUserData(win) };
+		// Keys
+		BOOM_INLINE static void OnKey(GLFWwindow* win, int32_t key, int32_t sc, int32_t action, int32_t mods) {
+			auto* self = GetUserData(win);
+			if (!self) return;
 
 			if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
 				glfwSetWindowShouldClose(win, GLFW_TRUE);
 				return;
 			}
 
-			// Ignore weird scancodes
-			if (key < 0 || key > GLFW_KEY_LAST) return;
+			self->input.onKey(key, sc, action, mods);
 
-			// Update state
-			const bool down = (action != GLFW_RELEASE);
-			self->inputs.Keys.set(static_cast<size_t>(key), down);
-
-			
-			const bool run = self->inputs.Keys.test(GLFW_KEY_LEFT_SHIFT);
-
-			// Axis from state (pos - neg) -> {-1,0,1}
-			auto axis = [&](int pos, int neg) -> float {
-				return float(self->inputs.Keys.test(pos)) - float(self->inputs.Keys.test(neg));
-				};
-
-			// Build movement vector from current state 
-			const float base = CONSTANTS::CAM_PAN_SPEED * self->camMoveMultiplier;
-			const float spd = base * (run ? CONSTANTS::CAM_RUN_MULTIPLIER : 1.f);
-
-			glm::vec3 dir{
-				axis(GLFW_KEY_D, GLFW_KEY_A),   // X: +D, -A
-				axis(GLFW_KEY_E, GLFW_KEY_Q),   // Y: +E, -Q
-				axis(GLFW_KEY_S, GLFW_KEY_W)    // Z: +S, -W  
-			};
-
-			// Optional: normalize diagonal so WASD diagonals aren’t faster
-			if (glm::length2(dir) > 1e-6f) {
-				dir = glm::normalize(dir);
-			}
-
-			self->camMoveDir = dir * spd;
-
-			// (Optional) keep your events for other systems
+			// Optional: keep your key events
+			if (!self->dispatcher) return;
 			switch (action) {
-			case GLFW_PRESS:  self->dispatcher->PostEvent<KeyPressEvent>(key);  break;
-			case GLFW_RELEASE:self->dispatcher->PostEvent<KeyReleaseEvent>(key); break;
-			case GLFW_REPEAT: self->dispatcher->PostEvent<KeyRepeatEvent>(key); break;
+			case GLFW_PRESS:   self->dispatcher->PostEvent<KeyPressEvent>(key);   break;
+			case GLFW_RELEASE: self->dispatcher->PostEvent<KeyReleaseEvent>(key); break;
+			case GLFW_REPEAT:  self->dispatcher->PostEvent<KeyRepeatEvent>(key);  break;
 			}
 		}
+
+
+
 
 		//to be called explicitly to reference window from application
 		//example: GetUserData(win)->isFullscreen 
@@ -285,6 +222,7 @@ namespace Boom {
 		}
 
 		BOOM_INLINE bool PollEvents() {
+			input.beginFrame();
 			glfwPollEvents();
 			dispatcher->PollEvents();
 			glfwSwapBuffers(windowPtr.get());
@@ -304,7 +242,7 @@ namespace Boom {
 		}
 		BOOM_INLINE void SetFOV(float fov) {
 			camFOV = glm::clamp(fov, CONSTANTS::MIN_FOV, CONSTANTS::MAX_FOV);
-			BOOM_DEBUG("fov:{}", camFOV);
+			//BOOM_DEBUG("fov:{}", camFOV);
 		}
 		BOOM_INLINE void SetCameraInputRegion(double x, double y, double w, double h, bool enabled) {
 			camRegionX = x; camRegionY = y; camRegionW = w; camRegionH = h; camInputEnabled = enabled;
@@ -347,5 +285,7 @@ namespace Boom {
 		double camRegionX{ 0.0 }, camRegionY{ 0.0 }, camRegionW{ 0.0 }, camRegionH{ 0.0 };
 		bool   camInputEnabled{ false };
 		bool isEditor{}; //needed due to imgui's weird resizing bug
+
+		InputSystem input;
 	};
 }
