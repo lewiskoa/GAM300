@@ -278,7 +278,7 @@ namespace Boom {
 		glm::dvec2 prevMousePos{};
 		//around x/y
 		glm::vec2 camRot{};
-		float camFOV{ CONSTANTS::MIN_FOV };
+		float camFOV{ CONSTANTS::MIN_FOV }; //removed later
 		float camMoveMultiplier{ 0.5f };
 
 		// Making sure that the rotation on happens in the viewport

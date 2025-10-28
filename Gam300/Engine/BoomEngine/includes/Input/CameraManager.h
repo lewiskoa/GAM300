@@ -77,8 +77,9 @@ namespace Boom {
             const glm::vec2 sd = input.scrollDelta();
             if (rmb && inRegion) {
                 m_app->camMoveMultiplier = std::clamp(m_app->camMoveMultiplier + sd.y * m_cfg.multiplierStep, 0.01f, 100.0f);
+               
             }
-            else {
+            else if(inRegion) {
                 m_app->SetFOV(std::clamp(m_app->camFOV - sd.y, m_cfg.minFov, m_cfg.maxFov));
             }
         }

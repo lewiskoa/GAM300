@@ -540,8 +540,7 @@ namespace Boom
 #endif
 
             // Reset asset registry (keeping EMPTY_ASSET sentinels)
-            m_Context->assets->Clear();
-            m_Context->assets->Init();
+           
             //* m_Context->assets = AssetRegistry();
 			
 
