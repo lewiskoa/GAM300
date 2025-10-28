@@ -176,7 +176,8 @@ namespace Boom
          */
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
-            LoadScene("default");
+            /*LoadScene("default");*/
+            LoadScene("test");
 
             ////init skybox
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
@@ -399,11 +400,11 @@ namespace Boom
 		
 
         /**
-     * @brief Saves the current scene and assets to files
-     * @param sceneName The name of the scene (without extension)
-     * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
-     * @return true if save was successful, false otherwise
-     */
+         * @brief Saves the current scene and assets to files
+         * @param sceneName The name of the scene (without extension)
+         * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
+         * @return true if save was successful, false otherwise
+         */
         BOOM_INLINE bool SaveScene(const std::string& sceneName, const std::string& scenePath = "Scenes/")
         {
             //Try blocks cause crashed in release mode. Need to find new alternative
@@ -531,7 +532,10 @@ namespace Boom
 #endif
 
             // Reset asset registry (keeping EMPTY_ASSET sentinels)
-            * m_Context->assets = AssetRegistry();
+            m_Context->assets->Clear();
+            m_Context->assets->Init();
+            //* m_Context->assets = AssetRegistry();
+			
 
             // RESTORE PREFABS after registry reset
             for (auto& [uid, asset] : savedPrefabs) {

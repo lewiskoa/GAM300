@@ -54,8 +54,8 @@ namespace Boom {
 		Texture data{};		//Runtime only, no need to serialize
 
 		 XPROPERTY_DEF(
-		 	"TextureAsset", TextureAsset,
-			 obj_member<"Data", &TextureAsset::data>
+		 	"TextureAsset", TextureAsset
+			 //obj_member<"Data", &TextureAsset::data>
 		 )
 
 	};
@@ -110,6 +110,7 @@ namespace Boom {
 			AddEmpty<ScriptAsset>();
 			AddEmpty<SceneAsset>();
 		}
+
 
 		//tries to get asset by its defined type
 		template <class T>

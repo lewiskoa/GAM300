@@ -144,14 +144,12 @@ namespace Boom
             try
             {
                 auto root = YAML::LoadFile(path);
-
                 // Check version
                 if (root["Version"])
                 {
                     std::string version = root["Version"].as<std::string>();
                     BOOM_INFO("[DataSerializer] Loading assets version: {}", version);
                 }
-
                 const auto& nodes = root["ASSETS"];
                 if (!nodes)
                 {
@@ -159,46 +157,79 @@ namespace Boom
                     return;
                 }
 
+                int successCount = 0;
+                int failCount = 0;
+
                 for (const auto& node : nodes)
                 {
-                    auto props = node["Properties"];
-                    auto uid = node["UID"].as<AssetID>();
-                    auto name = node["Name"].as<std::string>();
-                    auto source = node["Source"].as<std::string>();
-                    auto typeName = node["Type"].as<std::string>();
-
-                    auto opt = magic_enum::enum_cast<AssetType>(typeName);
-                    auto type = opt.has_value() ? opt.value() : AssetType::UNKNOWN;
-
-                    BOOM_INFO("[DataSerializer] Processing asset UID={}, Type={}", uid, typeName);
-
-                    // Deserialize using registry
-                    Asset* asset = SerializationRegistry::Instance().DeserializeAsset(
-                        registry, type, uid, source, props
-                    );
-
-                    if (asset)
+                    try
                     {
-                        asset->source = source;
-                        asset->name = name;
+                        auto props = node["Properties"];
+                        auto uid = node["UID"].as<AssetID>();
+                        auto name = node["Name"].as<std::string>();
+                        auto source = node["Source"].as<std::string>();
+                        auto typeName = node["Type"].as<std::string>();
+                        auto opt = magic_enum::enum_cast<AssetType>(typeName);
+                        auto type = opt.has_value() ? opt.value() : AssetType::UNKNOWN;
 
-                        // CRITICAL: Verify the asset loaded properly
-                        if (type == AssetType::MODEL) {
-                            auto* modelAsset = static_cast<ModelAsset*>(asset);
-                            if (!modelAsset->data) {
-                                BOOM_ERROR("[DataSerializer] Model '{}' has null data after loading from '{}'",
-                                    name, source);
+                        BOOM_INFO("[DataSerializer] Processing asset UID={}, Type={}", uid, typeName);
+
+                        // Deserialize using registry
+                        Asset* asset = SerializationRegistry::Instance().DeserializeAsset(
+                            registry, type, uid, source, props
+                        );
+
+                        if (asset)
+                        {
+                            asset->source = source;
+                            asset->name = name;
+
+                            // CRITICAL: Verify the asset loaded properly
+                            if (type == AssetType::MODEL) {
+                                auto* modelAsset = static_cast<ModelAsset*>(asset);
+                                if (!modelAsset->data) {
+                                    BOOM_ERROR("[DataSerializer] Model '{}' has null data after loading from '{}'",
+                                        name, source);
+                                    failCount++;
+                                    continue;
+                                }
                             }
+                            successCount++;
                         }
+                        else
+                        {
+                            BOOM_ERROR("[DataSerializer] Failed to deserialize asset '{}' (UID={})",
+                                name, uid);
+                            failCount++;
+                        }
+                    }
+                    catch (const YAML::Exception& e)
+                    {
+                        BOOM_ERROR("[DataSerializer] YAML error while parsing asset: {}", e.what());
+                        failCount++;
+                    }
+                    catch (const std::exception& e)
+                    {
+                        BOOM_ERROR("[DataSerializer] Error while loading asset: {}", e.what());
+                        failCount++;
+                    }
+                    catch (...)
+                    {
+                        BOOM_ERROR("[DataSerializer] Unknown error while loading asset");
+                        failCount++;
                     }
                 }
 
-                BOOM_INFO("[DataSerializer] Deserialized {} assets from: {}",
-                    nodes.size(), path);
+                BOOM_INFO("[DataSerializer] Deserialized {} assets from: {} ({} succeeded, {} failed)",
+                    nodes.size(), path, successCount, failCount);
             }
             catch (const YAML::Exception& e)
             {
-				std::cout << e.what() << std::endl;
+                BOOM_ERROR("[DataSerializer] Failed to load YAML file '{}': {}", path, e.what());
+            }
+            catch (const std::exception& e)
+            {
+                BOOM_ERROR("[DataSerializer] Error loading asset file '{}': {}", path, e.what());
             }
         }
     };
