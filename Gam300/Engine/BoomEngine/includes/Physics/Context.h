@@ -16,6 +16,8 @@ namespace Boom {
             glm::vec4 c1;
         };
 
+
+
         BOOM_INLINE PhysicsContext() {
             // sinitialize physX SDK
             m_Foundation = PxCreateFoundation(PX_PHYSICS_VERSION, m_AllocatorCallback, m_ErrorCallback);
@@ -149,6 +151,69 @@ namespace Boom {
             }
         }
 
+        BOOM_INLINE void UpdateColliderShape(Entity& entity)
+        {
+            if (!entity.Has<RigidBodyComponent>() || !entity.Has<ColliderComponent>()) {
+                return;
+            }
+
+            auto& transform = entity.Get<TransformComponent>().transform;
+            auto& body = entity.Get<RigidBodyComponent>().RigidBody;
+            auto& collider = entity.Get<ColliderComponent>().Collider;
+
+            if (!body.actor) return;
+
+            // 1. --- Destroy the old shape ---
+            if (collider.Shape) {
+                body.actor->detachShape(*collider.Shape);
+                collider.Shape->release();
+                collider.Shape = nullptr;
+            }
+
+            // 2. --- Re-create the shape with the new scale (logic moved from AddRigidBody) ---
+            if (collider.type == Collider3D::BOX) {
+                PxBoxGeometry box(ToPxVec3(transform.scale / 2.0f));
+                collider.Shape = m_Physics->createShape(box, *collider.material);
+            }
+            else if (collider.type == Collider3D::SPHERE) {
+                PxSphereGeometry sphere(transform.scale.x / 2.0f);
+                collider.Shape = m_Physics->createShape(sphere, *collider.material);
+            }
+            else if (collider.type == Collider3D::CAPSULE) {
+                // (Your existing, correct capsule creation logic goes here)
+                const glm::vec3 s = glm::abs(transform.scale);
+                enum Axis { AXIS_X = 0, AXIS_Y = 1, AXIS_Z = 2 };
+                Axis majorAxis = AXIS_X;
+                if (s.y > s.x && s.y > s.z) majorAxis = AXIS_Y;
+                else if (s.z > s.x && s.z > s.y) majorAxis = AXIS_Z;
+                float radius, halfHeight;
+                if (majorAxis == AXIS_Y) { radius = 0.5f * std::max(s.x, s.z); halfHeight = 0.5f * s.y; }
+                else if (majorAxis == AXIS_Z) { radius = 0.5f * std::max(s.x, s.y); halfHeight = 0.5f * s.z; }
+                else { radius = 0.5f * std::max(s.y, s.z); halfHeight = 0.5f * s.x; }
+                halfHeight = halfHeight - radius;
+                const float kMin = 0.01f;
+                if (radius <= 0.0f) radius = kMin;
+                if (halfHeight <= 0.0f) halfHeight = kMin;
+                PxCapsuleGeometry capsule(radius, halfHeight);
+                collider.Shape = m_Physics->createShape(capsule, *collider.material);
+                PxQuat localQ = PxQuat(PxIdentity);
+                if (majorAxis == AXIS_Y) localQ = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
+                else if (majorAxis == AXIS_Z) localQ = PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f));
+                collider.Shape->setLocalPose(PxTransform(PxVec3(0.0f), localQ));
+            }
+            // (Add your MESH logic here if it needs to be rescaled too)
+
+            // 3. --- Attach the new shape and update physics properties ---
+            if (collider.Shape) {
+                collider.Shape->setFlag(PxShapeFlag::eVISUALIZATION, true);
+                body.actor->attachShape(*collider.Shape);
+                if (body.type == RigidBody3D::DYNAMIC) {
+                    // This is CRITICAL for stability after a shape change!
+                    PxRigidBodyExt::updateMassAndInertia(*static_cast<PxRigidBody*>(body.actor), body.density);
+                }
+            }
+        }
+
         // Rigid Body
         BOOM_INLINE void AddRigidBody(Entity& entity, AssetRegistry& assetRegistry) {
             auto& transform = entity.Get<TransformComponent>().transform;
@@ -167,6 +232,8 @@ namespace Boom {
             rot = glm::normalize(rot);
 
             pose.q = PxQuat(rot.x, rot.y, rot.z, rot.w);
+
+            body.previousScale = transform.scale;
 
             // create a rigid body actor
             if (entity.template Has<ColliderComponent>())
@@ -419,6 +486,33 @@ namespace Boom {
             cooking->release();
             return convexMeshGeometry;
 
+        }
+
+        BOOM_INLINE void UpdatePhysicsMaterial(Entity& ent) {
+            // Ensure the entity has the required components
+            if (!ent.Has<RigidBodyComponent>() || !ent.Has<ColliderComponent>()) {
+                return;
+            }
+
+            auto& collider = ent.Get<ColliderComponent>().Collider;
+            auto* actor = ent.Get<RigidBodyComponent>().RigidBody.actor;
+
+            if (!actor || !collider.Shape) {
+                BOOM_WARN("Attempted to update physics material on an entity with no actor or shape.");
+                return;
+            }
+
+            // A shape can have multiple materials, but we are using just one.
+            // We retrieve the material that is currently attached to the shape.
+            PxMaterial* material;
+            collider.Shape->getMaterials(&material, 1);
+
+            if (material) {
+                // Apply the values from our component to the live PxMaterial.
+                material->setDynamicFriction(collider.dynamicFriction);
+                material->setStaticFriction(collider.staticFriction);
+                material->setRestitution(collider.restitution);
+            }
         }
 
 
