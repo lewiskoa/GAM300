@@ -468,7 +468,7 @@ private:
             // Get frame texture from engine
             uint32_t frameTexture = GetSceneFrame();
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-            float aspectRatio = (viewportSize.y > 0) ? viewportSize.x / viewportSize.y : 1.0f;
+            //float aspectRatio = (viewportSize.y > 0) ? viewportSize.x / viewportSize.y : 1.0f;
 
             if (frameTexture > 0 && viewportSize.x > 0 && viewportSize.y > 0) {
                 // Display the engine's rendered frame
@@ -532,7 +532,7 @@ private:
                         auto& camComp = view.get<Boom::CameraComponent>(eid);
                         auto& trans = view.get<Boom::TransformComponent>(eid);
                         cameraView = camComp.camera.View(trans.transform);
-                        cameraProj = camComp.camera.Projection(aspectRatio);
+                        cameraProj = camComp.camera.Projection(m_Context->renderer->AspectRatio());
                     }
                 }
 

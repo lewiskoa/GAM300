@@ -150,6 +150,10 @@ namespace Boom {
 		BOOM_INLINE float& DitherThreshold() {
 			return pbrShader->ditherThreshold;
 		}
+
+		BOOM_INLINE float AspectRatio() const {
+			return frame->Ratio();
+		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
 			//?? missing enum?
