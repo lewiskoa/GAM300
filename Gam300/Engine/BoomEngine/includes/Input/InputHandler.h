@@ -70,7 +70,7 @@ namespace Boom {
             if (action == GLFW_RELEASE) m_cur.Keys.set(size_t(key), false);
             else                        m_cur.Keys.set(size_t(key), true); // PRESS or REPEAT treated as down
         }
-
+        glm::vec2 mouseDeltaLast() const { return m_lastMouseDelta; }
         void onMouseButton(int button, int action, int /*mods*/) {
             if (button < 0 || button > GLFW_MOUSE_BUTTON_LAST) return;
             if (action == GLFW_RELEASE) m_cur.Mouse.set(size_t(button), false);
@@ -78,13 +78,15 @@ namespace Boom {
         }
 
         void onCursorPos(double x, double y) {
-           
+            glm::vec2 d{ float(x - m_cur.MouseX), float(y - m_cur.MouseY) };
             if (m_firstMouseThisFrame) {
                 m_firstMouseThisFrame = false;
-                m_mouseDelta = { 0.0f, 0.0f };
+                m_mouseDelta += glm::vec2{ float(x - m_prev.MouseX), float(y - m_prev.MouseY) };
+                m_lastMouseDelta = glm::vec2{ float(x - m_prev.MouseX), float(y - m_prev.MouseY) };
             }
             else {
-                m_mouseDelta += glm::vec2{ float(x - m_cur.MouseX), float(y - m_cur.MouseY) };
+                m_mouseDelta += d;
+                m_lastMouseDelta = d;           
             }
             m_cur.MouseX = x;
             m_cur.MouseY = y;
@@ -97,7 +99,7 @@ namespace Boom {
     private:
         WindowInputs m_cur{};
         WindowInputs m_prev{};
-
+        glm::vec2 m_lastMouseDelta{ 0.0f, 0.0f };
         glm::vec2 m_mouseDelta{ 0.0f, 0.0f };
         glm::vec2 m_scrollDelta{ 0.0f, 0.0f };
         bool      m_firstMouseThisFrame{ true };
