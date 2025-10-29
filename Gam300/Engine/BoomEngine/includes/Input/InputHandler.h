@@ -91,7 +91,7 @@ namespace Boom {
             m_cur.MouseX = x;
             m_cur.MouseY = y;
         }
-
+        glm::dvec2 cursorPos() const { return { m_cur.MouseX, m_cur.MouseY }; }
         void onScroll(double sx, double sy) {
             m_scrollDelta += glm::vec2{ float(sx), float(sy) };
         }
