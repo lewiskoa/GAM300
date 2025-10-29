@@ -426,7 +426,6 @@ private:
         ImGui::End();
     }
 
-    
     BOOM_INLINE void RenderViewport()
     {
         if (!m_ShowViewport) return;

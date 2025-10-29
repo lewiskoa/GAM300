@@ -198,9 +198,6 @@ namespace Boom {
 			}
 		}
 
-
-
-
 		//to be called explicitly to reference window from application
 		//example: GetUserData(win)->isFullscreen 
 		BOOM_INLINE static AppWindow* GetUserData(GLFWwindow* window) {
@@ -284,7 +281,7 @@ namespace Boom {
 		glm::vec2  camRot{};
 
 
-		float camMoveMultiplier{ 0.5f };
+		float camMoveMultiplier{ 0.05f };
 		// Making sure that the rotation on happens in the viewport
 		double camRegionX{ 0.0 }, camRegionY{ 0.0 }, camRegionW{ 0.0 }, camRegionH{ 0.0 };
 		bool   camInputEnabled{ false };
