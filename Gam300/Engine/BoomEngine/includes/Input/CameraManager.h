@@ -32,18 +32,24 @@ namespace Boom {
             const auto& s = input.current();
 
             const bool middleMouse = s.Mouse.test(GLFW_MOUSE_BUTTON_MIDDLE);
+            const bool mmbPress = m_app->input.mousePressed(GLFW_MOUSE_BUTTON_MIDDLE);
             const bool inRegion = !m_cfg.gateToViewportRect || m_app->IsMouseInCameraRegion(m_app->Handle().get());
             const bool rmb = !m_cfg.gateToRMB || s.Mouse.test(GLFW_MOUSE_BUTTON_RIGHT);
             const bool rmbPress = m_app->input.mousePressed(GLFW_MOUSE_BUTTON_RIGHT);
             const bool canUse = m_app->camInputEnabled && inRegion && rmb;          // look + WASD
             const bool canPan = m_app->camInputEnabled && inRegion && middleMouse;  // MMB pan
+
             glm::dvec2 curPos = m_app->input.cursorPos();
             if (rmbPress) {
                 m_prevLookPos = curPos;                // zero the baseline the moment RMB goes down
             }
+            if (mmbPress) m_prevPanPos = curPos;
 
             glm::vec2 md = rmb ? glm::vec2(curPos - m_prevLookPos) : glm::vec2(0.0f);
             m_prevLookPos = curPos;
+            glm::vec2 mdPan = middleMouse ? glm::vec2(curPos - m_prevPanPos) : glm::vec2(0.0f);
+            if (glm::length2(mdPan) < 1.0f) mdPan = {};
+
             // WASD movement vector (camera-local intent)
             glm::vec3 movements{
                 input.axis(GLFW_KEY_A, GLFW_KEY_D),
@@ -59,11 +65,15 @@ namespace Boom {
             const float fovDeg = (m_cam ? m_cam->FOV : CONSTANTS::MIN_FOV);
             // --- Give pan priority over look ---
             if (canPan) {
-                const glm::vec2 pan{ -md.x , md.y };
+             
+                const float W = float(m_app->getWidth());
+                const float H = float(m_app->getHeight());
+
+                glm::vec2 panNorm{ -mdPan.x / W, mdPan.y / H };   // 
                 glm::vec3 localMove{
-                    pan.x * fovDeg * 0.09f,
-                    pan.y * fovDeg * 0.10f,
-                    0.0f
+                    panNorm.x * fovDeg*0.01f,   // local right
+                    panNorm.y * fovDeg*0.01f,   // local up
+                    0.0f                          // no forward on pan
                 };
                 m_app->camMoveDir = localMove * base;
             }
@@ -111,5 +121,6 @@ namespace Boom {
         Camera3D*  m_cam = nullptr;
         bool        m_prevRmb = false;        // last-frame RMB state
         glm::dvec2  m_prevLookPos = {};           // last cursor pos used for look
+        glm::dvec2  m_prevPanPos{};
     };
 }
