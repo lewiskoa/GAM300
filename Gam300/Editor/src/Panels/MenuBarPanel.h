@@ -20,7 +20,7 @@ struct Context; // whatever your context class is named (m_Context)
 // A tiny bundle of pointers/callbacks so the panel stays UI-only.
 struct MenuBarConfig {
     // Engine pointers
-    Application* app{ nullptr };
+    Boom::Application* app{ nullptr };
     Context* ctx{ nullptr };
 
     // View toggles (wired to your editor state)

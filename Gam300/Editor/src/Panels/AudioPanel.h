@@ -1,99 +1,47 @@
-﻿// Editor/src/Windows/Audio.h
-#pragma once
+﻿#pragma once
 #include "Context/Context.h"
-#include "Context/DebugHelpers.h"
-#include "Vendors/imgui/imgui.h"
+#include <unordered_map>
+#include <string>
+#include <vector>
+#include <glm/gtc/type_ptr.hpp>
+#include "ImGuizmo.h"
+#include "Context/Profiler.hpp"
+#include "AppWindow.h"
 
+namespace Boom { class Application; }
 
-namespace EditorUI::Audio
+namespace EditorUI
 {
-    // Call this every frame somewhere in your editor UI pass
-    inline void Render()
+    // Audio panel matching the previous EditorUI::Audio::Render() behavior
+    class AudioPanel : public IWidget
     {
-        auto& audio = SoundEngine::Instance();
-        
-        // Catalog (adjust to your paths)
-        static const std::vector<std::pair<std::string, std::string>> kTracks = {
-            { "Menu", "Resources/Audio/Fetty Wap.wav" },
+    public:
+        BOOM_INLINE explicit AudioPanel(AppInterface* ctx);
 
-            
-        };
+        // Call this every frame from your editor render pass
+        void Render();              // wrapper -> calls OnShow()
+        BOOM_INLINE void OnShow() override;
 
-        // State
-        static int  selected = 0;
-        bool loop = false;
-        static std::unordered_map<std::string, float> sVolume;
-        for (auto& [n, _] : kTracks) if (!sVolume.count(n)) sVolume[n] = 1.0f;
+        // Optional visibility control
+        BOOM_INLINE void Show(bool v) { m_Show = v; }
+        BOOM_INLINE bool IsVisible() const { return m_Show; }
 
-        if (ImGui::Begin("Music"))
-        {
-            // Track picker
-            if (ImGui::BeginCombo("Track", kTracks[selected].first.c_str()))
-            {
-                for (int i = 0; i < (int)kTracks.size(); ++i)
-                {
-                    bool isSel = (i == selected);
-                    if (ImGui::Selectable(kTracks[i].first.c_str(), isSel)) selected = i;
-                    if (isSel) ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
+    private:
+        struct Track { std::string name; std::string path; };
+        void EnsureVolumeKeys();
 
-            const std::string& name = kTracks[selected].first;
-            const std::string& path = kTracks[selected].second;
+    private:
+        bool m_Show = true;
 
-            // Loop + Restart
-            if (ImGui::Checkbox("Loop", &loop)) {
-                audio.SetLooping(name, loop);
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("Restart")) {
-                audio.StopAllExcept("");
-                audio.PlaySound(name, path, loop);
-                audio.SetVolume(name, sVolume[name]);
-            }
+        // UI state
+        int  m_Selected = 0;
+        bool m_Loop = false;
+        bool m_Paused = false;
 
-            // Volume
-            float vol = sVolume[name];
-            if (ImGui::SliderFloat("Volume", &vol, 0.0f, 1.0f, "%.2f")) {
-                sVolume[name] = vol;
-                audio.SetVolume(name, vol);
-            }
+        // Catalog (same as your snippet; adjust paths as needed)
+        std::vector<Track> m_Tracks;
 
-            // Playback
-            bool playing = audio.IsPlaying(name);
-            if (!playing) {
-                if (ImGui::Button("Play")) {
-                    audio.StopAllExcept("");
-                    audio.PlaySound(name, path, loop);
-                    audio.SetVolume(name, sVolume[name]);
-                }
-            }
-            else {
-                if (ImGui::Button("Stop")) {
-                    audio.StopSound(name);
-                }
-                ImGui::SameLine();
-                static bool paused = false;
-                if (ImGui::Checkbox("Paused", &paused)) {
-                    audio.Pause(name, paused);
-                }
-            }
-
-            // Quick switch (optional)
-            ImGui::SeparatorText("Quick Switch");
-            for (int i = 0; i < (int)kTracks.size(); ++i) {
-                ImGui::PushID(i);
-                if (ImGui::Button(kTracks[i].first.c_str())) {
-                    selected = i;
-                    audio.StopAllExcept("");
-                    audio.PlaySound(kTracks[i].first, kTracks[i].second, loop);
-                    audio.SetVolume(kTracks[i].first, sVolume[kTracks[i].first]);
-                }
-                ImGui::PopID();
-                if ((i % 3) != 2) ImGui::SameLine();
-            }
-        }
-        ImGui::End();
-    }
-} // namespace EditorUI::Audio
+        // Per-track volume
+        std::unordered_map<std::string, float> m_Volume;
+    };
+} // namespace EditorUI

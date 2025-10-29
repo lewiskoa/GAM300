@@ -1,40 +1,52 @@
 #pragma once
-#include "Core.h"
-#include "Context/Context.h"
-#include "Context/DebugHelpers.h"
-#include "Vendors/imgui/imgui.h"
 
-#ifndef ICON_FA_TERMINAL
-#define ICON_FA_TERMINAL ""
-#endif
+#include <deque>
+#include <string>
+#include <array>
 
-// ConsolePanel provides an ImGui-based in-editor console.
-struct ConsolePanel : IWidget
+// Keep headers light in panel headers to avoid cycles.
+// We only need IWidget (base) and the Entity type.
+// If IWidget/Entity live in another header, include that one instead.
+#include "Context/Widgets.h"    // provides IWidget and Entity (adjust if yours differs)
+
+// Forward declare to avoid pulling imgui everywhere from the header.
+struct ImGuiTextFilter;
+
+namespace EditorUI
 {
-    BOOM_INLINE ConsolePanel(AppInterface* c);
-    BOOM_INLINE void Clear();
-    BOOM_INLINE void AddLog(const char* fmt, ...) IM_FMTARGS(2);
-    BOOM_INLINE void TrackLastItemAsViewport(const char* label = "Viewport");
-    BOOM_INLINE void OnShow() override;
-    BOOM_INLINE void OnSelect(Entity entity) override;
-    BOOM_INLINE void DebugConsoleState() const;
+    // ImGui-based in-editor console
+    struct ConsolePanel : IWidget
+    {
+        explicit ConsolePanel(AppInterface* c);
 
-private:
-    std::deque<std::string> m_Lines;
-    ImGuiTextFilter         m_Filter;
+        void Clear();
+        void AddLog(const char* fmt, ...) IM_FMTARGS(2);
+        void TrackLastItemAsViewport(const char* label = "Viewport");
 
-    bool  m_Open = true;
-    bool  m_AutoScroll = true;
-    bool  m_Pause = false;
-    int   m_MaxLines = 2000;
+        // IWidget overrides
+        void OnShow() override;
+        void OnSelect(Entity entity) override;
 
-    bool   m_LogMouseMoves = true;
-    bool   m_LogMouseClicks = true;
-    float  m_LogEverySeconds = 0.05f;
-    ImVec2 m_LastMouse{ -FLT_MAX, -FLT_MAX };
-    double m_LastLogTime = 0.0;
+        // Debug helpers
+        void DebugConsoleState() const;
 
-    std::array<bool, ImGuiKey_NamedKey_END> m_KeyDownPrev{};
-    char m_InputBuf[256]{};
-    bool m_FocusInput = false;
-};
+    private:
+        std::deque<std::string> m_Lines;
+        ImGuiTextFilter* m_FilterPtr = nullptr;   // we'll own a small filter object in the .cpp
+
+        bool  m_Open = true;
+        bool  m_AutoScroll = true;
+        bool  m_Pause = false;
+        int   m_MaxLines = 2000;
+
+        bool   m_LogMouseMoves = true;
+        bool   m_LogMouseClicks = true;
+        float  m_LogEverySeconds = 0.05f;
+        ImVec2 m_LastMouse{ -FLT_MAX, -FLT_MAX };
+        double m_LastLogTime = 0.0;
+
+        std::array<bool, ImGuiKey_NamedKey_END> m_KeyDownPrev{};
+        char  m_InputBuf[256]{};
+        bool  m_FocusInput = false;
+    };
+} // namespace EditorUI

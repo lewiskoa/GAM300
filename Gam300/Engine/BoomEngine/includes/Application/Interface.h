@@ -170,6 +170,8 @@ namespace Boom
 			return m_Context->renderer->GetFrame();
         }
 
+        BOOM_INLINE AppContext* GetContext() const noexcept { return m_Context; }
+
     protected:
         /** @brief  Called once when the layer is attached. Override to initialize. */
         BOOM_INLINE virtual void OnStart() {}

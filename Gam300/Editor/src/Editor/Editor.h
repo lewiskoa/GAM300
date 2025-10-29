@@ -1,29 +1,32 @@
-#pragma once
-
+﻿#pragma once
 #include <memory>
 
-// Pull common engine/editor precompiled headers if you use one
-#include "Editor/EditorPCH.h"
+// Keep heavy headers out of here to avoid cycles.
+// Just forward-declare the few types we need.
+struct ImGuiContext;            // ImGui is global-namespace
 
-// Panel interfaces (included here so Editor.cpp can construct them)
-#include "Panels/MenuBarPanel.h"
-#include "Panels/HierarchyPanel.h"
-#include "Panels/InspectorPanel.h"
-#include "Panels/ConsolePanel.h"
-#include "Panels/ResourcePanel.h"
-#include "Panels/DirectoryPanel.h"
-#include "Panels/AudioPanel.h"
-#include "Panels/PrefabBrowser.h"
-#include "Panels/ViewportPanel.h"
+namespace Boom { struct AppContext; }  // your engine context
 
 namespace EditorUI {
 
+    // Forward-declare all panels (their full defs live in each panel header).
+    class MenuBarPanel;
+    class HierarchyPanel;
+    class InspectorPanel;
+    class ConsolePanel;
+    class ResourcePanel;
+    class DirectoryPanel;
+    class AudioPanel;
+    class PrefabBrowserPanel;
+    class ViewportPanel;
+    class PerformancePanel;
+    class PlaybackControlsPanel;
+
     class Editor {
     public:
-        Editor() = default;
-        ~Editor() = default;
+        explicit Editor(Boom::AppContext* ctx, ImGuiContext* imgui = nullptr);
+        ~Editor();                      // defined in .cpp after including all panels
 
-        // non-copyable / non-movable (keeps ownership simple)
         Editor(const Editor&) = delete;
         Editor& operator=(const Editor&) = delete;
         Editor(Editor&&) = delete;
@@ -34,17 +37,26 @@ namespace EditorUI {
         void Render();
         void Shutdown();
 
+        // accessors used by panels
+        Boom::AppContext* GetContext() const { return m_Context; }
+        ImGuiContext* GetImGuiContext() const { return m_ImGuiContext; }
+
     private:
-        // Panels (constructed in Init, rendered in Render)
-        std::unique_ptr<MenuBarPanel>    m_MenuBar;
-        std::unique_ptr<HierarchyPanel>  m_Hierarchy;
-        std::unique_ptr<InspectorPanel>  m_Inspector;
-        std::unique_ptr<ConsolePanel>    m_Console;
-        std::unique_ptr<ResourcePanel>   m_Resources;
-        std::unique_ptr<DirectoryPanel>  m_Directory;
-        std::unique_ptr<AudioPanel>      m_Audio;
-        std::unique_ptr<PrefabBrowser>   m_PrefabBrowser;
-        std::unique_ptr<ViewportPanel>   m_Viewport;
+        Boom::AppContext* m_Context = nullptr;
+        ImGuiContext* m_ImGuiContext = nullptr;
+
+        // Panels (constructed in Init, destroyed in ~Editor)
+        std::unique_ptr<MenuBarPanel>           m_MenuBar;
+        std::unique_ptr<HierarchyPanel>         m_Hierarchy;
+        std::unique_ptr<InspectorPanel>         m_Inspector;
+        std::unique_ptr<ConsolePanel>           m_Console;
+        std::unique_ptr<ResourcePanel>          m_Resources;
+        std::unique_ptr<DirectoryPanel>         m_Directory;
+        std::unique_ptr<AudioPanel>             m_Audio;
+        std::unique_ptr<PrefabBrowserPanel>     m_PrefabBrowser;
+        std::unique_ptr<ViewportPanel>          m_Viewport;
+        std::unique_ptr<PerformancePanel>       m_Performance;
+        std::unique_ptr<PlaybackControlsPanel>  m_Playback;
     };
 
 } // namespace EditorUI

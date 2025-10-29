@@ -1,38 +1,47 @@
+ï»¿#pragma once
 #pragma once
-
 #include <functional>
-#include <entt/entity/entity.hpp>
+#include <entt/entt.hpp>
+#include "Vendors/imgui/imgui.h"
 
-// Forward declarations to keep compile times down
-struct Context;
+namespace Boom { struct AppContext; }
 
-class InspectorPanel
-{
-public:
-    InspectorPanel() = default;
-    InspectorPanel(Context* ctx, entt::entity* selected, bool* showFlag = nullptr)
-        : m_Context(ctx), m_SelectedEntity(selected), m_ShowInspector(showFlag) {}
+namespace EditorUI {
 
-    void Render();
+    class Editor;  // forward declare the owner (your Editor class)
 
-    // Optional wiring if you default-construct
-    void SetContext(Context* ctx) { m_Context = ctx; }
-    void SetSelectedEntity(entt::entity* entity) { m_SelectedEntity = entity; }
-    void SetShowFlag(bool* flag) { m_ShowInspector = flag; }
+    class InspectorPanel
+    {
+    public:
+        // Preferred: construct with the Editor owner; get context via owner->GetContext()
+        explicit InspectorPanel(Editor* owner, bool* showFlag = nullptr)
+            : m_Owner(owner), m_ShowInspector(showFlag) {}
 
-private:
-    template<typename TComponent, typename GetPropsFn>
-    void DrawComponentSection(const char* title,
-        TComponent* comp,
-        GetPropsFn getProps,
-        bool removable,
-        const std::function<void()>& onRemove);
+        // Optional helper if you really want to set selection externally
+        void SetSelectedEntity(entt::entity e) { m_SelectedEntity = e; m_HasSelection = (e != entt::null); }
+        void ClearSelection() { m_SelectedEntity = entt::null; m_HasSelection = false; }
 
-private:
-    Context* m_Context{ nullptr };         // provides .scene (entt::registry) etc.
-    entt::entity* m_SelectedEntity{ nullptr };  // selected entity from hierarchy
-    bool* m_ShowInspector{ nullptr };   // visibility toggle (optional)
+        // Render entry point
+        void Render();
 
-    // scratch buffer for the “Entity” name field
-    char           m_NameBuffer[256]{};
-};
+        // Accessors
+        Boom::AppContext* GetContext() const;   // implemented in .cpp using m_Owner->GetContext()
+        Editor* GetOwner() const { return m_Owner; }
+        void SetShowFlag(bool* flag) { m_ShowInspector = flag; }
+
+    private:
+        Editor* m_Owner = nullptr;        // we avoid storing AppContext directly here
+        bool* m_ShowInspector = nullptr;
+        entt::entity   m_SelectedEntity{ entt::null };
+        bool           m_HasSelection{ false };
+        char           m_NameBuffer[128]{};
+
+        template<typename TComponent, typename GetPropsFn>
+        void DrawComponentSection(const char* title,
+            TComponent* comp,
+            GetPropsFn getProps,
+            bool removable,
+            const std::function<void()>& onRemove);
+    };
+
+}

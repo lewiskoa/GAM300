@@ -1,128 +1,116 @@
-// src/Editor/main.cpp
-#include <cstdint>
-#include <memory>
+#include "Panels/ViewportPanel.h"
 
-#include "BoomEngine.h"                 // defines MyEngineClass, Application, etc.
-#include "Context/DebugHelpers.h"       // BOOM_INFO / BOOM_ERROR
-#include "Editor/Editor.h"              // your Editor layer
+// NOTE: Include your GL header that provides glGetIntegerv/glIsTexture.
+// If you use GLAD:   #include <glad/glad.h>
+// If you use GLEW:   #include <GL/glew.h>
+// If already included in your PCH, you can omit this include here.
+#include <GLFW/glfw3.h> 
 
-// ImGui + backends
-#include "Vendors/imgui/imgui.h"
-#include "Vendors/imgui/backends/imgui_impl_glfw.h"
-#include "Vendors/imgui/backends/imgui_impl_opengl3.h"
-
-// GLFW (needed for window/context handle)
-#include <GLFW/glfw3.h>
-
-// Events (for renaming window title); fix path to your engine’s event header.
-#include "Events/WindowEvents.h"
-
-// Audio (fix path to wherever SoundEngine lives in your project)
-#include "Audio/SoundEngine.h"
-
-int32_t main()
+ViewportPanel::ViewportPanel(AppInterface* ctx)
+    : IWidget(ctx)
 {
-    try
+    DEBUG_DLL_BOUNDARY("ViewportPanel::Constructor");
+    DEBUG_POINTER(context, "AppInterface");
+
+    if (!context) {
+        BOOM_ERROR("ViewportPanel::Constructor - Null context!");
+        m_Frame = 0;
+        return;
+    }
+
+    // Get initial scene frame
+    uint32_t frameId = context->GetSceneFrame();
+    DebugHelpers::ValidateFrameData(frameId, "ViewportPanel constructor");
+
+    m_Frame = (ImTextureID)(uintptr_t)frameId;
+    m_FrameId = frameId;
+
+    BOOM_INFO("ViewportPanel::Constructor - Frame ID: {}, ImTextureID: {}", frameId, (void*)m_Frame);
+}
+
+void ViewportPanel::Render()
+{
+    OnShow();
+}
+
+void ViewportPanel::OnShow()
+{
+    DEBUG_DLL_BOUNDARY("ViewportPanel::OnShow");
+
+    if (!m_ShowViewport) return;
+
+    if (!context) {
+        BOOM_ERROR("ViewportPanel::OnShow - Null context!");
+        return;
+    }
+
+    // Refresh frame id each frame (in case the renderer recreated it)
+    uint32_t newFrameId = context->GetSceneFrame();
+    if (newFrameId != m_FrameId) {
+        BOOM_INFO("ViewportPanel::OnShow - Frame ID changed: {} -> {}", m_FrameId, newFrameId);
+        m_FrameId = newFrameId;
+        m_Frame = (ImTextureID)(uintptr_t)newFrameId;
+    }
+
+    DebugHelpers::ValidateFrameData(m_FrameId, "ViewportPanel::OnShow");
+
+    if (ImGui::Begin(ICON_FA_IMAGE "\tViewport", &m_ShowViewport))
     {
-        // Boot the engine
-        MyEngineClass engine;
-        engine.whatup();
-        BOOM_INFO("Editor Started");
+        // Available draw area for the image
+        ImVec2 contentRegion = ImGui::GetContentRegionAvail();
+        m_Viewport = contentRegion;
 
-        // Init audio (FMOD)
-        if (!SoundEngine::Instance().Init())
+        BOOM_INFO("ViewportPanel::OnShow - Viewport size: {}x{}", contentRegion.x, contentRegion.y);
+
+        if (m_Frame && contentRegion.x > 0.0f && contentRegion.y > 0.0f)
         {
-            BOOM_ERROR("FMOD init failed");
-            return -1;
-        }
+            // Snapshot current binding to detect if our draw changed it
+            GLint currentTexture{};
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTexture);
 
-        // Create the engine Application (owns the GLFW window + run loop)
-        auto app = engine.CreateApp();
-        app->PostEvent<WindowTitleRenameEvent>(
-            "Boom Editor - Press 'Esc' to quit. 'WASD' to pan camera");
+            // Draw scene texture; OpenGL origin flip (v: [1..0])
+            ImGui::Image(m_Frame, contentRegion, ImVec2(0, 1), ImVec2(1, 0));
 
-        // Registry shared by editor panels / runtime
-        entt::registry mainRegistry;
-
-        // Acquire window/context from the engine
-        std::shared_ptr<GLFWwindow> engineWindow = app->GetWindowHandle();
-
-        ImGuiContext* imguiContext = nullptr;
-
-        if (engineWindow)
-        {
-            // Ensure GL context is current on this thread
-            glfwMakeContextCurrent(engineWindow.get());
-            GLFWwindow* current = glfwGetCurrentContext();
-
-            if (current == engineWindow.get())
-            {
-                BOOM_INFO("Context is current, initializing ImGui...");
-
-                // --- ImGui core ---
-                IMGUI_CHECKVERSION();
-                imguiContext = ImGui::CreateContext();
-
-                ImGuiIO& io = ImGui::GetIO();
-                io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-                io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-                io.ConfigWindowsMoveFromTitleBarOnly = true;
-
-                // --- ImGui backends ---
-                const bool platformOk = ImGui_ImplGlfw_InitForOpenGL(engineWindow.get(), true);
-                const bool rendererOk = ImGui_ImplOpenGL3_Init("#version 450");
-
-                if (platformOk && rendererOk)
-                {
-                    BOOM_INFO("ImGui initialized successfully!");
-                    ImGui::StyleColorsDark();
-                }
-                else
-                {
-                    BOOM_ERROR("ImGui backend initialization failed");
-                    ImGui::DestroyContext(imguiContext);
-                    imguiContext = nullptr;
-                }
+            if (ImGui::IsItemHovered()) {
+                BOOM_INFO("ViewportPanel::OnShow - Viewport is hovered");
             }
-            else
-            {
-                BOOM_ERROR("Failed to make GLFW context current.");
+
+            GLint newTexture{};
+            glGetIntegerv(GL_TEXTURE_BINDING_2D, &newTexture);
+            if (currentTexture != newTexture) {
+                BOOM_WARN("ViewportPanel::OnShow - Texture binding changed: {} -> {}", currentTexture, newTexture);
             }
         }
         else
         {
-            BOOM_ERROR("Engine window handle is null.");
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "Invalid frame data!");
+            ImGui::Text("Frame ID: %u", m_FrameId);
+            ImGui::Text("Frame Ptr: %p", m_Frame);
+            ImGui::Text("Content Region: %.1fx%.1f", contentRegion.x, contentRegion.y);
         }
-
-        // Attach the Editor layer only if ImGui is ready
-        if (imguiContext)
-        {
-            // Your Editor layer expects (ImGuiContext*, entt::registry*, Application*)
-            app->AttachLayer<Editor>(imguiContext, &mainRegistry, app.get());
-        }
-        else
-        {
-            BOOM_ERROR("Failed to initialize ImGui, running without editor.");
-        }
-
-        // --- Main run loop ---
-        app->RunContext(true);
-
-        // --- Shutdown / Cleanup ---
-        if (imguiContext)
-        {
-            ImGui_ImplOpenGL3_Shutdown();
-            ImGui_ImplGlfw_Shutdown();
-            ImGui::DestroyContext(imguiContext);
-        }
-
-        SoundEngine::Instance().Shutdown();
     }
-    catch (const std::exception& e)
-    {
-        BOOM_ERROR("Application failed: {}", e.what());
-        return -1;
+    ImGui::End();
+}
+
+void ViewportPanel::OnSelect(Entity entity)
+{
+    DEBUG_DLL_BOUNDARY("ViewportPanel::OnSelect");
+    BOOM_INFO("ViewportPanel::OnSelect - Entity selected: {}", (uint32_t)entity);
+    // Hook selection-dependent viewport behaviors here (gizmos, focus, etc.)
+}
+
+void ViewportPanel::DebugViewportState() const
+{
+    BOOM_INFO("=== ViewportPanel Debug State ===");
+    BOOM_INFO("Frame ID: {}", m_FrameId);
+    BOOM_INFO("Frame Ptr: {}", (void*)m_Frame);
+    BOOM_INFO("Viewport Size: {}x{}", m_Viewport.x, m_Viewport.y);
+
+    if (m_FrameId != 0) {
+        GLboolean isTexture = glIsTexture(m_FrameId);
+        BOOM_INFO("Frame is valid OpenGL texture: {}", isTexture);
     }
 
-    return 0;
+    DebugHelpers::ValidateFrameData(m_FrameId, "ViewportPanel::DebugViewportState");
+    BOOM_INFO("=== End Debug State ===");
 }
