@@ -24,7 +24,7 @@ namespace Boom {
         explicit CameraController(AppWindow* window, Config cfg = {})
             : m_app(window), m_cfg(cfg) {
         }
-
+        BOOM_INLINE void attachCamera(Camera3D* cam) { m_cam = cam; }
         BOOM_INLINE void update(float /*dt*/) {
             if (!m_app) return;
 
@@ -34,12 +34,16 @@ namespace Boom {
             const bool middleMouse = s.Mouse.test(GLFW_MOUSE_BUTTON_MIDDLE);
             const bool inRegion = !m_cfg.gateToViewportRect || m_app->IsMouseInCameraRegion(m_app->Handle().get());
             const bool rmb = !m_cfg.gateToRMB || s.Mouse.test(GLFW_MOUSE_BUTTON_RIGHT);
+            const bool rmbPress = m_app->input.mousePressed(GLFW_MOUSE_BUTTON_RIGHT);
             const bool canUse = m_app->camInputEnabled && inRegion && rmb;          // look + WASD
             const bool canPan = m_app->camInputEnabled && inRegion && middleMouse;  // MMB pan
+            glm::dvec2 curPos = m_app->input.cursorPos();
+            if (rmbPress) {
+                m_prevLookPos = curPos;                // zero the baseline the moment RMB goes down
+            }
 
-            // Read once per frame
-            const glm::vec2 md = input.mouseDeltaLast();
-
+            glm::vec2 md = rmb ? glm::vec2(curPos - m_prevLookPos) : glm::vec2(0.0f);
+            m_prevLookPos = curPos;
             // WASD movement vector (camera-local intent)
             glm::vec3 movements{
                 input.axis(GLFW_KEY_A, GLFW_KEY_D),
@@ -52,17 +56,16 @@ namespace Boom {
             const bool  running = s.Keys.test(GLFW_KEY_LEFT_SHIFT) || s.Keys.test(GLFW_KEY_RIGHT_SHIFT);
             const float base = CONSTANTS::CAM_PAN_SPEED * m_app->camMoveMultiplier;
             const float spd = base * (running ? CONSTANTS::CAM_RUN_MULTIPLIER : 1.f);
-
+            const float fovDeg = (m_cam ? m_cam->FOV : CONSTANTS::MIN_FOV);
             // --- Give pan priority over look ---
             if (canPan) {
-                // Pan in camera local X/Y using the one md we captured
-                const glm::vec2 pan{ -md.x / float(m_app->getWidth()), md.y / float(m_app->getHeight()) };
+                const glm::vec2 pan{ -md.x , md.y };
                 glm::vec3 localMove{
-                    pan.x * m_app->camFOV * 0.09f,  // right
-                    pan.y * m_app->camFOV * 0.10f,  // up
+                    pan.x * fovDeg * 0.09f,
+                    pan.y * fovDeg * 0.10f,
                     0.0f
                 };
-                m_app->camMoveDir = localMove * base;   // (or * spd if you want SHIFT to speed up pan)
+                m_app->camMoveDir = localMove * base;
             }
             else if (canUse) {
                 // Look (RMB) using the same md
@@ -97,7 +100,7 @@ namespace Boom {
                 m_app->camMoveMultiplier = std::clamp(m_app->camMoveMultiplier + sd.y * m_cfg.multiplierStep, 0.01f, 100.0f);
             }
             if (inRegion) {
-                m_app->SetFOV(std::clamp(m_app->camFOV - sd.y, m_cfg.minFov, m_cfg.maxFov));
+                m_cam->SetFOV(m_cam->FOV - sd.y);
             }
         }
 
@@ -105,5 +108,8 @@ namespace Boom {
     private:
         AppWindow* m_app = nullptr;
         Config     m_cfg{};
+        Camera3D*  m_cam = nullptr;
+        bool        m_prevRmb = false;        // last-frame RMB state
+        glm::dvec2  m_prevLookPos = {};           // last cursor pos used for look
     };
 }

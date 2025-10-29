@@ -240,10 +240,7 @@ namespace Boom {
 		BOOM_INLINE int IsExit() const {
 			return glfwWindowShouldClose(windowPtr.get());
 		}
-		BOOM_INLINE void SetFOV(float fov) {
-			camFOV = glm::clamp(fov, CONSTANTS::MIN_FOV, CONSTANTS::MAX_FOV);
-			//BOOM_DEBUG("fov:{}", camFOV);
-		}
+		
 		BOOM_INLINE void SetCameraInputRegion(double x, double y, double w, double h, bool enabled) {
 			camRegionX = x; camRegionY = y; camRegionW = w; camRegionH = h; camInputEnabled = enabled;
 		}
@@ -286,7 +283,7 @@ namespace Boom {
 		// around x/y (x=pitch, y=yaw) in degrees
 		glm::vec2  camRot{};
 
-		float camFOV{ CONSTANTS::MIN_FOV };
+
 		float camMoveMultiplier{ 0.5f };
 		// Making sure that the rotation on happens in the viewport
 		double camRegionX{ 0.0 }, camRegionY{ 0.0 }, camRegionW{ 0.0 }, camRegionH{ 0.0 };

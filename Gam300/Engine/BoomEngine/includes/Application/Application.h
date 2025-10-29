@@ -75,6 +75,7 @@ namespace Boom
                 m_Context->window->SetWindowTitle(e.title);
                 }
             );
+            
         }
 
         /**
@@ -182,8 +183,8 @@ namespace Boom
             CameraController camera(
                 m_Context->window.get(),
                 CameraController::Config{
-                    .mouseSensitivityX = 0.01f,
-                    .mouseSensitivityY = 0.01f,
+                    .mouseSensitivityX = 0.25f,
+                    .mouseSensitivityY = 0.25f,
                     .multiplierStep = 0.01f,
                     .gateToViewportRect = true,
                     .gateToRMB = true
@@ -204,7 +205,19 @@ namespace Boom
             while (m_Context->window->PollEvents() && !m_ShouldExit)
             {
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
+                Camera3D* activeCam = nullptr;
+                EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
+                    if (!activeCam && comp.camera.cameraType == Camera3D::CameraType::Main)
+                        activeCam = &comp.camera;
+                    });
+                if (!activeCam) { // fallback: first camera
+                    EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
+                        if (!activeCam) activeCam = &comp.camera;
+                        });
+                }
 
+                // 2) Attach BEFORE update so scroll/pan use this camera's FOV in this frame
+                if (activeCam) camera.attachCamera(activeCam);
                 glfwMakeContextCurrent(engineWindow.get());
 
                 // Always update delta time, but adjust for pause state
@@ -287,26 +300,47 @@ namespace Boom
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
                 camera.update(static_cast<float>(m_Context->DeltaTime));
                 //camera (always set up, but rotation freezes when paused)
-                EnttView<Entity, CameraComponent>([this, &curMP, &prevMP](auto entity, CameraComponent& comp) {
-                    Transform3D& transform{ entity.template Get<TransformComponent>().transform };
+                //EnttView<Entity, CameraComponent>([this, &curMP, &prevMP](auto entity, CameraComponent& comp) {
+                //    //Transform3D& transform{ entity.template Get<TransformComponent>().transform };
 
-                    //get dir vector of current camera
-                    transform.rotate.x += m_Context->window->camRot.x;
-                    transform.rotate.y += m_Context->window->camRot.y;
-                    glm::quat quat{ glm::radians(transform.rotate) };
+                //    ////get dir vector of current camera
+                //    //transform.rotate.x += m_Context->window->camRot.x;
+                //    //transform.rotate.y += m_Context->window->camRot.y;
+                //    //glm::quat quat{ glm::radians(transform.rotate) };
+                //    //glm::vec3 dir{ quat * m_Context->window->camMoveDir };
+                //    //transform.translate += dir;
+
+                //    //camera.attachCamera(&comp.camera);
+                //    //if (curMP == prevMP) {
+                //    //    m_Context->window->camRot = {};
+                //    //    if (m_Context->window->isMiddleClickDown)
+                //    //        m_Context->window->camMoveDir = {};
+                //    //}
+
+                //    //m_Context->renderer->SetCamera(comp.camera, transform);
+             
+                //});
+                EnttView<Entity, CameraComponent, TransformComponent>(
+                    [this](auto /*entity*/, CameraComponent& comp, TransformComponent& tc) {
+                        Transform3D& transform = tc.transform;
+
+                        // Apply per-frame mouse rotation delta
+                        transform.rotate.x += m_Context->window->camRot.x;
+                        transform.rotate.y += m_Context->window->camRot.y;
+
+                        // Clear the delta AFTER applying so it doesn't double-apply across frames
+                        m_Context->window->camRot = {};
+
+                        // Move in camera-local space
+                      glm::quat quat{ glm::radians(transform.rotate) };
                     glm::vec3 dir{ quat * m_Context->window->camMoveDir };
                     transform.translate += dir;
 
-                    comp.camera.FOV = m_Context->window->camFOV;
-                    if (curMP == prevMP) {
-                        m_Context->window->camRot = {};
-                        if (m_Context->window->isMiddleClickDown)
-                            m_Context->window->camMoveDir = {};
+                        // Submit camera to renderer
+                        m_Context->renderer->SetCamera(comp.camera, transform);
                     }
-
-                    m_Context->renderer->SetCamera(comp.camera, transform);
-                });
-                prevMP = curMP;
+                );
+				prevMP = curMP;
                
                 //pbr ecs (always render)
                 EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
