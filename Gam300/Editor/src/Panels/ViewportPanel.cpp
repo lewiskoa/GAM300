@@ -1,14 +1,8 @@
 #include "Panels/ViewportPanel.h"
-
-// Pull full types here (keeps header lean)
 #include "Editor.h"
 #include "Context/Context.h"
 #include "Context/DebugHelpers.h"
-
-// ImGui
 #include "Vendors/imgui/imgui.h"
-
-// GL (ensure your project initializes GLEW/loader once)
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -28,17 +22,18 @@ namespace EditorUI {
             return;
         }
 
-        // Editor must expose: Boom::AppContext* GetContext() const;
-        m_Ctx = m_Owner->GetContext();
+        // Try to get AppInterface from the owner (if Editor derives from it)
+        m_App = dynamic_cast<Boom::AppInterface*>(m_Owner);
+
+        // Cache context if Editor exposes it
+        if constexpr (requires(Editor * e) { e->GetContext(); }) {
+            m_Ctx = m_Owner->GetContext();
+        }
+        DEBUG_POINTER(m_App, "AppInterface");
         DEBUG_POINTER(m_Ctx, "AppContext");
 
-        if (!m_Ctx) {
-            BOOM_ERROR("ViewportPanel::Constructor - Null AppContext!");
-            return;
-        }
-
-        // Grab initial scene frame
-        uint32_t frameId = m_Ctx->GetSceneFrame();
+        // Initial frame id via AppInterface first, then fallback to renderer
+        uint32_t frameId = QuerySceneFrame();
         DebugHelpers::ValidateFrameData(frameId, "ViewportPanel constructor");
 
         m_FrameId = frameId;
@@ -48,24 +43,15 @@ namespace EditorUI {
             m_FrameId, (void*)m_Frame);
     }
 
-    void ViewportPanel::Render()
-    {
-        OnShow();
-    }
+    void ViewportPanel::Render() { OnShow(); }
 
     void ViewportPanel::OnShow()
     {
         DEBUG_DLL_BOUNDARY("ViewportPanel::OnShow");
-
         if (!m_ShowViewport) return;
 
-        if (!m_Ctx) {
-            BOOM_ERROR("ViewportPanel::OnShow - Null AppContext!");
-            return;
-        }
-
-        // Refresh frame id each frame (renderer may recreate it)
-        uint32_t newFrameId = m_Ctx->GetSceneFrame();
+        // Refresh frame each frame (renderer may recreate it)
+        uint32_t newFrameId = QuerySceneFrame();
         if (newFrameId != m_FrameId) {
             BOOM_INFO("ViewportPanel::OnShow - Frame ID changed: {} -> {}", m_FrameId, newFrameId);
             m_FrameId = newFrameId;
@@ -79,22 +65,11 @@ namespace EditorUI {
             ImVec2 contentRegion = ImGui::GetContentRegionAvail();
             m_Viewport = contentRegion;
 
-            // Optional: very chatty; comment out if noisy
-            // BOOM_INFO("ViewportPanel::OnShow - Viewport size: {}x{}", contentRegion.x, contentRegion.y);
-
             if (m_Frame && contentRegion.x > 0.0f && contentRegion.y > 0.0f)
             {
-                GLint currentTexture{};
-                glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTexture);
-
-                // Draw scene texture; OpenGL origin flip (v: [1..0])
+                GLint currentTexture{}; glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTexture);
                 ImGui::Image(m_Frame, contentRegion, ImVec2(0, 1), ImVec2(1, 0));
-
-                // Hover hints / input routing can go here
-                // if (ImGui::IsItemHovered()) { ... }
-
-                GLint newTexture{};
-                glGetIntegerv(GL_TEXTURE_BINDING_2D, &newTexture);
+                GLint newTexture{};     glGetIntegerv(GL_TEXTURE_BINDING_2D, &newTexture);
                 if (currentTexture != newTexture) {
                     BOOM_WARN("ViewportPanel::OnShow - Texture binding changed: {} -> {}", currentTexture, newTexture);
                 }
@@ -114,7 +89,6 @@ namespace EditorUI {
     {
         DEBUG_DLL_BOUNDARY("ViewportPanel::OnSelect");
         BOOM_INFO("ViewportPanel::OnSelect - Entity selected: {}", entity_id);
-        // Hook selection-dependent viewport behaviors here (gizmos, focus, etc.)
     }
 
     void ViewportPanel::DebugViewportState() const
@@ -128,9 +102,33 @@ namespace EditorUI {
             GLboolean isTexture = glIsTexture(m_FrameId);
             BOOM_INFO("Frame is valid OpenGL texture: {}", isTexture);
         }
-
         DebugHelpers::ValidateFrameData(m_FrameId, "ViewportPanel::DebugViewportState");
         BOOM_INFO("=== End Debug State ===");
+    }
+
+    // ---------------- helpers ----------------
+
+    uint32_t ViewportPanel::QuerySceneFrame() const
+    {
+        // Best: go through AppInterface (your source of truth)
+        if (m_App) {
+            return static_cast<uint32_t>(m_App->GetSceneFrame());
+        }
+
+        // Fallback: directly via renderer if context is available
+        if (m_Ctx && m_Ctx->renderer) {
+            // your GraphicsRenderer exposes GetFrame()
+            return static_cast<uint32_t>(m_Ctx->renderer->GetFrame());
+        }
+
+        return 0u;
+    }
+
+    double ViewportPanel::QueryDeltaTime() const
+    {
+        if (m_App) return m_App->GetDeltaTime();
+        if (m_Ctx) return m_Ctx->DeltaTime;
+        return 0.0;
     }
 
 } // namespace EditorUI
