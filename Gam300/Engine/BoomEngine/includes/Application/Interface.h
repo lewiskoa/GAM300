@@ -170,6 +170,13 @@ namespace Boom
 			return m_Context->renderer->GetFrame();
         }
 
+        BOOM_INLINE EntityRegistry& GetEntityRegistry() {
+            return m_Context->scene;
+        }
+
+        BOOM_INLINE entt::entity& SelectedEntity() {
+            return selectedEntity;
+        }
     protected:
         /** @brief  Called once when the layer is attached. Override to initialize. */
         BOOM_INLINE virtual void OnStart() {}
@@ -184,6 +191,8 @@ namespace Boom
         friend struct Application;
 
         uint32_t    m_LayerID{};   ///< Unique identifier for this layer
+
+        entt::entity selectedEntity{ entt::null };
     };
 
 } // namespace Boom

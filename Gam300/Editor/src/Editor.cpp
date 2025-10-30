@@ -96,8 +96,8 @@ private:
         CreateMainDockSpace();
         RenderMenuBar();
         RenderViewport();
-        RenderHierarchy();
-        RenderInspector();
+        hw.OnShow();
+        iw.OnShow();
         RenderPerformance();
         rw.OnShow();
         dw.OnShow();
@@ -329,8 +329,8 @@ private:
             }
 
             if (ImGui::BeginMenu("View")) {
-                ImGui::MenuItem("Inspector", nullptr, &m_ShowInspector);
-                ImGui::MenuItem("Hierarchy", nullptr, &m_ShowHierarchy);
+                ImGui::MenuItem("Inspector", nullptr, &iw.m_ShowInspector);
+                ImGui::MenuItem("Hierarchy", nullptr, &hw.m_ShowHierarchy);
                 ImGui::MenuItem("Viewport", nullptr, &m_ShowViewport);
                 ImGui::MenuItem("Prefab Browser", nullptr, &m_ShowPrefabBrowser);
                 ImGui::MenuItem("Performance", nullptr, &m_ShowPerformance);
@@ -596,352 +596,6 @@ private:
             }
         }
 
-
-        ImGui::End();
-    }
-
-    //Helpers
-    void DrawComponentSection(
-        const char* componentName,
-        void* pComponent,
-        const xproperty::type::object* (*getPropsFunc)(void*),
-        bool canRemove,
-        std::function<void()> removeFunc
-    )
-    {
-        ImGui::PushID(componentName);
-
-        bool isOpen = ImGui::CollapsingHeader(
-            componentName,
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap
-        );
-
-        // Context menu
-        if (canRemove && ImGui::BeginPopupContextItem()) {
-            if (ImGui::MenuItem("Remove Component")) {
-                if (removeFunc) removeFunc();
-                ImGui::EndPopup();
-                ImGui::PopID();
-                return;
-            }
-            ImGui::EndPopup();
-        }
-
-        // Settings button
-        if (canRemove) {
-            ImGui::SameLine(ImGui::GetWindowWidth() - 30);
-            if (ImGui::SmallButton("...")) {
-                ImGui::OpenPopup("ComponentSettings");
-            }
-
-            if (ImGui::BeginPopup("ComponentSettings")) {
-                if (ImGui::MenuItem("Remove Component")) {
-                    if (removeFunc) removeFunc();
-                    ImGui::EndPopup();
-                    ImGui::PopID();
-                    return;
-                }
-                ImGui::EndPopup();
-            }
-        }
-
-        if (isOpen) {
-            ImGui::Indent(12.0f);
-            ImGui::Spacing();
-
-            auto* props = getPropsFunc(pComponent);
-            if (props) {
-                DrawPropertiesUI(props, pComponent);
-            }
-            else {
-                ImGui::TextDisabled("No properties available");
-            }
-
-            ImGui::Spacing();
-            ImGui::Unindent(12.0f);
-        }
-
-        ImGui::PopID();
-        ImGui::Spacing();
-    }
-    BOOM_INLINE void DrawPropertiesUI(const xproperty::type::object* pObj, void* pInstance)
-    {
-        xproperty::settings::context ctx;
-
-        for (auto& member : pObj->m_Members) {
-            DrawPropertyMember(member, pInstance, ctx);
-        }
-    }
-
-    BOOM_INLINE void DrawPropertyMember(const xproperty::type::members& member, void* pInstance, xproperty::settings::context& ctx)
-    {
-        ImGui::PushID(member.m_pName);
-
-        if (std::holds_alternative<xproperty::type::members::var>(member.m_Variant)) {
-            auto& var = std::get<xproperty::type::members::var>(member.m_Variant);
-
-            xproperty::any value;
-            var.m_pRead(pInstance, value, var.m_UnregisteredEnumSpan, ctx);
-
-            auto typeGUID = value.getTypeGuid();
-            bool changed = false;
-
-            void* pData = &value.m_Data;
-
-            // Label column (Unity-style: label on left, control on right)
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("%s", member.m_pName);
-            ImGui::SameLine(150); // Fixed label width like Unity
-            ImGui::SetNextItemWidth(-1); // Fill remaining width
-
-            if (typeGUID == xproperty::settings::var_type<float>::guid_v) {
-                float* pValue = reinterpret_cast<float*>(pData);
-                changed = ImGui::DragFloat("##value", pValue, 0.01f);
-            }
-            else if (typeGUID == xproperty::settings::var_type<glm::vec3>::guid_v) {
-                glm::vec3* pValue = reinterpret_cast<glm::vec3*>(pData);
-                changed = ImGui::DragFloat3("##value", &pValue->x, 0.01f);
-            }
-            else if (typeGUID == xproperty::settings::var_type<int32_t>::guid_v) {
-                int32_t* pValue = reinterpret_cast<int32_t*>(pData);
-                changed = ImGui::DragInt("##value", pValue);
-            }
-            else if (typeGUID == xproperty::settings::var_type<uint64_t>::guid_v) {
-                uint64_t* pValue = reinterpret_cast<uint64_t*>(pData);
-                changed = ImGui::InputScalar("##value", ImGuiDataType_U64, pValue);
-            }
-            else if (typeGUID == xproperty::settings::var_type<std::string>::guid_v) {
-                std::string* pValue = reinterpret_cast<std::string*>(pData);
-                char buffer[256];
-                strncpy_s(buffer, pValue->c_str(), sizeof(buffer));
-                if (ImGui::InputText("##value", buffer, sizeof(buffer))) {
-                    *pValue = std::string(buffer);
-                    changed = true;
-                }
-            }
-            else if (value.isEnum()) {
-                const auto& enumSpan = value.getEnumSpan();
-                const char* currentName = value.getEnumString();
-
-                if (ImGui::BeginCombo("##value", currentName)) {
-                    for (const auto& enumItem : enumSpan) {
-                        bool selected = (enumItem.m_Value == value.getEnumValue());
-                        if (ImGui::Selectable(enumItem.m_pName, selected)) {
-                            xproperty::any newValue;
-                            newValue.set<std::string>(enumItem.m_pName);
-                            var.m_pWrite(pInstance, newValue, var.m_UnregisteredEnumSpan, ctx);
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
-            }
-            else {
-                ImGui::TextDisabled("<unsupported>");
-            }
-
-            if (changed && !member.m_bConst && var.m_pWrite) {
-                var.m_pWrite(pInstance, value, var.m_UnregisteredEnumSpan, ctx);
-            }
-        }
-        else if (std::holds_alternative<xproperty::type::members::props>(member.m_Variant)) {
-            auto& props = std::get<xproperty::type::members::props>(member.m_Variant);
-            auto [pChild, pChildObj] = props.m_pCast(pInstance, ctx);
-
-            if (pChild && pChildObj) {
-                // Nested object with subtle indentation
-                if (ImGui::TreeNodeEx(member.m_pName, ImGuiTreeNodeFlags_DefaultOpen)) {
-                    ImGui::Indent(8.0f);
-                    for (auto& childMember : pChildObj->m_Members) {
-                        DrawPropertyMember(childMember, pChild, ctx);
-                    }
-                    ImGui::Unindent(8.0f);
-                    ImGui::TreePop();
-                }
-            }
-        }
-
-        ImGui::PopID();
-    }
-
-    // In your Editor class
-    BOOM_INLINE void RenderHierarchy()
-    {
-        if (!m_ShowHierarchy) return;
-
-        if (ImGui::Begin("Hierarchy", &m_ShowHierarchy)) {
-            ImGui::Text("Scene Hierarchy");
-            ImGui::Separator();
-
-            // Use the correct scene registry from the AppContext
-            auto view = m_Context->scene.view<Boom::InfoComponent>();
-
-            for (auto entityID : view) {
-                auto& info = view.get<Boom::InfoComponent>(entityID);
-
-                // Compare the raw entity IDs for selection
-                bool isSelected = (m_SelectedEntity == entityID);
-
-                // Push the entity's unique ID onto ImGui's ID stack
-                ImGui::PushID(static_cast<int>(entityID));
-
-                // Now, you can safely use the (potentially non-unique) name for the label
-                if (ImGui::Selectable(info.name.c_str(), isSelected)) {
-                    // Assign the raw entity ID on click
-                    m_SelectedEntity = entityID;
-                }
-
-                // Pop the ID off the stack to keep it clean for the next item
-                ImGui::PopID();
-            }
-        }
-        ImGui::End();
-    }
-
-    BOOM_INLINE void RenderInspector()
-    {
-        ImGui::Begin("Inspector");
-
-        if (m_SelectedEntity != entt::null) {
-            Boom::Entity selectedEntity{ &m_Context->scene, m_SelectedEntity };
-
-            // ==================== ENTITY NAME ====================
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 6));
-
-            if (selectedEntity.Has<Boom::InfoComponent>()) {
-                auto& info = selectedEntity.Get<Boom::InfoComponent>();
-
-                ImGui::Text("Entity");
-                ImGui::SameLine();
-
-                ImGui::PushItemWidth(-1);
-                char buffer[256];
-                strncpy_s(buffer, sizeof(buffer), info.name.c_str(), sizeof(buffer) - 1);
-                if (ImGui::InputText("##EntityName", buffer, sizeof(buffer))) {
-                    info.name = std::string(buffer);
-                }
-                ImGui::PopItemWidth();
-            }
-
-            ImGui::PopStyleVar();
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Spacing();
-
-            // ==================== COMPONENTS ====================
-
-            // Transform Component (can't remove)
-            if (selectedEntity.Has<Boom::TransformComponent>()) {
-                auto& tc = selectedEntity.Get<Boom::TransformComponent>();
-                DrawComponentSection("Transform", &tc, Boom::GetTransformComponentProperties, false, nullptr);
-            }
-
-            // Camera Component
-            if (selectedEntity.Has<Boom::CameraComponent>()) {
-                auto& cc = selectedEntity.Get<Boom::CameraComponent>();
-                DrawComponentSection("Camera", &cc, Boom::GetCameraComponentProperties, true,
-                    [&]() { m_Context->scene.remove<Boom::CameraComponent>(m_SelectedEntity); }
-                );
-            }
-
-            // Model Component
-            if (selectedEntity.Has<Boom::ModelComponent>()) {
-                auto& mc = selectedEntity.Get<Boom::ModelComponent>();
-                DrawComponentSection("Model Renderer", &mc, Boom::GetModelComponentProperties, true,
-                    [&]() { m_Context->scene.remove<Boom::ModelComponent>(m_SelectedEntity); }
-                );
-            }
-
-            // RigidBody Component
-            if (selectedEntity.Has<Boom::RigidBodyComponent>()) {
-                auto& rc = selectedEntity.Get<Boom::RigidBodyComponent>();
-                DrawComponentSection("Rigidbody", &rc, Boom::GetRigidBodyComponentProperties, true,
-                    [&]() { m_Context->scene.remove<Boom::RigidBodyComponent>(m_SelectedEntity); }
-                );
-            }
-
-            // Collider Component
-            if (selectedEntity.Has<Boom::ColliderComponent>()) {
-                auto& col = selectedEntity.Get<Boom::ColliderComponent>();
-                DrawComponentSection("Collider", &col, Boom::GetColliderComponentProperties, true,
-                    [&]() { m_Context->scene.remove<Boom::ColliderComponent>(m_SelectedEntity); }
-                );
-            }
-
-            //// Animator Component
-            //if (selectedEntity.Has<Boom::AnimatorComponent>()) {
-            //    auto& anim = selectedEntity.Get<Boom::AnimatorComponent>();
-            //    DrawComponentSection("Animator", &anim, Boom::GetAnimatorComponentProperties, true,
-            //        [&]() { m_Context->scene.remove<Boom::AnimatorComponent>(m_SelectedEntity); }
-            //    );
-            //}
-
-            // Directional Light
-            if (selectedEntity.Has<Boom::DirectLightComponent>()) {
-                auto& dl = selectedEntity.Get<Boom::DirectLightComponent>();
-                DrawComponentSection("Directional Light", &dl, Boom::GetDirectLightComponentProperties, true,
-                    [&]() { m_Context->scene.remove<Boom::DirectLightComponent>(m_SelectedEntity); }
-                );
-            }
-
-            // Point Light
-            if (selectedEntity.Has<Boom::PointLightComponent>()) {
-                auto& pl = selectedEntity.Get<Boom::PointLightComponent>();
-                DrawComponentSection("Point Light", &pl, Boom::GetPointLightComponentProperties, true,
-                    [&]() { m_Context->scene.remove<Boom::PointLightComponent>(m_SelectedEntity); }
-                );
-            }
-
-            // Spot Light
-            if (selectedEntity.Has<Boom::SpotLightComponent>()) {
-                auto& sl = selectedEntity.Get<Boom::SpotLightComponent>();
-                DrawComponentSection("Spot Light", &sl, Boom::GetSpotLightComponentProperties, true,
-                    [&]() { m_Context->scene.remove<Boom::SpotLightComponent>(m_SelectedEntity); }
-                );
-            }
-
-            // Skybox Component
-            if (selectedEntity.Has<Boom::SkyboxComponent>()) {
-                auto& sky = selectedEntity.Get<Boom::SkyboxComponent>();
-                DrawComponentSection("Skybox", &sky, Boom::GetSkyboxComponentProperties, true,
-                    [&]() { m_Context->scene.remove<Boom::SkyboxComponent>(m_SelectedEntity); }
-                );
-            }
-
-            // ==================== ADD COMPONENT ====================
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Spacing();
-
-            if (ImGui::Button("Add Component", ImVec2(-1, 30))) {
-                ImGui::OpenPopup("AddComponentPopup");
-            }
-
-            //if (ImGui::BeginPopup("AddComponentPopup")) {
-            //    ImGui::Text("Add Component");
-            //    ImGui::Separator();
-
-            //    if (!selectedEntity.Has<Boom::CameraComponent>() && ImGui::Selectable("Camera")) {
-            //        selectedEntity.Add<Boom::CameraComponent>();
-            //    }
-            //    if (!selectedEntity.Has<Boom::ModelComponent>() && ImGui::Selectable("Model Renderer")) {
-            //        selectedEntity.Add<Boom::ModelComponent>();
-            //    }
-            //    if (!selectedEntity.Has<Boom::RigidBodyComponent>() && ImGui::Selectable("Rigidbody")) {
-            //        selectedEntity.Add<Boom::RigidBodyComponent>();
-            //    }
-            //    if (!selectedEntity.Has<Boom::ColliderComponent>() && ImGui::Selectable("Collider")) {
-            //        selectedEntity.Add<Boom::ColliderComponent>();
-            //    }
-
-            //    ImGui::EndPopup();
-            //}
-        }
-        else {
-            ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.5f - 20);
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-            ImGui::TextWrapped("Select an entity in the hierarchy to view its properties");
-            ImGui::PopStyleColor();
-        }
 
         ImGui::End();
     }
@@ -1576,8 +1230,6 @@ private:
     ImGuiContext* m_ImGuiContext = nullptr;
     ConsoleWindow m_Console{ this };
     bool m_ShowConsole = true;
-    bool m_ShowInspector = true;
-    bool m_ShowHierarchy = true;
     bool m_ShowViewport = true;
     bool m_ShowPrefabBrowser = true;
     bool m_ShowAudio = true;
@@ -1605,13 +1257,11 @@ private:
     std::vector<std::string> m_AvailableScenes;
     int m_SelectedSceneIndex = 0;
 
-
-
     ImGuizmo::OPERATION m_GizmoOperation = ImGuizmo::TRANSLATE;
     ImGuizmo::MODE m_gizmoMode = ImGuizmo::WORLD;
 
     entt::registry* m_Registry = nullptr;
-    entt::entity m_SelectedEntity = entt::null;
+    entt::entity& m_SelectedEntity{ SelectedEntity() };
 
     static constexpr int kPerfHistory = 180;   // last ~3s @60 FPS
     float m_FpsHistory[kPerfHistory] = { 0.f };
@@ -1629,6 +1279,8 @@ private:
     //remove when editor.cpp completed
     ResourceWindow rw{ this };
     DirectoryWindow dw{ this };
+    InspectorWindow iw{ this };
+    HierarchyWindow hw{ this };
 };
 
 // Updated main function

@@ -7,7 +7,7 @@ struct GuiContext;
 
 struct IWidget
 {
-	BOOM_INLINE IWidget(AppInterface* c) : context{c} {};
+	BOOM_INLINE IWidget(AppInterface* c) : context{ c } {};
 
 	BOOM_INLINE virtual ~IWidget() = default;
 	BOOM_INLINE virtual void OnSelect(Entity) {}
