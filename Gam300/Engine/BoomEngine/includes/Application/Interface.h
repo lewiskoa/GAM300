@@ -174,9 +174,50 @@ namespace Boom
             return m_Context->scene;
         }
 
-        BOOM_INLINE entt::entity& SelectedEntity() {
+    private: //helper functions
+        BOOM_INLINE void ResetAllSelected() {
+            selectedEntity = entt::null;
+            selectedAsset = {};
+            //add more if needed
+        }
+        struct CustomAsset {
+            AssetID id{};
+            AssetType type{};
+        };
+    public: //helper functions for imgui iwidget context
+        //if you need to swap selected object call with (true)
+        // otherwise if used for comparison/no reset of selected needed
+        BOOM_INLINE entt::entity& SelectedEntity(bool isResetAllSelected = false) {
+            if (isResetAllSelected) ResetAllSelected();
             return selectedEntity;
         }
+
+        //if you need to swap selected object call with (true)
+        // otherwise if used for comparison/no reset of selected needed
+        BOOM_INLINE CustomAsset& SelectedAsset(bool isResetAllSelected = false) {
+            if (isResetAllSelected) ResetAllSelected();
+            return selectedAsset;
+        }
+
+        template<typename Task>
+        BOOM_INLINE void ModifyAsset(Task f) {
+            switch (selectedAsset.type) {
+            case AssetType::TEXTURE:
+                m_Context->assets->ModifyTextureFromID(selectedAsset.id, f);
+                break;
+            case AssetType::MATERIAL:
+                m_Context->assets->ModifyMaterialFromID(selectedAsset.id, f);
+                break;
+            default:
+                break;
+            }
+            
+        }
+
+        BOOM_INLINE AssetRegistry& GetAssetRegistry() {
+            return *m_Context->assets;
+        }
+
     protected:
         /** @brief  Called once when the layer is attached. Override to initialize. */
         BOOM_INLINE virtual void OnStart() {}
@@ -193,6 +234,8 @@ namespace Boom
         uint32_t    m_LayerID{};   ///< Unique identifier for this layer
 
         entt::entity selectedEntity{ entt::null };
+
+        CustomAsset selectedAsset{};
     };
 
 } // namespace Boom

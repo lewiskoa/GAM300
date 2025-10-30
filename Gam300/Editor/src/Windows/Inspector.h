@@ -144,10 +144,32 @@ struct InspectorWindow : IWidget {
             //    ImGui::EndPopup();
             //}
         }
+        else if (context->SelectedAsset().id != 0u) {
+            if (ImGui::Button("Save All Assets", { 128, 20 })) {
+                SaveAssets();
+            }
+            context->ModifyAsset([&](auto* asset) {
+                if (asset->type == AssetType::MATERIAL) {
+                    MaterialAsset* mat{ dynamic_cast<MaterialAsset*>(asset) };
+
+                    ImGui::Text("Modifying material: %s", mat->name.c_str());
+                    //TODO: showcase material as textured sphere
+                    //TODO: data variables
+                }
+                else if (asset->type == AssetType::TEXTURE) {
+                    TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset) };
+
+                    ImGui::Text("Modifying texture: %s", tex->name.c_str());
+                    ImGui::Image((ImTextureID)(*tex->data.get()), { 256, 256 });
+
+                    //TODO: data variables
+                }
+            });
+        }
         else {
             ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.5f - 20);
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.6f, 0.6f, 0.6f, 1.0f));
-            ImGui::TextWrapped("Select an entity in the hierarchy to view its properties");
+            ImGui::TextWrapped("Select an entity in the hierarchy or an asset in resources to view its properties");
             ImGui::PopStyleColor();
         }
 
@@ -316,7 +338,25 @@ private: //helpers
         ImGui::PopID();
         ImGui::Spacing();
     }
+    
+    BOOM_INLINE bool SaveAssets(const std::string& scenePath = "Scenes/")
+    {
+        //Try blocks cause crashed in release mode. Need to find new alternative
+        DataSerializer serializer;
+
+        const std::string assetsFilePath = scenePath + "assets.yaml";
+
+        BOOM_INFO("[Assets] Saving assets to '{}'", assetsFilePath);
+
+        // Serialize scene and assets
+        serializer.Serialize(context->GetAssetRegistry(), assetsFilePath);
+
+        BOOM_INFO("[Assets] Successfully saved assets");
+        return true;
+    }
 
 public:
     bool m_ShowInspector{ true };
+
+
 };

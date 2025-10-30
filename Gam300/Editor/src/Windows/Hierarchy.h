@@ -30,7 +30,7 @@ struct HierarchyWindow : IWidget {
                 // Now, you can safely use the (potentially non-unique) name for the label
                 if (ImGui::Selectable(info.name.c_str(), isSelected)) {
                     // Assign the raw entity ID on click
-                    context->SelectedEntity() = entityID;
+                    context->SelectedEntity(true) = entityID;
                 }
 
                 // Pop the ID off the stack to keep it clean for the next item

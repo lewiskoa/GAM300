@@ -38,7 +38,7 @@ namespace Boom {
 		int32_t width;
 		uint32_t id;
 
-	private: //descriptions
+	public: //descriptions
 		float quality;
 		int32_t alphaThreshold;
 		int32_t mipLevel; //will not be enforced if too big

@@ -26,16 +26,17 @@ struct ResourceWindow : IWidget {
 				}
 
 				context->AssetView(
-					[&](auto* asset) {
+					[&](Asset* asset) {
 						ImGui::TableNextColumn();
 
 						//render with textures if avaliable
-						ImTextureID texid{icon};
+						ImTextureID texid{icon}; //default file icon
+
 						TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset) };
 						if (tex) {
 							texid = *tex->data.get();
 						}
-
+						
 						bool isClicked{
 							ImGui::ImageButtonEx(
 								(ImGuiID)asset->uid,
@@ -47,9 +48,9 @@ struct ResourceWindow : IWidget {
 						};
 						ImGui::TextWrapped(asset->source.c_str());
 
-						//do stuff after click
+						//show modifyable properties in inspector when selected
 						if (isClicked) {
-
+							context->SelectedAsset(true) = {asset->uid, asset->type};
 						}
 					}
 				);

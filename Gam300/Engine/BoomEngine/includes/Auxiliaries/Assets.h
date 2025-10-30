@@ -4,8 +4,6 @@
 #include "Graphics/Utilities/Data.h"
 #include "BoomProperties.h"
 
-//#include <unordered_map>
-
 namespace Boom {
 	using AssetID = uint64_t;
 	const AssetID EMPTY_ASSET = 0u;
@@ -38,6 +36,8 @@ namespace Boom {
 		AssetID occlusionMapID{ EMPTY_ASSET };
 		AssetID emissiveMapID{ EMPTY_ASSET };
 
+		MaterialAsset() { type = AssetType::MATERIAL; }
+
 		XPROPERTY_DEF(
 			"MaterialAsset", MaterialAsset,
 			obj_member<"Data", &MaterialAsset::data>,                    
@@ -53,11 +53,12 @@ namespace Boom {
 	struct TextureAsset : Asset {
 		Texture data{};		//Runtime only, no need to serialize
 
+		TextureAsset() { type = AssetType::TEXTURE; }
+
 		 XPROPERTY_DEF(
 		 	"TextureAsset", TextureAsset
 			 //obj_member<"Data", &TextureAsset::data>
 		 )
-
 	};
 
 	struct SkyboxAsset : Asset
@@ -65,6 +66,8 @@ namespace Boom {
 		Skybox data{};		//Already has XPROPERTY_DEF defined
 		Texture envMap{};
 		int32_t size{ 2048 };
+
+		SkyboxAsset() { type = AssetType::SKYBOX; }
 
 		XPROPERTY_DEF(
 			"SkyboxAsset", SkyboxAsset,
@@ -78,6 +81,8 @@ namespace Boom {
 		Model3D data{};		//Runtime only, no need to serialize
 		bool hasJoints{};
 
+		ModelAsset() { type = AssetType::MODEL; }
+
 		XPROPERTY_DEF(
 			"ModelAsset", ModelAsset,
 			obj_member<"HasJoints", &ModelAsset::hasJoints>
@@ -86,14 +91,18 @@ namespace Boom {
 
 	struct PrefabAsset : Asset {
 		std::string serializedData{};
+
+		PrefabAsset() { type = AssetType::PREFAB; }
 	};
 
 	//TODO(other uncompleted/custom types):
 	struct ScriptAsset : Asset {
 
+		ScriptAsset() { type = AssetType::SCRIPT; }
 	};
 	struct SceneAsset : Asset {
 
+		SceneAsset() { type = AssetType::SCENE; }
 	};
 
 	using SharedAsset = std::shared_ptr<Asset>;
@@ -136,6 +145,8 @@ namespace Boom {
 				}
 			}
 		}
+
+
 
 		//collection of asset
 		template <class T>
@@ -243,7 +254,28 @@ namespace Boom {
 			return EMPTY_ASSET;
 		}
 
+	public: //helper functions for imgui context
+		template <class Func>
+		BOOM_INLINE void ModifyMaterialFromID(AssetID id, Func f) {
+			auto& map = GetMap<MaterialAsset>();
+			for (auto& [uid, asset] : map) {
+				if (uid == id) {
+					f(asset.get());
+					break;
+				}
+			}
+		}
 
+		template <class Func>
+		BOOM_INLINE void ModifyTextureFromID(AssetID id, Func f) {
+			auto& map = GetMap<TextureAsset>();
+			for (auto& [uid, asset] : map) {
+				if (uid == id) {
+					f(asset.get());
+					break;
+				}
+			}
+		}
 	private:
 		// In your Add() method for debugging
 		template <class T>
