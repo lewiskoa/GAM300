@@ -332,7 +332,7 @@ namespace Boom
                     glm::vec3 dir{ quat * m_Context->window->camMoveDir };
                     transform.translate += dir;
 
-                    comp.camera.FOV = m_Context->window->camFOV;
+                    //comp.camera.FOV = m_Context->window->camFOV;
                     if (curMP == prevMP) {
                         m_Context->window->camRot = {};
                         if (m_Context->window->isMiddleClickDown)
