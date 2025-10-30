@@ -1,152 +1,87 @@
 #include "Panels/PlaybackControlsPanel.h"
+#include "Editor.h"
+#include "Context/Context.h"
 #include "Context/DebugHelpers.h"
+#include "AppWindow.h"           // declares Boom::Application / ApplicationState
+#include "Vendors/imgui/imgui.h"
 
-PlaybackControlsPanel::PlaybackControlsPanel(AppInterface* ctx, Application* app)
-    : IWidget(ctx)
-    , m_Application(app)
-{
-    DEBUG_DLL_BOUNDARY("PlaybackControlsPanel::Constructor");
-    DEBUG_POINTER(context, "AppInterface");
-}
+namespace EditorUI {
 
-void PlaybackControlsPanel::Render()
-{
-    OnShow();
-}
-
-void PlaybackControlsPanel::OnShow()
-{
-    if (!m_ShowPlaybackControls) return;
-
-    if (ImGui::Begin("Playback Controls", &m_ShowPlaybackControls))
+    PlaybackControlsPanel::PlaybackControlsPanel(Editor* owner, Boom::Application* app)
+        : m_Owner(owner), m_App(app)
     {
-        Application* app = m_Application;
+        DEBUG_DLL_BOUNDARY("PlaybackControlsPanel::Ctor");
+        if (!m_Owner) { BOOM_ERROR("PlaybackControls - null owner"); return; }
+        m_Ctx = m_Owner->GetContext();
+        DEBUG_POINTER(m_Ctx, "AppContext");
+    }
 
-        if (app)
+    void PlaybackControlsPanel::Render() { OnShow(); }
+
+    void PlaybackControlsPanel::OnShow()
+    {
+        if (!m_Show) return;
+
+        if (ImGui::Begin("Playback Controls", &m_Show))
         {
-            ApplicationState currentState = app->GetState();
+            auto* app = m_App;
+            if (!app) { ImGui::TextDisabled("Application not wired"); ImGui::End(); return; }
 
-            // Current state label
-            ImGui::Text("Application State: ");
-            ImGui::SameLine();
-            switch (currentState)
-            {
-            case ApplicationState::RUNNING:
-                ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "RUNNING");
-                break;
-            case ApplicationState::PAUSED:
-                ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "PAUSED");
-                break;
-            case ApplicationState::STOPPED:
-                ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "STOPPED");
-                break;
+            auto state = app->GetState();
+
+            ImGui::Text("Application State: "); ImGui::SameLine();
+            switch (state) {
+            case Boom::ApplicationState::RUNNING: ImGui::TextColored(ImVec4(0, 1, 0, 1), "RUNNING"); break;
+            case Boom::ApplicationState::PAUSED:  ImGui::TextColored(ImVec4(1, 1, 0, 1), "PAUSED");  break;
+            case Boom::ApplicationState::STOPPED: ImGui::TextColored(ImVec4(1, 0, 0, 1), "STOPPED"); break;
             }
 
             ImGui::Separator();
-
-            // Controls
             ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
 
-            // --- Play / Resume ---
+            // Play/Resume
             {
-                bool canPlay = (currentState == ApplicationState::PAUSED ||
-                    currentState == ApplicationState::STOPPED);
-
-                if (!canPlay) {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
-                }
-                else {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.7f, 0.0f, 0.8f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.0f, 0.8f, 0.0f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.0f, 0.6f, 0.0f, 1.0f));
-                }
-
-                if (ImGui::Button("Play/Resume", ImVec2(100, 30))) {
-                    if (canPlay) {
-                        app->Resume();
-                        BOOM_INFO("[Editor] Play/Resume button clicked");
-                    }
-                }
-                ImGui::PopStyleColor(3);
+                bool can = (state == Boom::ApplicationState::PAUSED || state == Boom::ApplicationState::STOPPED);
+                if (!can) ImGui::BeginDisabled();
+                if (ImGui::Button("Play/Resume", ImVec2(100, 30)) && can) app->Resume();
+                if (!can) ImGui::EndDisabled();
             }
 
             ImGui::SameLine();
 
-            // --- Pause ---
+            // Pause
             {
-                bool canPause = (currentState == ApplicationState::RUNNING);
-
-                if (!canPause) {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
-                }
-                else {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 1.0f, 0.0f, 0.8f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 0.2f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.8f, 0.8f, 0.0f, 1.0f));
-                }
-
-                if (ImGui::Button("Pause", ImVec2(100, 30))) {
-                    if (canPause) {
-                        app->Pause();
-                        BOOM_INFO("[Editor] Pause button clicked");
-                    }
-                }
-                ImGui::PopStyleColor(3);
+                bool can = (state == Boom::ApplicationState::RUNNING);
+                if (!can) ImGui::BeginDisabled();
+                if (ImGui::Button("Pause", ImVec2(100, 30)) && can) app->Pause();
+                if (!can) ImGui::EndDisabled();
             }
 
             ImGui::SameLine();
 
-            // --- Stop ---
+            // Stop
             {
-                bool canStop = (currentState != ApplicationState::STOPPED);
-
-                if (!canStop) {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.3f, 0.3f, 0.3f, 0.5f));
-                }
-                else {
-                    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.0f, 0.0f, 0.8f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-                    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.6f, 0.0f, 0.0f, 1.0f));
-                }
-
-                if (ImGui::Button("Stop", ImVec2(100, 30))) {
-                    if (canStop) {
-                        app->Stop();
-                        BOOM_INFO("[Editor] Stop button clicked");
-                    }
-                }
-                ImGui::PopStyleColor(3);
+                bool can = (state != Boom::ApplicationState::STOPPED);
+                if (!can) ImGui::BeginDisabled();
+                if (ImGui::Button("Stop", ImVec2(100, 30)) && can) app->Stop();
+                if (!can) ImGui::EndDisabled();
             }
 
             ImGui::PopStyleVar();
 
             ImGui::Separator();
-
-            // Help / shortcuts
             ImGui::Text("Keyboard Shortcuts:");
             ImGui::BulletText("Spacebar: Toggle Pause/Resume");
             ImGui::BulletText("Escape: Stop Application");
 
-            // Time info
-            if (currentState != ApplicationState::STOPPED) {
+            if (state != Boom::ApplicationState::STOPPED) {
                 ImGui::Separator();
                 ImGui::Text("Adjusted Time: %.2f seconds", app->GetAdjustedTime());
-
-                if (currentState == ApplicationState::PAUSED) {
-                    ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Time is paused");
-                }
+                if (state == Boom::ApplicationState::PAUSED)
+                    ImGui::TextColored(ImVec4(1, 1, 0, 1), "Time is paused");
             }
         }
-        else
-        {
-            ImGui::Text("Application reference not available");
-        }
+        ImGui::End();
     }
-    ImGui::End();
-}
+
+} // namespace EditorUI

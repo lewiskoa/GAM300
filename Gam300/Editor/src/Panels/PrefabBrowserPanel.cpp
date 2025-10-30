@@ -1,17 +1,39 @@
 ﻿#include "Panels/PrefabBrowserPanel.h"
 
-// Adjust these includes to your project structure:
-#include "Auxiliaries/Assets.h"       // Assets storage (Assets*, GetMap<PrefabAsset>(), etc.)
+// Pull full types here (keeps header light)
+#include "Editor/Editor.h"
+#include "Context/Context.h"
+#include "Context/DebugHelpers.h"
+
+// Assets / prefabs API (adjust to your project)
+#include "Auxiliaries/Assets.h"          // AssetID, Assets, PrefabAsset, EMPTY_ASSET
+#include "Auxiliaries/PrefabUtility.h"   // CreatePrefabFromEntity, SavePrefab, LoadPrefab, Instantiate
 
 #include <algorithm>
-#include <cstring>  // for std::strlen / std::strcpy
-#include "Editor/EditorPCH.h"
+#include <cctype>
+#include <cstring> // std::strlen, std::snprintf
 
-namespace EditorUI
-{
-    PrefabBrowserPanel::PrefabBrowserPanel(AppInterface* ctx)
-        : IWidget(ctx)
+namespace EditorUI {
+
+    PrefabBrowserPanel::PrefabBrowserPanel(Editor* owner)
+        : m_Owner(owner)
     {
+        DEBUG_DLL_BOUNDARY("PrefabBrowserPanel::Constructor");
+
+        if (!m_Owner) {
+            BOOM_ERROR("PrefabBrowserPanel::Constructor - Null owner!");
+            return;
+        }
+
+        // Editor must expose: Boom::AppContext* GetContext() const;
+        m_Ctx = m_Owner->GetContext();
+        DEBUG_POINTER(m_Ctx, "AppContext");
+
+        if (!m_Ctx) {
+            BOOM_ERROR("PrefabBrowserPanel::Constructor - Null AppContext!");
+            return;
+        }
+
         m_PrefabNameBuffer[0] = '\0';
         RefreshPrefabList();
     }
@@ -32,14 +54,14 @@ namespace EditorUI
         RenderPrefabBrowser();
     }
 
-    // -------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
     // UI: Dialogs (Save / Delete)
-    // -------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
     void PrefabBrowserPanel::RenderPrefabDialogs()
     {
-        auto* appCtx = GetAppContext(); // ✅ Get typed context once
+        if (!m_Ctx || !m_Ctx->assets) return;
 
-        // --- Save Prefab Dialog ------------------------------------------------
+        // --- Save Prefab Dialog ---------------------------------------------------
         if (m_ShowSavePrefabDialog) {
             ImGui::OpenPopup("Save as Prefab");
             m_ShowSavePrefabDialog = false;
@@ -63,19 +85,18 @@ namespace EditorUI
             bool cancelClicked = ImGui::Button("Cancel", ImVec2(80, 0));
 
             if ((saveClicked || enterPressed) && std::strlen(m_PrefabNameBuffer) > 0) {
-                AssetID prefabID = RandomU64();
+                const AssetID prefabID = RandomU64();
                 auto prefab = PrefabUtility::CreatePrefabFromEntity(
-                    *appCtx->assets,  // ✅ Use appCtx
+                    *m_Ctx->assets,
                     prefabID,
                     std::string(m_PrefabNameBuffer),
-                    appCtx->scene,    // ✅ Use appCtx
+                    m_Ctx->scene,
                     m_SelectedEntity
                 );
 
                 if (prefab) {
                     std::string filepath = "Prefabs/" + std::string(m_PrefabNameBuffer) + ".prefab";
-                    bool saved = PrefabUtility::SavePrefab(*prefab, filepath);
-                    if (saved) {
+                    if (PrefabUtility::SavePrefab(*prefab, filepath)) {
                         BOOM_INFO("[Editor] Saved prefab '{}'", m_PrefabNameBuffer);
                         RefreshPrefabList();
                     }
@@ -90,7 +111,7 @@ namespace EditorUI
             ImGui::EndPopup();
         }
 
-        // --- Delete Prefab Dialog ---------------------------------------------
+        // --- Delete Prefab Dialog -------------------------------------------------
         if (m_ShowDeletePrefabDialog) {
             ImGui::OpenPopup("Delete Prefab?");
             m_ShowDeletePrefabDialog = false;
@@ -98,7 +119,7 @@ namespace EditorUI
         }
 
         if (ImGui::BeginPopupModal("Delete Prefab?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            auto& asset = appCtx->assets->Get<PrefabAsset>(m_PrefabToDelete);  // ✅ Use appCtx
+            auto& asset = m_Ctx->assets->Get<PrefabAsset>(m_PrefabToDelete);
             ImGui::Text("Delete prefab '%s'?", asset.name.c_str());
             ImGui::Spacing();
 
@@ -110,12 +131,12 @@ namespace EditorUI
             ImGui::Separator();
 
             if (ImGui::Button("Delete", ImVec2(120, 0))) {
-                // SAVE the filepath BEFORE erasing the asset
-                std::string filepath = "Prefabs/" + asset.name + ".prefab";
-                std::string name = asset.name;
+                // Save info before erasing
+                const std::string filepath = "Prefabs/" + asset.name + ".prefab";
+                const std::string name = asset.name;
 
                 // Remove from memory FIRST
-                appCtx->assets->GetMap<PrefabAsset>().erase(m_PrefabToDelete);  // ✅ Use appCtx
+                m_Ctx->assets->GetMap<PrefabAsset>().erase(m_PrefabToDelete);
 
                 // NOW delete from disk (using the saved filepath)
                 if (m_DeleteFromDisk) {
@@ -132,7 +153,7 @@ namespace EditorUI
                 RefreshPrefabList();
 
                 if (m_SelectedPrefabID == m_PrefabToDelete) {
-                    m_SelectedPrefabID = EMPTY_ASSET;
+                    m_SelectedPrefabID = 0; // EMPTY
                 }
                 ImGui::CloseCurrentPopup();
             }
@@ -146,57 +167,52 @@ namespace EditorUI
         }
     }
 
-    // -------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
     // UI: Main Prefab Browser window
-    // -------------------------------------------------------------------------
+    // -----------------------------------------------------------------------------
     void PrefabBrowserPanel::RenderPrefabBrowser()
     {
-        auto* appCtx = GetAppContext(); // ✅ Get typed context once
+        if (!m_Ctx || !m_Ctx->assets) return;
 
         ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
-
         if (ImGui::Begin("Prefab Browser", &m_ShowPrefabBrowser)) {
 
             // Toolbar
-            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.8f, 1.0f));
             if (ImGui::Button("Refresh", ImVec2(80, 0))) {
                 RefreshPrefabList();
                 LoadAllPrefabsFromDisk(); // optional: ensure newest files are imported
             }
-            ImGui::PopStyleColor();
 
-            ImGui::SameLine();
-            ImGui::TextDisabled("|");
             ImGui::SameLine();
             ImGui::Text("Prefabs: %d", (int)m_LoadedPrefabs.size());
-
             ImGui::Separator();
 
             // Search bar
             static char searchBuffer[256] = "";
             ImGui::SetNextItemWidth(-1);
             ImGui::InputTextWithHint("##Search", "Search prefabs...", searchBuffer, sizeof(searchBuffer));
-
             ImGui::Separator();
 
             // Prefab list
             ImGui::BeginChild("PrefabList", ImVec2(0, -40), true);
 
-            auto& prefabMap = appCtx->assets->GetMap<PrefabAsset>();  // ✅ Use appCtx
+            auto& prefabMap = m_Ctx->assets->GetMap<PrefabAsset>();
 
             std::string search = searchBuffer;
             std::transform(search.begin(), search.end(), search.begin(),
-                [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                [](unsigned char c) { return (char)std::tolower(c); });
 
             int count = 0;
-            for (auto& [uid, asset] : prefabMap) {
+            for (auto& [uid, assetPtr] : prefabMap) {
                 if (uid == EMPTY_ASSET) continue;
+                auto* asset = static_cast<PrefabAsset*>(assetPtr.get());
+                if (!asset) continue;
 
                 // Filter by search
                 std::string name = asset->name;
                 std::string nameLower = name;
                 std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(),
-                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                    [](unsigned char c) { return (char)std::tolower(c); });
 
                 if (!search.empty() && nameLower.find(search) == std::string::npos) {
                     continue;
@@ -205,7 +221,6 @@ namespace EditorUI
                 count++;
                 ImGui::PushID((int)uid);
 
-                // Selectable line
                 bool selected = (m_SelectedPrefabID == uid);
                 if (ImGui::Selectable(("## " + name).c_str(), selected, 0, ImVec2(0, 40))) {
                     m_SelectedPrefabID = uid;
@@ -213,24 +228,24 @@ namespace EditorUI
 
                 // Double-click to instantiate
                 if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-                    EntityID newEntity = PrefabUtility::Instantiate(appCtx->scene, *appCtx->assets, uid);  // ✅ Use appCtx
+                    entt::entity newEntity = PrefabUtility::Instantiate(m_Ctx->scene, *m_Ctx->assets, uid);
                     if (newEntity != entt::null) {
                         m_SelectedEntity = newEntity;
                         BOOM_INFO("[Editor] Instantiated prefab '{}'", name);
                     }
                 }
 
-                // Right-click menu
+                // Context menu
                 if (ImGui::BeginPopupContextItem()) {
                     if (ImGui::MenuItem("Instantiate")) {
-                        EntityID newEntity = PrefabUtility::Instantiate(appCtx->scene, *appCtx->assets, uid);  // ✅ Use appCtx
+                        entt::entity newEntity = PrefabUtility::Instantiate(m_Ctx->scene, *m_Ctx->assets, uid);
                         if (newEntity != entt::null) {
                             m_SelectedEntity = newEntity;
                         }
                     }
                     if (ImGui::MenuItem("Save to Disk")) {
                         std::string path = "Prefabs/" + name + ".prefab";
-                        PrefabUtility::SavePrefab(*static_cast<PrefabAsset*>(asset.get()), path);
+                        PrefabUtility::SavePrefab(*asset, path);
                         BOOM_INFO("[Editor] Saved prefab '{}'", name);
                     }
                     ImGui::Separator();
@@ -241,21 +256,19 @@ namespace EditorUI
                     ImGui::EndPopup();
                 }
 
-                // Custom draw on the same line as the selectable
+                // Simple icon + meta on the same row
                 ImVec2 p = ImGui::GetItemRectMin();
                 ImDrawList* draw = ImGui::GetWindowDrawList();
-
-                // Icon placeholder
                 ImVec2 iconMin = ImVec2(p.x + 5, p.y + 5);
                 ImVec2 iconMax = ImVec2(p.x + 35, p.y + 35);
                 draw->AddRectFilled(iconMin, iconMax, IM_COL32(80, 120, 180, 255), 4.0f);
                 draw->AddText(ImVec2(iconMin.x + 8, iconMin.y + 8), IM_COL32(255, 255, 255, 255), "P");
 
-                // Name & meta
                 draw->AddText(ImVec2(p.x + 45, p.y + 5), IM_COL32(255, 255, 255, 255), name.c_str());
 
                 char metaText[128];
-                std::snprintf(metaText, sizeof(metaText), "ID: ...%llu", (unsigned long long)(uid % 100000));
+                std::snprintf(metaText, sizeof(metaText), "ID: ...%llu",
+                    (unsigned long long)(uid % 100000));
                 draw->AddText(ImVec2(p.x + 45, p.y + 22), IM_COL32(150, 150, 150, 255), metaText);
 
                 ImGui::PopID();
@@ -271,12 +284,12 @@ namespace EditorUI
 
             // Bottom toolbar
             ImGui::Separator();
-            if (m_SelectedPrefabID != EMPTY_ASSET) {
-                auto& asset = appCtx->assets->Get<PrefabAsset>(m_SelectedPrefabID);  // ✅ Use appCtx
+            if (m_SelectedPrefabID != 0) {
+                auto& asset = m_Ctx->assets->Get<PrefabAsset>(m_SelectedPrefabID);
                 ImGui::Text("Selected: %s", asset.name.c_str());
                 ImGui::SameLine(ImGui::GetContentRegionAvail().x - 100);
                 if (ImGui::Button("Instantiate", ImVec2(100, 0))) {
-                    EntityID newEntity = PrefabUtility::Instantiate(appCtx->scene, *appCtx->assets, m_SelectedPrefabID);  // ✅ Use appCtx
+                    entt::entity newEntity = PrefabUtility::Instantiate(m_Ctx->scene, *m_Ctx->assets, m_SelectedPrefabID);
                     if (newEntity != entt::null) {
                         m_SelectedEntity = newEntity;
                         BOOM_INFO("[Editor] Instantiated prefab '{}'", asset.name);
@@ -290,14 +303,28 @@ namespace EditorUI
         ImGui::End();
     }
 
+    // -----------------------------------------------------------------------------
+    // Data ops
+    // -----------------------------------------------------------------------------
+    void PrefabBrowserPanel::RefreshPrefabList()
+    {
+        m_LoadedPrefabs.clear();
+        if (!m_Ctx || !m_Ctx->assets) return;
 
+        auto& map = m_Ctx->assets->GetMap<PrefabAsset>();
+        m_LoadedPrefabs.reserve(map.size());
+        for (auto& [uid, assetPtr] : map) {
+            if (uid == EMPTY_ASSET) continue;
+            auto* asset = static_cast<PrefabAsset*>(assetPtr.get());
+            if (!asset) continue;
+            m_LoadedPrefabs.emplace_back(asset->name, uid);
+        }
+    }
 
     void PrefabBrowserPanel::LoadAllPrefabsFromDisk()
     {
-        auto* appCtx = GetAppContext(); // ✅ Get typed context
+        if (!m_Ctx || !m_Ctx->assets) return;
 
-        // Optional: if you already have a project-level function that does this,
-        // call it here instead. This implementation simply scans /Prefabs.
         const std::filesystem::path kDir{ "Prefabs" };
         if (!std::filesystem::exists(kDir)) return;
 
@@ -306,10 +333,9 @@ namespace EditorUI
             const auto& p = e.path();
             if (p.extension() == ".prefab") {
                 try {
-                    // Adjust if your API differs (e.g., PrefabUtility::LoadPrefab returns AssetID)
-                    PrefabUtility::LoadPrefab(*appCtx->assets, p.string());  // ✅ Use appCtx
+                    PrefabUtility::LoadPrefab(*m_Ctx->assets, p.string());
                 }
-                catch (std::exception const& ex) {
+                catch (const std::exception& ex) {
                     BOOM_ERROR("[Editor] Failed to load prefab '{}': {}", p.string(), ex.what());
                 }
             }
@@ -317,4 +343,5 @@ namespace EditorUI
 
         RefreshPrefabList();
     }
+
 } // namespace EditorUI

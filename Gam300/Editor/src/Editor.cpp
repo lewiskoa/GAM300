@@ -1,5 +1,5 @@
 ﻿// src/Editor/Editor.cpp
-#include "Editor/Editor.h"
+#include "Editor.h"
 
 // Bring in the full AppContext definition here (not in the header)
 #include "Context/Context.h"
@@ -17,10 +17,7 @@
 #include "Panels/PerformancePanel.h"
 #include "Panels/PlaybackControlsPanel.h"
 
-// ImGui + backends
-#include "Vendors/imgui/imgui.h"
-#include "Vendors/imgui/backends/imgui_impl_glfw.h"
-#include "Vendors/imgui/backends/imgui_impl_opengl3.h"
+#include "BoomEngine.h"
 
 // Gizmo
 #include "ImGuizmo.h"

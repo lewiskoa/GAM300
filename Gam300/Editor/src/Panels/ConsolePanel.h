@@ -24,7 +24,7 @@ namespace EditorUI
         void TrackLastItemAsViewport(const char* label = "Viewport");
 
         // IWidget overrides
-        void OnShow() override;
+        void Render();
         void OnSelect(Entity entity) override;
 
         // Debug helpers

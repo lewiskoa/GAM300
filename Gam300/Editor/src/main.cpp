@@ -4,7 +4,7 @@
 
 #include "BoomEngine.h"                 // defines MyEngineClass, Application, etc.
 #include "Context/DebugHelpers.h"       // BOOM_INFO / BOOM_ERROR
-#include "Editor/Editor.h"              // your Editor layer
+#include "Editor.h"              // your Editor layer
 
 // ImGui + backends
 #include "Vendors/imgui/imgui.h"

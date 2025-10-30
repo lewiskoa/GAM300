@@ -12,7 +12,7 @@
 // Engine/Editor bits used in the implementation (safe to include here)
 #include "Context/Context.h"
 #include "Context/DebugHelpers.h"
-#include "Editor/EditorPCH.h"
+#include "EditorPCH.h"
 
 #ifndef ICON_FA_TERMINAL
 #define ICON_FA_TERMINAL ""
@@ -116,7 +116,7 @@ namespace EditorUI
     // ---------------------------
     // IWidget overrides
     // ---------------------------
-    void ConsolePanel::OnShow()
+    void ConsolePanel::Render()
     {
         if (!context) {
             BOOM_ERROR("ConsolePanel::OnShow - Null context!");

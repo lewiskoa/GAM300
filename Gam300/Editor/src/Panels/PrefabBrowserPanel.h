@@ -1,36 +1,35 @@
 #pragma once
-#include "Context/Context.h"
-#include "Context/DebugHelpers.h"
-#include "Vendors/imgui/imgui.h"
-#include <string>
+
 #include <vector>
-#include <unordered_map>
+#include <string>
 #include <filesystem>
-#include "Editor/EditorPCH.h"
+#include "Vendors/imgui/imgui.h"
+#include <entt/entity/entity.hpp> // entt::entity
 
+namespace Boom { class AppContext; }
 
+namespace EditorUI {
 
-namespace EditorUI
-{
-    class PrefabBrowserPanel : public IWidget
-    {
+    class Editor; // forward-declare, full type only needed in .cpp
+
+    class PrefabBrowserPanel {
     public:
-        BOOM_INLINE explicit PrefabBrowserPanel(AppInterface* ctx);
+        explicit PrefabBrowserPanel(Editor* owner);
 
-        // Call once per frame from your editor render pass
-        void Render();              // wrapper -> calls OnShow()
-        BOOM_INLINE void OnShow() override;
+        // Editor.cpp calls this
+        void Render();
 
         // External toggles (optional)
-        BOOM_INLINE void Show(bool v) { m_ShowPrefabBrowser = v; }
-        BOOM_INLINE bool IsVisible() const { return m_ShowPrefabBrowser; }
+        void Show(bool v) { m_ShowPrefabBrowser = v; }
+        bool IsVisible() const { return m_ShowPrefabBrowser; }
 
-        // To trigger the save/delete dialogs from outside (optional)
-        BOOM_INLINE void OpenSaveDialog() { m_ShowSavePrefabDialog = true; }
-        BOOM_INLINE void OpenDeleteDialog(AssetID id) { m_PrefabToDelete = id; m_ShowDeletePrefabDialog = true; }
+        // Dialog triggers (optional)
+        void OpenSaveDialog() { m_ShowSavePrefabDialog = true; }
+        void OpenDeleteDialog(std::uint64_t id) { m_PrefabToDelete = id; m_ShowDeletePrefabDialog = true; }
 
     private:
         // UI sections
+        void OnShow();                // internal render
         void RenderPrefabDialogs();
         void RenderPrefabBrowser();
 
@@ -38,12 +37,11 @@ namespace EditorUI
         void RefreshPrefabList();
         void LoadAllPrefabsFromDisk(); // scans Prefabs/ and loads .prefab assets
 
-        // Helper to get AppContext
-        BOOM_INLINE Boom::AppContext* GetAppContext() {
-            return static_cast<Boom::AppContext*>(m_Context);
-        }
-
     private:
+        // Owner/context
+        Editor* m_Owner = nullptr;    // non-owning
+        Boom::AppContext* m_Ctx = nullptr;    // cached from Editor
+
         // Visibility
         bool m_ShowPrefabBrowser = true;
 
@@ -53,14 +51,15 @@ namespace EditorUI
         bool m_DeleteFromDisk = false;
 
         // Selection & inputs
-        AssetID m_SelectedPrefabID = EMPTY_ASSET;
-        AssetID m_PrefabToDelete = EMPTY_ASSET;
-        char    m_PrefabNameBuffer[256] = {};
+        std::uint64_t m_SelectedPrefabID = 0;       // use your AssetID if preferred
+        std::uint64_t m_PrefabToDelete = 0;       // use your AssetID if preferred
+        char          m_PrefabNameBuffer[256] = {};
 
         // Cached list for rendering (name, uid)
-        std::vector<std::pair<std::string, AssetID>> m_LoadedPrefabs;
+        std::vector<std::pair<std::string, std::uint64_t>> m_LoadedPrefabs;
 
-        // External state (typical editor members you referenced)
-        EntityID m_SelectedEntity = entt::null;
+        // External state (typical: currently selected entity in editor)
+        entt::entity m_SelectedEntity = entt::null;
     };
+
 } // namespace EditorUI

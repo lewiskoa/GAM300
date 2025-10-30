@@ -1,25 +1,30 @@
 #pragma once
-#include "Context/Context.h"
-#include "Context/DebugHelpers.h"
 #include "Vendors/imgui/imgui.h"
 
-// Performance overlay that displays FPS, frame time, and profiler information.
-class PerformancePanel : public IWidget
-{
-public:
-    BOOM_INLINE explicit PerformancePanel(AppInterface* ctx);
+namespace Boom { class AppContext; }
 
-    // Called once per frame from your editor render loop
-    void Render();               // wrapper for OnShow()
-    BOOM_INLINE void OnShow() override;
+namespace EditorUI {
 
-    // Optional visibility control
-    BOOM_INLINE void Show(bool v) { m_ShowPerformance = v; }
-    BOOM_INLINE bool IsVisible() const { return m_ShowPerformance; }
+    class Editor;
 
-private:
-    static constexpr int kPerfHistory = 120;  // Number of frames stored in FPS graph
-    bool   m_ShowPerformance = true;
-    float  m_FpsHistory[kPerfHistory];
-    int    m_FpsWriteIdx = 0;
-};
+    class PerformancePanel {
+    public:
+        explicit PerformancePanel(Editor* owner);
+        void Render();          // Editor.cpp calls this
+        void OnShow();          // internal
+
+        void Show(bool v) { m_Show = v; }
+        bool IsVisible() const { return m_Show; }
+
+    private:
+        static constexpr int kPerfHistory = 120;
+
+        Editor* m_Owner = nullptr;
+        Boom::AppContext* m_Ctx = nullptr;
+
+        bool   m_Show = true;
+        float  m_FpsHistory[kPerfHistory]{};
+        int    m_FpsWriteIdx = 0;
+    };
+
+} // namespace EditorUI

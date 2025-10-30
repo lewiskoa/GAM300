@@ -1,24 +1,29 @@
 #pragma once
 
 #include <entt/entity/entity.hpp> // entt::entity
+#include "Vendors/imgui/imgui.h"
 
-namespace Boom { struct Context; }
+namespace Boom { class AppContext; }
 
-class HierarchyPanel
-{
-public:
-    HierarchyPanel() = default;
-    explicit HierarchyPanel(Boom::Context* ctx, bool* showFlag = nullptr, entt::entity* selected = nullptr)
-        : m_Context(ctx), m_ShowHierarchy(showFlag), m_SelectedEntity(selected) {}
+namespace EditorUI {
 
-    void Render();
+    class Editor; // forward declare, full type only needed in .cpp
 
-    void SetContext(Boom::Context* ctx) { m_Context = ctx; }
-    void SetShowFlag(bool* flag) { m_ShowHierarchy = flag; }
-    void SetSelectedEntity(entt::entity* sel) { m_SelectedEntity = sel; }
+    class HierarchyPanel {
+    public:
+        explicit HierarchyPanel(Editor* owner);
 
-private:
-    Boom::Context* m_Context{ nullptr };     // NOTE: fully-qualified type
-    bool* m_ShowHierarchy{ nullptr };
-    entt::entity* m_SelectedEntity{ nullptr };
-};
+        void Render();
+
+        // Optional wiring from Editor
+        void SetShowFlag(bool* flag) { m_ShowHierarchy = flag; }
+        void SetSelectedEntity(entt::entity* sel) { m_SelectedEntity = sel; }
+
+    private:
+        Editor* m_Owner = nullptr;  // non-owning
+        Boom::AppContext* m_Ctx = nullptr;  // cached from Editor
+        bool* m_ShowHierarchy = nullptr;  // external toggle
+        entt::entity* m_SelectedEntity = nullptr;  // selection binding
+    };
+
+} // namespace EditorUI

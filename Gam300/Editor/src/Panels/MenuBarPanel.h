@@ -2,67 +2,74 @@
 
 #include <functional>
 #include <cstddef>
-#include <memory>
 #include <string>
-#include "Context/Context.h"
-#include "BoomEngine.h"
+#include <memory>
 
 // ImGui
 #include "Vendors/imgui/imgui.h"
 
-// If you use entt in your editor state:
+// entt (for entt::entity / entt::null)
 #include <entt/entity/entity.hpp>
 
-// Forward decls of your engine types (adjust includes if you prefer)
-struct Application;
-struct Context; // whatever your context class is named (m_Context)
+namespace Boom {
+    class Application;
+    class AppContext; // your engine context (the one Editor holds)
+}
 
-// A tiny bundle of pointers/callbacks so the panel stays UI-only.
-struct MenuBarConfig {
-    // Engine pointers
-    Boom::Application* app{ nullptr };
-    Context* ctx{ nullptr };
+namespace EditorUI {
 
-    // View toggles (wired to your editor state)
-    bool* showInspector{ nullptr };
-    bool* showHierarchy{ nullptr };
-    bool* showViewport{ nullptr };
-    bool* showPrefabBrowser{ nullptr };
-    bool* showPerformance{ nullptr };
-    bool* showPlaybackControls{ nullptr };
-    bool* showConsole{ nullptr };
-    bool* showAudio{ nullptr };
+    class Editor; // forward declaration to accept Editor* in ctor
 
-    // Dialog flags
-    bool* showSaveDialog{ nullptr };
-    bool* showLoadDialog{ nullptr };
-    bool* showSavePrefabDialog{ nullptr };
+    // A small config bundle, leaving the panel UI-only.
+    // You can wire these from Editor (or the panel's ctor will try to fill a few).
+    struct MenuBarConfig {
+        // Engine pointers
+        Boom::Application* app{ nullptr };
+        Boom::AppContext* ctx{ nullptr };
 
-    // Selected entity handle (optional; used by “Save/Delete Selected”)
-    entt::entity* selectedEntity{ nullptr };
+        // View toggles (wired to your editor state)
+        bool* showInspector{ nullptr };
+        bool* showHierarchy{ nullptr };
+        bool* showViewport{ nullptr };
+        bool* showPrefabBrowser{ nullptr };
+        bool* showPerformance{ nullptr };
+        bool* showPlaybackControls{ nullptr };
+        bool* showConsole{ nullptr };
+        bool* showAudio{ nullptr };
 
-    // Scene name text buffer (for Save/Save As defaults)
-    char* sceneNameBuffer{ nullptr };
-    size_t sceneNameBufferSize{ 0 };
+        // Dialog flags
+        bool* showSaveDialog{ nullptr };
+        bool* showLoadDialog{ nullptr };
+        bool* showSavePrefabDialog{ nullptr };
 
-    // Helpers
-    std::function<void(bool)> RefreshSceneList; // pass true to force
-};
+        // Selected entity handle (optional; used by Save/Delete Selected)
+        entt::entity* selectedEntity{ nullptr };
 
-class MenuBarPanel {
-public:
-    MenuBarPanel() = default;
-    explicit MenuBarPanel(const MenuBarConfig& cfg) { SetConfig(cfg); }
+        // Scene name text buffer (for Save/Save As defaults)
+        char* sceneNameBuffer{ nullptr };
+        size_t sceneNameBufferSize{ 0 };
 
-    void SetConfig(const MenuBarConfig& cfg) { m = cfg; }
+        // Helpers
+        std::function<void(bool)> RefreshSceneList; // pass true to force
+    };
 
-    // Render the main menu bar
-    void Render();
+    class MenuBarPanel {
+    public:
+        // Editor.cpp calls: m_MenuBar = std::make_unique<MenuBarPanel>(this);
+        explicit MenuBarPanel(Editor* owner);
 
-private:
-    void PrefillSceneNameFromCurrent();
+        // Optional: allow Editor to update bindings later
+        void SetConfig(const MenuBarConfig& cfg) { m = cfg; }
 
-private:
-    MenuBarConfig m{};
-};
+        // Render the main menu bar
+        void Render();
 
+    private:
+        void PrefillSceneNameFromCurrent();
+
+    private:
+        MenuBarConfig m{};
+        Editor* m_Owner{ nullptr };
+    };
+
+} // namespace EditorUI

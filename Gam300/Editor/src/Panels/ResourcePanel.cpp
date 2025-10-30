@@ -1,55 +1,42 @@
 #include "Panels/ResourcePanel.h"
-#include <glm/glm.hpp>
+#include "Editor.h"
+#include "Context/Context.h"
+#include "Context/DebugHelpers.h"
+#include "Vendors/imgui/imgui.h"
 
-BOOM_INLINE ResourcePanel::ResourcePanel(AppInterface* c)
-    : IWidget(c)
-    , iconImage("Icons/asset.png", false)
-    , icon((ImTextureID)iconImage)
-    , selected{}
-{
-}
+#ifndef ICON_FA_IMAGE
+#define ICON_FA_IMAGE ""
+#endif
 
-BOOM_INLINE void ResourcePanel::OnShow()
-{
-    if (ImGui::Begin("Resources"))
+namespace EditorUI {
+
+    ResourcePanel::ResourcePanel(Editor* owner)
+        : m_Owner(owner)
     {
-        int colNo = static_cast<int>((ImGui::GetContentRegionAvail().x) / (ASSET_SIZE + ImGui::GetStyle().ItemSpacing.x));
-        colNo = glm::max(1, colNo);
-
-        ImGuiTableFlags flags = ImGuiTableFlags_SizingFixedSame | ImGuiTableFlags_NoHostExtendX;
-
-        if (ImGui::BeginTable("##ResourceTable", colNo, flags))
-        {
-            for (int i = 0; i < colNo; ++i)
-                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, ASSET_SIZE);
-
-            context->AssetView([&](auto* asset)
-                {
-                    ImGui::TableNextColumn();
-
-                    ImTextureID texid = icon;
-                    if (auto tex = dynamic_cast<TextureAsset*>(asset))
-                        texid = *tex->data.get();
-
-                    bool clicked = ImGui::ImageButtonEx(
-                        (ImGuiID)asset->uid,
-                        texid,
-                        ImVec2(ASSET_SIZE, ASSET_SIZE),
-                        ImVec2(0, 1), ImVec2(1, 0),
-                        ImVec4(0, 0, 0, 1),
-                        ImVec4(1, 1, 1, 1));
-
-                    ImGui::TextWrapped(asset->source.c_str());
-
-                    if (clicked)
-                    {
-                        selected = asset->uid;
-                        // future: preview / inspector integration
-                    }
-                });
-
-            ImGui::EndTable();
-        }
+        DEBUG_DLL_BOUNDARY("ResourcePanel::Ctor");
+        if (!m_Owner) { BOOM_ERROR("ResourcePanel - null owner"); return; }
+        m_Ctx = m_Owner->GetContext();
+        DEBUG_POINTER(m_Ctx, "AppContext");
     }
-    ImGui::End();
-}
+
+    void ResourcePanel::OnShow()
+    {
+        if (!ImGui::Begin("Resources")) { ImGui::End(); return; }
+
+        ImGui::Text("Asset tile size: %.0f", ASSET_SIZE);
+
+        ImGui::BeginGroup();
+        if (m_Icon) {
+            ImGui::Image(m_Icon, ImVec2(ASSET_SIZE, ASSET_SIZE));
+        }
+        else {
+            const char* label = (ICON_FA_IMAGE[0] ? ICON_FA_IMAGE : " ");
+            ImGui::Button(label, ImVec2(ASSET_SIZE, ASSET_SIZE));
+        }
+        ImGui::TextUnformatted("Example.asset");
+        ImGui::EndGroup();
+
+        ImGui::End();
+    }
+
+} // namespace EditorUI

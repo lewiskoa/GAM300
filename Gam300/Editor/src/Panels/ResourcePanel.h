@@ -1,17 +1,22 @@
 #pragma once
-#include "Context/Context.h"
+#include "Vendors/imgui/imgui.h"
 
+namespace Boom { class AppContext; }
 
-class ResourcePanel : public IWidget
-{
-public:
-    BOOM_INLINE ResourcePanel(AppInterface* c);
-    BOOM_INLINE void OnShow() override;
+namespace EditorUI {
 
-private:
-    Texture2D iconImage;
-    ImTextureID icon;
-    AssetID selected;
+    class Editor;
 
-    static constexpr float ASSET_SIZE = 64.0f;
-};
+    class ResourcePanel {
+    public:
+        explicit ResourcePanel(Editor* owner);
+        void OnShow();                 // Editor.cpp calls this
+        void Render() { OnShow(); }    // optional wrapper
+
+    private:
+        Editor* m_Owner = nullptr; // non-owning
+        Boom::AppContext* m_Ctx = nullptr; // cached from Editor
+        ImTextureID       m_Icon = {};
+    };
+
+} // namespace EditorUI

@@ -1,46 +1,72 @@
 #include "Panels/HierarchyPanel.h"
 
-#include "Vendors/imgui/imgui.h"
-#include <entt/entt.hpp>                 // for view(), to_integral, etc.
-
-// Must provide full definitions here:
+// pull full types here (keeps header light)
+#include "Editor/Editor.h"
 #include "Context/Context.h"
-
 #include "Context/DebugHelpers.h"
-#include "BoomEngine.h"
+#include "BoomEngine.h"            // for Boom::InfoComponent (adjust include if needed)
 
-void HierarchyPanel::Render()
-{
-    // Treat missing flag as "visible"
-    if (m_ShowHierarchy && !*m_ShowHierarchy) return;
-    if (!m_Context) return;
+#include <entt/entt.hpp>
 
-    bool open = m_ShowHierarchy ? *m_ShowHierarchy : true;
-    if (ImGui::Begin("Hierarchy", m_ShowHierarchy ? m_ShowHierarchy : &open))
+namespace EditorUI {
+
+    HierarchyPanel::HierarchyPanel(Editor* owner)
+        : m_Owner(owner)
     {
-        ImGui::TextUnformatted("Scene Hierarchy");
-        ImGui::Separator();
+        DEBUG_DLL_BOUNDARY("HierarchyPanel::Constructor");
 
-        // Either access the public field...
-        // auto& registry = m_Context->scene;
-
-        // ...or if your Context exposes a getter, use that (prefer this if 'scene' isn't public):
-        auto& registry = m_Context->GetRegistry(); // <-- change to your actual API
-
-        auto view = registry.view<Boom::InfoComponent>();
-        for (entt::entity e : view)
-        {
-            auto& info = view.get<Boom::InfoComponent>(e);
-            const bool isSelected = (m_SelectedEntity && *m_SelectedEntity == e);
-
-            ImGui::PushID(static_cast<int>(entt::to_integral(e)));
-            if (ImGui::Selectable(info.name.c_str(), isSelected))
-            {
-                if (m_SelectedEntity) *m_SelectedEntity = e;
-                BOOM_INFO("[Hierarchy] Selected entity: {}", info.name);
-            }
-            ImGui::PopID();
+        if (!m_Owner) {
+            BOOM_ERROR("HierarchyPanel::Constructor - Null owner!");
+            return;
         }
+        // Editor must provide: Boom::AppContext* GetContext() const;
+        m_Ctx = m_Owner->GetContext();
+        DEBUG_POINTER(m_Ctx, "AppContext");
+
+        if (!m_Ctx) {
+            BOOM_ERROR("HierarchyPanel::Constructor - Null AppContext!");
+            return;
+        }
+
+        // If your Editor exposes flags/selection, wire them here (optional):
+        // m_ShowHierarchy  = &m_Owner->m_ShowHierarchy;
+        // m_SelectedEntity = &m_Owner->m_SelectedEntity;
     }
-    ImGui::End();
-}
+
+    void HierarchyPanel::Render()
+    {
+        if (!m_Ctx) return;
+
+        // If no external flag wired, treat as visible
+        bool open_local = true;
+        bool* p_open = m_ShowHierarchy ? m_ShowHierarchy : &open_local;
+
+        if (ImGui::Begin("Hierarchy", p_open))
+        {
+            ImGui::TextUnformatted("Scene Hierarchy");
+            ImGui::Separator();
+
+            // Prefer a getter; fallback to public .scene if that’s your API
+            // auto& registry = m_Ctx->scene;
+            auto& registry = m_Ctx->GetRegistry(); // adjust to your actual API
+
+
+            auto view = registry.view<Boom::InfoComponent>();
+            for (entt::entity e : view)
+            {
+                const auto& info = view.get<Boom::InfoComponent>(e);
+                const bool isSelected = (m_SelectedEntity && *m_SelectedEntity == e);
+
+                ImGui::PushID(static_cast<int>(entt::to_integral(e)));
+                if (ImGui::Selectable(info.name.c_str(), isSelected))
+                {
+                    if (m_SelectedEntity) *m_SelectedEntity = e;
+                    BOOM_INFO("[Hierarchy] Selected entity: {}", info.name);
+                }
+                ImGui::PopID();
+            }
+        }
+        ImGui::End();
+    }
+
+} // namespace EditorUI

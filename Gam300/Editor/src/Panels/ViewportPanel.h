@@ -1,35 +1,41 @@
 #pragma once
-#include "Context/Context.h"
-#include "Context/DebugHelpers.h"
+
+#include <cstdint>
+
+// ImGui types
 #include "Vendors/imgui/imgui.h"
 
-// Fallback if your FontAwesome alias isn't defined in your global headers
-#ifndef ICON_FA_IMAGE
-#define ICON_FA_IMAGE ""
-#endif
+namespace Boom {
+    class AppContext; // full type included in .cpp
+}
 
-// ViewportPanel: draws the scene framebuffer texture inside an ImGui window.
-class ViewportPanel : public IWidget
-{
-public:
-    BOOM_INLINE explicit ViewportPanel(AppInterface* ctx);
+namespace EditorUI {
 
-    // Call this each frame from your editor render pass
-    void Render();               // wrapper -> calls OnShow()
-    BOOM_INLINE void OnShow() override;
-    BOOM_INLINE void OnSelect(Entity entity) override;
+    class Editor; // forward-declared so header stays light
 
-    // Optional visibility control
-    BOOM_INLINE void Show(bool v) { m_ShowViewport = v; }
-    BOOM_INLINE bool IsVisible() const { return m_ShowViewport; }
+    class ViewportPanel {
+    public:
+        explicit ViewportPanel(Editor* owner);
 
-    // Debug helper
-    BOOM_INLINE void DebugViewportState() const;
+        // Editor.cpp calls this:
+        void Render();
 
-private:
-    bool       m_ShowViewport = true;
+        // You can call these from elsewhere if needed
+        void OnShow();
+        void OnSelect(uint32_t entity_id);   // keep signature simple & decoupled
+        void DebugViewportState() const;
 
-    ImTextureID m_Frame = nullptr;
-    uint32_t    m_FrameId = 0;
-    ImVec2      m_Viewport{ 0.0f, 0.0f };
-};
+        void Show(bool v) { m_ShowViewport = v; }
+        bool IsVisible() const { return m_ShowViewport; }
+
+    private:
+        Editor* m_Owner = nullptr;   // non-owning
+        Boom::AppContext* m_Ctx = nullptr;   // cached from Editor
+        bool               m_ShowViewport = true;
+
+        ImTextureID        m_Frame = {};        // zero-init
+        uint32_t           m_FrameId = 0;
+        ImVec2             m_Viewport = ImVec2(0.0f, 0.0f);
+    };
+
+} // namespace EditorUI

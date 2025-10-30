@@ -1,6 +1,6 @@
 ﻿// Panels/InspectorPanel.cpp
 #include "Panels/InspectorPanel.h"
-#include "Editor/Editor.h"          // for Editor::GetContext()
+#include "Editor.h"          // for Editor::GetContext()
 #include "Context/Context.h"        // for Boom::AppContext + scene access
 #include "Vendors/imgui/imgui.h"
 
@@ -49,7 +49,19 @@ namespace EditorUI {
         }
 
         if (open) {
-            getProps(*comp);
+            if constexpr (std::is_invocable_v<GetPropsFn, TComponent&>) {
+                getProps(*comp);
+            }
+            else if constexpr (std::is_invocable_v<GetPropsFn, void*>) {
+                getProps(static_cast<void*>(comp));
+            }
+            else if constexpr (std::is_invocable_v<GetPropsFn, const void*>) {
+                getProps(static_cast<const void*>(comp));
+            }
+            else {
+                static_assert([] {return false; }(),
+                    "getProps must be invocable with TComponent& or (const) void*");
+            }
             ImGui::TreePop();
         }
     }

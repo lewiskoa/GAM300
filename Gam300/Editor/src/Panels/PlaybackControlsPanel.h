@@ -1,29 +1,28 @@
 #pragma once
-#include "Context/Context.h"
 #include "Vendors/imgui/imgui.h"
 
-// Adjust this include to where your Application + ApplicationState are declared.
-// (If you already include Application in a PCH, you can remove this.)
-#include "AppWindow.h" // defines Application, ApplicationState
+namespace Boom { class AppContext; class Application; enum class ApplicationState : int; }
 
-// Dockable panel that controls app Run/Pause/Stop and shows time info.
-class PlaybackControlsPanel : public IWidget
-{
-public:
-    BOOM_INLINE explicit PlaybackControlsPanel(AppInterface* ctx, Boom::Application* app = nullptr);
+namespace EditorUI {
 
-    // Render per-frame
-    void Render();                // wrapper -> calls OnShow()
-    BOOM_INLINE void OnShow() override;
+    class Editor;
 
-    // Visibility
-    BOOM_INLINE void Show(bool v) { m_ShowPlaybackControls = v; }
-    BOOM_INLINE bool IsVisible() const { return m_ShowPlaybackControls; }
+    class PlaybackControlsPanel {
+    public:
+        explicit PlaybackControlsPanel(Editor* owner, Boom::Application* app = nullptr);
 
-    // App wiring (if you construct before Application exists)
-    BOOM_INLINE void SetApplication(Application* app) { m_Application = app; }
+        void Render();              // Editor.cpp calls this
+        void OnShow();              // internal
 
-private:
-    bool         m_ShowPlaybackControls = true;
-    Application* m_Application = nullptr;
-};
+        void Show(bool v) { m_Show = v; }
+        bool IsVisible() const { return m_Show; }
+        void SetApplication(Boom::Application* app) { m_App = app; }
+
+    private:
+        Editor* m_Owner = nullptr;
+        Boom::AppContext* m_Ctx = nullptr;
+        Boom::Application* m_App = nullptr;
+        bool              m_Show = true;
+    };
+
+} // namespace EditorUI
