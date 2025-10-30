@@ -447,6 +447,59 @@ namespace Boom {
             m_Scene->addActor(*body.actor);
         }
 
+        BOOM_INLINE void SetRigidBodyType(Entity& entity, RigidBody3D::Type newType)
+        {
+            if (!entity.Has<RigidBodyComponent>()) return;
+
+            auto& body = entity.Get<RigidBodyComponent>().RigidBody;
+            auto* oldActor = body.actor;
+
+            // 1. --- Guard Clause: If the type isn't changing, do nothing ---
+            if (!oldActor || body.type == newType) {
+                return;
+            }
+
+            // 2. --- Preserve all essential properties from the old actor ---
+            PxTransform transform = oldActor->getGlobalPose();
+            EntityID* userData = static_cast<EntityID*>(oldActor->userData);
+
+            // Get all shapes from the old actor. An actor can have multiple shapes.
+            const PxU32 numShapes = oldActor->getNbShapes();
+            std::vector<PxShape*> shapes(numShapes);
+            oldActor->getShapes(shapes.data(), numShapes);
+
+            // 3. --- Remove and release the old actor ---
+            m_Scene->removeActor(*oldActor);
+            oldActor->release();
+
+            // 4. --- Create the new actor of the desired type ---
+            PxRigidActor* newActor = nullptr;
+            if (newType == RigidBody3D::DYNAMIC)
+            {
+                PxRigidDynamic* dyn = m_Physics->createRigidDynamic(transform);
+                // CRITICAL: Update mass and inertia for the new dynamic body
+                PxRigidBodyExt::updateMassAndInertia(*dyn, body.density);
+                newActor = dyn;
+            }
+            else // newType is STATIC
+            {
+                newActor = m_Physics->createRigidStatic(transform);
+            }
+
+            // 5. --- Re-attach all shapes and restore user data ---
+            if (newActor) {
+                for (PxShape* shape : shapes) {
+                    newActor->attachShape(*shape);
+                }
+                newActor->userData = userData;
+                m_Scene->addActor(*newActor);
+            }
+
+            // 6. --- IMPORTANT: Update our component to point to the new actor and type ---
+            body.actor = newActor;
+            body.type = newType;
+        }
+
 
 
         // Mesh Colliders

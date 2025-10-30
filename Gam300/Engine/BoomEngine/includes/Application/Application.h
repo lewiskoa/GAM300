@@ -231,6 +231,32 @@ namespace Boom
                     prevF10 = f10Pressed;
                 }
 
+                // ✨ NEW: Add this block to test SetRigidBodyType with F11
+                {
+                    static bool prevF11 = false;
+                    bool f11Pressed = glfwGetKey(engineWindow.get(), GLFW_KEY_F11) == GLFW_PRESS;
+                    if (f11Pressed && !prevF11)
+                    {
+                        // Find the "Sphere" entity to toggle its type
+                        EnttView<Entity, InfoComponent, RigidBodyComponent>([this](auto entity, InfoComponent& info, RigidBodyComponent& rb) {
+                            if (info.name == "Sphere") {
+                                // Determine the new type by flipping the current one
+                                RigidBody3D::Type currentType = rb.RigidBody.type;
+                                RigidBody3D::Type newType = (currentType == RigidBody3D::DYNAMIC)
+                                    ? RigidBody3D::STATIC
+                                    : RigidBody3D::DYNAMIC;
+
+                                // Call the function to perform the switch!
+                                m_Context->physics->SetRigidBodyType(entity, newType);
+
+                                // Log the change to the console for confirmation
+                                BOOM_INFO("[Test F11] Toggled Sphere rigid body to: {}", (newType == RigidBody3D::DYNAMIC) ? "DYNAMIC" : "STATIC");
+                            }
+                            });
+                    }
+                    prevF11 = f11Pressed;
+                }
+
 
                 // Always update delta time, but adjust for pause state
                 ComputeFrameDeltaTime();
