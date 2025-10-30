@@ -19,6 +19,7 @@ namespace Boom {
             bool  clampPitch = true;
             float minPitchDeg = -89.f;
             float maxPitchDeg = 89.f;
+            
         };
 
         explicit CameraController(AppWindow* window, Config cfg = {})
@@ -30,20 +31,25 @@ namespace Boom {
 
             auto& input = m_app->input;
             const auto& s = input.current();
-
             const bool middleMouse = s.Mouse.test(GLFW_MOUSE_BUTTON_MIDDLE);
+            const bool mmbPress = m_app->input.mousePressed(GLFW_MOUSE_BUTTON_MIDDLE);
             const bool inRegion = !m_cfg.gateToViewportRect || m_app->IsMouseInCameraRegion(m_app->Handle().get());
             const bool rmb = !m_cfg.gateToRMB || s.Mouse.test(GLFW_MOUSE_BUTTON_RIGHT);
             const bool rmbPress = m_app->input.mousePressed(GLFW_MOUSE_BUTTON_RIGHT);
             const bool canUse = m_app->camInputEnabled && inRegion && rmb;          // look + WASD
             const bool canPan = m_app->camInputEnabled && inRegion && middleMouse;  // MMB pan
+
             glm::dvec2 curPos = m_app->input.cursorPos();
             if (rmbPress) {
                 m_prevLookPos = curPos;                // zero the baseline the moment RMB goes down
             }
+            if (mmbPress) m_prevPanPos = curPos;
 
             glm::vec2 md = rmb ? glm::vec2(curPos - m_prevLookPos) : glm::vec2(0.0f);
             m_prevLookPos = curPos;
+            glm::vec2 mdPan = middleMouse ? glm::vec2(curPos - m_prevPanPos) : glm::vec2(0.0f);
+            if (glm::length2(mdPan) < 1.0f) mdPan = {};
+
             // WASD movement vector (camera-local intent)
             glm::vec3 movements{
                 input.axis(GLFW_KEY_A, GLFW_KEY_D),
@@ -59,13 +65,23 @@ namespace Boom {
             const float fovDeg = (m_cam ? m_cam->FOV : CONSTANTS::MIN_FOV);
             // --- Give pan priority over look ---
             if (canPan) {
-                const glm::vec2 pan{ -md.x , md.y };
+                // IMPORTANT: consume the delta every frame (Unity-like feel)
+                glm::vec2 pixDelta = glm::vec2(curPos - m_prevPanPos);
+                m_prevPanPos = curPos; 
+
+               
+                const float H = float(m_app->getHeight());
+                const float d = panFocusDist; // pick your pivot distance; tune this
+                const float wpp = 2.f * d * std::tan(fovDeg * 0.5f) / H; 
+
+                // Camera-local right/up displacement (no forward, no speed multiplier)
                 glm::vec3 localMove{
-                    pan.x * fovDeg * 0.09f,
-                    pan.y * fovDeg * 0.10f,
-                    0.0f
+                    -pixDelta.x * wpp,    // right (flip sign if it feels backwards)
+                     pixDelta.y * wpp,    // up
+                     0.0f
                 };
-                m_app->camMoveDir = localMove * base;
+
+                m_app->camMoveDir = localMove; // treated as per-frame displacement
             }
             else if (canUse) {
                 // Look (RMB) using the same md
@@ -96,12 +112,17 @@ namespace Boom {
 
             // Scroll: speed multiplier and FOV
             const glm::vec2 sd = input.scrollDelta();
-            if (rmb && inRegion) {
-                m_app->camMoveMultiplier = std::clamp(m_app->camMoveMultiplier + sd.y * m_cfg.multiplierStep, 0.01f, 100.0f);
+            if (sd.y != 0.0f && inRegion) {
+                if (rmb) {
+                    float next = m_app->camMoveMultiplier + sd.y * m_cfg.multiplierStep;
+                    m_app->camMoveMultiplier = std::clamp(next, 0.01f, 100.0f);
+                }
+                else if (m_cam) {
+                    float nextFov = std::clamp(m_cam->FOV - sd.y, m_cfg.minFov, m_cfg.maxFov);
+                    if (nextFov != m_cam->FOV) m_cam->SetFOV(nextFov);
+                }
             }
-            if (inRegion) {
-                m_cam->SetFOV(m_cam->FOV - sd.y);
-            }
+          
         }
 
 
@@ -111,5 +132,7 @@ namespace Boom {
         Camera3D*  m_cam = nullptr;
         bool        m_prevRmb = false;        // last-frame RMB state
         glm::dvec2  m_prevLookPos = {};           // last cursor pos used for look
+        glm::dvec2  m_prevPanPos{};
+        float panFocusDist = 5.f;//adjust this if the pan dist is slow
     };
 }

@@ -181,14 +181,7 @@ namespace Boom
             LoadScene("default");
      
             CameraController camera(
-                m_Context->window.get(),
-                CameraController::Config{
-                    .mouseSensitivityX = 0.25f,
-                    .mouseSensitivityY = 0.25f,
-                    .multiplierStep = 0.01f,
-                    .gateToViewportRect = true,
-                    .gateToRMB = true
-                }
+                m_Context->window.get()
             );
          
             ////init skybox
