@@ -1,13 +1,12 @@
 #pragma once
-
-#include <entt/entity/entity.hpp> // entt::entity
+#include <entt/entity/entity.hpp>
 #include "Vendors/imgui/imgui.h"
 
-namespace Boom { class AppContext; }
+namespace Boom { struct AppContext; struct AppInterface; }
 
 namespace EditorUI {
 
-    class Editor; // forward declare, full type only needed in .cpp
+    class Editor;
 
     class HierarchyPanel {
     public:
@@ -20,10 +19,12 @@ namespace EditorUI {
         void SetSelectedEntity(entt::entity* sel) { m_SelectedEntity = sel; }
 
     private:
-        Editor* m_Owner = nullptr;  // non-owning
-        Boom::AppContext* m_Ctx = nullptr;  // cached from Editor
-        bool* m_ShowHierarchy = nullptr;  // external toggle
-        entt::entity* m_SelectedEntity = nullptr;  // selection binding
+        Editor* m_Owner = nullptr;
+        Boom::AppInterface* m_App = nullptr;   // preferred
+        Boom::AppContext* m_Ctx = nullptr;   // cached from m_App->GetContext()
+
+        bool* m_ShowHierarchy = nullptr;
+        entt::entity* m_SelectedEntity = nullptr;
     };
 
 } // namespace EditorUI

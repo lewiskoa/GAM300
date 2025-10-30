@@ -1,8 +1,10 @@
-#include "Panels/ViewportPanel.h"
-#include "Editor.h"
+﻿#include "Panels/ViewportPanel.h"
+#include "Editor.h"                // so we can inspect Editor at compile-time
 #include "Context/Context.h"
 #include "Context/DebugHelpers.h"
 #include "Vendors/imgui/imgui.h"
+#include <type_traits>             // std::is_base_of_v
+#include <cstdint>                 // std::uint32_t - ADDED THIS
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
@@ -22,18 +24,23 @@ namespace EditorUI {
             return;
         }
 
-        // Try to get AppInterface from the owner (if Editor derives from it)
-        m_App = dynamic_cast<Boom::AppInterface*>(m_Owner);
+        // Editor doesn't inherit from AppInterface, so we can't cast
+        // We'll access everything through m_Ctx instead
+        m_App = nullptr;
 
-        // Cache context if Editor exposes it
+        // If Editor exposes GetContext(), cache it. (C++20 requires-expression)
         if constexpr (requires(Editor * e) { e->GetContext(); }) {
             m_Ctx = m_Owner->GetContext();
         }
+        else {
+            m_Ctx = nullptr;
+        }
+
         DEBUG_POINTER(m_App, "AppInterface");
         DEBUG_POINTER(m_Ctx, "AppContext");
 
         // Initial frame id via AppInterface first, then fallback to renderer
-        uint32_t frameId = QuerySceneFrame();
+        std::uint32_t frameId = QuerySceneFrame();
         DebugHelpers::ValidateFrameData(frameId, "ViewportPanel constructor");
 
         m_FrameId = frameId;
@@ -51,7 +58,7 @@ namespace EditorUI {
         if (!m_ShowViewport) return;
 
         // Refresh frame each frame (renderer may recreate it)
-        uint32_t newFrameId = QuerySceneFrame();
+        std::uint32_t newFrameId = QuerySceneFrame();
         if (newFrameId != m_FrameId) {
             BOOM_INFO("ViewportPanel::OnShow - Frame ID changed: {} -> {}", m_FrameId, newFrameId);
             m_FrameId = newFrameId;
@@ -85,7 +92,7 @@ namespace EditorUI {
         ImGui::End();
     }
 
-    void ViewportPanel::OnSelect(uint32_t entity_id)
+    void ViewportPanel::OnSelect(std::uint32_t entity_id)
     {
         DEBUG_DLL_BOUNDARY("ViewportPanel::OnSelect");
         BOOM_INFO("ViewportPanel::OnSelect - Entity selected: {}", entity_id);
@@ -108,17 +115,17 @@ namespace EditorUI {
 
     // ---------------- helpers ----------------
 
-    uint32_t ViewportPanel::QuerySceneFrame() const
+    std::uint32_t ViewportPanel::QuerySceneFrame() const
     {
-        // Best: go through AppInterface (your source of truth)
+        // Prefer AppInterface if available
         if (m_App) {
-            return static_cast<uint32_t>(m_App->GetSceneFrame());
+            return static_cast<std::uint32_t>(m_App->GetSceneFrame());
         }
 
         // Fallback: directly via renderer if context is available
         if (m_Ctx && m_Ctx->renderer) {
             // your GraphicsRenderer exposes GetFrame()
-            return static_cast<uint32_t>(m_Ctx->renderer->GetFrame());
+            return static_cast<std::uint32_t>(m_Ctx->renderer->GetFrame());
         }
 
         return 0u;

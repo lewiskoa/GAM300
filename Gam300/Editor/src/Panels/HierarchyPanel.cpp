@@ -1,10 +1,11 @@
 #include "Panels/HierarchyPanel.h"
 
-// pull full types here (keeps header light)
-#include "Editor/Editor.h"
+// keep header light; pull real types here
+#include "Editor.h"
+#include "Application/Interface.h"   // AppInterface (GetContext, etc.)
 #include "Context/Context.h"
 #include "Context/DebugHelpers.h"
-#include "BoomEngine.h"            // for Boom::InfoComponent (adjust include if needed)
+#include "BoomEngine.h"              // InfoComponent (adjust include if needed)
 
 #include <entt/entt.hpp>
 
@@ -15,29 +16,23 @@ namespace EditorUI {
     {
         DEBUG_DLL_BOUNDARY("HierarchyPanel::Constructor");
 
-        if (!m_Owner) {
-            BOOM_ERROR("HierarchyPanel::Constructor - Null owner!");
-            return;
-        }
-        // Editor must provide: Boom::AppContext* GetContext() const;
-        m_Ctx = m_Owner->GetContext();
-        DEBUG_POINTER(m_Ctx, "AppContext");
+        if (!m_Owner) { BOOM_ERROR("HierarchyPanel - Null owner!"); return; }
 
-        if (!m_Ctx) {
-            BOOM_ERROR("HierarchyPanel::Constructor - Null AppContext!");
-            return;
-        }
+        // FIXED: Since Editor now inherits from AppInterface, cast works
+        m_App = static_cast<Boom::AppInterface*>(m_Owner);
+        DEBUG_POINTER(m_App, "AppInterface");
 
-        // If your Editor exposes flags/selection, wire them here (optional):
-        // m_ShowHierarchy  = &m_Owner->m_ShowHierarchy;
-        // m_SelectedEntity = &m_Owner->m_SelectedEntity;
+        // Get context through the AppInterface
+        if (m_App) {
+            m_Ctx = m_App->GetContext();
+            DEBUG_POINTER(m_Ctx, "AppContext");
+        }
     }
 
     void HierarchyPanel::Render()
     {
         if (!m_Ctx) return;
 
-        // If no external flag wired, treat as visible
         bool open_local = true;
         bool* p_open = m_ShowHierarchy ? m_ShowHierarchy : &open_local;
 
@@ -46,10 +41,8 @@ namespace EditorUI {
             ImGui::TextUnformatted("Scene Hierarchy");
             ImGui::Separator();
 
-            // Prefer a getter; fallback to public .scene if that’s your API
-            // auto& registry = m_Ctx->scene;
-            auto& registry = m_Ctx->GetRegistry(); // adjust to your actual API
-
+            // Your AppContext exposes 'scene'
+            auto& registry = m_Ctx->scene;
 
             auto view = registry.view<Boom::InfoComponent>();
             for (entt::entity e : view)

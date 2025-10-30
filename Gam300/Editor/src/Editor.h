@@ -1,14 +1,18 @@
 ﻿#pragma once
 #include <memory>
 
+// CRITICAL: Include the complete definition, not just forward declaration
+#include "Application/Interface.h"  // For Boom::AppInterface complete type
+
 // Keep heavy headers out of here to avoid cycles.
 // Just forward-declare the few types we need.
 struct ImGuiContext;            // ImGui is global-namespace
 
-namespace Boom { struct AppContext; }  // your engine context
+namespace Boom {
+    struct AppContext;          // Can still forward-declare this
+}
 
 namespace EditorUI {
-
     // Forward-declare all panels (their full defs live in each panel header).
     class MenuBarPanel;
     class HierarchyPanel;
@@ -22,7 +26,8 @@ namespace EditorUI {
     class PerformancePanel;
     class PlaybackControlsPanel;
 
-    class Editor {
+    // FIXED: Now inherits from AppInterface (complete definition included above)
+    class Editor : public Boom::AppInterface {
     public:
         explicit Editor(Boom::AppContext* ctx, ImGuiContext* imgui = nullptr);
         ~Editor();                      // defined in .cpp after including all panels

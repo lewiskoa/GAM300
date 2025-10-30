@@ -1,7 +1,7 @@
 ﻿#include "Panels/PrefabBrowserPanel.h"
 
 // Pull full types here (keeps header light)
-#include "Editor/Editor.h"
+#include "Editor.h"
 #include "Context/Context.h"
 #include "Context/DebugHelpers.h"
 

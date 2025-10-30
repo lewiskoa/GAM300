@@ -1,5 +1,5 @@
 #include "Panels/PerformancePanel.h"
-#include "Editor/Editor.h"
+#include "Editor.h"
 #include "Context/Context.h"
 #include "Context/DebugHelpers.h"
 #include "Context/Profiler.hpp"     // DrawProfilerPanel(..)
@@ -47,9 +47,13 @@ namespace EditorUI {
             else if (fps >= 30.f)  ImGui::TextColored(ImVec4(1, 0.8f, 0.2f, 1), "Playable");
             else                   ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "Slow");
 
-            // Profiler integration
-            if (m_Ctx && m_Ctx->profiler) DrawProfilerPanel(m_Ctx->profiler);
-            else ImGui::TextDisabled("Profiler unavailable");
+            // Profiler integration - FIXED: Check pointer, not reference
+            if (m_Ctx && m_Ctx->profiler != nullptr) {
+                DrawProfilerPanel(m_Ctx->profiler);
+            }
+            else {
+                ImGui::TextDisabled("Profiler unavailable");
+            }
         }
         ImGui::End();
     }

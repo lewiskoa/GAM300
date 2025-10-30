@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <filesystem>
 
-namespace Boom { class AppContext; }
-struct GLFWwindow; // forward declare
+namespace Boom { struct AppContext; struct AppInterface; }
+struct GLFWwindow;
 
 namespace EditorUI {
 
@@ -16,8 +16,8 @@ namespace EditorUI {
     public:
         explicit DirectoryPanel(Editor* owner);
         void Init();
-        void OnShow();                 // Editor.cpp calls OnShow()
-        void Render() { OnShow(); }    // wrapper
+        void OnShow();
+        void Render() { OnShow(); }
 
     private:
         // Helpers
@@ -30,7 +30,7 @@ namespace EditorUI {
         std::unique_ptr<FileNode> BuildDirectoryTree();
         void RenderDirectoryTree(std::unique_ptr<FileNode> const& root);
 
-        // Filesystem operations
+        // Filesystem ops
         void CopyFilesToDirectory(const std::vector<std::string>& filePaths,
             const std::filesystem::path& targetDir);
         bool DeletePath(const std::filesystem::path& path);
@@ -39,9 +39,10 @@ namespace EditorUI {
         static void OnDrop(GLFWwindow*, int count, const char** paths);
 
     private:
-        // Owner/context
+        // Owner / engine access
         Editor* m_Owner = nullptr;
-        Boom::AppContext* m_Ctx = nullptr;
+        Boom::AppInterface* m_App = nullptr;   // preferred access (Interface.h)
+        Boom::AppContext* m_Ctx = nullptr;   // cached from m_App->GetContext()
 
         // Config
         const std::filesystem::path ROOT_PATH{ "Resources" };

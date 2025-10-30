@@ -26,6 +26,8 @@
 // If your project uses glad/glew, include it *once* in a common cpp.
 // Here we rely on your existing setup.
 #include <GLFW/glfw3.h>
+#include "Vendors/imgui/backends/imgui_impl_glfw.h"
+#include "Vendors/imgui/backends/imgui_impl_opengl3.h"
 
 namespace {
 

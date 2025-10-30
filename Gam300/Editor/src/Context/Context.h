@@ -99,8 +99,8 @@ struct GuiContext : AppInterface
         // Validate ImGui state after initialization
         DebugHelpers::ValidateImGuiState("After initialization");
 
-        // Attach event callback
-        AttachCallback<SelectEvent>([this](auto e)
+        // Attach event callback - FIX: Capture the return value
+        (void)AttachCallback<SelectEvent>([this](auto e)
             {
                 DEBUG_DLL_BOUNDARY("SelectEvent callback");
                 for (auto& window : m_Windows) {
@@ -163,14 +163,17 @@ struct GuiContext : AppInterface
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
 
-        // Begin the main window
+        // Begin the main window - FIX: Capture return value
         bool windowOpen = ImGui::Begin("MainWindow", NULL, flags);
+
+        // Always pop styles even if window didn't open
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar(3);
+
         if (windowOpen)
         {
             // Set up the main dockspace
             ImGui::DockSpace(ImGui::GetID("MainDockspace"), ImVec2(0, 0), ImGuiDockNodeFlags_PassthruCentralNode);
-            ImGui::PopStyleColor();
-            ImGui::PopStyleVar(3);
 
             // Iterate through each window in the vector and call OnShow
             for (auto& window : m_Windows)
@@ -371,10 +374,13 @@ struct GuiContextNoSwitch : AppInterface
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
 
-        if (ImGui::Begin("MainWindow", NULL, flags)) {
+        // FIX: Always pop styles even if Begin fails
+        bool windowOpen = ImGui::Begin("MainWindow", NULL, flags);
+        ImGui::PopStyleColor();
+        ImGui::PopStyleVar(3);
+
+        if (windowOpen) {
             ImGui::DockSpace(ImGui::GetID("MainDockspace"), ImVec2(0, 0), ImGuiDockNodeFlags_PassthruCentralNode);
-            ImGui::PopStyleColor();
-            ImGui::PopStyleVar(3);
 
             // Show windows
             for (auto& vwindow : m_Windows) {

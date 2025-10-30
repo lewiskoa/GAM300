@@ -19,12 +19,4 @@
 #include "Context/Profiler.hpp"
 #include "Context/Widgets.h"
 #include "BoomEngine.h"
-#include "Context/Context.h"
-
-#include "Context/DebugHelpers.h"
-#include <glm/gtc/type_ptr.hpp>
-#include "ImGuizmo.h"
-#include "Context/Profiler.hpp"
 #include "AppWindow.h"
-#include "Vendors/imgui/imgui.h"
-#include "Editor.h"

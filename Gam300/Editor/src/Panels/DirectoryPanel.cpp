@@ -7,6 +7,9 @@
 #include <filesystem>
 #include <algorithm>
 
+// pull Interface so we can call AppInterface methods
+#include "Application/Interface.h"   // include path per your include dirs
+
 namespace EditorUI {
 
     struct DirectoryPanel::FileNode {
@@ -26,21 +29,36 @@ namespace EditorUI {
     {
         DEBUG_DLL_BOUNDARY("DirectoryPanel::Ctor");
         if (!m_Owner) { BOOM_ERROR("DirectoryPanel - null owner"); return; }
-        m_Ctx = m_Owner->GetContext();
-        DEBUG_POINTER(m_Ctx, "AppContext");
+
+        // FIXED: Since Editor now inherits from AppInterface, cast works
+        m_App = static_cast<Boom::AppInterface*>(m_Owner);
+        DEBUG_POINTER(m_App, "AppInterface");
+
+        // Get context through the AppInterface
+        if (m_App) {
+            m_Ctx = m_App->GetContext();
+            DEBUG_POINTER(m_Ctx, "AppContext");
+        }
     }
 
     void DirectoryPanel::Init()
     {
         rootNode = BuildDirectoryTree();
-        if (m_Ctx && m_Ctx->GetWindowHandle())
-            glfwSetDropCallback(m_Ctx->GetWindowHandle().get(), OnDrop);
+
+        // Use the Interface API to wire the drop callback
+        if (m_App) {
+            if (auto wh = m_App->GetWindowHandle())
+                glfwSetDropCallback(wh.get(), OnDrop);
+        }
+        else if (m_Ctx && m_Ctx->window) { // fallback
+            glfwSetDropCallback(m_Ctx->window->Handle().get(), OnDrop);
+        }
+
         treeNodeOpenStatus[ROOT_PATH.string()] = true;
     }
 
     void DirectoryPanel::OnShow()
     {
-        // Accept drops each frame
         dropTargetPath.clear();
 
         if (ImGui::Begin("Project", nullptr, ImGuiWindowFlags_HorizontalScrollbar))
@@ -67,8 +85,11 @@ namespace EditorUI {
 
     void DirectoryPanel::RefreshUpdate()
     {
-        if (ImGui::Button("Refresh") ||
-            ((rTimer += (m_Ctx ? m_Ctx->GetDeltaTime() : 0.0)) > AUTO_REFRESH_SEC))
+        const double dt =
+            m_App ? m_App->GetDeltaTime()
+            : (m_Ctx ? m_Ctx->DeltaTime : 0.0);
+
+        if (ImGui::Button("Refresh") || ((rTimer += dt) > AUTO_REFRESH_SEC))
         {
             rootNode = BuildDirectoryTree();
             rTimer = 0.0;
@@ -159,7 +180,7 @@ namespace EditorUI {
                 {
                     const auto& path = entry.path();
                     bool isDir = entry.is_directory();
-                    unsigned id = 0; // replace with your texture IDs if you have them
+                    unsigned id = 0;
 
                     auto child = std::make_unique<FileNode>(path.filename().string(), isDir, path, id);
                     if (isDir) scanDir(*child, depth + 1);

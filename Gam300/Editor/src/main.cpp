@@ -92,7 +92,7 @@ int32_t main()
         if (imguiContext)
         {
             // Your Editor layer expects (ImGuiContext*, entt::registry*, Application*)
-            app->AttachLayer<Editor>(imguiContext, &mainRegistry, app.get());
+            app->AttachLayer<EditorUI::Editor>(imguiContext, &mainRegistry, app.get());
         }
         else
         {
