@@ -41,7 +41,8 @@ namespace Boom {
 			finalShader = std::make_unique<FinalShader>("final.glsl", w, h);
 			pbrShader = std::make_unique<PBRShader>("pbr.glsl");
 			bloom = std::make_unique<BloomShader>("bloom.glsl", w, h);	
-			frame = std::make_unique<FrameBuffer>(w, h);
+			frame = std::make_unique<FrameBuffer>(w, h, false);
+			lowPolyFrame = std::make_unique<FrameBuffer>(w, h, true);
 
 			skyboxMesh = CreateSkyboxMesh();
 		}
@@ -87,42 +88,73 @@ namespace Boom {
 		}
 		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material = {}) {
 			if (isDrawDebugMode) {
-				pbrShader->DrawDebug(model, transform, material.albedo);
+				pbrShader->DrawDebug(model, transform, material.albedo, showNormalTexture);
 			}
 			else {
-				pbrShader->Draw(model, transform, material);
+				pbrShader->Draw(model, transform, material, showNormalTexture);
 			}
 		}
+
+		BOOM_INLINE float Aspect() const { return frame->Ratio(); }
 
 	public: //helper functions
 		BOOM_INLINE void Resize(int32_t w, int32_t h) {
 			frame->Resize(w, h);
+			lowPolyFrame->Resize(w, h);
 		}
 		BOOM_INLINE uint32_t GetFrame() {
 			return finalShader->GetMap();
 		}
 
 		BOOM_INLINE void NewFrame() {
-			frame->Begin();
+			pbrShader->showDither = showLowPoly;
+			if (showLowPoly) {
+				lowPolyFrame->Begin();
+			}
+			else {
+				frame->Begin();
+			}
 			pbrShader->Use();
 		}
 		BOOM_INLINE void EndFrame() {
 			pbrShader->UnUse();
-			frame->End();
-			bloom->Compute(frame->GetBrightnessMap(), 10);
+			if (showLowPoly) {
+				lowPolyFrame->End();
+				bloom->Compute(lowPolyFrame->GetBrightnessMap(), 10);
+			}
+			else {
+				frame->End();
+				bloom->Compute(frame->GetBrightnessMap(), 10);
+			}
 		}
 		BOOM_INLINE void ShowFrame() {
-			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Show(frame->GetTexture(), bloom->GetMap(), !isDrawDebugMode);
+			if (showLowPoly) {
+				glViewport(0, 0, lowPolyFrame->GetWidth(), lowPolyFrame->GetHeight());
+				finalShader->Show(lowPolyFrame->GetTexture(), bloom->GetMap(), !isDrawDebugMode);
+			}
+			else {
+				glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
+				finalShader->Show(frame->GetTexture(), bloom->GetMap(), !isDrawDebugMode);
+			}
 		}
 
 		BOOM_INLINE void ShowFrame(bool useFBO) {
-			glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-			finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, !isDrawDebugMode); //enable/disable bloom here
+			if (showLowPoly) {
+				glViewport(0, 0, lowPolyFrame->GetWidth(), lowPolyFrame->GetHeight());
+				finalShader->Render(lowPolyFrame->GetTexture(), bloom->GetMap(), useFBO, false);
+			}
+			else {
+				glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
+				finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, false); //enable/disable bloom here
+			}
 		}
 
-		bool& IsDrawDebugMode() {
-			return isDrawDebugMode;
+		BOOM_INLINE float& DitherThreshold() {
+			return pbrShader->ditherThreshold;
+		}
+
+		BOOM_INLINE float AspectRatio() const {
+			return frame->Ratio();
 		}
 	private:
 		BOOM_INLINE void PrintSpecs() {
@@ -175,9 +207,14 @@ namespace Boom {
 		std::unique_ptr<FinalShader> finalShader;
 		std::unique_ptr<PBRShader> pbrShader;
 		std::unique_ptr<FrameBuffer> frame;
+		std::unique_ptr<FrameBuffer> lowPolyFrame;
 		std::unique_ptr<BloomShader> bloom;
 		SkyboxMesh skyboxMesh;
+
+	public: //imgui public references
 		bool isDrawDebugMode{};
+		bool showLowPoly{true};
+		bool showNormalTexture{};
 	};
 
 

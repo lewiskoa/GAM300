@@ -10,6 +10,9 @@
 #include "Scripting/ScriptAPI.h"
 #include "Scripting/ScriptRuntime.h"
 #include "../Graphics/Utilities/Culling.h"
+#include "Input/CameraManager.h"
+#include "Graphics/Shaders/DebugLines.h"
+
 namespace Boom
 {
     /**
@@ -30,10 +33,10 @@ namespace Boom
      * Inherits from AppInterface to receive the same lifecycle hooks
      * and gain access to the shared AppContext.
      */
-    struct Application: AppInterface
+    struct Application : AppInterface
     {
         template<typename EntityType, typename... Components, typename Fn>
-        BOOM_INLINE void EnttView(Fn && fn) {
+        BOOM_INLINE void EnttView(Fn&& fn) {
             auto view = m_Context->scene.view<Components...>();
             for (auto e : view) {
                 fn(EntityType{ &m_Context->scene, e }, m_Context->scene.get<Components>(e)...);
@@ -48,10 +51,12 @@ namespace Boom
         bool m_ShouldExit = false;  // Flag for graceful shutdown
         float m_TestRot = 0.0f;
 
+        bool m_PhysDebugViz = true;
+
         // Temporary for showing physics
         double m_SphereTimer = 0.0;
-        double m_SphereResetInterval = 5.0; 
-        glm::vec3 m_SphereInitialPosition = { 2.5f, 1.2f, 0.0f }; 
+        double m_SphereResetInterval = 5.0;
+        glm::vec3 m_SphereInitialPosition = { 2.5f, 1.2f, 0.0f };
 
         /**
          * @brief Constructs the Application, assigns its unique ID, and allocates the AppContext.
@@ -74,6 +79,7 @@ namespace Boom
                 m_Context->window->SetWindowTitle(e.title);
                 }
             );
+
         }
 
         /**
@@ -178,6 +184,10 @@ namespace Boom
         {
             LoadScene("default");
 
+            CameraController camera(
+                m_Context->window.get()
+            );
+
             ////init skybox
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
                 SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
@@ -186,17 +196,165 @@ namespace Boom
 
             CreateScriptInstancesFromScene();
 
+            m_DebugLinesShader = std::make_unique<Boom::DebugLinesShader>("debug_lines.glsl");
+            m_Context->physics->EnableDebugVisualization(m_PhysDebugViz, 1.0f);
+
             //temp input for mouse motion
             glm::dvec2 curMP{};
             glm::dvec2 prevMP{};
             while (m_Context->window->PollEvents() && !m_ShouldExit)
             {
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
+                Camera3D* activeCam = nullptr;
+                EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
+                    if (!activeCam && comp.camera.cameraType == Camera3D::CameraType::Main)
+                        activeCam = &comp.camera;
+                    });
+                if (!activeCam) { // fallback: first camera
+                    EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
+                        if (!activeCam) activeCam = &comp.camera;
+                        });
+                }
 
+                // 2) Attach BEFORE update so scroll/pan use this camera's FOV in this frame
+                if (activeCam) camera.attachCamera(activeCam);
                 glfwMakeContextCurrent(engineWindow.get());
+
+                // NEW: runtime toggle with F9
+                {
+                    static bool prevF9 = false;
+                    bool f9Pressed = glfwGetKey(engineWindow.get(), GLFW_KEY_F9) == GLFW_PRESS;
+                    if (f9Pressed && !prevF9)
+                    {
+                        m_PhysDebugViz = !m_PhysDebugViz;
+                        m_Context->physics->EnableDebugVisualization(m_PhysDebugViz, 1.0f);
+                        BOOM_INFO("[PhysX] Debug visualization: {}", m_PhysDebugViz ? "ON" : "OFF");
+                    }
+                    prevF9 = f9Pressed;
+                }
+
+                // NEW: toggle debug rigidbodies with F10
+                {
+                    static bool prevF10 = false;
+                    bool f10Pressed = glfwGetKey(engineWindow.get(), GLFW_KEY_F10) == GLFW_PRESS;
+                    if (f10Pressed && !prevF10)
+                    {
+                        m_DebugRigidBodiesOnly = !m_DebugRigidBodiesOnly;
+                        // Turn off PhysX global viz when we use RB-only to avoid duplication
+                        m_Context->physics->EnableDebugVisualization(!m_DebugRigidBodiesOnly && m_PhysDebugViz, 1.0f);
+                        BOOM_INFO("[Debug] Rigidbody-only collider viz: {}", m_DebugRigidBodiesOnly ? "ON" : "OFF");
+                    }
+                    prevF10 = f10Pressed;
+                }
+
+				//   F11 for testing change of rigid body type
+                {
+                    static bool prevF11 = false;
+                    bool f11Pressed = glfwGetKey(engineWindow.get(), GLFW_KEY_F11) == GLFW_PRESS;
+                    if (f11Pressed && !prevF11)
+                    {
+                        // Find the "Sphere" entity to toggle its type
+                        EnttView<Entity, InfoComponent, RigidBodyComponent>([this](auto entity, InfoComponent& info, RigidBodyComponent& rb) {
+                            if (info.name == "Sphere") {
+                                // Determine the new type by flipping the current one
+                                RigidBody3D::Type currentType = rb.RigidBody.type;
+                                RigidBody3D::Type newType = (currentType == RigidBody3D::DYNAMIC)
+                                    ? RigidBody3D::STATIC
+                                    : RigidBody3D::DYNAMIC;
+
+                                // Call the function to perform the switch!
+                                m_Context->physics->SetRigidBodyType(entity, newType);
+
+                                // Log the change to the console for confirmation
+                                BOOM_INFO("[Test F11] Toggled Sphere rigid body to: {}", (newType == RigidBody3D::DYNAMIC) ? "DYNAMIC" : "STATIC");
+                            }
+                            });
+                    }
+                    prevF11 = f11Pressed;
+                }
+
 
                 // Always update delta time, but adjust for pause state
                 ComputeFrameDeltaTime();
+
+                // Animation testing controls
+                {
+                    // Press L to load additional animations
+                    static bool lastLPressed = false;
+                    bool lPressed = glfwGetKey(engineWindow.get(), GLFW_KEY_L) == GLFW_PRESS;
+                    if (lPressed && !lastLPressed) {
+                        EnttView<Entity, AnimatorComponent>([this]([[maybe_unused]] auto entity, auto& animComp) {
+
+                            auto& animator = animComp.animator;
+
+
+                            BOOM_INFO("=== Loading additional animations ===");
+                            size_t beforeCount = animator->GetClipCount();
+
+                            // Try to load these - they need to exist in your Models folder!
+                            animator->LoadAnimationFromFile("idle.fbx", "Idle");
+                            animator->LoadAnimationFromFile("walking.fbx", "Walk");
+                            animator->LoadAnimationFromFile("run.fbx", "Run");
+
+                            size_t afterCount = animator->GetClipCount();
+                            BOOM_WARN("Loaded {} new animations (total: {})", afterCount - beforeCount, afterCount);
+
+                            // List all animations
+                            for (size_t i = 0; i < animator->GetClipCount(); ++i) {
+                                const auto* clip = animator->GetClip(i);
+                                if (clip) {
+                                    BOOM_INFO("  [{}] '{}' - {:.2f}s", i, clip->name, clip->duration);
+                                }
+                            }
+                            });
+                    }
+                    lastLPressed = lPressed;
+
+                    // Press 1-9 to switch animations
+                    EnttView<Entity, AnimatorComponent>([this, &engineWindow]([[maybe_unused]]auto entity, auto& animComp) {
+
+                        auto& animator = animComp.animator;
+
+                        if (glfwGetKey(engineWindow.get(), GLFW_KEY_1) == GLFW_PRESS && animator->GetClipCount() > 0) {
+                            animator->PlayClip(0);
+                            const auto* clip = animator->GetClip(0);
+                            if (clip) BOOM_INFO("Switched to [0]: '{}'", clip->name);
+                        }
+                        if (glfwGetKey(engineWindow.get(), GLFW_KEY_2) == GLFW_PRESS && animator->GetClipCount() > 1) {
+                            animator->PlayClip(1);
+                            const auto* clip = animator->GetClip(1);
+                            if (clip) BOOM_INFO("Switched to [1]: '{}'", clip->name);
+                        }
+                        if (glfwGetKey(engineWindow.get(), GLFW_KEY_3) == GLFW_PRESS && animator->GetClipCount() > 2) {
+                            animator->PlayClip(2);
+                            const auto* clip = animator->GetClip(2);
+                            if (clip) BOOM_INFO("Switched to [2]: '{}'", clip->name);
+                        }
+                        if (glfwGetKey(engineWindow.get(), GLFW_KEY_4) == GLFW_PRESS && animator->GetClipCount() > 3) {
+                            animator->PlayClip(3);
+                            const auto* clip = animator->GetClip(3);
+                            if (clip) BOOM_INFO("Switched to [3]: '{}'", clip->name);
+                        }
+
+                        // Press I for info about current animation
+                        static bool lastIPressed = false;
+                        bool iPressed = glfwGetKey(engineWindow.get(), GLFW_KEY_I) == GLFW_PRESS;
+                        if (iPressed && !lastIPressed) {
+                            BOOM_INFO("=== Current Animation Info ===");
+                            BOOM_INFO("Current Clip: {} / {}", animator->GetCurrentClip(), animator->GetClipCount() - 1);
+                            const auto* clip = animator->GetClip(animator->GetCurrentClip());
+                            if (clip) {
+                                BOOM_INFO("  Name: '{}'", clip->name);
+                                BOOM_INFO("  Duration: {:.2f}s", clip->duration);
+                                BOOM_INFO("  Current Time: {:.2f}s", animator->GetTime());
+                                BOOM_INFO("  Tracks: {}", clip->tracks.size());
+                            }
+                        }
+                        static bool lastIState = iPressed;
+                        lastIPressed = iPressed;
+                        });
+                }
+                // ============ END NEW SECTION ============
 
                 m_Context->profiler.BeginFrame();
                 m_Context->profiler.Start("Total Frame");
@@ -215,33 +373,6 @@ namespace Boom
                     ResetSphere();
                     m_SphereTimer = 0.0;
                 }
-                // When paused, m_TestRot stays at its current value
-
-                // Update sphere timer
-                //m_SphereTimer += m_Context->DeltaTime;
-
-                //if (m_SphereTimer >= m_SphereResetInterval) {
-                //    // Find the sphere entity by name (or UID)
-                //    EnttView<Entity, InfoComponent, TransformComponent>([this](auto entity, InfoComponent& info, TransformComponent& transform) {
-                //        if (info.name == "Sphere") {
-                //            transform.transform.translate = m_SphereInitialPosition;
-                //        }
-                //        });
-                //    m_SphereTimer = 0.0;
-                //}
-
-
-                //lights (always set up)
-               /* m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
-                m_Context->renderer->SetPointLightCount(0);
-
-                glm::vec3 testDir{ -.7f, -.3f, .3f };
-                m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
-                m_Context->renderer->SetDirectionalLightCount(1);
-
-                m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                m_Context->renderer->SetSpotLightCount(0);*/
 
                 {
                     int points = 0;
@@ -271,12 +402,39 @@ namespace Boom
                     m_Context->renderer->SetSpotLightCount(spots);
                 }
 
-
                 //temp input for mouse motion
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
+                camera.update(static_cast<float>(m_Context->DeltaTime));
 
+                glm::mat4 dbgView(1.0f);
+                glm::mat4 dbgProj(1.0f);
+                glm::vec3 dbgCamPos(0.0f);
                 //camera (always set up, but rotation freezes when paused)
-                EnttView<Entity, CameraComponent>([this, &curMP, &prevMP](auto entity, CameraComponent& comp) {
+                //EnttView<Entity, CameraComponent>([this, &curMP, &prevMP](auto entity, CameraComponent& comp) {
+                //    //Transform3D& transform{ entity.template Get<TransformComponent>().transform };
+
+                //    ////get dir vector of current camera
+                //    //transform.rotate.x += m_Context->window->camRot.x;
+                //    //transform.rotate.y += m_Context->window->camRot.y;
+                //    //glm::quat quat{ glm::radians(transform.rotate) };
+                //    //glm::vec3 dir{ quat * m_Context->window->camMoveDir };
+                //    //transform.translate += dir;
+
+                //    //camera.attachCamera(&comp.camera);
+                //    //if (curMP == prevMP) {
+                //    //    m_Context->window->camRot = {};
+                //    //    if (m_Context->window->isMiddleClickDown)
+                //    //        m_Context->window->camMoveDir = {};
+                //    //}
+
+                //    //m_Context->renderer->SetCamera(comp.camera, transform);
+
+                //});
+
+
+
+
+                EnttView<Entity, CameraComponent>([this, &curMP, &prevMP, &dbgView, &dbgProj, &dbgCamPos](auto entity, CameraComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
 
                     //get dir vector of current camera
@@ -286,7 +444,7 @@ namespace Boom
                     glm::vec3 dir{ quat * m_Context->window->camMoveDir };
                     transform.translate += dir;
 
-                    comp.camera.FOV = m_Context->window->camFOV;
+                    //comp.camera.FOV = m_Context->window->camFOV;
                     if (curMP == prevMP) {
                         m_Context->window->camRot = {};
                         if (m_Context->window->isMiddleClickDown)
@@ -294,9 +452,28 @@ namespace Boom
                     }
 
                     m_Context->renderer->SetCamera(comp.camera, transform);
-                });
-                prevMP = curMP;
-               
+
+                    // Cache matrices and camera world position
+                    dbgView = comp.camera.View(transform);
+                    dbgProj = comp.camera.Projection(m_Context->renderer->Aspect());
+                    dbgCamPos = transform.translate;
+                    });
+                {
+                    prevMP = curMP;
+
+                    EnttView<Entity, TransformComponent, RigidBodyComponent>([this](auto entity, TransformComponent& tc, RigidBodyComponent& rbc) {
+                        // Check if the current scale is different from the stored scale
+                        if (tc.transform.scale != rbc.RigidBody.previousScale)
+                        {
+                            // If it changed, update the collider shape
+                            m_Context->physics->UpdateColliderShape(entity);
+
+                            // Then, update the stored scale to the new value for the next frame
+                            rbc.RigidBody.previousScale = tc.transform.scale;
+                        }
+                        });
+                }
+
                 //pbr ecs (always render)
                 EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
                     static int renderCount = 0;
@@ -364,6 +541,47 @@ namespace Boom
                     if (renderCount >= 5) debugModelsPrinted = true;
                     });
 
+                if (m_PhysDebugViz && m_DebugLinesShader)
+                {
+                    m_Context->physics->CollectDebugLines(m_PhysLinesCPU);
+                    if (!m_PhysLinesCPU.empty())
+                    {
+                        // Build CPU line list
+                        std::vector<Boom::LineVert> lineVerts;
+                        lineVerts.reserve(m_PhysLinesCPU.size() * 2);
+                        for (const auto& l : m_PhysLinesCPU)
+                        {
+                            lineVerts.push_back(Boom::LineVert{ l.p0, l.c0 });
+                            lineVerts.push_back(Boom::LineVert{ l.p1, l.c1 });
+                        }
+
+                        // Cull any segments within a small radius of the camera (fix “ball in face”)
+                        std::vector<Boom::LineVert> filtered;
+                        filtered.reserve(lineVerts.size());
+                        const float camCullRadius = 0.6f;
+
+                        for (size_t i = 0; i + 1 < lineVerts.size(); i += 2)
+                        {
+                            const auto& a = lineVerts[i + 0];
+                            const auto& b = lineVerts[i + 1];
+
+                            const float segDist = DistancePointSegment(dbgCamPos, a.pos, b.pos);
+                            const float endA = glm::distance(a.pos, dbgCamPos);
+                            const float endB = glm::distance(b.pos, dbgCamPos);
+
+                            // Keep only segments not near the camera (endpoints and segment body)
+                            if (segDist >= camCullRadius && endA >= camCullRadius && endB >= camCullRadius)
+                            {
+                                filtered.push_back(a);
+                                filtered.push_back(b);
+                            }
+                        }
+
+                        if (!filtered.empty())
+                            m_DebugLinesShader->Draw(dbgView, dbgProj, filtered, 1.5f);
+                    }
+                }
+
                 //skybox ecs (should be drawn at the end)
                 EnttView<Entity, SkyboxComponent>([this](auto entity, SkyboxComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
@@ -395,15 +613,15 @@ namespace Boom
             }
         }
 
-		
-		
+
+
 
         /**
-     * @brief Saves the current scene and assets to files
-     * @param sceneName The name of the scene (without extension)
-     * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
-     * @return true if save was successful, false otherwise
-     */
+         * @brief Saves the current scene and assets to files
+         * @param sceneName The name of the scene (without extension)
+         * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
+         * @return true if save was successful, false otherwise
+         */
         BOOM_INLINE bool SaveScene(const std::string& sceneName, const std::string& scenePath = "Scenes/")
         {
             //Try blocks cause crashed in release mode. Need to find new alternative
@@ -494,7 +712,9 @@ namespace Boom
         BOOM_INLINE bool IsSceneLoaded() const { return m_SceneLoaded; }
 
     private:
-
+        std::unique_ptr<Boom::DebugLinesShader> m_DebugLinesShader;
+        std::vector<Boom::PhysicsContext::DebugLine> m_PhysLinesCPU;
+        bool m_DebugRigidBodiesOnly = true;
         char m_CurrentScenePath[512] = "\0";
         bool m_SceneLoaded = false;
 
@@ -531,7 +751,9 @@ namespace Boom
 #endif
 
             // Reset asset registry (keeping EMPTY_ASSET sentinels)
-            * m_Context->assets = AssetRegistry();
+
+            //* m_Context->assets = AssetRegistry();
+
 
             // RESTORE PREFABS after registry reset
             for (auto& [uid, asset] : savedPrefabs) {
@@ -677,15 +899,17 @@ namespace Boom
             // Only simulate physics if running
             if (m_AppState == ApplicationState::RUNNING)
             {
-                
+
                 m_Context->physics->Simulate(1, static_cast<float>(m_Context->DeltaTime));
                 EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
                     {
                         auto& transform = entity.template Get<TransformComponent>().transform;
                         auto pose = comp.RigidBody.actor->getGlobalPose();
-                        glm::quat rot(pose.q.x, pose.q.y, pose.q.z, pose.q.w);
-                        transform.rotate = glm::degrees(glm::eulerAngles(rot));
-                        transform.translate = PxToVec3(pose.p);
+                        if (comp.RigidBody.actor->is<physx::PxRigidDynamic>()) {
+                            glm::quat rot(pose.q.w, pose.q.x, pose.q.y, pose.q.z); // This is CORRECT
+                            transform.rotate = glm::degrees(glm::eulerAngles(rot));
+                            transform.translate = PxToVec3(pose.p);
+                        }
                     });
             }
         }
@@ -696,7 +920,7 @@ namespace Boom
             EnttView<Entity, ScriptComponent>([this](auto entity, ScriptComponent& sc) {
                 if (sc.TypeName.empty()) return;
                 // Create a managed instance and remember its ID on the component
-                sc.InstanceId = script_create_instance(sc.TypeName.c_str(),static_cast<ScriptEntityId>(entity.ID()));
+                sc.InstanceId = script_create_instance(sc.TypeName.c_str(), static_cast<ScriptEntityId>(entity.ID()));
                 BOOM_INFO("[Scripting] Created instance '{}' -> entt {}",
                     sc.TypeName,
                     static_cast<uint32_t>(entity.ID()));
@@ -711,6 +935,211 @@ namespace Boom
                     sc.InstanceId = 0;
                 }
                 });
+        }
+
+        BOOM_INLINE static glm::mat4 PxToGlm(const physx::PxTransform& t)
+        {
+            // GLM expects (w,x,y,z) ctor, PhysX stores (x,y,z,w)
+            glm::quat q(t.q.w, t.q.x, t.q.y, t.q.z);
+            glm::mat4 m = glm::mat4_cast(q);
+            m[3] = glm::vec4(t.p.x, t.p.y, t.p.z, 1.0f);
+            return m;
+        }
+
+        BOOM_INLINE static void AppendLine(std::vector<Boom::LineVert>& out,
+            const glm::vec3& a, const glm::vec3& b,
+            const glm::vec4& cA, const glm::vec4& cB)
+        {
+            out.push_back(Boom::LineVert{ a, cA });
+            out.push_back(Boom::LineVert{ b, cB });
+        }
+
+        BOOM_INLINE static void AppendBoxWire(const physx::PxBoxGeometry& g,
+            const physx::PxTransform& world,
+            std::vector<Boom::LineVert>& out,
+            const glm::vec4& color)
+        {
+            const glm::vec3 he(g.halfExtents.x, g.halfExtents.y, g.halfExtents.z);
+            const glm::mat4 M = PxToGlm(world);
+
+            const glm::vec3 c[8] = {
+                {-he.x, -he.y, -he.z}, { he.x, -he.y, -he.z},
+                { he.x,  he.y, -he.z}, {-he.x,  he.y, -he.z},
+                {-he.x, -he.y,  he.z}, { he.x, -he.y,  he.z},
+                { he.x,  he.y,  he.z}, {-he.x,  he.y,  he.z}
+            };
+            auto X = [&](glm::vec3 p) { return glm::vec3(M * glm::vec4(p, 1)); };
+
+            const int e[12][2] = {
+                {0,1},{1,2},{2,3},{3,0},
+                {4,5},{5,6},{6,7},{7,4},
+                {0,4},{1,5},{2,6},{3,7}
+            };
+            for (auto& pair : e)
+                AppendLine(out, X(c[pair[0]]), X(c[pair[1]]), color, color);
+        }
+
+        BOOM_INLINE static void AppendCircle(const glm::mat4& M, float r,
+            int segments, int axis, // 0=X,1=Y,2=Z
+            float yOffset,
+            std::vector<Boom::LineVert>& out,
+            const glm::vec4& color)
+        {
+            auto P = [&](float a)->glm::vec3 {
+                float s = sinf(a), c = cosf(a);
+                glm::vec3 p;
+                if (axis == 0)      p = glm::vec3(0, r * c, r * s);
+                else if (axis == 1) p = glm::vec3(r * c, 0, r * s);
+                else                p = glm::vec3(r * c, r * s, 0);
+                p.y += (axis == 1 ? 0.0f : yOffset);
+                return glm::vec3(M * glm::vec4(p, 1));
+                };
+            const float step = glm::two_pi<float>() / (float)segments;
+            for (int i = 0; i < segments; ++i) {
+                glm::vec3 a = P(i * step);
+                glm::vec3 b = P((i + 1) * step);
+                AppendLine(out, a, b, color, color);
+            }
+        }
+
+        BOOM_INLINE static void AppendSphereWire(float radius,
+            const physx::PxTransform& world,
+            std::vector<Boom::LineVert>& out,
+            const glm::vec4& color)
+        {
+            const glm::mat4 M = PxToGlm(world);
+            const int seg = 24;
+            // 3 great circles
+            AppendCircle(M, radius, seg, 0, 0.0f, out, color); // YZ plane
+            AppendCircle(M, radius, seg, 1, 0.0f, out, color); // XZ plane
+            AppendCircle(M, radius, seg, 2, 0.0f, out, color); // XY plane
+        }
+
+        BOOM_INLINE static void AppendSemiCircle(const glm::mat4& M, float r,
+            int segments, int axis, // 0=X,1=Y,2=Z
+            bool positiveHalf,      // which half to draw
+            std::vector<Boom::LineVert>& out,
+            const glm::vec4& color)
+        {
+            auto P = [&](float a)->glm::vec3 {
+                float s = sinf(a), c = cosf(a);
+                glm::vec3 p;
+                if (axis == 0)      p = glm::vec3(0, r * c, r * s); // YZ plane circle
+                else if (axis == 1) p = glm::vec3(r * c, 0, r * s); // XZ plane circle
+                else                p = glm::vec3(r * c, r * s, 0); // XY plane circle
+                return glm::vec3(M * glm::vec4(p, 1));
+                };
+
+            const float step = glm::pi<float>() / (float)segments; // Step over 180 degrees
+            const float offset = positiveHalf ? 0.0f : glm::pi<float>();
+
+            for (int i = 0; i < segments; ++i) {
+                glm::vec3 a = P(offset + i * step);
+                glm::vec3 b = P(offset + (i + 1) * step);
+                AppendLine(out, a, b, color, color);
+            }
+        }
+
+        BOOM_INLINE static void AppendCapsuleWire(float radius, float halfHeight,
+            const physx::PxTransform& world,
+            std::vector<Boom::LineVert>& out,
+            const glm::vec4& color)
+        {
+            const glm::mat4 M = PxToGlm(world);
+            const int seg = 12; // Segments for a semi-circle
+
+            // --- Create transforms for the two hemisphere centers by translating in LOCAL space ---
+            // A PhysX capsule's length is ALWAYS along its local X-axis.
+            glm::mat4 M_end_pos_x = M * glm::translate(glm::mat4(1.0f), glm::vec3(halfHeight, 0, 0));
+            glm::mat4 M_end_neg_x = M * glm::translate(glm::mat4(1.0f), glm::vec3(-halfHeight, 0, 0));
+
+            // --- Draw the two hemispheres ---
+            // For an X-aligned capsule, the "equator" is a circle in the YZ plane.
+            // The other two semi-circles provide the 3D volume.
+
+            // Positive X Hemisphere
+            AppendCircle(M_end_pos_x, radius, seg * 2, 0, 0.0f, out, color);     // Equator circle (YZ plane)
+            AppendSemiCircle(M_end_pos_x, radius, seg, 1, true, out, color);  // Top arc (XZ plane)
+            AppendSemiCircle(M_end_pos_x, radius, seg, 2, true, out, color);  // Side arc (XY plane)
+
+            // Negative X Hemisphere
+            AppendCircle(M_end_neg_x, radius, seg * 2, 0, 0.0f, out, color);     // Equator circle (YZ plane)
+            AppendSemiCircle(M_end_neg_x, radius, seg, 1, false, out, color); // Bottom arc (XZ plane)
+            AppendSemiCircle(M_end_neg_x, radius, seg, 2, false, out, color); // Side arc (XY plane)
+
+            // --- Draw four side rails connecting the equators ---
+            for (int i = 0; i < 4; ++i) {
+                float angle = glm::half_pi<float>() * i;
+
+                // Points on the circumference of the capsule's equator (in the YZ plane)
+                glm::vec3 p_on_circ(0, radius * cos(angle), radius * sin(angle));
+
+                // Define the local start and end points of the rail along the X-axis
+                glm::vec3 rail_start_local = glm::vec3(-halfHeight, 0, 0) + p_on_circ;
+                glm::vec3 rail_end_local = glm::vec3(halfHeight, 0, 0) + p_on_circ;
+
+                // Transform these local points to the final world space using the main transform M
+                glm::vec3 A = glm::vec3(M * glm::vec4(rail_start_local, 1.0f));
+                glm::vec3 B = glm::vec3(M * glm::vec4(rail_end_local, 1.0f));
+
+                AppendLine(out, A, B, color, color);
+            }
+        }
+
+        BOOM_INLINE void DrawRigidBodiesDebugOnly(const glm::mat4& view, const glm::mat4& proj)
+        {
+            if (!m_DebugLinesShader) return;
+
+            std::vector<Boom::LineVert> verts;
+            verts.reserve(1024);
+            const glm::vec4 color(0.1f, 1.0f, 0.1f, 1.0f);
+
+            EnttView<Entity, RigidBodyComponent>([&](auto entity, RigidBodyComponent& rb) {
+                if (!entity.template Has<ColliderComponent>()) return;
+
+                physx::PxRigidActor* actor = rb.RigidBody.actor;
+                if (!actor) return;
+
+                PxU32 n = actor->getNbShapes();
+                if (!n) return;
+                std::vector<physx::PxShape*> shapes(n);
+                actor->getShapes(shapes.data(), n);
+
+                const physx::PxTransform actorPose = actor->getGlobalPose();
+                for (auto* shape : shapes)
+                {
+                    const physx::PxTransform world = actorPose * shape->getLocalPose();
+                    physx::PxGeometryHolder gh = shape->getGeometry();
+                    switch (gh.getType())
+                    {
+                    case physx::PxGeometryType::eBOX:
+                        AppendBoxWire(gh.box(), world, verts, color);
+                        break;
+                    case physx::PxGeometryType::eSPHERE:
+                        AppendSphereWire(gh.sphere().radius, world, verts, color);
+                        break;
+                    case physx::PxGeometryType::eCAPSULE:
+                        AppendCapsuleWire(gh.capsule().radius, gh.capsule().halfHeight, world, verts, color);
+                        break;
+                    default:
+                        // For mesh/convex/etc. you can add more if needed; skip for now.
+                        break;
+                    }
+                }
+                });
+
+            if (!verts.empty())
+                m_DebugLinesShader->Draw(view, proj, verts, 1.5f);
+        }
+
+        BOOM_INLINE static float DistancePointSegment(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b)
+        {
+            const glm::vec3 ab = b - a;
+            const float ab2 = glm::dot(ab, ab);
+            if (ab2 <= 1e-6f) return glm::distance(p, a);
+            const float t = glm::clamp(glm::dot(p - a, ab) / ab2, 0.0f, 1.0f);
+            const glm::vec3 closest = a + t * ab;
+            return glm::distance(p, closest);
         }
     };
 

@@ -37,6 +37,8 @@ namespace Boom {
 
 			, jointsLoc{ GetUniformVar("hasJoints") }
 			, isDebugModeLoc{ GetUniformVar("isDebugMode") }
+			, ditherThresholdLoc{GetUniformVar("ditherThreshold")}
+			, showNormalTextureLoc{ GetUniformVar("showNormalTexture") }
 		{
 		}
 
@@ -101,13 +103,17 @@ namespace Boom {
 			SetUniform(viewPosLoc, transform.translate);
 		}
 		BOOM_INLINE void Draw(Mesh3D const& mesh, Transform3D const& transform) {
-			SetUniform(isDebugModeLoc, false);
+			SetUniform(isDebugModeLoc, false); 
+			SetUniform(ditherThresholdLoc, showDither ? ditherThreshold : 0.f);
+			SetUniform(showNormalTextureLoc, false);
 			SetUniform(modelMatLoc, transform.Matrix());
 			mesh->Draw(GL_TRIANGLES);
 		}
 
-		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material) {
+		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material, bool showNormal = false) {
 			SetUniform(isDebugModeLoc, false);
+			SetUniform(ditherThresholdLoc, showDither ? ditherThreshold : 0.f);
+			SetUniform(showNormalTextureLoc, showNormal);
 
 			SetUniform(modelMatLoc, transform.Matrix());
 			SetUniform(albedoLoc, material.albedo);
@@ -163,14 +169,17 @@ namespace Boom {
 			model->Draw();
 		}
 		
-		BOOM_INLINE void DrawDebug(Model3D const& model, Transform3D const& transform, glm::vec3 albedo) {
+		BOOM_INLINE void DrawDebug(Model3D const& model, Transform3D const& transform, glm::vec3 albedo, bool showNormal = false) {
 			SetUniform(isDebugModeLoc, true);
+			SetUniform(ditherThresholdLoc, showDither ? ditherThreshold : 0.f);
+			SetUniform(showNormalTextureLoc, showNormal);
 			SetUniform(modelMatLoc, transform.Matrix());
 			SetUniform(albedoLoc, albedo);
 
 			SetUniform(jointsLoc, model->HasJoint());
 			model->Draw(GL_LINES);
 		}
+
 		//Animation 
 		BOOM_INLINE void SetJoints(std::vector<glm::mat4>& transforms)
 		{
@@ -180,6 +189,9 @@ namespace Boom {
 				SetUniform(GetUniformVar(uniform.c_str()), transforms[i]);
 			}
 		}
+
+		bool showDither{};
+		float ditherThreshold{ 0.1f };
 	private:
 		int32_t noSpotLightLoc;
 		int32_t noDirLightLoc;
@@ -211,5 +223,7 @@ namespace Boom {
 
 		int32_t jointsLoc;
 		int32_t isDebugModeLoc;
+		int32_t ditherThresholdLoc;
+		int32_t showNormalTextureLoc;
 	};
 }

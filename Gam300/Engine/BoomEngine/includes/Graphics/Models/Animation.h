@@ -3,32 +3,34 @@
 
 namespace Boom
 {
-    /**
-     * @brief Animation clip metadata.
-     *
-     * Describes a named clip with total duration and a playback speed multiplier.
-     * The clip's per-joint curves live on each @ref Joint as a list of @ref KeyFrame entries
-     * (one track per joint), typically sorted by @ref KeyFrame::timeStamp.
-     *
-     * @note duration is expressed in seconds after any ticks-per-second conversion during import.
-     * @see Boom::Joint, Boom::KeyFrame, Boom::Animator
-     */
-    struct Animation
-    {
-        /** @brief Total clip length in seconds (post-import). */
-        float duration = 0.0f;
+    ///**
+    // * @brief Animation clip metadata.
+    // *
+    // * Describes a named clip with total duration and a playback speed multiplier.
+    // * The clip's per-joint curves live on each @ref Joint as a list of @ref KeyFrame entries
+    // * (one track per joint), typically sorted by @ref KeyFrame::timeStamp.
+    // *
+    // * @note duration is expressed in seconds after any ticks-per-second conversion during import.
+    // * @see Boom::Joint, Boom::KeyFrame, Boom::Animator
+    // */
+    //struct Animation
+    //{
+    //    /** @brief Total clip length in seconds (post-import). */
+    //    float duration = 0.0f;
 
-        /**
-        * @brief Playback speed multiplier.
-        *
-        * 1.0 = authored speed, 0.5 = half speed (slow motion), 2.0 = double speed.
-        * The effective sampling time is usually: @code t_effective = t * speed; @endcode
-        */
-        float speed = 1.0f;
+    //    /**
+    //    * @brief Playback speed multiplier.
+    //    *
+    //    * 1.0 = authored speed, 0.5 = half speed (slow motion), 2.0 = double speed.
+    //    * The effective sampling time is usually: @code t_effective = t * speed; @endcode
+    //    */
+    //    float speed = 1.0f;
 
-        /** @brief Human-readable clip name (e.g., "Walk", "Idle", "Run"). */
-        std::string name;
-    };
+    //    /** @brief Human-readable clip name (e.g., "Walk", "Idle", "Run"). */
+    //    std::string name;
+    //};
+
+
 
     /**
          * @brief A single sampled pose for a joint (bone) at a moment in time.
@@ -49,6 +51,30 @@ namespace Boom
         glm::quat rotation = glm::vec3(0.0f);
         glm::vec3 scale = glm::vec3(1.0f);
         float timeStamp = 0.0f;
+    };
+
+    /**
+    * @brief Animation clip that stores keyframes per joint name
+    *
+    * Instead of storing keyframes IN the joints, we store them here
+    * indexed by joint name. This allows multiple animations to exist
+    * for the same skeleton.
+    */
+    struct AnimationClip
+    {
+        std::string name;
+        float duration = 0.0f;
+        float ticksPerSecond = 1.0f;
+
+        // Map of joint name -> keyframes for that joint
+        std::unordered_map<std::string, std::vector<KeyFrame>> tracks;
+
+        // Get keyframes for a specific joint
+        const std::vector<KeyFrame>* GetTrack(const std::string& jointName) const
+        {
+            auto it = tracks.find(jointName);
+            return (it != tracks.end()) ? &it->second : nullptr;
+        }
     };
 
 
@@ -72,7 +98,7 @@ namespace Boom
     struct Joint
     {
         std::vector<Joint> children{};
-        std::vector<KeyFrame> keys{};
+        //std::vector<KeyFrame> keys{};
         std::string name{};
         glm::mat4 offset{}; // <- inverse transform mtx
         int32_t index{};

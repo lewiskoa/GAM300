@@ -3,7 +3,7 @@
 #include "GlobalConstants.h"
 
 #pragma warning(push)
-#pragma warning(disable : 4244 4267 4458 4100 5054 4189) //library warnings ignored
+#pragma warning(disable : 4244 4267 4458 4100 5054 4189 26819 6262 26495) //library warnings ignored
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <gli/gli.hpp>
@@ -13,6 +13,7 @@
 
 namespace Boom {
 	Texture2D::Texture2D() : height{}, width{}, id{}
+		, isCompileAsCompressed{ true }
 		, quality{ 0.5f }
 		, alphaThreshold{ 128 }
 		, mipLevel{ 10 }
@@ -184,6 +185,8 @@ namespace Boom {
 	}
 
 	void Texture2D::CompressTexture(std::string const& inputFile, std::string const& outputDDS) {
+		if (!isCompileAsCompressed) return; //if designer prefers non compressed file format
+
 		CMP_InitFramework();
 
 		//BC7 is best compression (could be expanded if nesassary)

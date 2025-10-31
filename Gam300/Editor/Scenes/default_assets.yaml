@@ -17,6 +17,23 @@ ASSETS:
       MetallicMapID: 0
       OcclusionMapID: 0
       EmissiveMapID: 0
+  - Type: MATERIAL
+    UID: 59203253777835523025
+    Name: Black-Marb
+    Source: Marble
+    Properties:
+      Data:
+        emissive: [0, 0, 0]
+        albedo: [1, 1, 1]
+        roughness: 0.400000006
+        metallic: 0.5
+        occlusion: 1
+      AlbedoMapID: 16314464286324216731
+      NormalMapID: 436545047596730240
+      RoughnessMapID: 356508722382236238
+      MetallicMapID: 0
+      OcclusionMapID: 0
+      EmissiveMapID: 0
   - Type: PREFAB
     UID: 7846215101016755014
     Name: Dancing Model
@@ -126,8 +143,8 @@ ASSETS:
       HasJoints: false
   - Type: MODEL
     UID: 12185416543001335231
-    Name: dance
-    Source: dance.fbx
+    Name: kick
+    Source: kick.fbx
     Properties:
       HasJoints: true
   - Type: MODEL

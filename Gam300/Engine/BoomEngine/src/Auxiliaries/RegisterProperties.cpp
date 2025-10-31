@@ -15,6 +15,7 @@ XPROPERTY_REG(SpotLight)
 XPROPERTY_REG(Skybox)
 XPROPERTY_REG(RigidBody3D)
 XPROPERTY_REG(Collider3D)
+XPROPERTY_REG(Texture2D)
 
 //===============COMPONENTS=================
 XPROPERTY_REG(TransformComponent)

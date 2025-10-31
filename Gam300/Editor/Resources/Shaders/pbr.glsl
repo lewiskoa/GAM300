@@ -114,6 +114,7 @@ uniform int noSpotLight;
 uniform vec3 viewPos;
 
 uniform bool isDebugMode;
+uniform bool showNormalTexture;
 
 //this effect influences the appearance of surfaces
 // for example, higher reflectivity at grazing angles than dielectrics
@@ -147,10 +148,26 @@ float ComputeMapOrMatF(bool isMap, sampler2D map, float mat) {
     return res;
 }
 
+const int bayer64[64] = int[64](0,  32,  8,  40, 2, 34, 10, 42,
+                                48, 16, 56, 25, 50, 18, 58, 26,
+                                12, 44, 4, 36, 14, 46, 6, 38,
+                                60, 28, 52, 20, 62, 30, 54, 22,
+                                3, 35, 11, 43, 1, 33, 8, 41,
+                                51, 19, 59, 27, 49, 17, 57, 25,
+                                15, 47, 7, 39, 13, 45, 5, 37,
+                                63, 31, 55, 23, 61, 29, 53, 21
+                                );
+
+uniform float ditherThreshold;
+
 void main() {
     if (isDebugMode) {
-        //                                       green            strength
+        //                                       green                strength
         out_fragment = vec4(mix(material.albedo, vec3(0.0, 1.0, 0.0), 0.75), 1.0);
+        return;
+    }
+    if (showNormalTexture){
+        out_fragment = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
         return;
     }
     vec3 V = normalize(vertex.position - viewPos);
@@ -183,9 +200,20 @@ void main() {
     else {
         out_brightness=vec4(0.0,0.0,0.0,1.0);
     }
+
+
+    //simulate low bit depth
+    float colorDepth = 32.0;
+    vec3 quanColor = floor(color * colorDepth) / colorDepth; //5bits per channel, 32 levels
+
+    //dither logic
+    int col = int(mod(gl_FragCoord.x, 8));
+    int row = int(mod(gl_FragCoord.y, 8));
+    float threshold = float(bayer64[col + 8 * row]) / 64.0;
+    if (length(color - quanColor) <= threshold * ditherThreshold) color = quanColor;
+
     out_fragment = vec4(color, 1.0);
     
-    //fragColor = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
 }
 
 vec3 FresnelSchlick(float cosTheta, vec3 f0) {

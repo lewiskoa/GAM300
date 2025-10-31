@@ -2,7 +2,7 @@
 #include "../Buffers/Mesh.h"
 #include "../Textures/Texture.h"
 #include "BoomProperties.h"
-
+#include "GlobalConstants.h"
 
 //helper functions
 namespace Boom {
@@ -51,6 +51,9 @@ namespace Boom {
 		}
 		//transform here refers to the camera's transformation variables
 		BOOM_INLINE glm::mat4 View(Transform3D const& transform) const {
+			return glm::inverse(transform.Matrix());
+
+			/*
 			glm::quat rotQuat{ glm::radians(transform.rotate) };
 			glm::vec3 forward{ rotQuat * glm::vec3{0.f, 0.f, -1.f} };
 			glm::vec3 up{ rotQuat * glm::vec3{0.f, 1.f, 0.f} };
@@ -59,10 +62,13 @@ namespace Boom {
 				transform.translate,			//position
 				transform.translate + forward, 	//target
 				up								//upwards direction
-			);
+			);*/
 		}
 		BOOM_INLINE glm::mat4 Projection(float ratio) const {
 			return glm::perspective(glm::radians(FOV), ratio, nearPlane, farPlane);
+		}
+		BOOM_INLINE void SetFOV(float fovDeg) {
+			FOV = glm::clamp(fovDeg, CONSTANTS::MIN_FOV, CONSTANTS::MAX_FOV);
 		}
 
 		float nearPlane{0.3000f};
@@ -75,6 +81,11 @@ namespace Boom {
 			obj_member<"FarPlane", &Camera3D::farPlane>,
 			obj_member<"FOV", &Camera3D::FOV>
 		)
+			//enum of camera types
+			enum CameraType {
+			Main,
+			Sub
+		}cameraType;
 	};
 
 	struct PbrMaterial {

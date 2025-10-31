@@ -38,23 +38,23 @@ namespace Boom {
 		int32_t width;
 		uint32_t id;
 
-	private: //descriptions
+	public: //descriptions
+		bool isCompileAsCompressed;
 		float quality;
 		int32_t alphaThreshold;
 		int32_t mipLevel; //will not be enforced if too big
 		bool isGamma;
-		//std::string assetFilePath;
-		//std::string assetName;
 
 	public:
-		/*
+		
 		XPROPERTY_DEF(
 			"Texture", Texture2D,
+			obj_member<"CompileAsCompressed", &Texture2D::isCompileAsCompressed>,
 			obj_member<"quality", &Texture2D::quality>,
 			obj_member<"alphaThreshold", &Texture2D::alphaThreshold>,
 			obj_member<"mipLevel", &Texture2D::mipLevel>,
 			obj_member<"isGamma", &Texture2D::isGamma>
-		)*/
+		)
 	};
 
 	using Texture = std::shared_ptr<Texture2D>;
