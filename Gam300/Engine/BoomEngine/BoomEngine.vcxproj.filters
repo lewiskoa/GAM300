@@ -67,6 +67,8 @@
     <ClInclude Include="includes\Window\InputSystem.h" />
     <ClInclude Include="thirdparty\dotnet\hostfxr.h" />
     <ClInclude Include="thirdparty\dotnet\nethost.h" />
+    <ClInclude Include="includes\Input\CameraManager.h" />
+    <ClInclude Include="includes\Input\InputHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="thirdparty\dotnet\nethost.lib" />
