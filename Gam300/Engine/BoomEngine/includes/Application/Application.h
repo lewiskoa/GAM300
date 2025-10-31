@@ -283,8 +283,10 @@ namespace Boom
                     static bool lastLPressed = false;
                     bool lPressed = glfwGetKey(engineWindow.get(), GLFW_KEY_L) == GLFW_PRESS;
                     if (lPressed && !lastLPressed) {
-                        EnttView<Entity, AnimatorComponent>([this](auto entity, auto& animComp) {
+                        EnttView<Entity, AnimatorComponent>([this]([[maybe_unused]] auto entity, auto& animComp) {
+
                             auto& animator = animComp.animator;
+
 
                             BOOM_INFO("=== Loading additional animations ===");
                             size_t beforeCount = animator->GetClipCount();
@@ -309,7 +311,8 @@ namespace Boom
                     lastLPressed = lPressed;
 
                     // Press 1-9 to switch animations
-                    EnttView<Entity, AnimatorComponent>([this, &engineWindow](auto entity, auto& animComp) {
+                    EnttView<Entity, AnimatorComponent>([this, &engineWindow]([[maybe_unused]]auto entity, auto& animComp) {
+
                         auto& animator = animComp.animator;
 
                         if (glfwGetKey(engineWindow.get(), GLFW_KEY_1) == GLFW_PRESS && animator->GetClipCount() > 0) {
