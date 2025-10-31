@@ -48,7 +48,7 @@ namespace EditorUI {
             else                   ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "Slow");
 
             // Profiler integration - FIXED: Check pointer, not reference
-            if (m_Ctx && m_Ctx->profiler != nullptr) {
+            if (m_Ctx) {
                 DrawProfilerPanel(m_Ctx->profiler);
             }
             else {

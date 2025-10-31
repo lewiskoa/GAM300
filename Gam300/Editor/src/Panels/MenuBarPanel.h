@@ -12,8 +12,8 @@
 #include <entt/entity/entity.hpp>
 
 namespace Boom {
-    class Application;
-    class AppContext; // your engine context (the one Editor holds)
+    struct Application;
+    struct AppContext; // your engine context (the one Editor holds)
 }
 
 namespace EditorUI {

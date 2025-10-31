@@ -71,13 +71,14 @@ namespace Boom
                 return nullptr;
             }
 
-            auto layer = new Layer(std::forward<Args>(args)...);
+            auto* layer = new Layer(std::forward<Args>(args)...);
             m_Context->layers.push_back(layer);
 
-            layer->m_LayerID = TypeID<Layer>();
-            layer->m_Context = m_Context;
-            layer->OnStart();
+            layer->_InitLayer(m_Context, TypeID<Layer>());
 
+         
+            AppInterface* asBase = layer;
+            asBase->OnStart();
             return layer;
         }
 
@@ -180,7 +181,10 @@ namespace Boom
         BOOM_INLINE virtual void OnUpdate() {}
 
         AppContext* m_Context{};   ///< Pointer to shared application context
-
+        void _InitLayer(AppContext* ctx, uint32_t id) {
+            m_Context = ctx;
+            m_LayerID = id;
+        }
     private:
         // Allow Application to set up layers
         friend struct Application;

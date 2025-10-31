@@ -10,7 +10,7 @@
 #include "Vendors/imgui/imgui.h"
 #include "Vendors/imgui/backends/imgui_impl_glfw.h"
 #include "Vendors/imgui/backends/imgui_impl_opengl3.h"
-
+#include "Context/Context.h"
 // GLFW (needed for window/context handle)
 #include <GLFW/glfw3.h>
 

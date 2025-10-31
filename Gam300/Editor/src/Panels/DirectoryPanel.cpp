@@ -23,7 +23,7 @@ namespace EditorUI {
             : name(n), isDirectory(dir), fullPath(p), texId(id) {
         }
     };
-
+    DirectoryPanel::~DirectoryPanel() = default;
     DirectoryPanel::DirectoryPanel(Editor* owner)
         : m_Owner(owner)
     {

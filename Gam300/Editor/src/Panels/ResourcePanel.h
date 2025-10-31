@@ -1,7 +1,7 @@
 #pragma once
 #include "Vendors/imgui/imgui.h"
 
-namespace Boom { class AppContext; }
+namespace Boom { struct AppContext; }
 
 namespace EditorUI {
 

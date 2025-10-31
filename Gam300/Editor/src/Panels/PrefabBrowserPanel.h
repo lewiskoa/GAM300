@@ -6,7 +6,7 @@
 #include "Vendors/imgui/imgui.h"
 #include <entt/entity/entity.hpp> // entt::entity
 
-namespace Boom { class AppContext; }
+namespace Boom { struct AppContext; }
 
 namespace EditorUI {
 

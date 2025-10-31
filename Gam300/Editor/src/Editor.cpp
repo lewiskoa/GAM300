@@ -86,8 +86,10 @@ namespace {
 
 namespace EditorUI {
 
-    Editor::Editor(Boom::AppContext* ctx, ImGuiContext* imgui)
-        : m_Context(ctx), m_ImGuiContext(imgui)
+    Editor::Editor(ImGuiContext* imgui,
+        entt::registry* registry,
+        Boom::Application* app)
+        : m_ImGuiContext(imgui), m_Registry(registry), m_App(app)
     {
     }
 
@@ -112,6 +114,22 @@ namespace EditorUI {
 
         // Panel-specific init
         if (m_Directory) m_Directory->Init();
+    }
+    void Editor::OnStart()
+    {
+        // AppInterface already filled m_Context before this call.
+        // Make sure ImGui uses the context we created in main.cpp.
+        if (m_ImGuiContext)
+            ImGui::SetCurrentContext(m_ImGuiContext);
+
+        BOOM_INFO("Editor::OnStart");
+        Init();   // build all panels here (you already wrote this)
+    }
+
+    void Editor::OnUpdate()
+    {
+        // draw one ImGui frame of the editor
+        Render(); // you already wrote this to NewFrame(), draw panels, RenderDrawData()
     }
 
     void Editor::Render()

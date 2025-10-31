@@ -15,6 +15,7 @@ namespace EditorUI {
     class DirectoryPanel {
     public:
         explicit DirectoryPanel(Editor* owner);
+		~DirectoryPanel();
         void Init();
         void OnShow();
         void Render() { OnShow(); }

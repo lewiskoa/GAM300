@@ -17,7 +17,7 @@ namespace EditorUI {
     class MenuBarPanel;
     class HierarchyPanel;
     class InspectorPanel;
-    class ConsolePanel;
+    struct ConsolePanel;
     class ResourcePanel;
     class DirectoryPanel;
     class AudioPanel;
@@ -29,7 +29,9 @@ namespace EditorUI {
     // FIXED: Now inherits from AppInterface (complete definition included above)
     class Editor : public Boom::AppInterface {
     public:
-        explicit Editor(Boom::AppContext* ctx, ImGuiContext* imgui = nullptr);
+        explicit Editor(ImGuiContext* imgui,
+            entt::registry* registry,
+            Boom::Application* app);
         ~Editor();                      // defined in .cpp after including all panels
 
         Editor(const Editor&) = delete;
@@ -45,11 +47,16 @@ namespace EditorUI {
         // accessors used by panels
         Boom::AppContext* GetContext() const { return m_Context; }
         ImGuiContext* GetImGuiContext() const { return m_ImGuiContext; }
-
+        entt::registry* GetRegistry() const { return m_Registry; }
+        Boom::Application* GetApp() const { return m_App; }
+    protected:
+        void OnStart() override;   // 
+        void OnUpdate() override;  // 
     private:
         Boom::AppContext* m_Context = nullptr;
         ImGuiContext* m_ImGuiContext = nullptr;
-
+        entt::registry* m_Registry = nullptr;
+        Boom::Application* m_App = nullptr;
         // Panels (constructed in Init, destroyed in ~Editor)
         std::unique_ptr<MenuBarPanel>           m_MenuBar;
         std::unique_ptr<HierarchyPanel>         m_Hierarchy;
