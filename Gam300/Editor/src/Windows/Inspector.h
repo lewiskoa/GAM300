@@ -2,8 +2,13 @@
 #include "Context/Context.h"
 
 struct InspectorWindow : IWidget {
-private:
-    const std::string_view CUSTOM_PAYLOAD_TYPE{ "DND_INT" };
+private: //private definiitons of payload types to load for drop retrieval
+    template<std::string_view const& Payload>
+    struct PayloadToType;
+
+    template<> struct PayloadToType<CONSTANTS::DND_PAYLOAD_TEXTURE> { using Type = TextureAsset; };
+    template<> struct PayloadToType<CONSTANTS::DND_PAYLOAD_MATERIAL> { using Type = MaterialAsset; };
+    template<> struct PayloadToType<CONSTANTS::DND_PAYLOAD_MODEL> { using Type = ModelAsset; };
 public:
     BOOM_INLINE InspectorWindow(AppInterface* c) : IWidget{ c } {}
 
@@ -72,16 +77,18 @@ private:
         }
 
         // Model Component
-        if (ImGui::CollapsingHeader("Model Renderer")) {
-            //2 for now (model.fbx & material)
-            //ImGui::
-        }
-
         if (selectedEntity.Has<Boom::ModelComponent>()) {
             auto& mc = selectedEntity.Get<Boom::ModelComponent>();
-            DrawComponentSection("Model Renderer", &mc, Boom::GetModelComponentProperties, true,
-                [&]() { context->GetEntityRegistry().remove<Boom::ModelComponent>(context->SelectedEntity()); }
-            );
+
+            if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+                //2 for now (model.fbx & material)
+                ImGui::BeginTable("##maps", 6, ImGuiTableFlags_SizingFixedFit);
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthStretch);
+                InputAssetWidget<CONSTANTS::DND_PAYLOAD_MODEL>("Model", mc.modelID);
+                InputAssetWidget<CONSTANTS::DND_PAYLOAD_MATERIAL>("Material", mc.materialID);
+                ImGui::EndTable();
+            }
         }
 
         // RigidBody Component
@@ -184,12 +191,12 @@ private:
                     ImGui::BeginTable("##maps", 6, ImGuiTableFlags_SizingFixedFit);
                     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
                     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthStretch);
-                    InputAssetWidget("albedo map", mat->albedoMapID);
-                    InputAssetWidget("normal map", mat->normalMapID);
-                    InputAssetWidget("roughness map", mat->roughnessMapID);
-                    InputAssetWidget("metallic map", mat->metallicMapID);
-                    InputAssetWidget("occlusion map", mat->occlusionMapID);
-                    InputAssetWidget("emissive map", mat->emissiveMapID);
+                    InputAssetWidget<CONSTANTS::DND_PAYLOAD_TEXTURE>("albedo map", mat->albedoMapID);
+                    InputAssetWidget<CONSTANTS::DND_PAYLOAD_TEXTURE>("normal map", mat->normalMapID);
+                    InputAssetWidget<CONSTANTS::DND_PAYLOAD_TEXTURE>("roughness map", mat->roughnessMapID);
+                    InputAssetWidget<CONSTANTS::DND_PAYLOAD_TEXTURE>("metallic map", mat->metallicMapID);
+                    InputAssetWidget<CONSTANTS::DND_PAYLOAD_TEXTURE>("occlusion map", mat->occlusionMapID);
+                    InputAssetWidget<CONSTANTS::DND_PAYLOAD_TEXTURE>("emissive map", mat->emissiveMapID);
                     ImGui::EndTable();
                 }
 
@@ -383,10 +390,10 @@ private: //helpers
         ImGui::Spacing();
     }
 
-    BOOM_INLINE void AcceptIDDrop(AssetID& data) {
+    BOOM_INLINE void AcceptIDDrop(AssetID& data, char const* payloadType) {
         if (ImGui::BeginDragDropTarget())
         {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("DND_INT"))
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(payloadType))
             {
                 IM_ASSERT(payload->DataSize == sizeof(AssetID));
                 data = *(AssetID const*)payload->Data;
@@ -395,6 +402,8 @@ private: //helpers
             ImGui::EndDragDropTarget();
         }
     }
+
+    template <std::string_view const& Payload>
     BOOM_INLINE void InputAssetWidget(char const* label, AssetID& data) {
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
@@ -402,12 +411,14 @@ private: //helpers
         ImGui::SameLine();
 
         ImGui::TableSetColumnIndex(1);
-        ImVec2 const fieldSize{ ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()}; //auto height
+        ImVec2 const fieldSize{ ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()};
         ImGui::PushID(label);
-        if (ImGui::Button(context->GetAssetName<TextureAsset>(data).c_str(), fieldSize)) {
+
+        using AssetType = typename PayloadToType<Payload>::Type;
+        if (ImGui::Button(context->GetAssetName<AssetType>(data).c_str(), fieldSize)) {
             //TODO: clicking button opens asset picker window
         }
-        AcceptIDDrop(data);
+        AcceptIDDrop(data, Payload.data());
         ImGui::PopID();
     }
 public:

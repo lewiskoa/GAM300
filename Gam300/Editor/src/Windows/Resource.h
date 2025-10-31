@@ -46,8 +46,18 @@ struct ResourceWindow : IWidget {
 							ImVec4(1, 1, 1, 1));
 
 						if (tex && ImGui::BeginDragDropSource()) {
-							ImGui::SetDragDropPayload("DND_INT", &asset->uid, sizeof(AssetID));
+							ImGui::SetDragDropPayload(CONSTANTS::DND_PAYLOAD_TEXTURE.data(), &asset->uid, sizeof(AssetID));
 							ImGui::Text("Dragging Texture: %s", asset->name.c_str());
+							ImGui::EndDragDropSource();
+						}
+						else if (dynamic_cast<MaterialAsset*>(asset) && ImGui::BeginDragDropSource()) {
+							ImGui::SetDragDropPayload(CONSTANTS::DND_PAYLOAD_MATERIAL.data(), &asset->uid, sizeof(AssetID));
+							ImGui::Text("Dragging Material: %s", asset->name.c_str());
+							ImGui::EndDragDropSource();
+						}
+						else if (dynamic_cast<ModelAsset*>(asset) && ImGui::BeginDragDropSource()) {
+							ImGui::SetDragDropPayload(CONSTANTS::DND_PAYLOAD_MODEL.data(), &asset->uid, sizeof(AssetID));
+							ImGui::Text("Dragging Model: %s", asset->name.c_str());
 							ImGui::EndDragDropSource();
 						}
 						ImGui::PopID();
