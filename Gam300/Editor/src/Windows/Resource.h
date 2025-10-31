@@ -11,14 +11,18 @@ struct ResourceWindow : IWidget {
 
 	BOOM_INLINE void OnShow() override {
 		if (ImGui::Begin("Resources")) {
+			
+			if (ImGui::Button("Save All Assets", { 128, 20 })) {
+				SaveAssets();
+			}
+
 			int32_t colNo{ (int32_t)((ImGui::GetContentRegionAvail().x) / (ASSET_SIZE + ImGui::GetStyle().ItemSpacing.x)) };
 			colNo = glm::max(1, colNo);
 
-			ImGuiTableFlags flags{ 
-				ImGuiTableFlags_SizingFixedSame | 
+			ImGuiTableFlags flags{
+				ImGuiTableFlags_SizingFixedSame |
 				ImGuiTableFlags_NoHostExtendX
 			};
-
 			if (ImGui::BeginTable("", colNo, flags)) {
 				// set column sizes according to paddings
 				for (int i{}; i < colNo; ++i) {
@@ -33,19 +37,21 @@ struct ResourceWindow : IWidget {
 						ImTextureID texid{icon}; //default file icon
 
 						TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset) };
-						if (tex) {
-							texid = *tex->data.get();
+						if (tex) texid = *tex->data.get();
+
+						ImGui::PushID((int)asset->uid); 
+						bool isClicked = ImGui::ImageButton("##thumb", texid, ImVec2(ASSET_SIZE, ASSET_SIZE),
+							ImVec2(0, 1), ImVec2(1, 0),
+							ImVec4(0, 0, 0, 1),
+							ImVec4(1, 1, 1, 1));
+
+						if (tex && ImGui::BeginDragDropSource()) {
+							ImGui::SetDragDropPayload("DND_INT", &asset->uid, sizeof(AssetID));
+							ImGui::Text("Dragging Texture: %s", asset->name.c_str());
+							ImGui::EndDragDropSource();
 						}
-						
-						bool isClicked{
-							ImGui::ImageButtonEx(
-								(ImGuiID)asset->uid,
-								texid,
-								ImVec2(ASSET_SIZE, ASSET_SIZE),
-								ImVec2(0, 1), ImVec2(1, 0),
-								ImVec4(0, 0, 0, 1),
-								ImVec4(1, 1, 1, 1)) 
-						};
+						ImGui::PopID();
+
 						ImGui::TextWrapped(asset->source.c_str());
 
 						//show modifyable properties in inspector when selected
@@ -60,6 +66,22 @@ struct ResourceWindow : IWidget {
 		ImGui::End();
 	}
 
+private:
+	BOOM_INLINE bool SaveAssets(const std::string& scenePath = "Scenes/")
+	{
+		//Try blocks cause crashed in release mode. Need to find new alternative
+		DataSerializer serializer;
+
+		const std::string assetsFilePath = scenePath + "assets.yaml";
+
+		BOOM_INFO("[Assets] Saving assets to '{}'", assetsFilePath);
+
+		// Serialize scene and assets
+		serializer.Serialize(context->GetAssetRegistry(), assetsFilePath);
+
+		BOOM_INFO("[Assets] Successfully saved assets");
+		return true;
+	}
 private:
 	Texture2D iconImage;
 	ImTextureID icon;

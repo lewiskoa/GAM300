@@ -39,12 +39,11 @@ namespace Boom {
 		uint32_t id;
 
 	public: //descriptions
+		bool isCompileAsCompressed;
 		float quality;
 		int32_t alphaThreshold;
 		int32_t mipLevel; //will not be enforced if too big
 		bool isGamma;
-		//std::string assetFilePath;
-		//std::string assetName;
 
 	public:
 		/*

@@ -13,6 +13,7 @@
 
 namespace Boom {
 	Texture2D::Texture2D() : height{}, width{}, id{}
+		, isCompileAsCompressed{ true }
 		, quality{ 0.5f }
 		, alphaThreshold{ 128 }
 		, mipLevel{ 10 }
@@ -184,6 +185,8 @@ namespace Boom {
 	}
 
 	void Texture2D::CompressTexture(std::string const& inputFile, std::string const& outputDDS) {
+		if (!isCompileAsCompressed) return; //if designer prefers non compressed file format
+
 		CMP_InitFramework();
 
 		//BC7 is best compression (could be expanded if nesassary)
