@@ -17,6 +17,7 @@ public:
 
         ImGui::Begin("Inspector", &m_ShowInspector);
 
+        DeleteUpdate();
         if (context->SelectedEntity() != entt::null) {
             EntityUpdate();
         }
@@ -421,8 +422,51 @@ private: //helpers
         AcceptIDDrop(data, Payload.data());
         ImGui::PopID();
     }
+
+    BOOM_INLINE void DeleteUpdate() {
+        if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+            showDeletePopup = true;
+        }
+        if (showDeletePopup) {
+            ImGui::OpenPopup("Confirm Delete");
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+
+            if (ImGui::BeginPopupModal("Confirm Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+                AppInterface::AssetInfo info{};
+
+                if (context->SelectedEntity() != entt::null) {
+                    Boom::Entity selectedEntity{ &context->GetEntityRegistry(), context->SelectedEntity() };
+                    info.name = selectedEntity.Get<Boom::InfoComponent>().name;
+                    info.id = selectedEntity.Get<Boom::InfoComponent>().uid;
+                }
+                else if (context->SelectedAsset().id != 0u) {
+                    info = context->SelectedAsset();
+                }
+
+                ImGui::Text("Are you sure you want to delete:\n%s?", info.name.c_str());
+                ImGui::Separator();
+                if (ImGui::Button("Yes", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
+                    if (context->SelectedEntity() != entt::null) {
+                        context->GetEntityRegistry().destroy(context->SelectedEntity());
+                        context->ResetAllSelected();
+                    }
+                    else if (context->SelectedAsset().id != 0u) {
+                        context->DeleteAsset(info.id, info.type);
+                        context->ResetAllSelected();
+                    }
+                    showDeletePopup = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                if (ImGui::Button("No", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+                    showDeletePopup = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
+        }
+    }
 public:
     bool m_ShowInspector{ true };
-
-
+    bool showDeletePopup{};
 };

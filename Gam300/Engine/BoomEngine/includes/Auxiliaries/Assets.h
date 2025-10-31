@@ -264,6 +264,18 @@ namespace Boom {
 			return EMPTY_ASSET;
 		}
 
+		template <class T>
+		BOOM_INLINE bool Remove(AssetID uid) {
+			const uint32_t type{ TypeID<T>() };
+			auto it{ registry.find(type) };
+			if (it != registry.end()) {
+				it->second.erase(uid);
+				return true;
+			}
+
+			return false;
+		}
+
 	public: //helper functions for imgui context
 		template <class Func>
 		BOOM_INLINE void ModifyMaterialFromID(AssetID id, Func f) {

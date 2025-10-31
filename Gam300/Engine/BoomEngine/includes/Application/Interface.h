@@ -185,17 +185,7 @@ namespace Boom
         BOOM_INLINE std::string const& GetAssetName(AssetID uid) {
             return m_Context->assets->Get<Type>(uid).name;
         }
-
-    private: //helper functions
-        BOOM_INLINE void ResetAllSelected() {
-            selectedEntity = entt::null;
-            selectedAsset = {};
-            //add more if needed
-        }
-        struct CustomAsset {
-            AssetID id{};
-            AssetType type{};
-        };
+        
     public: //helper functions for imgui iwidget context
         //if you need to swap selected object call with (true)
         // otherwise if used for comparison/no reset of selected needed
@@ -203,10 +193,19 @@ namespace Boom
             if (isResetAllSelected) ResetAllSelected();
             return selectedEntity;
         }
-
+        BOOM_INLINE void ResetAllSelected() {
+            selectedEntity = entt::null;
+            selectedAsset = {};
+            //add more if needed
+        }
+        struct AssetInfo {
+            AssetID id{};
+            AssetType type{};
+            std::string name{};
+        };
         //if you need to swap selected object call with (true)
         // otherwise if used for comparison/no reset of selected needed
-        BOOM_INLINE CustomAsset& SelectedAsset(bool isResetAllSelected = false) {
+        BOOM_INLINE AssetInfo& SelectedAsset(bool isResetAllSelected = false) {
             if (isResetAllSelected) ResetAllSelected();
             return selectedAsset;
         }
@@ -230,6 +229,16 @@ namespace Boom
             return *m_Context->assets;
         }
 
+        BOOM_INLINE void DeleteAsset(AssetID uid, AssetType type) {
+            if (type == AssetType::TEXTURE) m_Context->assets->Remove<TextureAsset>(uid);
+            else if (type == AssetType::MATERIAL) m_Context->assets->Remove<MaterialAsset>(uid);
+            else if (type == AssetType::SKYBOX) m_Context->assets->Remove<SkyboxAsset>(uid);
+            else if (type == AssetType::SCRIPT) m_Context->assets->Remove<ScriptAsset>(uid);
+            else if (type == AssetType::SCENE) m_Context->assets->Remove<SceneAsset>(uid);
+            else if (type == AssetType::MODEL) m_Context->assets->Remove<ModelAsset>(uid);
+            else if (type == AssetType::PREFAB) m_Context->assets->Remove<PrefabAsset>(uid);
+        }
+
     protected:
         /** @brief  Called once when the layer is attached. Override to initialize. */
         BOOM_INLINE virtual void OnStart() {}
@@ -247,7 +256,7 @@ namespace Boom
 
         entt::entity selectedEntity{ entt::null };
 
-        CustomAsset selectedAsset{};
+        AssetInfo selectedAsset{};
     };
 
 } // namespace Boom

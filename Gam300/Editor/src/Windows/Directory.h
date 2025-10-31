@@ -72,27 +72,28 @@ private: //seperated imgui logic
 		if (showDeleteConfirm) {
 			ImGui::OpenPopup("Confirm Delete");
 			ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-		}
-		if (ImGui::BeginPopupModal("Confirm Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-			ImGui::Text("Are you sure you want to delete:\n%s?", selectedPath.c_str());
-			ImGui::Separator();
-			if (ImGui::Button("Yes", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
-				if (DeletePath(selectedPath)) {
-					selectedPath.clear(); // Clear selection after deletion
+
+			if (ImGui::BeginPopupModal("Confirm Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+				ImGui::Text("Are you sure you want to delete:\n%s?", selectedPath.c_str());
+				ImGui::Separator();
+				if (ImGui::Button("Yes", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
+					if (DeletePath(selectedPath)) {
+						selectedPath.clear(); // Clear selection after deletion
+					}
+					else {
+						showDeleteError = true;
+						deleteErrorMessage = "Failed to delete: " + selectedPath;
+					}
+					showDeleteConfirm = false;
+					ImGui::CloseCurrentPopup();
 				}
-				else {
-					showDeleteError = true;
-					deleteErrorMessage = "Failed to delete: " + selectedPath;
+				ImGui::SameLine();
+				if (ImGui::Button("No", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+					showDeleteConfirm = false;
+					ImGui::CloseCurrentPopup();
 				}
-				showDeleteConfirm = false;
-				ImGui::CloseCurrentPopup();
+				ImGui::EndPopup();
 			}
-			ImGui::SameLine();
-			if (ImGui::Button("No", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-				showDeleteConfirm = false;
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
 		}
 
 		// Error popup
