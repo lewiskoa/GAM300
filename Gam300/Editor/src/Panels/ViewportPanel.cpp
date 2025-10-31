@@ -17,76 +17,102 @@ namespace EditorUI {
     ViewportPanel::ViewportPanel(Editor* owner)
         : m_Owner(owner)
     {
-        DEBUG_DLL_BOUNDARY("ViewportPanel::Constructor");
+        //DEBUG_DLL_BOUNDARY("ViewportPanel::Constructor");
 
-        if (!m_Owner) {
-            BOOM_ERROR("ViewportPanel::Constructor - Null owner!");
-            return;
-        }
+        //if (!m_Owner) {
+        //    BOOM_ERROR("ViewportPanel::Constructor - Null owner!");
+        //    return;
+        //}
 
-        // Editor doesn't inherit from AppInterface, so we can't cast
-        // We'll access everything through m_Ctx instead
-        m_App = nullptr;
+        //// Editor doesn't inherit from AppInterface, so we can't cast
+        //// We'll access everything through m_Ctx instead
+        //m_App = nullptr;
 
-        // If Editor exposes GetContext(), cache it. (C++20 requires-expression)
-        if constexpr (requires(Editor * e) { e->GetContext(); }) {
-            m_Ctx = m_Owner->GetContext();
-        }
-        else {
-            m_Ctx = nullptr;
-        }
+        //// If Editor exposes GetContext(), cache it. (C++20 requires-expression)
+        //if constexpr (requires(Editor * e) { e->GetContext(); }) {
+        //    m_Ctx = m_Owner->GetContext();
+        //}
+        //else {
+        //    m_Ctx = nullptr;
+        //}
 
-        DEBUG_POINTER(m_App, "AppInterface");
-        DEBUG_POINTER(m_Ctx, "AppContext");
+        //DEBUG_POINTER(m_App, "AppInterface");
+        //DEBUG_POINTER(m_Ctx, "AppContext");
 
-        // Initial frame id via AppInterface first, then fallback to renderer
-        std::uint32_t frameId = QuerySceneFrame();
-        DebugHelpers::ValidateFrameData(frameId, "ViewportPanel constructor");
+        //// Initial frame id via AppInterface first, then fallback to renderer
+        //std::uint32_t frameId = QuerySceneFrame();
+        //DebugHelpers::ValidateFrameData(frameId, "ViewportPanel constructor");
 
-        m_FrameId = frameId;
-        m_Frame = (ImTextureID)(uintptr_t)frameId;
+        //m_FrameId = frameId;
+        //m_Frame = (ImTextureID)(uintptr_t)frameId;
 
-        BOOM_INFO("ViewportPanel::Constructor - Frame ID: {}, ImTextureID: {}",
-            m_FrameId, (void*)m_Frame);
+        //BOOM_INFO("ViewportPanel::Constructor - Frame ID: {}, ImTextureID: {}",
+        //    m_FrameId, (void*)m_Frame);
+        m_App = static_cast<Boom::AppInterface*>(m_Owner);     // Editor : AppInterface
+        m_Ctx = m_App ? m_App->GetContext() : nullptr;
     }
 
     void ViewportPanel::Render() { OnShow(); }
 
     void ViewportPanel::OnShow()
     {
-        DEBUG_DLL_BOUNDARY("ViewportPanel::OnShow");
+        //DEBUG_DLL_BOUNDARY("ViewportPanel::OnShow");
+        //if (!m_ShowViewport) return;
+
+        //// Refresh frame each frame (renderer may recreate it)
+        //std::uint32_t newFrameId = QuerySceneFrame();
+        //if (newFrameId != m_FrameId) {
+        //    BOOM_INFO("ViewportPanel::OnShow - Frame ID changed: {} -> {}", m_FrameId, newFrameId);
+        //    m_FrameId = newFrameId;
+        //    m_Frame = (ImTextureID)(uintptr_t)newFrameId;
+        //}
+
+        //DebugHelpers::ValidateFrameData(m_FrameId, "ViewportPanel::OnShow");
+
+        //if (ImGui::Begin(ICON_FA_IMAGE "\tViewport", &m_ShowViewport))
+        //{
+        //    ImVec2 contentRegion = ImGui::GetContentRegionAvail();
+        //    m_Viewport = contentRegion;
+
+        //    if (m_Frame && contentRegion.x > 0.0f && contentRegion.y > 0.0f)
+        //    {
+        //        GLint currentTexture{}; glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTexture);
+        //        ImGui::Image(m_Frame, contentRegion, ImVec2(0, 1), ImVec2(1, 0));
+        //        GLint newTexture{};     glGetIntegerv(GL_TEXTURE_BINDING_2D, &newTexture);
+        //        if (currentTexture != newTexture) {
+        //            BOOM_WARN("ViewportPanel::OnShow - Texture binding changed: {} -> {}", currentTexture, newTexture);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        ImGui::TextColored(ImVec4(1, 0, 0, 1), "Invalid frame data!");
+        //        ImGui::Text("Frame ID: %u", m_FrameId);
+        //        ImGui::Text("Frame Ptr: %p", m_Frame);
+        //        ImGui::Text("Content Region: %.1fx%.1f", contentRegion.x, contentRegion.y);
+        //    }
+        //}
+        //ImGui::End();
         if (!m_ShowViewport) return;
+        if (ImGui::Begin(ICON_FA_IMAGE "\tViewport", &m_ShowViewport)) {
+            ImVec2 avail = ImGui::GetContentRegionAvail();
 
-        // Refresh frame each frame (renderer may recreate it)
-        std::uint32_t newFrameId = QuerySceneFrame();
-        if (newFrameId != m_FrameId) {
-            BOOM_INFO("ViewportPanel::OnShow - Frame ID changed: {} -> {}", m_FrameId, newFrameId);
-            m_FrameId = newFrameId;
-            m_Frame = (ImTextureID)(uintptr_t)newFrameId;
-        }
-
-        DebugHelpers::ValidateFrameData(m_FrameId, "ViewportPanel::OnShow");
-
-        if (ImGui::Begin(ICON_FA_IMAGE "\tViewport", &m_ShowViewport))
-        {
-            ImVec2 contentRegion = ImGui::GetContentRegionAvail();
-            m_Viewport = contentRegion;
-
-            if (m_Frame && contentRegion.x > 0.0f && contentRegion.y > 0.0f)
-            {
-                GLint currentTexture{}; glGetIntegerv(GL_TEXTURE_BINDING_2D, &currentTexture);
-                ImGui::Image(m_Frame, contentRegion, ImVec2(0, 1), ImVec2(1, 0));
-                GLint newTexture{};     glGetIntegerv(GL_TEXTURE_BINDING_2D, &newTexture);
-                if (currentTexture != newTexture) {
-                    BOOM_WARN("ViewportPanel::OnShow - Texture binding changed: {} -> {}", currentTexture, newTexture);
-                }
+            // Optional: keep render target sized to panel
+            if (m_Ctx && m_Ctx->renderer) {
+                m_Ctx->renderer->Resize((int)avail.x, (int)avail.y);  // your Resize re-creates FBO/tex
             }
-            else
-            {
+
+            // Pull the latest color texture from the renderer
+            uint32_t frameId = QuerySceneFrame();          // via m_App->GetSceneFrame() or m_Ctx->renderer->GetFrame()
+            m_FrameId = frameId;
+            m_Frame = (ImTextureID)(uintptr_t)frameId;
+
+            if (frameId && avail.x > 0 && avail.y > 0) {
+                ImGui::Image(m_Frame, avail, ImVec2(0, 1), ImVec2(1, 0));   // GL-style UVs
+                // (optional) camera input region/update like your working code...
+            }
+            else {
                 ImGui::TextColored(ImVec4(1, 0, 0, 1), "Invalid frame data!");
-                ImGui::Text("Frame ID: %u", m_FrameId);
-                ImGui::Text("Frame Ptr: %p", m_Frame);
-                ImGui::Text("Content Region: %.1fx%.1f", contentRegion.x, contentRegion.y);
+                ImGui::Text("Frame ID: %u", frameId);
             }
         }
         ImGui::End();

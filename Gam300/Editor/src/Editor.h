@@ -53,7 +53,7 @@ namespace EditorUI {
         void OnStart() override;   // 
         void OnUpdate() override;  // 
     private:
-        Boom::AppContext* m_Context = nullptr;
+       // Boom::AppContext* m_Context = nullptr;
         ImGuiContext* m_ImGuiContext = nullptr;
         entt::registry* m_Registry = nullptr;
         Boom::Application* m_App = nullptr;
