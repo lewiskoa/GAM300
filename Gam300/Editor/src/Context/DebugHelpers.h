@@ -2,9 +2,12 @@
 #include "Helpers.h"
 
 // Debug macros for DLL boundary debugging
-#define DEBUG_DLL_BOUNDARY(func_name) \
-    BOOM_INFO("[DLL_DEBUG] Entering {} at {}", func_name, __FILE__ ":" + std::to_string(__LINE__))
-
+#ifndef NDEBUG
+#define DEBUG_DLL_BOUNDARY(...)                                                  \
+    do { [[maybe_unused]] bool _dbg_used = ::DebugHelpers::DllBoundary(__VA_ARGS__); } while (0)
+#else
+#define DEBUG_DLL_BOUNDARY(...) ((void)0)
+#endif
 #define DEBUG_POINTER(ptr, name) \
     BOOM_INFO("[PTR_DEBUG] {} = {} (valid: {})", name, (void*)ptr, (ptr != nullptr))
 
