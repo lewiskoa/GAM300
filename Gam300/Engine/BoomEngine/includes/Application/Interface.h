@@ -174,6 +174,11 @@ namespace Boom
             return m_Context->scene;
         }
 
+        template<class Type>
+        BOOM_INLINE std::string const& GetAssetName(AssetID uid) {
+            return m_Context->assets->Get<Type>(uid).name;
+        }
+
     private: //helper functions
         BOOM_INLINE void ResetAllSelected() {
             selectedEntity = entt::null;

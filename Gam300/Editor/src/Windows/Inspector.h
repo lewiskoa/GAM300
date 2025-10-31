@@ -72,6 +72,11 @@ private:
         }
 
         // Model Component
+        if (ImGui::CollapsingHeader("Model Renderer")) {
+            //2 for now (model.fbx & material)
+            //ImGui::
+        }
+
         if (selectedEntity.Has<Boom::ModelComponent>()) {
             auto& mc = selectedEntity.Get<Boom::ModelComponent>();
             DrawComponentSection("Model Renderer", &mc, Boom::GetModelComponentProperties, true,
@@ -176,18 +181,16 @@ private:
                 // toggle between mapID and standard slider (vec3/float)
 
                 if (ImGui::CollapsingHeader("Maps", ImGuiTreeNodeFlags_DefaultOpen)) {
-                    ImGui::InputScalar("albedo map", ImGuiDataType_U64, &mat->albedoMapID);
-                    AcceptIDDrop(mat->albedoMapID);
-                    ImGui::InputScalar("normal map", ImGuiDataType_U64, &mat->normalMapID);
-                    AcceptIDDrop(mat->normalMapID);
-                    ImGui::InputScalar("roughness map", ImGuiDataType_U64, &mat->roughnessMapID);
-                    AcceptIDDrop(mat->roughnessMapID);
-                    ImGui::InputScalar("metallic map", ImGuiDataType_U64, &mat->metallicMapID);
-                    AcceptIDDrop(mat->metallicMapID);
-                    ImGui::InputScalar("occlusion map", ImGuiDataType_U64, &mat->occlusionMapID);
-                    AcceptIDDrop(mat->occlusionMapID);
-                    ImGui::InputScalar("emissive map", ImGuiDataType_U64, &mat->emissiveMapID);
-                    AcceptIDDrop(mat->emissiveMapID);
+                    ImGui::BeginTable("##maps", 6, ImGuiTableFlags_SizingFixedFit);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+                    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthStretch);
+                    InputAssetWidget("albedo map", mat->albedoMapID);
+                    InputAssetWidget("normal map", mat->normalMapID);
+                    InputAssetWidget("roughness map", mat->roughnessMapID);
+                    InputAssetWidget("metallic map", mat->metallicMapID);
+                    InputAssetWidget("occlusion map", mat->occlusionMapID);
+                    InputAssetWidget("emissive map", mat->emissiveMapID);
+                    ImGui::EndTable();
                 }
 
                 if (ImGui::CollapsingHeader("Variables", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -391,6 +394,21 @@ private: //helpers
             }
             ImGui::EndDragDropTarget();
         }
+    }
+    BOOM_INLINE void InputAssetWidget(char const* label, AssetID& data) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::TextUnformatted(label);
+        ImGui::SameLine();
+
+        ImGui::TableSetColumnIndex(1);
+        ImVec2 const fieldSize{ ImGui::GetContentRegionAvail().x, ImGui::GetFrameHeight()}; //auto height
+        ImGui::PushID(label);
+        if (ImGui::Button(context->GetAssetName<TextureAsset>(data).c_str(), fieldSize)) {
+            //TODO: clicking button opens asset picker window
+        }
+        AcceptIDDrop(data);
+        ImGui::PopID();
     }
 public:
     bool m_ShowInspector{ true };

@@ -39,7 +39,7 @@ struct ResourceWindow : IWidget {
 						TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset) };
 						if (tex) texid = *tex->data.get();
 
-						ImGui::PushID((int)asset->uid); 
+						ImGui::PushID((int)asset->uid);
 						bool isClicked = ImGui::ImageButton("##thumb", texid, ImVec2(ASSET_SIZE, ASSET_SIZE),
 							ImVec2(0, 1), ImVec2(1, 0),
 							ImVec4(0, 0, 0, 1),
