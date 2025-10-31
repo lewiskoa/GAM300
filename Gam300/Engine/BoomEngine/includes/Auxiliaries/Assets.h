@@ -18,6 +18,16 @@ namespace Boom {
 		MODEL,
 		PREFAB
 	};
+	constexpr char const* TYPE_NAMES[] {
+		"All",
+		"Materials",
+		"Textures",
+		"Skybox",
+		"Scripts",
+		"Scenes",
+		"Models(.fbx)",
+		"Prefab",
+	};
 
 	struct Asset {
 		virtual ~Asset() = default;
