@@ -143,8 +143,8 @@ ASSETS:
       HasJoints: false
   - Type: MODEL
     UID: 12185416543001335231
-    Name: dance
-    Source: dance.fbx
+    Name: kick
+    Source: kick.fbx
     Properties:
       HasJoints: true
   - Type: MODEL

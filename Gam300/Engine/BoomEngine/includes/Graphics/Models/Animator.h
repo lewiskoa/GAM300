@@ -1,182 +1,238 @@
 #pragma once
 #include "Animation.h"
+#include <assimp/postprocess.h>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
 
 namespace Boom
 {
-     /**
-     * @brief Drives skeletal animation by advancing time and updating joint transforms.
-     *
-     * The Animator owns a list of @c Animation clips and a transform buffer (one
-     * matrix per joint). Calling Animate() advances the local time of the current
-     * clip (indexed by @c m_Sequence), then performs a depth-first traversal from
-     * the root joint to compute interpolated local transforms and write final
-     * skinned (object-space) matrices into @c m_Transforms.
-     *
-     * @note Thread-safety: not thread-safe; mutates internal time and buffers.
-     * @note Time units: @p deltaTime is expected in seconds.
-     */
-	struct Animator 
-	{
-        /**
-         * @brief Advance the active animation and update all joint transforms.
-         *
-         * If @c m_Sequence is a valid index into @c m_Animations, the internal clock
-         * @c m_Time is advanced by @c speed * deltaTime and wrapped into the clip
-         * duration (looping). Then the skeleton is updated via @ref UpdateJoints.
-         * If the sequence is invalid, no work is performed and the current transform
-         * buffer is returned unchanged.
-         *
-         * @param[in] deltaTime Elapsed time (seconds) since the previous update.
-         *
-         * @return std::vector<glm::mat4>& Reference to the per-joint final transform
-         *         buffer (index = joint index).
-         *
-         * @pre @c m_Animations[m_Sequence] exists and its joints' keyframes cover
-         *      the full duration with at least two ordered keys per joint.
-         * @post @c m_Transforms contains updated matrices for all joints.
-         *
-         * @remarks Complexity: O(J) where J is the number of joints (one DFS).
-         */
-		BOOM_INLINE auto& Animate(float deltaTime) 
-		{
-            if (m_Sequence < m_Animations.size())
+    struct Animator
+    {
+        BOOM_INLINE auto& Animate(float deltaTime)
+        {
+            if (m_CurrentClip < m_Clips.size())
             {
-                m_Time += m_Animations[m_Sequence].speed *
-                    deltaTime;
-                m_Time = fmod(m_Time,
-                    m_Animations[m_Sequence].duration);
-                UpdateJoints(m_Root, glm::identity<glm::mat4>
-                    ());
+                m_Time += m_Clips[m_CurrentClip]->ticksPerSecond * deltaTime;
+                m_Time = fmod(m_Time, m_Clips[m_CurrentClip]->duration);
+                UpdateJoints(m_Root, glm::identity<glm::mat4>());
             }
             return m_Transforms;
         }
 
-		// Getters and setters
-    public:
-        BOOM_INLINE int32_t GetSequence() const { return m_Sequence; }
-        BOOM_INLINE float GetTime() const { return m_Time; }
-        BOOM_INLINE void SetSequence(int32_t sequence) { m_Sequence = sequence; }
-        BOOM_INLINE void SetTime(float time) { m_Time = time; }
-
-    private:
-        /**
-        * @brief Interpolate between two keyframes to produce a local joint matrix.
-        *
-        * Performs standard TRS interpolation:
-        *  - position: linear interpolation (lerp)
-        *  - rotation: normalized spherical linear interpolation (slerp)
-        *  - scale:    linear interpolation (lerp)
-        *
-        * @param[in] prev        Previous keyframe (t0).
-        * @param[in] next        Next keyframe (t1), with t1 > t0.
-        * @param[in] progression Normalized time in [0, 1] between @p prev and @p next.
-        *
-        * @return glm::mat4 The local transform matrix at the interpolated time.
-        *
-        * @pre 0.0f <= @p progression <= 1.0f.
-        * @note Assumes right-handed TRS composition: translate * rotate * scale.
-        */
-        BOOM_INLINE glm::mat4 Interpolate(const KeyFrame& prev, const KeyFrame& next, float progression)
+        // NEW: Switch animation at runtime
+        BOOM_INLINE void PlayClip(size_t clipIndex)
         {
-            return (glm::translate(glm::mat4(1.0f),
-                glm::mix(prev.position, next.position, progression)) *
-
-                glm::toMat4(glm::normalize(glm::slerp(prev.rotation
-                    , next.rotation, progression))) *
-                glm::scale(glm::mat4(1.0f), glm::mix(prev.scale,
-                    next.scale, progression)));
+            if (clipIndex < m_Clips.size())
+            {
+                m_CurrentClip = clipIndex;
+                m_Time = 0.0f; // Reset time when switching
+            }
         }
 
-        /**
-         * @brief Find the two keyframes bracketing the current local time for a joint.
-         *
-         * Scans the joint's sorted key list and returns the last key with timestamp
-         * <= @c m_Time as @p prev and the first key with timestamp > @c m_Time as @p next.
-         *
-         * @param[in]  joint Joint whose keyframes are queried (expects sorted @c keys).
-         * @param[out] prev  Output previous keyframe.
-         * @param[out] next  Output next keyframe.
-         *
-         * @pre @c joint.keys.size() >= 2 and timestamps are strictly increasing and
-         *      cover the clip range. @c m_Time is wrapped into the clip duration.
-         * @warning No explicit fallback is provided if @c m_Time is beyond the last key
-         *          (should not happen because @c Animate() wraps time with @c fmod).
-         */
-        BOOM_INLINE void GetPreviousAndNextFrames(Joint&
-            joint, KeyFrame& prev, KeyFrame& next)
+        BOOM_INLINE void PlayClip(const std::string& clipName)
         {
-            for (uint32_t i = 1u; i < joint.keys.size(); i++)
+            for (size_t i = 0; i < m_Clips.size(); ++i)
             {
-                if (m_Time < joint.keys[i].timeStamp)
+                if (m_Clips[i]->name == clipName)
                 {
-                    prev = joint.keys[i - 1];
-                    next = joint.keys[i];
+                    PlayClip(i);
                     return;
                 }
             }
         }
 
-        /**
-        * @brief Recursively compute and store final joint transforms.
-        *
-        * Builds the current joint's local transform by interpolating between the
-        * bracketing keyframes, composes it with the parent's transform, then writes
-        * the final skinned matrix into @c m_Transforms at @c joint.index:
-        *
-        * final = parent * local * m_GlobalTransform * joint.offset
-        *
-        * After updating the current joint, the function recurses into each child.
-        *
-        * @param[in] joint            The joint to update (and recurse into children).
-        * @param[in] parentTransform  The accumulated transform from the parent chain.
-        *
-        * @pre @c m_Transforms has size >= max joint index + 1.
-        * @post @c m_Transforms[joint.index] holds the current frame's final matrix.
-        *
-        * @remarks Depth-first traversal; each joint visited once.
-        */
+        // Getters
+        BOOM_INLINE size_t GetCurrentClip() const { return m_CurrentClip; }
+        BOOM_INLINE float GetTime() const { return m_Time; }
+        BOOM_INLINE size_t GetClipCount() const { return m_Clips.size(); }
+        BOOM_INLINE const AnimationClip* GetClip(size_t index) const
+        {
+            return (index < m_Clips.size()) ? m_Clips[index].get() : nullptr;
+        }
+
+        BOOM_INLINE size_t GetSequence() const { return GetCurrentClip(); }
+        BOOM_INLINE void SetSequence(size_t index) { PlayClip(index); }
+
+    private:
+        BOOM_INLINE void GetPreviousAndNextFrames(
+            const std::vector<KeyFrame>& keys,
+            KeyFrame& prev,
+            KeyFrame& next) const
+        {
+            if (keys.size() < 2)
+            {
+                if (!keys.empty()) prev = next = keys[0];
+                return;
+            }
+
+            for (uint32_t i = 1; i < keys.size(); i++)
+            {
+                if (m_Time < keys[i].timeStamp)
+                {
+                    prev = keys[i - 1];
+                    next = keys[i];
+                    return;
+                }
+            }
+
+            // If we're past the last keyframe (shouldn't happen with fmod)
+            prev = next = keys.back();
+        }
+
+        BOOM_INLINE glm::mat4 Interpolate(const KeyFrame& prev, const KeyFrame& next, float progression)
+        {
+            return glm::translate(glm::mat4(1.0f), glm::mix(prev.position, next.position, progression)) *
+                glm::toMat4(glm::normalize(glm::slerp(prev.rotation, next.rotation, progression))) *
+                glm::scale(glm::mat4(1.0f), glm::mix(prev.scale, next.scale, progression));
+        }
+
         BOOM_INLINE void UpdateJoints(Joint& joint, const glm::mat4& parentTransform)
         {
-            KeyFrame prev, next;
+            glm::mat4 localTransform = glm::mat4(1.0f); // Default to identity
 
-            // get previous and next frames
-            GetPreviousAndNextFrames(joint, prev, next);
+            // Get the current animation clip
+            if (m_CurrentClip < m_Clips.size())
+            {
+                const AnimationClip* clip = m_Clips[m_CurrentClip].get();
 
-            // compute interpolation factor
-            float progression = (m_Time - prev.timeStamp) / (next.timeStamp - prev.timeStamp);
+                // Look up this joint's track in the current animation
+                const auto* keys = clip->GetTrack(joint.name);
 
-            // compute joint new transform
-            glm::mat4 transform = parentTransform * Interpolate(prev, next, progression);
+                if (keys && keys->size() >= 2)
+                {
+                    KeyFrame prev, next;
+                    GetPreviousAndNextFrames(*keys, prev, next);
 
-            // update joint transform
-            m_Transforms[joint.index] = (transform * m_GlobalTransform * joint.offset);
+                    float progression = 0.0f;
+                    float dt = next.timeStamp - prev.timeStamp;
+                    if (dt > 0.0f)
+                    {
+                        progression = (m_Time - prev.timeStamp) / dt;
+                    }
 
-            // update children joints
-            for (auto& child : joint.children) {
-                UpdateJoints(child, transform);
+                    localTransform = Interpolate(prev, next, progression);
+                }
+                else if (keys && keys->size() == 1)
+                {
+                    // Only one keyframe - use it as static pose
+                    const KeyFrame& key = (*keys)[0];
+                    localTransform = glm::translate(glm::mat4(1.0f), key.position) *
+                        glm::toMat4(key.rotation) *
+                        glm::scale(glm::mat4(1.0f), key.scale);
+                }
+            }
+
+            // Combine with parent transform
+            glm::mat4 worldTransform = parentTransform * localTransform;
+
+            // Update joint transform
+            m_Transforms[joint.index] = worldTransform * m_GlobalTransform * joint.offset;
+
+            // Update children
+            for (auto& child : joint.children)
+            {
+                UpdateJoints(child, worldTransform);
             }
         }
 
-public:
+    public:
+        // For cloning
         BOOM_INLINE std::shared_ptr<Animator> Clone() const
         {
             auto clone = std::make_shared<Animator>();
             clone->m_GlobalTransform = m_GlobalTransform;
-            clone->m_Animations = m_Animations;
+            clone->m_Clips = m_Clips; // Shared ownership of clips
             clone->m_Root = m_Root;
             clone->m_Transforms.resize(m_Transforms.size());
-            clone->m_Sequence = m_Sequence;
+            clone->m_CurrentClip = m_CurrentClip;
             clone->m_Time = m_Time;
             return clone;
         }
 
+        BOOM_INLINE void SetTime(float time)
+        {
+            m_Time = time;
+            if (m_CurrentClip < m_Clips.size())
+            {
+                // Clamp to clip duration
+                m_Time = std::min(m_Time, m_Clips[m_CurrentClip]->duration);
+            }
+        }
+
+        BOOM_INLINE void LoadAnimationFromFile(const std::string& filepath, const std::string& clipName = "")
+        {
+            // Use Assimp to load just the animation data
+            Assimp::Importer importer;
+            const aiScene* ai_scene = importer.ReadFile(
+                (CONSTANTS::MODELS_LOCATION.data() + filepath).c_str(),
+                aiProcess_LimitBoneWeights
+            );
+
+            if (!ai_scene || !ai_scene->mAnimations || ai_scene->mNumAnimations == 0)
+            {
+                BOOM_ERROR("Failed to load animation from: {}", filepath);
+                return;
+            }
+
+            // Load the first animation from the file
+            auto ai_anim = ai_scene->mAnimations[0];
+
+            auto clip = std::make_shared<AnimationClip>();
+            clip->name = clipName.empty() ? ai_anim->mName.C_Str() : clipName;
+            clip->duration = (float)ai_anim->mDuration;
+            clip->ticksPerSecond = (float)ai_anim->mTicksPerSecond;
+
+            // Parse animation channels
+            for (uint32_t j = 0; j < ai_anim->mNumChannels; j++)
+            {
+                aiNodeAnim* ai_channel = ai_anim->mChannels[j];
+                std::string jointName(ai_channel->mNodeName.C_Str());
+
+                std::vector<KeyFrame>& track = clip->tracks[jointName];
+
+                uint32_t maxKeys = std::max({
+                    ai_channel->mNumPositionKeys,
+                    ai_channel->mNumRotationKeys,
+                    ai_channel->mNumScalingKeys
+                    });
+
+                track.reserve(maxKeys);
+
+                for (uint32_t k = 0; k < maxKeys; k++)
+                {
+                    KeyFrame key;
+
+                    if (k < ai_channel->mNumPositionKeys)
+                    {
+                        key.position = AssimpToVec3(ai_channel->mPositionKeys[k].mValue);
+                        key.timeStamp = (float)ai_channel->mPositionKeys[k].mTime;
+                    }
+                    if (k < ai_channel->mNumRotationKeys)
+                    {
+                        key.rotation = AssimpToQuat(ai_channel->mRotationKeys[k].mValue);
+                    }
+                    if (k < ai_channel->mNumScalingKeys)
+                    {
+                        key.scale = AssimpToVec3(ai_channel->mScalingKeys[k].mValue);
+                    }
+
+                    track.push_back(key);
+                }
+            }
+
+            m_Clips.push_back(clip);
+            BOOM_INFO("Loaded animation '{}' from {} - Duration: {:.2f}s",
+                clip->name, filepath, clip->duration);
+        }
+
     private:
-        std::vector<Animation> m_Animations{};   //!< Animation clips (durations, speeds, joint keys).
-        std::vector<glm::mat4> m_Transforms{};   //!< Final per-joint transforms (skinning matrices).
-        glm::mat4 m_GlobalTransform{};           //!< Global/model transform applied to all joints.
-        friend struct SkeletalModel;           //!< Grants SkeletalModel access to internals.
-        int32_t m_Sequence = 0;                //!< index of the active animation clip.
-        float m_Time = 0.0f;                   //!< Local time within the active clip (seconds, wrapped).
-        Joint m_Root;                          //!< Skeleton root joint.
-	};
+        std::vector<std::shared_ptr<AnimationClip>> m_Clips{}; // Now we store clips, not raw Animation structs
+        std::vector<glm::mat4> m_Transforms{};
+        glm::mat4 m_GlobalTransform{};
+        Joint m_Root;
+        size_t m_CurrentClip = 0;
+        float m_Time = 0.0f;
+
+        friend struct SkeletalModel;
+    };
 }
