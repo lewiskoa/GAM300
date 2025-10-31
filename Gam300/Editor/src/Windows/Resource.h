@@ -15,6 +15,15 @@ struct ResourceWindow : IWidget {
 			if (ImGui::Button("Save All Assets", { 128, 20 })) {
 				SaveAssets();
 			}
+			ImGui::SameLine();
+			static bool isPopup{};
+			if (ImGui::Button("Create Empty Material", { 140, 20 })) {
+				isPopup = true;
+			}
+			if (isPopup) {
+				ImGui::OpenPopup("Input Material Name");
+				isPopup = CreateEmptyMaterial();
+			}
 
 			static int currentType{ static_cast<int>(AssetType::UNKNOWN) }; //unknown will show all assets
 			ImGui::Combo("Filter", &currentType, TYPE_NAMES, IM_ARRAYSIZE(TYPE_NAMES));
@@ -96,8 +105,58 @@ private:
 		BOOM_INFO("[Assets] Successfully saved assets");
 		return true;
 	}
+
+	BOOM_INLINE bool CreateEmptyMaterial() {
+		static char buff[CONSTANTS::CHAR_BUFFER_SIZE] = "New Material";
+		
+		if (ImGui::BeginPopupModal("Material Name", nullptr)) {
+			ImGui::InputText("Name", buff, sizeof(buff));
+			ImGui::Separator();
+			
+			bool shouldClose{};
+
+			if (ImGui::Button("Close")) { //cancel operation
+				ImGui::CloseCurrentPopup();
+				shouldClose = true;
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("OK")) { //create material operation
+				ImGui::CloseCurrentPopup();
+				std::string name{ buff };
+				HandleConflictName(name);
+				context->GetAssetRegistry().AddMaterial(RandomU64(), name);
+				shouldClose = true;
+			}
+
+			ImGui::EndPopup();
+			return shouldClose;
+		}
+
+		return true;
+	}
+
+	// Handle conflict: append a number to filename (e.g., "file (1).txt")
+	BOOM_INLINE void HandleConflictName(std::string& name) {
+		int counter{ 1 };
+		bool duplicateName{true};
+		std::string baseName{name};
+		while (duplicateName) {
+			duplicateName = false;
+			context->AssetTypeView<MaterialAsset>([&baseName, &name, &counter, &duplicateName](MaterialAsset* mat) {
+				if (mat->name == name) {
+					baseName = name + " (" + std::to_string(counter) + ")";
+					++counter;
+					duplicateName = true;
+					return;
+				}
+			});
+		}
+		name = baseName;
+	}
 private:
 	Texture2D iconImage;
 	ImTextureID icon;
 	AssetID selected;
+
+	bool showNamePopup{};
 };

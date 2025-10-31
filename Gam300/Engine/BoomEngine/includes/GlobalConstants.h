@@ -9,6 +9,7 @@ namespace Boom {
 	using Vec3 = glm::vec3;
 
 	namespace CONSTANTS {
+		int const CHAR_BUFFER_SIZE{ 256 };
 		constexpr std::tuple<float, float, float, float> DEFAULT_BACKGROUND_COLOR = {.3f, .3f, .3f, 1.f};
 		constexpr std::string_view SHADERS_LOCATION = "Resources/Shaders/";
 		constexpr std::string_view MODELS_LOCATION = "Resources/Models/";

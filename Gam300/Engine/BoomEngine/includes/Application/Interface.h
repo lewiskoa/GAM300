@@ -150,11 +150,18 @@ namespace Boom
         BOOM_INLINE void AssetTextureView(Task&& task) {
             auto& map = m_Context->assets->GetMap<TextureAsset>();
             for (auto& [uid, asset] : map) {
-                if (uid != EMPTY_ASSET) {
-                    TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset.get()) };
-                    if (!tex) continue;
-                    task(tex);
-                }
+                TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset.get()) };
+                if (!tex) continue;
+                task(tex);
+            }
+        }
+
+        template<class AssetType, class Task>
+        BOOM_INLINE void AssetTypeView(Task&& task) {
+            auto& map = m_Context->assets->GetMap<AssetType>();
+            for (auto& [uid, asset] : map) {
+                AssetType* customAsset{ dynamic_cast<AssetType*>(asset.get()) };
+                task(customAsset); //_Asset*
             }
         }
 
