@@ -9,8 +9,9 @@
 #include "Auxiliaries/PrefabUtility.h"
 #include "Scripting/ScriptAPI.h"
 #include "Scripting/ScriptRuntime.h"
-#include "Graphics/Shaders/DebugLines.h"
+#include "../Graphics/Utilities/Culling.h"
 #include "Input/CameraManager.h"
+#include "Graphics/Shaders/DebugLines.h"
 
 namespace Boom
 {
@@ -50,7 +51,6 @@ namespace Boom
         bool m_ShouldExit = false;  // Flag for graceful shutdown
         float m_TestRot = 0.0f;
 
-        // NEW: PhysX debug visualization toggle
         bool m_PhysDebugViz = true;
 
         // Temporary for showing physics
@@ -79,6 +79,7 @@ namespace Boom
                 m_Context->window->SetWindowTitle(e.title);
                 }
             );
+
         }
 
         /**
@@ -182,9 +183,11 @@ namespace Boom
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
             LoadScene("default");
+
             CameraController camera(
                 m_Context->window.get()
             );
+
             ////init skybox
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
                 SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
@@ -193,14 +196,10 @@ namespace Boom
 
             CreateScriptInstancesFromScene();
 
-
-
             m_DebugLinesShader = std::make_unique<Boom::DebugLinesShader>("debug_lines.glsl");
-
-            // NEW: turn on PhysX debug visualization once at startup
             m_Context->physics->EnableDebugVisualization(m_PhysDebugViz, 1.0f);
 
-            // temp input for mouse motion
+            //temp input for mouse motion
             glm::dvec2 curMP{};
             glm::dvec2 prevMP{};
             while (m_Context->window->PollEvents() && !m_ShouldExit)
@@ -248,7 +247,7 @@ namespace Boom
                     prevF10 = f10Pressed;
                 }
 
-                // ✨ NEW: Add this block to test SetRigidBodyType with F11
+				//   F11 for testing change of rigid body type
                 {
                     static bool prevF11 = false;
                     bool f11Pressed = glfwGetKey(engineWindow.get(), GLFW_KEY_F11) == GLFW_PRESS;
@@ -297,10 +296,32 @@ namespace Boom
                 }
                 // When paused, m_TestRot stays at its current value
 
-                // ... (The commented out sphere timer logic remains here) ...
+                // Update sphere timer
+                //m_SphereTimer += m_Context->DeltaTime;
+
+                //if (m_SphereTimer >= m_SphereResetInterval) {
+                //    // Find the sphere entity by name (or UID)
+                //    EnttView<Entity, InfoComponent, TransformComponent>([this](auto entity, InfoComponent& info, TransformComponent& transform) {
+                //        if (info.name == "Sphere") {
+                //            transform.transform.translate = m_SphereInitialPosition;
+                //        }
+                //        });
+                //    m_SphereTimer = 0.0;
+                //}
+
 
                 //lights (always set up)
-                // ... (Your light setup loops remain here) ...
+               /* m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
+                m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
+                m_Context->renderer->SetPointLightCount(0);
+
+                glm::vec3 testDir{ -.7f, -.3f, .3f };
+                m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
+                m_Context->renderer->SetDirectionalLightCount(1);
+
+                m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
+                m_Context->renderer->SetSpotLightCount(0);*/
+
                 {
                     int points = 0;
                     EnttView<Entity, PointLightComponent, TransformComponent>(
@@ -329,18 +350,38 @@ namespace Boom
                     m_Context->renderer->SetSpotLightCount(spots);
                 }
 
-
                 //temp input for mouse motion
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
-
                 camera.update(static_cast<float>(m_Context->DeltaTime));
 
-                // ADD: Per-frame debug view/proj used by debug line renderer
                 glm::mat4 dbgView(1.0f);
                 glm::mat4 dbgProj(1.0f);
                 glm::vec3 dbgCamPos(0.0f);
-
                 //camera (always set up, but rotation freezes when paused)
+                //EnttView<Entity, CameraComponent>([this, &curMP, &prevMP](auto entity, CameraComponent& comp) {
+                //    //Transform3D& transform{ entity.template Get<TransformComponent>().transform };
+
+                //    ////get dir vector of current camera
+                //    //transform.rotate.x += m_Context->window->camRot.x;
+                //    //transform.rotate.y += m_Context->window->camRot.y;
+                //    //glm::quat quat{ glm::radians(transform.rotate) };
+                //    //glm::vec3 dir{ quat * m_Context->window->camMoveDir };
+                //    //transform.translate += dir;
+
+                //    //camera.attachCamera(&comp.camera);
+                //    //if (curMP == prevMP) {
+                //    //    m_Context->window->camRot = {};
+                //    //    if (m_Context->window->isMiddleClickDown)
+                //    //        m_Context->window->camMoveDir = {};
+                //    //}
+
+                //    //m_Context->renderer->SetCamera(comp.camera, transform);
+
+                //});
+
+
+
+
                 EnttView<Entity, CameraComponent>([this, &curMP, &prevMP, &dbgView, &dbgProj, &dbgCamPos](auto entity, CameraComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
 
@@ -365,9 +406,9 @@ namespace Boom
                     dbgProj = comp.camera.Projection(m_Context->renderer->Aspect());
                     dbgCamPos = transform.translate;
                     });
-                prevMP = curMP;
-
                 {
+                    prevMP = curMP;
+
                     EnttView<Entity, TransformComponent, RigidBodyComponent>([this](auto entity, TransformComponent& tc, RigidBodyComponent& rbc) {
                         // Check if the current scale is different from the stored scale
                         if (tc.transform.scale != rbc.RigidBody.previousScale)
@@ -409,6 +450,7 @@ namespace Boom
                     }
 
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
+                    //ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
 
                     if (!debugModelsPrinted && renderCount < 5) {
                         BOOM_INFO("[Render] Transform position: ({}, {}, {}), scale: ({}, {}, {})",
@@ -447,9 +489,6 @@ namespace Boom
                     if (renderCount >= 5) debugModelsPrinted = true;
                     });
 
-                // =========================================================================
-                // CORRECTED SECTION: Physics debug drawing is now here, outside the model loop
-                // =========================================================================
                 if (m_PhysDebugViz && m_DebugLinesShader)
                 {
                     m_Context->physics->CollectDebugLines(m_PhysLinesCPU);
@@ -505,6 +544,7 @@ namespace Boom
                 //draw the updated frame
                 m_Context->renderer->ShowFrame(showFrame);
 
+
                 for (auto layer : m_Context->layers)
                 {
                     layer->OnUpdate();
@@ -513,8 +553,6 @@ namespace Boom
                 if (m_AppState == ApplicationState::RUNNING)
                 {
                     // Run physics simulation only when running
-                    // NOTE: I noticed you call RunPhysicsSimulation twice, I've left it as is,
-                    // but you might want to ensure it only runs once per frame.
                     RunPhysicsSimulation();
                 }
 
@@ -522,16 +560,16 @@ namespace Boom
                 m_Context->profiler.EndFrame();
             }
         }
-        
+
 
 
 
         /**
-     * @brief Saves the current scene and assets to files
-     * @param sceneName The name of the scene (without extension)
-     * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
-     * @return true if save was successful, false otherwise
-     */
+         * @brief Saves the current scene and assets to files
+         * @param sceneName The name of the scene (without extension)
+         * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
+         * @return true if save was successful, false otherwise
+         */
         BOOM_INLINE bool SaveScene(const std::string& sceneName, const std::string& scenePath = "Scenes/")
         {
             //Try blocks cause crashed in release mode. Need to find new alternative
@@ -622,14 +660,11 @@ namespace Boom
         BOOM_INLINE bool IsSceneLoaded() const { return m_SceneLoaded; }
 
     private:
-
         std::unique_ptr<Boom::DebugLinesShader> m_DebugLinesShader;
         std::vector<Boom::PhysicsContext::DebugLine> m_PhysLinesCPU;
+        bool m_DebugRigidBodiesOnly = true;
         char m_CurrentScenePath[512] = "\0";
         bool m_SceneLoaded = false;
-
-        // Toggle: draw only entities that have RigidBodyComponent (+ColliderComponent)
-        bool m_DebugRigidBodiesOnly = true; // F10 toggles this at runtime
 
         /**
         * @brief Cleans up the current scene and physics actors
@@ -664,7 +699,9 @@ namespace Boom
 #endif
 
             // Reset asset registry (keeping EMPTY_ASSET sentinels)
-            * m_Context->assets = AssetRegistry();
+
+            //* m_Context->assets = AssetRegistry();
+
 
             // RESTORE PREFABS after registry reset
             for (auto& [uid, asset] : savedPrefabs) {
@@ -778,7 +815,7 @@ namespace Boom
 
                     const physx::PxTransform pose(p, q);
                     dyn->setGlobalPose(pose);
-                    dyn->setLinearVelocity(physx::PxVec3(2.f, 0.f, 0.f));
+                    dyn->setLinearVelocity(physx::PxVec3(0.f, 0.f, 0.f));
                     dyn->setAngularVelocity(physx::PxVec3(0.f, 0.f, 0.f));
 
                     // Mirror to ECS transform immediately (prevents 1-frame hitch)
