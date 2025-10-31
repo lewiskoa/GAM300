@@ -205,14 +205,20 @@ namespace Boom
                     }
                     catch (const YAML::Exception& e)
                     {
+#ifdef DEBUG
                         //BOOM_ERROR("[DataSerializer] YAML error while parsing asset: {}", e.what());
                         BOOM_ERROR("[DataSerializer] YAML error while parsing asset: {}", std::string(e.what()));
+#endif // DEBUG
+						std::cout << e.what() << std::endl;
                         failCount++;
                     }
                     catch (const std::exception& e)
                     {
+#ifdef DEBUG
                         //BOOM_ERROR("[DataSerializer] Error while loading asset: {}", e.what());
                         BOOM_ERROR("[DataSerializer] Error while loading asset: {}", std::string(e.what()));
+#endif // DEBUG
+						std::cout << e.what() << std::endl;
                         failCount++;
                     }
                     catch (...)
@@ -227,13 +233,19 @@ namespace Boom
             }
             catch (const YAML::Exception& e)
             {
+#ifdef DEBUG
                 //BOOM_ERROR("[DataSerializer] Failed to load YAML file '{}': {}", path, e.what());
                 BOOM_ERROR("[DataSerializer] Failed to load YAML file '{}': {}", path, std::string(e.what()));
+#endif // DEBUG
+				std::cout << e.what() << std::endl;
             }
             catch (const std::exception& e)
             {
+#ifdef DEBUG
                 //BOOM_ERROR("[DataSerializer] Error loading asset file '{}': {}", path, e.what());
                 BOOM_ERROR("[DataSerializer] Error loading asset file '{}': {}", path, std::string(e.what()));
+#endif // DEBUG
+                std::cout << e.what() << std::endl;
             }
         }
     };

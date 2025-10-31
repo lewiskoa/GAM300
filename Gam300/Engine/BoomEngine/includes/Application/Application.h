@@ -317,23 +317,35 @@ namespace Boom
 
                         if (glfwGetKey(engineWindow.get(), GLFW_KEY_1) == GLFW_PRESS && animator->GetClipCount() > 0) {
                             animator->PlayClip(0);
+#ifdef DEBUG
                             const auto* clip = animator->GetClip(0);
                             if (clip) BOOM_INFO("Switched to [0]: '{}'", clip->name);
+#endif // DEBUG
+
                         }
                         if (glfwGetKey(engineWindow.get(), GLFW_KEY_2) == GLFW_PRESS && animator->GetClipCount() > 1) {
                             animator->PlayClip(1);
+                            
+#ifdef DEBUG
                             const auto* clip = animator->GetClip(1);
                             if (clip) BOOM_INFO("Switched to [1]: '{}'", clip->name);
+#endif // DEBUG
+
                         }
                         if (glfwGetKey(engineWindow.get(), GLFW_KEY_3) == GLFW_PRESS && animator->GetClipCount() > 2) {
                             animator->PlayClip(2);
+                            
+#ifdef DEBUG
                             const auto* clip = animator->GetClip(2);
                             if (clip) BOOM_INFO("Switched to [2]: '{}'", clip->name);
+#endif // DEBUG
                         }
                         if (glfwGetKey(engineWindow.get(), GLFW_KEY_4) == GLFW_PRESS && animator->GetClipCount() > 3) {
                             animator->PlayClip(3);
+#ifdef DEBUG
                             const auto* clip = animator->GetClip(3);
-                            if (clip) BOOM_INFO("Switched to [3]: '{}'", clip->name);
+                            if (clip) BOOM_INFO("Switched to [3]: '{}'", clip->name); 
+#endif // DEBUG
                         }
 
                         // Press I for info about current animation
@@ -344,10 +356,14 @@ namespace Boom
                             BOOM_INFO("Current Clip: {} / {}", animator->GetCurrentClip(), animator->GetClipCount() - 1);
                             const auto* clip = animator->GetClip(animator->GetCurrentClip());
                             if (clip) {
+#ifdef DEBUG
+
                                 BOOM_INFO("  Name: '{}'", clip->name);
                                 BOOM_INFO("  Duration: {:.2f}s", clip->duration);
                                 BOOM_INFO("  Current Time: {:.2f}s", animator->GetTime());
                                 BOOM_INFO("  Tracks: {}", clip->tracks.size());
+#endif // DEBUG
+
                             }
                         }
                         static bool lastIState = iPressed;

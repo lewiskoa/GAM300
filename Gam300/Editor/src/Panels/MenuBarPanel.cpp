@@ -140,7 +140,7 @@ namespace EditorUI {
         {
             // Toggle your renderer's debug draw flag by *reference* if available.
             if (m.ctx && m.ctx->renderer) {
-                ImGui::MenuItem("Debug Draw", nullptr, &m.ctx->renderer->IsDrawDebugMode());
+                ImGui::MenuItem("Debug Draw", nullptr, &m.ctx->renderer->isDrawDebugMode);
             }
             ImGui::EndMenu();
         }
