@@ -203,6 +203,7 @@ namespace EditorUI
 
     void ConsolePanel::DebugConsoleState() const
     {
+#ifdef DEBUG
         BOOM_INFO("=== ConsolePanel Debug State ===");
         BOOM_INFO("Lines: {}", (int)m_Lines.size());
         BOOM_INFO("MaxLines: {}", m_MaxLines);
@@ -211,5 +212,6 @@ namespace EditorUI
         BOOM_INFO("LogMouseMoves: {}", m_LogMouseMoves);
         BOOM_INFO("LogMouseClicks: {}", m_LogMouseClicks);
         BOOM_INFO("=== End Debug State ===");
+#endif // DEBUG
     }
 } // namespace EditorUI

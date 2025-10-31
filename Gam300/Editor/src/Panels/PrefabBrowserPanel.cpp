@@ -336,7 +336,10 @@ namespace EditorUI {
                     PrefabUtility::LoadPrefab(*m_Ctx->assets, p.string());
                 }
                 catch (const std::exception& ex) {
+#ifdef DEBUG
                     BOOM_ERROR("[Editor] Failed to load prefab '{}': {}", p.string(), ex.what());
+#endif // DEBUG
+					std::cerr << "Error loading prefab '" << p.string() << "': " << ex.what() << std::endl;
                 }
             }
         }

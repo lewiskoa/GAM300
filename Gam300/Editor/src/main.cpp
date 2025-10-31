@@ -114,7 +114,10 @@ int32_t main()
     }
     catch (const std::exception& e)
     {
+#ifdef DEBUG
         BOOM_ERROR("Application failed: {}", e.what());
+#endif // DEBUG
+		std::cerr << "Application failed: " << e.what() << std::endl;   
         return -1;
     }
 

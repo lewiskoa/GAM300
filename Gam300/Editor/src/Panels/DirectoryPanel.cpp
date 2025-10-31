@@ -250,7 +250,11 @@ namespace EditorUI {
             }
             catch (const std::filesystem::filesystem_error& e)
             {
-                BOOM_ERROR("DirectoryPanel::CopyFilesToDirectory: {}", e.what());
+#ifdef DEBUG
+            BOOM_ERROR("DirectoryPanel::CopyFilesToDirectory: {}", e.what());
+#endif // DEBUG
+
+			std::cout << "Error copying file: " << e.what() << std::endl;
             }
         }
         rootNode = BuildDirectoryTree();
@@ -269,7 +273,11 @@ namespace EditorUI {
         }
         catch (const std::filesystem::filesystem_error& e)
         {
+#ifdef DEBUG
             BOOM_ERROR("DirectoryPanel::DeletePath: {}", e.what());
+#endif // DEBUG
+			std::cout << "Error deleting path: " << e.what() << std::endl;
+            
             return false;
         }
     }
