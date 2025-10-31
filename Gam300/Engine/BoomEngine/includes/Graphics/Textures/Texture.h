@@ -46,14 +46,15 @@ namespace Boom {
 		bool isGamma;
 
 	public:
-		/*
+		
 		XPROPERTY_DEF(
 			"Texture", Texture2D,
+			obj_member<"CompileAsCompressed", &Texture2D::isCompileAsCompressed>,
 			obj_member<"quality", &Texture2D::quality>,
 			obj_member<"alphaThreshold", &Texture2D::alphaThreshold>,
 			obj_member<"mipLevel", &Texture2D::mipLevel>,
 			obj_member<"isGamma", &Texture2D::isGamma>
-		)*/
+		)
 	};
 
 	using Texture = std::shared_ptr<Texture2D>;

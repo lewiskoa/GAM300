@@ -56,8 +56,8 @@ namespace Boom {
 		TextureAsset() { type = AssetType::TEXTURE; }
 
 		 XPROPERTY_DEF(
-		 	"TextureAsset", TextureAsset
-			 //obj_member<"Data", &TextureAsset::data>
+		 	"TextureAsset", TextureAsset,
+			 obj_member<"Data", &TextureAsset::data>
 		 )
 	};
 
