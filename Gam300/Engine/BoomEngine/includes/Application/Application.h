@@ -10,6 +10,7 @@
 #include "Scripting/ScriptAPI.h"
 #include "Scripting/ScriptRuntime.h"
 #include "Graphics/Shaders/DebugLines.h"
+#include "Input/CameraManager.h"
 
 namespace Boom
 {
@@ -181,7 +182,9 @@ namespace Boom
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
             LoadScene("default");
-
+            CameraController camera(
+                m_Context->window.get()
+            );
             ////init skybox
             EnttView<Entity, SkyboxComponent>([this](auto, auto& comp) {
                 SkyboxAsset& skybox{ m_Context->assets->Get<SkyboxAsset>(comp.skyboxID) };
@@ -189,6 +192,8 @@ namespace Boom
                 });
 
             CreateScriptInstancesFromScene();
+
+
 
             m_DebugLinesShader = std::make_unique<Boom::DebugLinesShader>("debug_lines.glsl");
 
@@ -201,7 +206,19 @@ namespace Boom
             while (m_Context->window->PollEvents() && !m_ShouldExit)
             {
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
+                Camera3D* activeCam = nullptr;
+                EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
+                    if (!activeCam && comp.camera.cameraType == Camera3D::CameraType::Main)
+                        activeCam = &comp.camera;
+                    });
+                if (!activeCam) { // fallback: first camera
+                    EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
+                        if (!activeCam) activeCam = &comp.camera;
+                        });
+                }
 
+                // 2) Attach BEFORE update so scroll/pan use this camera's FOV in this frame
+                if (activeCam) camera.attachCamera(activeCam);
                 glfwMakeContextCurrent(engineWindow.get());
 
                 // NEW: runtime toggle with F9
@@ -315,6 +332,8 @@ namespace Boom
 
                 //temp input for mouse motion
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
+
+                camera.update(static_cast<float>(m_Context->DeltaTime));
 
                 // ADD: Per-frame debug view/proj used by debug line renderer
                 glm::mat4 dbgView(1.0f);
