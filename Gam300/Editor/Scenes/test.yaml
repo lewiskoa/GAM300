@@ -4,64 +4,69 @@ ENTITIES:
   - {}
   - {}
   - {}
+  - {}
   - InfoComponent:
       Parent: 0
       Name: Spot Light
       UID: 12363776012929465708
     TransformComponent:
       Transform:
-        Translate: [2, 2, 2]
-        Rotate: [0, 0, 0]
+        Translate: [0.0599999987, -4.23000002, 0.879999995]
+        Rotate: [0.0799999982, 0.150000006, 0]
         Scale: [1, 1, 1]
     SpotLightComponent:
       Light:
-        Radiance: [1, 1, 1]
-        Intensity: 3.5
+        Radiance: [1.24000001, 1.40999997, 1.22000003]
+        Intensity: 9.60000038
         FallOff: 1.05592418
         CutOff: 0.34906584
   - InfoComponent:
       Parent: 0
-      Name: Directional Light
-      UID: 16395980114807373968
+      Name: Ball 1
+      UID: 6042260349840611439
     TransformComponent:
       Transform:
-        Translate: [0, 0, 0]
-        Rotate: [6, 0, 0]
+        Translate: [0, 1.77999997, 0]
+        Rotate: [0, 0, 0]
         Scale: [1, 1, 1]
-    DirectLightComponent:
-      Light:
-        Radiance: [1, 1, 1]
-        Intensity: 2
+    ModelComponent:
+      ModelID: 11565258723769024311
+      MaterialID: 11573253777835523025
+      ModelName: sphere
+      MaterialName: ""
+      ModelSource: Resources/Models/walking.fbx
+      MaterialSource: Marble
   - InfoComponent:
       Parent: 0
       Name: Point Light
       UID: 5315588240363654174
     TransformComponent:
       Transform:
-        Translate: [0.389999986, 0.0199999996, 1.10000002]
+        Translate: [0, 0.5, 0]
         Rotate: [0, 0, 0]
         Scale: [1, 1, 1]
     PointLightComponent:
       Light:
-        Radiance: [1, 1, 1]
-        Intensity: 2.4000001
+        Radiance: [1, 0.899999976, 0.699999988]
+        Intensity: 10.9899998
+  - {}
   - InfoComponent:
       Parent: 0
       Name: Camera
       UID: 9201024860084647067
     TransformComponent:
       Transform:
-        Translate: [2.30496955, 0.35743022, 0.921902597]
-        Rotate: [-1.3125, -275.1875, 0]
+        Translate: [-3.45438051, -0.387372822, 1.78994715]
+        Rotate: [6.0625, -70.5, 0]
         Scale: [1, 1, 1]
     CameraComponent:
       Camera:
         NearPlane: 0.300000012
         FarPlane: 1000
-        FOV: 65
+        FOV: 60
   - InfoComponent:
       Parent: 0
-      Name: Entity
+      Name: Skybox
       UID: 3009173759421305309
     TransformComponent:
       Transform:
@@ -70,45 +75,28 @@ ENTITIES:
         Scale: [1, 1, 1]
     SkyboxComponent:
       SkyboxID: 10427935764841817814
+  - {}
+  - {}
+  - {}
+  - {}
   - InfoComponent:
       Parent: 0
       Name: Model walk
       UID: 18299148976802030936
     TransformComponent:
       Transform:
-        Translate: [0, -1.5, 0]
+        Translate: [0, -1.16999996, -1.40999997]
         Rotate: [0, 0, 0]
         Scale: [0.00999999978, 0.00999999978, 0.00999999978]
     ModelComponent:
-      ModelID: 12185416543001335231
+      ModelID: 12369161784125194221
       MaterialID: 11573253777835523025
       ModelName: ""
       MaterialName: ""
-      ModelSource: Resources/Models/walking.fbx
+      ModelSource: walking.fbx
       MaterialSource: Marble
     AnimatorComponent:
       Sequence: 0
-      Time: 0.369889706
-  - InfoComponent:
-      Parent: 0
-      Name: Shere
-      UID: 6042260349840611439
-    TransformComponent:
-      Transform:
-        Translate: [0, 1, 0]
-        Rotate: [0, 0, 0]
-        Scale: [1, 1, 1]
-    ModelComponent:
-      ModelID: 6147709962160563775
-      MaterialID: 11573253777835523025
-      ModelName: sphere
-      MaterialName: ""
-      ModelSource: Resources/Models/sphere.fbx
-      MaterialSource: Marble
-  - {}
-  - {}
-  - {}
-  - {}
-  - {}
+      Time: 28.698164
   - {}
   - {}
