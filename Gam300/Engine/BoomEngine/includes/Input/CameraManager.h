@@ -9,7 +9,7 @@ namespace Boom {
     public:
         struct Config {
             float mouseSensitivityX = 0.25f;
-            float mouseSensitivityY = 0.25;
+            float mouseSensitivityY = 0.25f;
             float multiplierStep = 0.01f;
             float minFov = CONSTANTS::MIN_FOV;
             float maxFov = CONSTANTS::MAX_FOV;
@@ -45,7 +45,8 @@ namespace Boom {
             }
             if (mmbPress) m_prevPanPos = curPos;
 
-            glm::vec2 md = rmb ? glm::vec2(curPos - m_prevLookPos) : glm::vec2(0.0f);
+           glm::vec2 md = input.mouseDeltaLast();
+           if (rmbPress) md = {};
             m_prevLookPos = curPos;
             glm::vec2 mdPan = middleMouse ? glm::vec2(curPos - m_prevPanPos) : glm::vec2(0.0f);
             if (glm::length2(mdPan) < 1.0f) mdPan = {};
@@ -85,8 +86,8 @@ namespace Boom {
             }
             else if (canUse) {
                 // Look (RMB) using the same md
-                m_app->camRot.y -= md.x *( m_cfg.mouseSensitivityX*CONSTANTS::CAM_PAN_SPEED);
-                m_app->camRot.x -= md.y *( m_cfg.mouseSensitivityY*CONSTANTS::CAM_PAN_SPEED);
+                m_app->camRot.y = -md.x * (m_cfg.mouseSensitivityX * CONSTANTS::CAM_PAN_SPEED);
+                m_app->camRot.x = -md.y * (m_cfg.mouseSensitivityY * CONSTANTS::CAM_PAN_SPEED);
                 if (m_cfg.clampPitch)
                     m_app->camRot.x = std::clamp(m_app->camRot.x, m_cfg.minPitchDeg, m_cfg.maxPitchDeg);
 
@@ -108,6 +109,7 @@ namespace Boom {
             else {
                 // Only clear when neither panning nor using look/move
                 m_app->camMoveDir = {};
+                m_app->camRot = {};
             }
 
             // Scroll: speed multiplier and FOV
@@ -133,6 +135,6 @@ namespace Boom {
         bool        m_prevRmb = false;        // last-frame RMB state
         glm::dvec2  m_prevLookPos = {};           // last cursor pos used for look
         glm::dvec2  m_prevPanPos{};
-        float panFocusDist = 5.f;//adjust this if the pan dist is slow
+        float panFocusDist = 1.0f;//adjust this if the pan dist is slow
     };
 }

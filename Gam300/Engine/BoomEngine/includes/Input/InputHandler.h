@@ -17,6 +17,7 @@ namespace Boom {
             m_prev = m_cur;
             m_mouseDelta = { 0.0f, 0.0f };
             m_scrollDelta = { 0.0f, 0.0f };
+            m_lastMouseDelta = { 0.0f,0.0f };
             m_firstMouseThisFrame = true; // next cursor event seeds position
         }
 
