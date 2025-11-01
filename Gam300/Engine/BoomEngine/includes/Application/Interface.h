@@ -89,10 +89,7 @@ namespace Boom
             return m_Context->window->Handle();
         }
 
-        BOOM_INLINE uint32_t GetSceneFrame()
-        {
-            return m_Context->renderer->GetFrame();
-        }
+        
 
     /////////////////////////////////////
     //EventSystem Manipulation Logistics
@@ -214,12 +211,8 @@ namespace Boom
             }
         }
 
-        BOOM_INLINE double GetDeltaTime() const noexcept { return m_Context->DeltaTime; }
+     
 
-        BOOM_INLINE std::shared_ptr<GLFWwindow> GetWindowHandle()
-        {
-            return m_Context->window->Handle();
-        }
 
         BOOM_INLINE uint32_t GetSceneFrame()
         {
