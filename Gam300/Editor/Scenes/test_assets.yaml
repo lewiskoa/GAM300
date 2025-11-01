@@ -117,7 +117,7 @@ ASSETS:
   - Type: TEXTURE
     UID: 356508722382236238
     Name: albedo
-    Source: Resources/Textures/Marble/albedo.dds
+    Source: Resources/Textures/Marble/albedo.png
     Properties:
       Data:
         CompileAsCompressed: true
@@ -128,7 +128,7 @@ ASSETS:
   - Type: TEXTURE
     UID: 436545047596730240
     Name: normal
-    Source: Resources/Textures/Marble/normal.dds
+    Source: Resources/Textures/Marble/normal.png
     Properties:
       Data:
         CompileAsCompressed: true
@@ -139,7 +139,7 @@ ASSETS:
   - Type: TEXTURE
     UID: 16314464286324216731
     Name: roughness
-    Source: Resources/Textures/Marble/roughness.dds
+    Source: Resources/Textures/Marble/roughness.png
     Properties:
       Data:
         CompileAsCompressed: true
