@@ -4,6 +4,11 @@
 #include "Context/DebugHelpers.h"
 #include "Vendors/imgui/imgui.h"
 
+#include <fstream>
+#include <filesystem>
+#include <unordered_map>
+#include <nlohmann/json.hpp>
+#include "Audio/Audio.hpp"
 
 namespace EditorUI::Audio
 {
