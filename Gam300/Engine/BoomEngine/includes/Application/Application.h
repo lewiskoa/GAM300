@@ -699,8 +699,7 @@ namespace Boom
 #endif
 
             // Reset asset registry (keeping EMPTY_ASSET sentinels)
-
-            //* m_Context->assets = AssetRegistry();
+            * m_Context->assets = AssetRegistry();
 
 
             // RESTORE PREFABS after registry reset

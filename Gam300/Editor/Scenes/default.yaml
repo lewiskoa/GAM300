@@ -12,7 +12,7 @@ ENTITIES:
         Rotate: [0, 0, 0]
         Scale: [1, 1, 1]
     ModelComponent:
-      ModelID: 11565258723769024311
+      ModelID: 6147709962160563775
       MaterialID: 0
   - InfoComponent:
       UID: 18299148976802030936

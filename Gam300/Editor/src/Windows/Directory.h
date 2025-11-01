@@ -272,10 +272,10 @@ private:
 		std::unordered_set<std::filesystem::path> seenPaths;
 
 		if (rootNode) {
-			TraverseAndRegister(rootNode.get(), seenPaths);
+			//TraverseAndRegister(rootNode.get(), seenPaths);
 		}
 
-		RemoveStaleAssets(seenPaths);
+		//RemoveStaleAssets(seenPaths);
 	}
 
 	//recursively traverse into linked list tree to register/update assets
@@ -288,8 +288,7 @@ private:
 		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); //lowercase
 
 		// --- TEXTURES ---
-		if (!node->isDirectory && (ext == ".png" || ext == ".dds"))
-		{
+		if (!node->isDirectory && (ext == ".png" || ext == ".dds")) {
 			seen.insert(path);
 			if (ext == ".dds" && Texture2D::IsHDR(path.generic_string()))
 				RegisterAsset<SkyboxAsset>(path, node->texId);
@@ -297,16 +296,19 @@ private:
 				RegisterAsset<TextureAsset>(path, node->texId);
 		}
 		// --- MODELS ---
-		else if (!node->isDirectory && ext == ".fbx")
-		{
+		else if (!node->isDirectory && ext == ".fbx") {
 			seen.insert(path);
 			RegisterAsset<ModelAsset>(path, node->texId);
 		}
 		// --- SKYBOX ---
-		else if (!node->isDirectory && ext == ".hdr")
-		{
+		else if (!node->isDirectory && ext == ".hdr") {
 			seen.insert(path);
 			RegisterAsset<SkyboxAsset>(path, node->texId);
+		}
+		// --- PREFABS ---
+		else if (!node->isDirectory && ext == ".prefab") {
+			seen.insert(path);
+			RegisterAsset<PrefabAsset>(path, node->texId);
 		}
 		// --- more stuff in future ---
 
@@ -326,17 +328,17 @@ private:
 		if (context->GetAssetRegistry().Get<T>(uid).uid == EMPTY_ASSET) {
 			// New asset
 			texId = (GLuint)assetIcon;
-			if constexpr (std::is_same_v<T, TextureAsset>)
-			{
+			if constexpr (std::is_same_v<T, TextureAsset>) {
 				texId = (GLuint)(*context->GetAssetRegistry().AddTexture(uid, path.generic_string()).get()->data);
 			}
-			else if constexpr (std::is_same_v<T, ModelAsset>)
-			{
+			else if constexpr (std::is_same_v<T, ModelAsset>) {
 				context->GetAssetRegistry().AddModel(uid, path.generic_string());
 			}
-			else if constexpr (std::is_same_v<T, SkyboxAsset>)
-			{
+			else if constexpr (std::is_same_v<T, SkyboxAsset>) {
 				context->GetAssetRegistry().AddSkybox(uid, path.generic_string());
+			}
+			else if constexpr (std::is_same_v<T, SkyboxAsset>) {
+				context->GetAssetRegistry().AddPrefab(uid, path.generic_string());
 			}
 			// --- more stuff in future ---
 
