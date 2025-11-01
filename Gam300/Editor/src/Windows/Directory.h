@@ -221,7 +221,7 @@ private:
 		root->isHovered = false;
 
 		if (root->texId) {
-			ImGui::Image((void*)(intptr_t)root->texId, ImVec2(32, 32)); // Icon size: 16x16
+			ImGui::Image((void*)(intptr_t)root->texId, { 32, 32 }); // Icon size: 16x16
 			ImGui::SameLine();
 		}
 
@@ -284,13 +284,17 @@ private:
 		if (!node) return;
 
 		const auto& path = node->fullPath;
-		const auto ext = path.extension().string();
+		std::string ext{ path.extension().string() };
+		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); //lowercase
 
 		// --- TEXTURES ---
 		if (!node->isDirectory && (ext == ".png" || ext == ".dds"))
 		{
 			seen.insert(path);
-			RegisterAsset<TextureAsset>(path, node->texId);
+			if (ext == ".dds" && Texture2D::IsHDR(path.generic_string()))
+				RegisterAsset<SkyboxAsset>(path, node->texId);
+			else 
+				RegisterAsset<TextureAsset>(path, node->texId);
 		}
 		// --- MODELS ---
 		else if (!node->isDirectory && ext == ".fbx")
@@ -318,7 +322,7 @@ private:
 	BOOM_INLINE void RegisterAsset(const std::filesystem::path& path, GLuint& texId)
 	{
 		AssetID uid{ context->AssetIDFromPath(path) };  // your hash function
-
+		BOOM_DEBUG("{}:{}", path.generic_string(), uid);
 		if (context->GetAssetRegistry().Get<T>(uid).uid == EMPTY_ASSET) {
 			// New asset
 			texId = (GLuint)assetIcon;
@@ -342,12 +346,16 @@ private:
 	BOOM_INLINE void RemoveStaleAssets(const std::unordered_set<std::filesystem::path>& seen)
 	{
 		for (auto& [type, map] : context->GetAssetRegistry().GetAll()) {
-			for (auto it = map.begin(); it != map.end(); ) {
-				//if file not located in seen path = deleted, must remove from assetmanager
-				if (seen.find(it->second->source) == seen.end()) {
-					it = map.erase(it);
+			if (!map.empty()) {
+				auto first{ map.begin() };
+				++first;
+				for (auto it{ first }; it != map.end(); ) {
+					//if file not located in seen path = deleted, must remove from assetmanager
+					if (seen.find(it->second->source) == seen.end()) {
+						it = map.erase(it);
+					}
+					else ++it;
 				}
-				else ++it;
 			}
 		}
 	}

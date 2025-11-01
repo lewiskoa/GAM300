@@ -180,7 +180,7 @@ private:
 
     BOOM_INLINE void AssetUpdate() {
         context->ModifyAsset([&](auto* asset) {
-            ImGui::Text("Modifying: %s", asset->name.c_str());
+            ImGui::Text("Modifying: %s (%d)", asset->name.c_str(), asset->uid);
             if (asset->type == AssetType::MATERIAL) {
                 MaterialAsset* mat{ dynamic_cast<MaterialAsset*>(asset) };
 
@@ -223,6 +223,9 @@ private:
                         ImGui::Checkbox("Gamma", &tex->data->isGamma);
                     }
                 }
+            }
+            else {
+                ImGui::Button("nothing here!");
             }
             });
     }
@@ -416,7 +419,7 @@ private: //helpers
         ImGui::PushID(label);
 
         using AssetType = typename PayloadToType<Payload>::Type;
-        if (ImGui::Button(context->GetAssetName<AssetType>(data).c_str(), fieldSize)) {
+        if (ImGui::Button(context->GetAssetName<AssetType>(data).data(), fieldSize)) {
             //TODO: clicking button opens asset picker window
         }
         AcceptIDDrop(data, Payload.data());

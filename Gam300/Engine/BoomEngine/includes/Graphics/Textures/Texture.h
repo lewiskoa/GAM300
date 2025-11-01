@@ -45,6 +45,8 @@ namespace Boom {
 		int32_t mipLevel; //will not be enforced if too big
 		bool isGamma;
 
+		static bool IsHDR(std::string const& filename);
+
 	public:
 		
 		XPROPERTY_DEF(

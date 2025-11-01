@@ -19,6 +19,7 @@ namespace Boom {
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS); //smooth skybox
 
+			glewExperimental = GL_TRUE;
 			GLenum err = glewInit();
 #ifdef BOOM_ENABLE_LOG
 			if (GLEW_OK != err) {

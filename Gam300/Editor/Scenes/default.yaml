@@ -12,7 +12,7 @@ ENTITIES:
         Rotate: [0, 0, 0]
         Scale: [1, 1, 1]
     ModelComponent:
-      ModelID: 6147709962160563775
+      ModelID: 11565258723769024311
       MaterialID: 0
   - InfoComponent:
       UID: 18299148976802030936
@@ -108,7 +108,7 @@ ENTITIES:
       ModelID: 6147709962160563775
       MaterialID: 11573253777835523025
       ModelName: "sphere"
-      ModelSource: "sphere.fbx"
+      ModelSource: "Resources/Models/sphere.fbx"
       MaterialSource: "Marble"
     RigidBodyComponent:
       RigidBody:
@@ -135,7 +135,7 @@ ENTITIES:
       MaterialID: 0
       ModelName: sphere
       MaterialName: ""
-      ModelSource: walking.fbx
+      ModelSource: Resources/Models/walking.fbx
       MaterialSource: Marble
   - InfoComponent:
       UID: 10000000000000000002
@@ -150,7 +150,7 @@ ENTITIES:
       ModelID: 3843189617850929280     # keep your existing cube mesh; now it looks like a plane
       MaterialID: 11573253777835523025
       ModelName: "Cube"
-      ModelSource: "Cube.fbx"
+      ModelSource: "Resources/Models/Cube.fbx"
       MaterialSource: "Marble"
     RigidBodyComponent:
       RigidBody:

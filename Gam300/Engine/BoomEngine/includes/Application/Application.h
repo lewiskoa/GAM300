@@ -432,13 +432,13 @@ namespace Boom
                             comp.modelID, comp.materialID);
                     }
 
-                    ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
+                    ModelAsset* modelPtr{ m_Context->assets->TryGet<ModelAsset>(comp.modelID) };
 
-                    if (!model.data) {
-                        BOOM_ERROR("[Render] Model data is null for ModelID: {} ({})",
-                            comp.modelID, model.name);
+                    if (!modelPtr) {
+                        BOOM_ERROR("[Render] Model data is null for ModelID: {} ({})", comp.modelID, comp.modelName);
                         return; // Skip rendering this model
                     }
+                    ModelAsset& model{ *modelPtr };
 
                     //set animator uniform if model has one
                     if (entity.template Has<AnimatorComponent>()) {

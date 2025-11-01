@@ -84,7 +84,7 @@ ENTITIES:
       MaterialID: 11573253777835523025
       ModelName: ""
       MaterialName: ""
-      ModelSource: walking.fbx
+      ModelSource: Resources/Models/walking.fbx
       MaterialSource: Marble
     AnimatorComponent:
       Sequence: 0
@@ -103,7 +103,7 @@ ENTITIES:
       MaterialID: 11573253777835523025
       ModelName: sphere
       MaterialName: ""
-      ModelSource: sphere.fbx
+      ModelSource: Resources/Models/sphere.fbx
       MaterialSource: Marble
   - {}
   - {}

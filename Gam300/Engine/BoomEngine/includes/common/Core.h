@@ -11,12 +11,12 @@
 #define GLM_ENABLE_EXPERIMENTAL //needed for GLM_GTX_component_wise as it is an experimental feature
 #define GLM_DLL
 
+#pragma warning(push)
+#pragma warning(disable : 4244 4267 4458 4100 5054 4189 26819 6262 26495) //library warnings disable
 // add headers that you want to pre-compile here
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#pragma warning(push)
-#pragma warning(disable : 4201 4244) //library warnings disable
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>

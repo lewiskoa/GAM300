@@ -57,7 +57,7 @@ public:
 
 							ImGui::PushID((int)asset->uid);
 							bool isClicked = ImGui::ImageButton("##thumb", texid, ImVec2(ASSET_SIZE, ASSET_SIZE),
-								ImVec2(0, 1), ImVec2(1, 0),
+								ImVec2(0, 0), ImVec2(1, 1),
 								ImVec4(0, 0, 0, 1),
 								ImVec4(1, 1, 1, 1));
 
@@ -78,7 +78,8 @@ public:
 							}
 							ImGui::PopID();
 
-							ImGui::TextWrapped(asset->source.c_str());
+							std::filesystem::path aPath{ asset->source };
+							ImGui::TextWrapped(aPath.filename().string().c_str());
 
 							//show modifyable properties in inspector when selected
 							if (isClicked) {

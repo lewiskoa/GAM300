@@ -189,8 +189,10 @@ namespace Boom
         };
 
         template<class Type>
-        BOOM_INLINE std::string const& GetAssetName(AssetID uid) {
-            return m_Context->assets->Get<Type>(uid).name;
+        BOOM_INLINE std::string_view GetAssetName(AssetID uid) {
+            Type* asset{ m_Context->assets->TryGet<Type>(uid) };
+            if (!asset) return "";
+            return asset->name;
         }
 
         template<typename Task>

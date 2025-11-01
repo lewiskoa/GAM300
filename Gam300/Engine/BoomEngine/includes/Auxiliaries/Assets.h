@@ -140,7 +140,18 @@ namespace Boom {
 				return asset;
 			}
 			//BOOM_ERROR("[AssetRegistry::Get] Asset UID {} not found! Returning EMPTY_ASSET", uid);
-			return (T&)(*registry[type][EMPTY_ASSET]);
+			return static_cast<T&>(*registry[type][EMPTY_ASSET]);
+		}
+
+		template <class T>
+		BOOM_INLINE T* TryGet(AssetID uid)
+		{
+			const uint32_t type = TypeID<T>();
+			auto& map = registry[type];
+			auto it = map.find(uid);
+			if (it != map.end())
+				return static_cast<T*>(it->second.get());
+			return nullptr;
 		}
 
 		//loops through all assets and
@@ -330,6 +341,7 @@ namespace Boom {
 		template <class T>
 		BOOM_INLINE void AddEmpty() {
 			registry[TypeID<T>()][EMPTY_ASSET] = std::make_shared<T>();
+			registry[TypeID<T>()][EMPTY_ASSET]->uid = EMPTY_ASSET;
 		}
 
 	private:
