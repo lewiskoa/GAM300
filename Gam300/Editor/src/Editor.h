@@ -1,8 +1,8 @@
 ﻿#pragma once
 #include <memory>
-
 // CRITICAL: Include the complete definition, not just forward declaration
 #include "Application/Interface.h"  // For Boom::AppInterface complete type
+#include "Vendors/imgui/imgui.h"    // For ImVec2
 
 // Keep heavy headers out of here to avoid cycles.
 // Just forward-declare the few types we need.
@@ -49,14 +49,19 @@ namespace EditorUI {
         ImGuiContext* GetImGuiContext() const { return m_ImGuiContext; }
         entt::registry* GetRegistry() const { return m_Registry; }
         Boom::Application* GetApp() const { return m_App; }
+
+        // NEW: Get viewport size for renderer resizing
+        ImVec2 GetViewportSize() const;
+
     protected:
-        void OnStart() override;   // 
-        void OnUpdate() override;  // 
+        void OnStart() override;
+        void OnUpdate() override;
+
     private:
-       // Boom::AppContext* m_Context = nullptr;
         ImGuiContext* m_ImGuiContext = nullptr;
         entt::registry* m_Registry = nullptr;
         Boom::Application* m_App = nullptr;
+
         // Panels (constructed in Init, destroyed in ~Editor)
         std::unique_ptr<MenuBarPanel>           m_MenuBar;
         std::unique_ptr<HierarchyPanel>         m_Hierarchy;

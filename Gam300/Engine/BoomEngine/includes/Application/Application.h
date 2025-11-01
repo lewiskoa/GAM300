@@ -370,6 +370,8 @@ namespace Boom
                         lastIPressed = iPressed;
                         });
                 }
+
+
                 // ============ END NEW SECTION ============
 
                 m_Context->profiler.BeginFrame();

@@ -21,6 +21,7 @@ namespace EditorUI {
 
         void Show(bool v) { m_ShowViewport = v; }
         bool IsVisible() const { return m_ShowViewport; }
+        ImVec2 GetSize() const { return m_Viewport; }
 
     private:
         // helpers

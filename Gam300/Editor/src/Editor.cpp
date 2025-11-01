@@ -110,7 +110,7 @@ namespace EditorUI {
         m_PrefabBrowser = std::make_unique<PrefabBrowserPanel>(this);
         m_Viewport = std::make_unique<ViewportPanel>(this);
         m_Performance = std::make_unique<PerformancePanel>(this);
-        m_Playback = std::make_unique<PlaybackControlsPanel>(this);
+        m_Playback = std::make_unique<PlaybackControlsPanel>(this, m_App);
 
         // Panel-specific init
         if (m_Directory) m_Directory->Init();
@@ -158,10 +158,10 @@ namespace EditorUI {
         if (m_Resources)      m_Resources->OnShow();
         if (m_Directory)      m_Directory->OnShow();
         if (m_PrefabBrowser)  m_PrefabBrowser->Render();
-        if (m_Console)        m_Console->OnShow();
+        if (m_Console)        m_Console->Render();
         if (m_Audio)          m_Audio->Render();
         if (m_Performance)    m_Performance->Render();
-        if (m_Playback)       m_Playback->Render();
+        if (m_Playback)       m_Playback->OnShow();
 
         // --- End frame / draw ---
         EndImguiFrame();

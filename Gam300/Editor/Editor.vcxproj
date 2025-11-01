@@ -157,6 +157,7 @@
         $(EngineIncludeRoots);
         %(AdditionalIncludeDirectories)
     </AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
