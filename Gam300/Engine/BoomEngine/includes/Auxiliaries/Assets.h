@@ -139,8 +139,19 @@ namespace Boom {
 				auto& asset = (T&)(*registry[type][uid]);
 				return asset;
 			}
-			BOOM_ERROR("[AssetRegistry::Get] Asset UID {} not found! Returning EMPTY_ASSET", uid);
-			return (T&)(*registry[type][EMPTY_ASSET]);
+			//BOOM_ERROR("[AssetRegistry::Get] Asset UID {} not found! Returning EMPTY_ASSET", uid);
+			return static_cast<T&>(*registry[type][EMPTY_ASSET]);
+		}
+
+		template <class T>
+		BOOM_INLINE T* TryGet(AssetID uid)
+		{
+			const uint32_t type = TypeID<T>();
+			auto& map = registry[type];
+			auto it = map.find(uid);
+			if (it != map.end())
+				return static_cast<T*>(it->second.get());
+			return nullptr;
 		}
 
 		//loops through all assets and
@@ -181,7 +192,7 @@ namespace Boom {
 		BOOM_INLINE auto AddSkybox(
 			AssetID uid,
 			std::string const& path,
-			int32_t size)
+			int32_t size = 2048)
 		{
 			auto asset{ std::make_shared<SkyboxAsset>() };
 			asset->type = AssetType::SKYBOX;
@@ -208,8 +219,8 @@ namespace Boom {
 		{
 			auto asset{ std::make_shared<ModelAsset>() };
 			asset->type = AssetType::MODEL;
-			asset->hasJoints = hasJoints;
-			if (hasJoints) {
+			asset->hasJoints = hasJoints || Model::CheckForJoints(path); //can check for joints from (.fbx) file
+			if (asset->hasJoints) {
 				asset->data = std::make_shared<SkeletalModel>(path);
 			}
 			else {
@@ -264,6 +275,21 @@ namespace Boom {
 			return EMPTY_ASSET;
 		}
 
+		template <class T>
+		BOOM_INLINE bool Remove(AssetID uid) {
+			const uint32_t type{ TypeID<T>() };
+			auto it{ registry.find(type) };
+			if (it != registry.end()) {
+				it->second.erase(uid);
+				return true;
+			}
+
+			return false;
+		}
+		BOOM_INLINE std::unordered_map<uint32_t, AssetMap>& GetAll() {
+			return registry;
+		}
+
 	public: //helper functions for imgui context
 		template <class Func>
 		BOOM_INLINE void ModifyMaterialFromID(AssetID id, Func f) {
@@ -315,6 +341,7 @@ namespace Boom {
 		template <class T>
 		BOOM_INLINE void AddEmpty() {
 			registry[TypeID<T>()][EMPTY_ASSET] = std::make_shared<T>();
+			registry[TypeID<T>()][EMPTY_ASSET]->uid = EMPTY_ASSET;
 		}
 
 	private:

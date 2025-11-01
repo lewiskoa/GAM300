@@ -21,17 +21,21 @@ namespace Boom {
 	{
 	}
 
-	Texture2D::Texture2D(std::string filename, bool)
+	Texture2D::Texture2D(std::string const& filename)
 		: Texture2D()
 	{
-		filename = CONSTANTS::TEXTURES_LOCATION.data() + filename;
-
-		std::string ext{ GetExtension(filename) };
-		if (ext == "dds") {
-			LoadCompressed(filename);
+		try {
+			std::string ext{ GetExtension(filename) };
+			if (ext == "dds") {
+				LoadCompressed(filename);
+			}
+			else {
+				LoadUnCompressed(filename);
+			}
 		}
-		else {
-			LoadUnCompressed(filename);
+		catch (std::exception e) {
+			char const* tmp{ e.what() };
+			BOOM_ERROR("ERROR_Texture2D({}): {}", filename, tmp);
 		}
 		
 		//Compressonator is working, will be implemented for compiling textures as compressed for base game
@@ -85,9 +89,17 @@ namespace Boom {
 	}
 
 	void Texture2D::LoadUnCompressed(std::string const& filename) {
+		bool isHDR{ GetExtension(filename) == "hdr" };
 
 		//texture data
-		void* pixels{ stbi_load(filename.c_str(), &width, &height, nullptr, 4) };
+		void* pixels{};
+		if (isHDR) {
+			int32_t channels{};
+			pixels = stbi_loadf(filename.c_str(), &width, &height, &channels, 0);
+		}
+		else {
+			pixels = stbi_load(filename.c_str(), &width, &height, nullptr, 4);
+		}
 
 		if (pixels == nullptr) {
 			throw std::exception(("stbi_load(" + filename + ") failed.").c_str());
@@ -96,7 +108,12 @@ namespace Boom {
 		//texture buffers
 		glGenTextures(1, &id);
 		glBindTexture(GL_TEXTURE_2D, id);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (uint32_t*)pixels);
+		if (isHDR) {
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, (float*)pixels);
+		}
+		else {
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, (uint32_t*)pixels);
+		}
 		stbi_image_free(pixels);
 
 		//options
@@ -104,17 +121,11 @@ namespace Boom {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		//glGenerateMipmap(GL_TEXTURE_2D); //mipmaps should not be needed for uncompressed anymore (small size)
+		glGenerateMipmap(GL_TEXTURE_2D);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
-
-		//initial .HDR loading
-		//int32_t channels{};
-		//pixels = stbi_loadf(filename.c_str(), &width, &height, &channels, 0);
-		//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, (float*)pixels);
 	}
 	void Texture2D::LoadCompressed(std::string const& filename) {
-		
 		// Load DDS using GLI
 		gli::texture texture = gli::load(filename);
 		if (texture.empty()) {
@@ -150,27 +161,32 @@ namespace Boom {
 		height = (int32_t)tex2D.extent().y;
 
 		//load textures according to mipmap levels
-		for (size_t level{}; level < tex2D.levels(); ++level) {
-			GLsizei mipWidth{ (GLsizei)tex2D.extent(level).x };
-			GLsizei mipHeight{ (GLsizei)tex2D.extent(level).y };
-			GLsizei compressedSize{ (GLsizei)tex2D.size(level) };
-			void const* compressedData{ tex2D.data(0, 0, level) };
+		bool isFailed{true};
+		uint32_t failedCounter{};
+		do {
+			isFailed = false;
+			for (size_t level{}; level < tex2D.levels(); ++level) {
+				glCompressedTexImage2D(
+					GL_TEXTURE_2D,
+					(GLint)level,
+					internalFormat,
+					(GLsizei)tex2D.extent(level).x,
+					(GLsizei)tex2D.extent(level).y,
+					0,
+					(GLsizei)tex2D.size(level),
+					tex2D.data(0, 0, level)
+				);
 
-			glCompressedTexImage2D(
-				GL_TEXTURE_2D,
-				(GLint)level,
-				internalFormat,
-				mipWidth,
-				mipHeight,
-				0,
-				compressedSize,
-				compressedData
-			);
-
-			if (glGetError() != GL_NO_ERROR) {
-				glDeleteTextures(1, &id);
-				throw std::exception("glCompressedTexImage2D() upload error.");
+				if (glGetError() != GL_NO_ERROR) {
+					glDeleteTextures(1, &id);
+					isFailed = true;
+					++failedCounter;
+					break;
+				}
 			}
+		} while (isFailed && failedCounter < 10);
+		if (failedCounter == 10) {
+			throw std::exception("LoadCompressed() - glCompressedTexImage2D() failed.");
 		}
 
 		//textures has different options if they have multiple levels of mipmaps
@@ -269,5 +285,21 @@ namespace Boom {
 		std::string ext{ filename.substr(pos + 1) };
 		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); //lowercase
 		return ext;
+	}
+
+	bool Texture2D::IsHDR(std::string const& filename) {
+		gli::texture texture = gli::load(filename);
+		if (texture.empty()) {
+			throw std::exception(("gli::load(" + filename + ") failed.").c_str());
+		}
+
+		// Ensure it's a 2D texture and DXT1 format
+		if (texture.target() != gli::TARGET_2D) {
+			throw std::exception("texture.target != TARGET_2D");
+		}
+		gli::gl gl(gli::gl::PROFILE_GL33); // Adjust for your OpenGL version
+		gli::gl::format format = gl.translate(texture.format(), texture.swizzles());
+
+		return format.Internal == gli::gl::INTERNAL_RGB_BP_UNSIGNED_FLOAT; //check HDR/EXR format encoded
 	}
 }

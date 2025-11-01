@@ -12,8 +12,6 @@ namespace Boom {
 		int const CHAR_BUFFER_SIZE{ 256 };
 		constexpr std::tuple<float, float, float, float> DEFAULT_BACKGROUND_COLOR = {.3f, .3f, .3f, 1.f};
 		constexpr std::string_view SHADERS_LOCATION = "Resources/Shaders/";
-		constexpr std::string_view MODELS_LOCATION = "Resources/Models/";
-		constexpr std::string_view TEXTURES_LOCATION = "Resources/Textures/";
 		constexpr float CAM_PAN_SPEED{ .25f };
 		constexpr float CAM_RUN_MULTIPLIER{ 1.5f }; 
 		constexpr float MIN_FOV{ 45.f };

@@ -2,9 +2,12 @@
 #include "Context/Context.h"
 
 struct ResourceWindow : IWidget {
+private:
+	char const* NEW_MATERIAL_NAME{ "New Material" };
+public:
 	BOOM_INLINE ResourceWindow(AppInterface* c) 
 		: IWidget{ c }
-		, iconImage{"Icons/asset.png", false}
+		, iconImage{"Resources/Textures/Icons/asset.png" }
 		, icon{ (ImTextureID)iconImage }
 		, selected{}
 	{}
@@ -13,16 +16,17 @@ struct ResourceWindow : IWidget {
 		if (ImGui::Begin("Resources")) {
 			
 			if (ImGui::Button("Save All Assets", { 128, 20 })) {
-				SaveAssets();
+				context->SaveAssets();
 			}
 			ImGui::SameLine();
-			static bool isPopup{};
-			if (ImGui::Button("Create Empty Material", { 140, 20 })) {
-				isPopup = true;
+
+			if (ImGui::Button("Create Empty Material", { 160, 20 })) {
+				showNamePopup = true;
 			}
-			if (isPopup) {
+			if (showNamePopup) {
 				ImGui::OpenPopup("Input Material Name");
-				isPopup = CreateEmptyMaterial();
+				ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+				CreateEmptyMaterial();
 			}
 
 			static int currentType{ static_cast<int>(AssetType::UNKNOWN) }; //unknown will show all assets
@@ -53,7 +57,7 @@ struct ResourceWindow : IWidget {
 
 							ImGui::PushID((int)asset->uid);
 							bool isClicked = ImGui::ImageButton("##thumb", texid, ImVec2(ASSET_SIZE, ASSET_SIZE),
-								ImVec2(0, 1), ImVec2(1, 0),
+								ImVec2(0, 0), ImVec2(1, 1),
 								ImVec4(0, 0, 0, 1),
 								ImVec4(1, 1, 1, 1));
 
@@ -74,11 +78,12 @@ struct ResourceWindow : IWidget {
 							}
 							ImGui::PopID();
 
-							ImGui::TextWrapped(asset->source.c_str());
+							std::filesystem::path aPath{ asset->source };
+							ImGui::TextWrapped(aPath.filename().string().c_str());
 
 							//show modifyable properties in inspector when selected
 							if (isClicked) {
-								context->SelectedAsset(true) = { asset->uid, asset->type };
+								context->SelectedAsset(true) = { asset->uid, asset->type, asset->name };
 							}
 						}
 					}
@@ -90,49 +95,28 @@ struct ResourceWindow : IWidget {
 	}
 
 private:
-	BOOM_INLINE bool SaveAssets(const std::string& scenePath = "Scenes/")
-	{
-		//Try blocks cause crashed in release mode. Need to find new alternative
-		DataSerializer serializer;
-
-		const std::string assetsFilePath = scenePath + "assets.yaml";
-
-		BOOM_INFO("[Assets] Saving assets to '{}'", assetsFilePath);
-
-		// Serialize scene and assets
-		serializer.Serialize(context->GetAssetRegistry(), assetsFilePath);
-
-		BOOM_INFO("[Assets] Successfully saved assets");
-		return true;
-	}
-
-	BOOM_INLINE bool CreateEmptyMaterial() {
-		static char buff[CONSTANTS::CHAR_BUFFER_SIZE] = "New Material";
+	BOOM_INLINE void CreateEmptyMaterial() {
+		static char buff[CONSTANTS::CHAR_BUFFER_SIZE] = "";
 		
-		if (ImGui::BeginPopupModal("Material Name", nullptr)) {
-			ImGui::InputText("Name", buff, sizeof(buff));
+		if (ImGui::BeginPopupModal("Input Material Name", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+			ImGui::InputTextWithHint("##", NEW_MATERIAL_NAME, buff, sizeof(buff));
 			ImGui::Separator();
-			
-			bool shouldClose{};
 
-			if (ImGui::Button("Close")) { //cancel operation
-				ImGui::CloseCurrentPopup();
-				shouldClose = true;
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("OK")) { //create material operation
-				ImGui::CloseCurrentPopup();
+			if (ImGui::Button("OK", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false)) { //create material operation
 				std::string name{ buff };
+				if (name.empty()) name = NEW_MATERIAL_NAME;
 				HandleConflictName(name);
 				context->GetAssetRegistry().AddMaterial(RandomU64(), name);
-				shouldClose = true;
+				showNamePopup = false;
+				ImGui::CloseCurrentPopup();
 			}
-
+			ImGui::SameLine();
+			if (ImGui::Button("Close", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) { //cancel operation
+				showNamePopup = false;
+				ImGui::CloseCurrentPopup();
+			}
 			ImGui::EndPopup();
-			return shouldClose;
 		}
-
-		return true;
 	}
 
 	// Handle conflict: append a number to filename (e.g., "file (1).txt")

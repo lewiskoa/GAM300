@@ -10,7 +10,7 @@ namespace Boom {
 		Texture2D();
 		//file path starts from Textures folder
 		//textures that shouldn't compress are often already really small in size, like icons
-		Texture2D(std::string filename, bool shouldCompress = true);
+		Texture2D(std::string const& filename);
 
 		//use this overload when importing new textures(.png) with the editor
 		//will output a (BC7 .dds) compressed texture and load it setting ID
@@ -44,6 +44,8 @@ namespace Boom {
 		int32_t alphaThreshold;
 		int32_t mipLevel; //will not be enforced if too big
 		bool isGamma;
+
+		static bool IsHDR(std::string const& filename);
 
 	public:
 		

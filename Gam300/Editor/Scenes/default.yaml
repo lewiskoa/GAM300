@@ -1,63 +1,74 @@
 Version: 1.0
 ENTITIES:
   - {}
-  - {}
   - InfoComponent:
-      UID: 6042260349840611439
-      Name: Entity
       Parent: 0
-    TransformComponent:
-      Transform:
-        Translate: [0, 1, 0]
-        Rotate: [0, 0, 0]
-        Scale: [1, 1, 1]
-    ModelComponent:
-      ModelID: 6147709962160563775
-      MaterialID: 0
-  - InfoComponent:
-      UID: 18299148976802030936
       Name: Player
-      Parent: 0
+      UID: 18299148976802030936
     TransformComponent:
       Transform:
         Translate: [0, -1.20000005, 0]
         Rotate: [0, 0, 0]
         Scale: [0.00999999978, 0.00999999978, 0.00999999978]
     ModelComponent:
-      ModelID: 12185416543001335231
+      ModelID: 9625104056789884581
       MaterialID: 11573253777835523025
+      ModelName: ""
+      MaterialName: ""
+      ModelSource: ""
+      MaterialSource: ""
     AnimatorComponent:
       Sequence: 0
-      Time: 759.018555
+      Time: 734.337646
+  - {}
+  - {}
   - InfoComponent:
-      UID: 3009173759421305309
-      Name: Entity
       Parent: 0
+      Name: Ball 2
+      UID: 6042260349840611439
+    TransformComponent:
+      Transform:
+        Translate: [1.28999996, 1, 0]
+        Rotate: [0, 0, 0]
+        Scale: [0.5, 0.5, 0.5]
+    ModelComponent:
+      ModelID: 11565258723769024311
+      MaterialID: 11573253777835523025
+      ModelName: ""
+      MaterialName: ""
+      ModelSource: ""
+      MaterialSource: ""
+  - {}
+  - InfoComponent:
+      Parent: 0
+      Name: Skybox
+      UID: 3009173759421305309
     TransformComponent:
       Transform:
         Translate: [0, 0, 0]
         Rotate: [0, 0, 0]
         Scale: [1, 1, 1]
     SkyboxComponent:
-      SkyboxID: 12730153547297182823
+      SkyboxID: 10427935764841817814
   - InfoComponent:
-      UID: 9201024860084647067
-      Name: Entity
       Parent: 0
+      Name: Camera
+      UID: 9201024860084647067
     TransformComponent:
       Transform:
         Translate: [-1.95089293, 0, 2.40915275]
         Rotate: [0, -39, 0]
         Scale: [1, 1, 1]
     CameraComponent:
-      NearPlane: 0.300000012
-      FarPlane: 1000
-      FOV: 45
+      Camera:
+        NearPlane: 0.300000012
+        FarPlane: 1000
+        FOV: 60
   - {}
   - InfoComponent:
-      UID: 5315588240363654174
-      Name: Point Light
       Parent: 0
+      Name: Point Light
+      UID: 5315588240363654174
     TransformComponent:
       Transform:
         Translate: [0, 0.5, 0]
@@ -65,12 +76,12 @@ ENTITIES:
         Scale: [1, 1, 1]
     PointLightComponent:
       Light:
-        Intensity: 10
         Radiance: [1, 0.899999976, 0.699999988]
+        Intensity: 10
   - InfoComponent:
-      UID: 16395980114807373968
-      Name: Directional Light
       Parent: 0
+      Name: Directional Light
+      UID: 16395980114807373968
     TransformComponent:
       Transform:
         Translate: [0, 0, 0]
@@ -78,12 +89,12 @@ ENTITIES:
         Scale: [1, 1, 1]
     DirectLightComponent:
       Light:
-        Intensity: 3
         Radiance: [1, 1, 0.899999976]
+        Intensity: 3
   - InfoComponent:
-      UID: 12363776012929465708
-      Name: Spot Light
       Parent: 0
+      Name: Spot Light
+      UID: 12363776012929465708
     TransformComponent:
       Transform:
         Translate: [2, 2, 2]
@@ -91,77 +102,83 @@ ENTITIES:
         Scale: [1, 1, 1]
     SpotLightComponent:
       Light:
-        Intensity: 15
         Radiance: [0.699999988, 0.800000012, 1]
-        Falloff: 0.305432618
-        Cutoff: 0.218166158
-  - InfoComponent:
-      UID: 10000000000000000001
-      Name: Sphere
-      Parent: 0
-    TransformComponent:
-      Transform:
-        Translate: [2.5, 1.2, 0]
-        Rotate: [0, 0, 0]
-        Scale: [1, 2, 1]
-    ModelComponent:
-      ModelID: 6147709962160563775
-      MaterialID: 11573253777835523025
-      ModelName: "sphere"
-      ModelSource: "sphere.fbx"
-      MaterialSource: "Marble"
-    RigidBodyComponent:
-      RigidBody:
-        Density: 1.0
-        Type: DYNAMIC
-    ColliderComponent:
+        Intensity: 15
+        FallOff: 1.05592418
+        CutOff: 0.34906584
+  - ColliderComponent:
       Collider:
         DynamicFriction: 0.5
         StaticFriction: 0.5
-        Restitution: 0.6
+        Restitution: 0.600000024
         Type: CAPSULE
-
+    InfoComponent:
+      Parent: 0
+      Name: Sphere
+      UID: 10000000000000000001
+    TransformComponent:
+      Transform:
+        Translate: [2.5, -0.19999972, 0]
+        Rotate: [0, -0, 0]
+        Scale: [1, 2, 1]
+    RigidBodyComponent:
+      RigidBody:
+        Density: 1
+        Mass: 1
+        InitialVelocity: [0, 0, 0]
+        Previous Scale: [1, 2, 1]
+        Type: DYNAMIC
+    ModelComponent:
+      ModelID: 11565258723769024311
+      MaterialID: 11573253777835523025
+      ModelName: sphere
+      MaterialName: ""
+      ModelSource: Resources/Models/sphere.fbx
+      MaterialSource: Marble
   - InfoComponent:
       Parent: 0
-      Name: TestBall
+      Name: Ball 1
       UID: 6042260349840611439
     TransformComponent:
       Transform:
-        Translate: [0, 1, 0]
+        Translate: [0, 1.77999997, 0]
         Rotate: [0, 0, 0]
         Scale: [1, 1, 1]
     ModelComponent:
-      ModelID: 6147709962160563775
-      MaterialID: 0
+      ModelID: 11565258723769024311
+      MaterialID: 11573253777835523025
       ModelName: sphere
       MaterialName: ""
-      ModelSource: walking.fbx
+      ModelSource: Resources/Models/walking.fbx
       MaterialSource: Marble
-  - InfoComponent:
-      UID: 10000000000000000002
-      Name: Ground
+  - ColliderComponent:
+      Collider:
+        DynamicFriction: 0.5
+        StaticFriction: 0.5
+        Restitution: 0
+        Type: BOX
+    InfoComponent:
       Parent: 0
+      Name: Ground
+      UID: 10000000000000000002
     TransformComponent:
       Transform:
-        Translate: [0, -1.30, 0]         # under the Player at y ? -1.2
+        Translate: [0, -1.29999995, 0]
         Rotate: [0, 0, 0]
-        Scale: [20, 0.20, 20]            # wide & thin = �plane�
-    ModelComponent:
-      ModelID: 3843189617850929280     # keep your existing cube mesh; now it looks like a plane
-      MaterialID: 11573253777835523025
-      ModelName: "Cube"
-      ModelSource: "Cube.fbx"
-      MaterialSource: "Marble"
+        Scale: [20, 0.200000003, 20]
     RigidBodyComponent:
       RigidBody:
         Density: 1
         Mass: 0
         InitialVelocity: [0, 0, 0]
+        Previous Scale: [20, 0.200000003, 20]
         Type: STATIC
-    ColliderComponent:
-      Collider:
-        DynamicFriction: 0.5
-        StaticFriction: 0.5
-        Restitution: 0.0                  # less bouncy for ground feel
-        Type: BOX                         # box collider matches the flattened mesh
+    ModelComponent:
+      ModelID: 7633162898494281895
+      MaterialID: 11573253777835523025
+      ModelName: Cube
+      MaterialName: ""
+      ModelSource: Resources/Models/Cube.fbx
+      MaterialSource: Marble
+  - {}
   - {}

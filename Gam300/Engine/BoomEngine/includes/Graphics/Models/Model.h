@@ -16,6 +16,24 @@ namespace Boom {
 		BOOM_INLINE Model(std::string const&) {};
 		BOOM_INLINE virtual bool HasJoint() { return false; }
 		BOOM_INLINE virtual void Draw(uint32_t = GL_TRIANGLES) = 0;
+
+		static BOOM_INLINE bool CheckForJoints(std::string const& filename) {
+			Assimp::Importer importer; //will auto free
+			return ModelHasJoints(importer.ReadFile(filename, aiProcess_Triangulate | aiProcess_GenNormals));
+		}
+
+	private:
+		static BOOM_INLINE bool ModelHasJoints(const aiScene* scene) {
+			if (!scene) return false;
+
+			for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
+				aiMesh* mesh = scene->mMeshes[i];
+				if (mesh->mNumBones > 0) {
+					return true;
+				}
+			}
+			return false;
+		}
 	};
 
 	//---------------------------Static Model------------------------------
@@ -27,10 +45,8 @@ namespace Boom {
 		 * @details Applies a set of Assimp post-process flags for real-time rendering.
 		 *          On failure, logs an error and leaves the model empty.
 		 */
-		BOOM_INLINE StaticModel(std::string filename)
+		BOOM_INLINE StaticModel(std::string const& filename)
 		{
-			filename = CONSTANTS::MODELS_LOCATION.data() + filename;
-
 			uint32_t flags = aiProcess_Triangulate |
 				aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
 				aiProcess_OptimizeMeshes |
@@ -132,10 +148,8 @@ namespace Boom {
 		*          and parses available animation channels into the Animator.
 		*          On failure, logs an error and leaves the model empty.
 		*/
-		BOOM_INLINE SkeletalModel(std::string filename)
+		BOOM_INLINE SkeletalModel(std::string const& filename)
 		{
-			filename = CONSTANTS::MODELS_LOCATION.data() + filename;
-
 			uint32_t flags = aiProcess_Triangulate |
 				aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace |
 				aiProcess_OptimizeMeshes |
