@@ -53,6 +53,9 @@ namespace EditorUI {
         // NEW: Get viewport size for renderer resizing
         ImVec2 GetViewportSize() const;
 
+        ViewportPanel* GetViewportPanel() const { return m_Viewport.get(); }
+
+
     protected:
         void OnStart() override;
         void OnUpdate() override;

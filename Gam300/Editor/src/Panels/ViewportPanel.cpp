@@ -28,57 +28,77 @@ namespace EditorUI {
     {
         if (!m_ShowViewport) return;
 
-        if (ImGui::Begin(ICON_FA_IMAGE "\tViewport", &m_ShowViewport)) {
-            // Get available viewport space (updates automatically on fullscreen/resize)
+        if (ImGui::Begin(ICON_FA_IMAGE "\tViewport", &m_ShowViewport))
+        {
+            // 1) Get available space & aspect
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-
-            // Detect size changes (including fullscreen transitions)
-            static ImVec2 lastSize = { 0, 0 };
-            bool sizeChanged = (viewportSize.x != lastSize.x || viewportSize.y != lastSize.y);
-
-            if (sizeChanged && viewportSize.x > 1.0f && viewportSize.y > 1.0f) {
-                lastSize = viewportSize;
-                BOOM_INFO("Viewport resized to {}x{}", (int)viewportSize.x, (int)viewportSize.y);
-            }
-
-            // Store the current size for the editor to query
             m_Viewport = viewportSize;
+            const float aspect = (viewportSize.y > 1.0f) ? (viewportSize.x / viewportSize.y) : 1.0f;
 
-            // Get the frame texture from engine (already rendered in main loop)
-            uint32_t frameTexture = QuerySceneFrame();
+            // 2) Get the frame texture from the engine
+            const uint32_t frameTexture = QuerySceneFrame();
 
-            // Only proceed if we have valid texture and size
-            if (frameTexture > 0 && viewportSize.x > 1.0f && viewportSize.y > 1.0f) {
-
-                // Display the engine's rendered frame (just like your old working code)
+            if (frameTexture > 0 && viewportSize.x > 1.0f && viewportSize.y > 1.0f)
+            {
+                // 3) Draw the backbuffer/scene image
                 ImGui::Image(
                     (ImTextureID)(uintptr_t)frameTexture,
                     viewportSize,
-                    ImVec2(0, 1),  // UV top-left (flipped for OpenGL)
-                    ImVec2(1, 0)   // UV bottom-right
+                    ImVec2(0, 1),  // flip for OpenGL
+                    ImVec2(1, 0)
                 );
 
-                // Store viewport rect for other systems (camera input, gizmos, etc.)
-                ImVec2 itemMin = ImGui::GetItemRectMin();
-                ImVec2 itemMax = ImGui::GetItemRectMax();
+                // 4) Determine the viewport rect in ImGui space
+                const ImVec2 itemMin = ImGui::GetItemRectMin();
+                const ImVec2 itemMax = ImGui::GetItemRectMax();
+                const ImVec2 rectSz = ImVec2(itemMax.x - itemMin.x, itemMax.y - itemMin.y);
 
-                // Tooltip for debug
-                if (ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip("Engine Viewport - Scene render output");
+                // 5) Hover/focus: only allow camera input when actually over this image
+                const bool hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+                const bool focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && hovered;
+
+                // 6) Convert to GLFW client-space and inform the engine window
+                const ImVec2 mainPos = ImGui::GetMainViewport()->Pos; // top-left of client area in screen space
+                const double localX = double(itemMin.x - mainPos.x);
+                const double localY = double(itemMin.y - mainPos.y);
+                const double localW = double(rectSz.x);
+                const double localH = double(rectSz.y);
+
+                if (m_Ctx && m_Ctx->window)
+                    m_Ctx->window->SetCameraInputRegion(localX, localY, localW, localH, /*allow*/ hovered && focused);
+
+                // 7) Build active camera view/projection with the current aspect
+                //    (Even if you don't use it here yet, this ensures your camera comp sees the right aspect.)
+                if (m_Ctx)
+                {
+                    auto camView = m_Ctx->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
+                    if (camView.begin() != camView.end())
+                    {
+                        auto eid = *camView.begin();
+                        auto& camComp = camView.get<Boom::CameraComponent>(eid);
+                        auto& trans = camView.get<Boom::TransformComponent>(eid);
+
+                        // These are ready for gizmos or any overlay you add later
+                        const glm::mat4 view = camComp.camera.View(trans.transform);
+                        const glm::mat4 proj = camComp.camera.Projection(aspect);
+                        (void)view; (void)proj;
+                    }
                 }
 
+                // Tooltip
+                if (hovered)
+                    ImGui::SetTooltip("Engine Viewport - Scene render output");
             }
-            else {
-                // Debug info when texture is invalid
+            else
+            {
+                // Fallback UI when no frame is available
                 ImGui::Text("Frame Texture ID: %u", frameTexture);
                 ImGui::Text("Viewport Size: %.0fx%.0f", viewportSize.x, viewportSize.y);
                 ImGui::Text("Waiting for engine frame data...");
 
-                // Draw placeholder
-                ImDrawList* drawList = ImGui::GetWindowDrawList();
-                ImVec2 canvasPos = ImGui::GetCursorScreenPos();
-
                 if (viewportSize.x > 50 && viewportSize.y > 50) {
+                    ImDrawList* drawList = ImGui::GetWindowDrawList();
+                    ImVec2 canvasPos = ImGui::GetCursorScreenPos();
                     drawList->AddRectFilled(
                         canvasPos,
                         ImVec2(canvasPos.x + viewportSize.x, canvasPos.y + viewportSize.y),
@@ -99,6 +119,10 @@ namespace EditorUI {
     {
         DEBUG_DLL_BOUNDARY("ViewportPanel::OnSelect");
         BOOM_INFO("ViewportPanel::OnSelect - Entity selected: {}", entity_id);
+
+        // If later you want gizmos here, you can store this selection into a member and
+        // manipulate its TransformComponent inside OnShow() using ImGuizmo with the camera matrices.
+        // (Left as-is to avoid header changes.)
     }
 
     void ViewportPanel::DebugViewportState() const

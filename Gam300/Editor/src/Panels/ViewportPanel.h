@@ -2,6 +2,8 @@
 
 #include <cstdint>                 // for uint32_t
 #include "Vendors/imgui/imgui.h"   // for ImTextureID, ImVec2
+#include "ImGuizmo.h"
+#include <glm/gtc/type_ptr.hpp>
 
 namespace Boom { struct AppContext; }
 namespace Boom { struct AppInterface; }
@@ -37,6 +39,8 @@ namespace EditorUI {
         ImTextureID  m_Frame = (ImTextureID)0;  // set in ctor
         std::uint32_t m_FrameId = 0;
         ImVec2       m_Viewport{ 0.0f, 0.0f };
+
+
     };
 
 } // namespace EditorUI
