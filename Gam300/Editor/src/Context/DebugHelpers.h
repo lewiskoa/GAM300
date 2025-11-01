@@ -36,6 +36,8 @@
 // Enhanced debugging functions for your specific use case
 namespace DebugHelpers
 {
+    //template function for dll boundary
+    template <typename... Args> inline bool DllBoundary(Args&&...) { return true; }
     // Debug function to validate window handle across DLL boundary
     inline void ValidateWindowHandle(GLFWwindow* window, const char* location)
     {
