@@ -139,7 +139,7 @@ namespace Boom {
 				auto& asset = (T&)(*registry[type][uid]);
 				return asset;
 			}
-			BOOM_ERROR("[AssetRegistry::Get] Asset UID {} not found! Returning EMPTY_ASSET", uid);
+			//BOOM_ERROR("[AssetRegistry::Get] Asset UID {} not found! Returning EMPTY_ASSET", uid);
 			return (T&)(*registry[type][EMPTY_ASSET]);
 		}
 
@@ -181,7 +181,7 @@ namespace Boom {
 		BOOM_INLINE auto AddSkybox(
 			AssetID uid,
 			std::string const& path,
-			int32_t size)
+			int32_t size = 2048)
 		{
 			auto asset{ std::make_shared<SkyboxAsset>() };
 			asset->type = AssetType::SKYBOX;
@@ -208,8 +208,8 @@ namespace Boom {
 		{
 			auto asset{ std::make_shared<ModelAsset>() };
 			asset->type = AssetType::MODEL;
-			asset->hasJoints = hasJoints;
-			if (hasJoints) {
+			asset->hasJoints = hasJoints || Model::CheckForJoints(path); //can check for joints from (.fbx) file
+			if (asset->hasJoints) {
 				asset->data = std::make_shared<SkeletalModel>(path);
 			}
 			else {
@@ -274,6 +274,9 @@ namespace Boom {
 			}
 
 			return false;
+		}
+		BOOM_INLINE std::unordered_map<uint32_t, AssetMap>& GetAll() {
+			return registry;
 		}
 
 	public: //helper functions for imgui context

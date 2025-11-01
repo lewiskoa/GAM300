@@ -7,7 +7,7 @@ private:
 public:
 	BOOM_INLINE ResourceWindow(AppInterface* c) 
 		: IWidget{ c }
-		, iconImage{"Icons/asset.png", false}
+		, iconImage{"Resources/Textures/Icons/asset.png" }
 		, icon{ (ImTextureID)iconImage }
 		, selected{}
 	{}
@@ -16,7 +16,7 @@ public:
 		if (ImGui::Begin("Resources")) {
 			
 			if (ImGui::Button("Save All Assets", { 128, 20 })) {
-				SaveAssets();
+				context->SaveAssets();
 			}
 			ImGui::SameLine();
 
@@ -94,22 +94,6 @@ public:
 	}
 
 private:
-	BOOM_INLINE bool SaveAssets(const std::string& scenePath = "Scenes/")
-	{
-		//Try blocks cause crashed in release mode. Need to find new alternative
-		DataSerializer serializer;
-
-		const std::string assetsFilePath = scenePath + "assets.yaml";
-
-		BOOM_INFO("[Assets] Saving assets to '{}'", assetsFilePath);
-
-		// Serialize scene and assets
-		serializer.Serialize(context->GetAssetRegistry(), assetsFilePath);
-
-		BOOM_INFO("[Assets] Successfully saved assets");
-		return true;
-	}
-
 	BOOM_INLINE void CreateEmptyMaterial() {
 		static char buff[CONSTANTS::CHAR_BUFFER_SIZE] = "";
 		

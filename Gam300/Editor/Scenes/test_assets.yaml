@@ -117,7 +117,7 @@ ASSETS:
   - Type: TEXTURE
     UID: 356508722382236238
     Name: albedo
-    Source: Marble/albedo.dds
+    Source: Resources/Textures/Marble/albedo.dds
     Properties:
       Data:
         CompileAsCompressed: true
@@ -128,7 +128,7 @@ ASSETS:
   - Type: TEXTURE
     UID: 436545047596730240
     Name: normal
-    Source: Marble/normal.dds
+    Source: Resources/Textures/Marble/normal.dds
     Properties:
       Data:
         CompileAsCompressed: true
@@ -139,7 +139,7 @@ ASSETS:
   - Type: TEXTURE
     UID: 16314464286324216731
     Name: roughness
-    Source: Marble/roughness.dds
+    Source: Resources/Textures/Marble/roughness.dds
     Properties:
       Data:
         CompileAsCompressed: true
@@ -150,54 +150,54 @@ ASSETS:
   - Type: SKYBOX
     UID: 12730153547297182823
     Name: sky
-    Source: Skybox/sky.dds
+    Source: Resources/Textures/Skybox/sky.dds
     Properties:
       Size: 2048
   - Type: MODEL
     UID: 8858230097853058436
     Name: Cube - Copy (4)
-    Source: Cube - Copy (4).fbx
+    Source: Resources/Models/Cube - Copy (4).fbx
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 12185416543001335231
     Name: walking
-    Source: walking.fbx
+    Source: Resources/Models/walking.fbx
     Properties:
       HasJoints: true
   - Type: MODEL
     UID: 2474215152335402778
     Name: Cube - Copy (3)
-    Source: Cube - Copy (3).fbx
+    Source: Resources/Models/Cube - Copy (3).fbx
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 6147709962160563775
     Name: sphere
-    Source: sphere.fbx
+    Source: Resources/Models/sphere.fbx
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 3843189617850929280
     Name: cube
-    Source: cube.fbx
+    Source: Resources/Models/cube.fbx
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 14642322846606299060
     Name: Cube - Copy (2)
-    Source: Cube - Copy (2).fbx
+    Source: Resources/Models/Cube - Copy (2).fbx
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 11186732660022374532
     Name: Cube - Copy
-    Source: Cube - Copy.fbx
+    Source: Resources/Models/Cube - Copy.fbx
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 10224291522457842912
     Name: Cube - Copy (5)
-    Source: Cube - Copy (5).fbx
+    Source: Resources/Models/Cube - Copy (5).fbx
     Properties:
       HasJoints: false

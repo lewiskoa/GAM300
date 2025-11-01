@@ -8,6 +8,7 @@
 #define INTERFACE_H
 
 #include "Context.h"
+#include "Auxiliaries/DataSerializer.h"
 
 namespace Boom
 {
@@ -80,7 +81,22 @@ namespace Boom
 
             return layer;
         }
+        BOOM_INLINE double GetDeltaTime() const noexcept { return m_Context->DeltaTime; }
 
+        BOOM_INLINE std::shared_ptr<GLFWwindow> GetWindowHandle()
+        {
+            return m_Context->window->Handle();
+        }
+
+        BOOM_INLINE uint32_t GetSceneFrame()
+        {
+            return m_Context->renderer->GetFrame();
+        }
+
+    /////////////////////////////////////
+    //EventSystem Manipulation Logistics
+    /////////////////////////////////////
+    public:
         // attach event callback
         template <typename Event, typename Callback>
         BOOM_INLINE void AttachCallback(Callback&& callback)
@@ -111,6 +127,12 @@ namespace Boom
             m_Context->dispatcher.DetachCallback<Event>(m_LayerID);
         }
 
+        
+
+    /////////////////////////////////////
+    //Entity Manipulation Logistics
+    /////////////////////////////////////
+    public: 
         // create entity
         template <typename Entt, typename... Args>
         BOOM_INLINE Entt CreateEntt(Args&&... args)
@@ -124,7 +146,7 @@ namespace Boom
         {
             BOOM_STATIC_ASSERT(std::is_base_of<Entity,
                 Entt>::value);
-            return std::move(Entt(&m_Context->scene,entity));
+            return std::move(Entt(&m_Context->scene, entity));
         }
         // loop through entities
         template<typename Entt, typename Comp, typename Task>
@@ -138,6 +160,37 @@ namespace Boom
                     task(std::move(Entt(&m_Context->scene,
                         entity)), comp);
                 });
+        }
+        BOOM_INLINE EntityRegistry& GetEntityRegistry() {
+            return m_Context->scene;
+        }
+        //if you need to swap selected object call with (true)
+        // otherwise if used for comparison/no reset of selected needed
+        BOOM_INLINE entt::entity& SelectedEntity(bool isResetAllSelected = false) {
+            if (isResetAllSelected) ResetAllSelected();
+            return selectedEntity;
+        }
+        BOOM_INLINE void ResetAllSelected() {
+            selectedEntity = entt::null;
+            selectedAsset = {};
+            //add more if needed
+        }
+    private: //vars
+        entt::entity selectedEntity{ entt::null };
+        
+    /////////////////////////////////////
+    //Asset Manipulation Logistics
+    /////////////////////////////////////
+    public:
+        struct AssetInfo {
+            AssetID id{};
+            AssetType type{};
+            std::string name{};
+        };
+
+        template<class Type>
+        BOOM_INLINE std::string const& GetAssetName(AssetID uid) {
+            return m_Context->assets->Get<Type>(uid).name;
         }
 
         template<typename Task>
@@ -164,45 +217,6 @@ namespace Boom
                 task(customAsset); //_Asset*
             }
         }
-
-        BOOM_INLINE double GetDeltaTime() const noexcept { return m_Context->DeltaTime; }
-
-        BOOM_INLINE std::shared_ptr<GLFWwindow> GetWindowHandle()
-        {
-            return m_Context->window->Handle();
-        }
-
-        BOOM_INLINE uint32_t GetSceneFrame()
-        {
-			return m_Context->renderer->GetFrame();
-        }
-
-        BOOM_INLINE EntityRegistry& GetEntityRegistry() {
-            return m_Context->scene;
-        }
-
-        template<class Type>
-        BOOM_INLINE std::string const& GetAssetName(AssetID uid) {
-            return m_Context->assets->Get<Type>(uid).name;
-        }
-        
-    public: //helper functions for imgui iwidget context
-        //if you need to swap selected object call with (true)
-        // otherwise if used for comparison/no reset of selected needed
-        BOOM_INLINE entt::entity& SelectedEntity(bool isResetAllSelected = false) {
-            if (isResetAllSelected) ResetAllSelected();
-            return selectedEntity;
-        }
-        BOOM_INLINE void ResetAllSelected() {
-            selectedEntity = entt::null;
-            selectedAsset = {};
-            //add more if needed
-        }
-        struct AssetInfo {
-            AssetID id{};
-            AssetType type{};
-            std::string name{};
-        };
         //if you need to swap selected object call with (true)
         // otherwise if used for comparison/no reset of selected needed
         BOOM_INLINE AssetInfo& SelectedAsset(bool isResetAllSelected = false) {
@@ -222,7 +236,7 @@ namespace Boom
             default:
                 break;
             }
-            
+
         }
 
         BOOM_INLINE AssetRegistry& GetAssetRegistry() {
@@ -239,6 +253,33 @@ namespace Boom
             else if (type == AssetType::PREFAB) m_Context->assets->Remove<PrefabAsset>(uid);
         }
 
+        BOOM_INLINE bool SaveAssets(const std::string& scenePath = "AssetsProp/")
+        {
+            //Try blocks cause crashed in release mode. Need to find new alternative
+            DataSerializer serializer;
+
+            const std::string assetsFilePath = scenePath + "assets.yaml";
+
+            BOOM_INFO("[Assets] Saving assets to '{}'", assetsFilePath);
+
+            // Serialize scene and assets
+            serializer.Serialize(GetAssetRegistry(), assetsFilePath);
+
+            BOOM_INFO("[Assets] Successfully saved assets");
+            return true;
+        }
+
+        //Gets asset if from path for 100% unique ids
+        BOOM_INLINE AssetID AssetIDFromPath(const std::filesystem::path& path)
+        {
+            return std::hash<std::string>{}(path.string());
+        }
+    private: //vars
+        AssetInfo selectedAsset{};
+    
+    /////////////////////////////////////
+    //virtual
+    /////////////////////////////////////
     protected:
         /** @brief  Called once when the layer is attached. Override to initialize. */
         BOOM_INLINE virtual void OnStart() {}
@@ -253,10 +294,6 @@ namespace Boom
         friend struct Application;
 
         uint32_t    m_LayerID{};   ///< Unique identifier for this layer
-
-        entt::entity selectedEntity{ entt::null };
-
-        AssetInfo selectedAsset{};
     };
 
 } // namespace Boom

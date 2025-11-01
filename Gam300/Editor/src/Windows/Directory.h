@@ -13,11 +13,11 @@ private:
 public:
 	BOOM_INLINE DirectoryWindow(AppInterface* c)
 		: IWidget{ c }
-		, folderIcon{ "Icons/folder.png", false }
-		, assetIcon{ "Icons/asset.png", false }
+		, folderIcon{ "Resources/Textures/Icons/folder.png" }
+		, assetIcon{ "Resources/Textures/Icons/asset.png" }
 		, rootNode{}
 		, selectedPath{}
-		, rTimer{}
+		, rTimer{ AUTO_REFRESH_TIMER }
 		, dropTargetPath{}
 		, showDeleteConfirm{}
 		, showDeleteError{}
@@ -62,6 +62,7 @@ private: //seperated imgui logic
 		if (ImGui::Button("Refresh") || (rTimer += context->GetDeltaTime()) > AUTO_REFRESH_TIMER) {
 			rootNode = BuildDirectoryTree();
 			rTimer = 0.0;
+			UpdateAssetRegistry();
 		}
 	}
 	BOOM_INLINE void DeleteUpdate() {
@@ -121,7 +122,10 @@ private: //seperated imgui logic
 		}
 	}
 
-private: //directory tree
+/////////////////////////////////////
+//Directory Tree
+/////////////////////////////////////
+private:
 	//k-tree linked list of nodes containing children directories and files
 	//every fileNode should have an icon to represent what it is
 	// sprite for folders, textures
@@ -160,8 +164,7 @@ private: //directory tree
 					if (ext == ".dds" || ext == ".png") {
 						//finds the texture id to draw
 						context->AssetTextureView([&path, &texId](TextureAsset* tex){
-							std::string texPath{ std::string(CONSTANTS::TEXTURES_LOCATION) + tex->source };
-							if (texPath == path.generic_string()) {
+							if (tex->source == path.generic_string()) {
 								texId = static_cast<GLuint>(*tex->data.get());
 								return;
 							}
@@ -256,7 +259,103 @@ private: //directory tree
 		ImGui::PopID();
 	}
 
-private: //filesystem logic
+/////////////////////////////////////
+//Asset Managing
+/////////////////////////////////////
+private:
+	//update assetmanager based on files located:
+		// textures(.png/.dds)
+		// models(.fbx)
+		// skybox(.hdr)
+	//missing implementation file types : script, scene, prefab
+	BOOM_INLINE void UpdateAssetRegistry() {
+		std::unordered_set<std::filesystem::path> seenPaths;
+
+		if (rootNode) {
+			TraverseAndRegister(rootNode.get(), seenPaths);
+		}
+
+		RemoveStaleAssets(seenPaths);
+	}
+
+	//recursively traverse into linked list tree to register/update assets
+	BOOM_INLINE void TraverseAndRegister(FileNode* node, std::unordered_set<std::filesystem::path>& seen)
+	{
+		if (!node) return;
+
+		const auto& path = node->fullPath;
+		const auto ext = path.extension().string();
+
+		// --- TEXTURES ---
+		if (!node->isDirectory && (ext == ".png" || ext == ".dds"))
+		{
+			seen.insert(path);
+			RegisterAsset<TextureAsset>(path, node->texId);
+		}
+		// --- MODELS ---
+		else if (!node->isDirectory && ext == ".fbx")
+		{
+			seen.insert(path);
+			RegisterAsset<ModelAsset>(path, node->texId);
+		}
+		// --- SKYBOX ---
+		else if (!node->isDirectory && ext == ".hdr")
+		{
+			seen.insert(path);
+			RegisterAsset<SkyboxAsset>(path, node->texId);
+		}
+		// --- more stuff in future ---
+
+		// Recurse into children
+		for (auto& child : node->children)
+		{
+			TraverseAndRegister(child.get(), seen);
+		}
+	}
+
+	//logic for update/register of asset
+	template <class T>
+	BOOM_INLINE void RegisterAsset(const std::filesystem::path& path, GLuint& texId)
+	{
+		AssetID uid{ context->AssetIDFromPath(path) };  // your hash function
+
+		if (context->GetAssetRegistry().Get<T>(uid).uid == EMPTY_ASSET) {
+			// New asset
+			texId = (GLuint)assetIcon;
+			if constexpr (std::is_same_v<T, TextureAsset>)
+			{
+				texId = (GLuint)(*context->GetAssetRegistry().AddTexture(uid, path.generic_string()).get()->data);
+			}
+			else if constexpr (std::is_same_v<T, ModelAsset>)
+			{
+				context->GetAssetRegistry().AddModel(uid, path.generic_string());
+			}
+			else if constexpr (std::is_same_v<T, SkyboxAsset>)
+			{
+				context->GetAssetRegistry().AddSkybox(uid, path.generic_string());
+			}
+			// --- more stuff in future ---
+
+		}
+	}
+
+	BOOM_INLINE void RemoveStaleAssets(const std::unordered_set<std::filesystem::path>& seen)
+	{
+		for (auto& [type, map] : context->GetAssetRegistry().GetAll()) {
+			for (auto it = map.begin(); it != map.end(); ) {
+				//if file not located in seen path = deleted, must remove from assetmanager
+				if (seen.find(it->second->source) == seen.end()) {
+					it = map.erase(it);
+				}
+				else ++it;
+			}
+		}
+	}
+
+/////////////////////////////////////
+//Filesystem
+/////////////////////////////////////
+private:
 	//logic behind copying of files into specified directory
 	BOOM_INLINE void CopyFilesToDirectory(const std::vector<std::string>& filePaths, const std::filesystem::path& targetDir) {
 		for (const auto& filePath : filePaths) {
@@ -306,6 +405,9 @@ private: //filesystem logic
 		}
 	}
 
+/////////////////////////////////////
+//GLFW Callback
+/////////////////////////////////////
 private: //glfw callback for drag and drop
 	BOOM_INLINE static void OnDrop(GLFWwindow*, int32_t count, char const** paths) {
 		droppedFiles.clear();
