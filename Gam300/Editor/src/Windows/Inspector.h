@@ -427,7 +427,10 @@ private: //helpers
     }
 
     BOOM_INLINE void DeleteUpdate() {
-        if (ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+        if ((context->SelectedEntity() != entt::null || 
+             context->SelectedAsset().id != 0u) && 
+            ImGui::IsKeyPressed(ImGuiKey_Delete, false)) 
+        {
             showDeletePopup = true;
         }
         if (showDeletePopup) {
