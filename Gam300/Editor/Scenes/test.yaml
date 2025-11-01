@@ -69,7 +69,7 @@ ENTITIES:
         Rotate: [0, 0, 0]
         Scale: [1, 1, 1]
     SkyboxComponent:
-      SkyboxID: 12730153547297182823
+      SkyboxID: 10427935764841817814
   - InfoComponent:
       Parent: 0
       Name: Model walk

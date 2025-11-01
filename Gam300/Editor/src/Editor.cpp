@@ -473,8 +473,7 @@ private:
 
             if (frameTexture > 0 && viewportSize.x > 0 && viewportSize.y > 0) {
                 // Display the engine's rendered frame
-                ImGui::Image((ImTextureID)(uintptr_t)frameTexture, viewportSize,
-                    ImVec2(0, 1), ImVec2(1, 0));  // Flipped UV for OpenGL
+                ImGui::Image((ImTextureID)(uintptr_t)frameTexture, viewportSize, ImVec2(0, 1), ImVec2(1, 0));  // Flipped UV for OpenGL
 
                 m_Console.TrackLastItemAsViewport("Viewport");
 

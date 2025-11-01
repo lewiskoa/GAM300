@@ -182,6 +182,10 @@ namespace Boom
          */
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
+            { //load assets
+                DataSerializer serializer;
+                serializer.Deserialize(*m_Context->assets, "AssetsProp/assets.yaml");
+            }
             LoadScene("default");
 
             CameraController camera(
@@ -576,13 +580,13 @@ namespace Boom
             DataSerializer serializer;
 
             const std::string sceneFilePath = scenePath + sceneName + ".yaml";
-            const std::string assetsFilePath = scenePath + sceneName + "_assets.yaml";
+            //const std::string assetsFilePath = scenePath + sceneName + "_assets.yaml";
 
             BOOM_INFO("[Scene] Saving scene '{}' to '{}'", sceneName, sceneFilePath);
 
             // Serialize scene and assets
             serializer.Serialize(m_Context->scene, sceneFilePath);
-            serializer.Serialize(*m_Context->assets, assetsFilePath);
+            //serializer.Serialize(*m_Context->assets, assetsFilePath);
 
             // Update current scene tracking
             strncpy_s(m_CurrentScenePath, sizeof(m_CurrentScenePath), sceneFilePath.c_str(), _TRUNCATE);
@@ -602,7 +606,7 @@ namespace Boom
             DataSerializer serializer;
 
             const std::string sceneFilePath = scenePath + sceneName + ".yaml";
-            const std::string assetsFilePath = scenePath + sceneName + "_assets.yaml";
+            //const std::string assetsFilePath = scenePath + sceneName + "_assets.yaml";
 
             BOOM_INFO("[Scene] Loading scene '{}' from '{}'", sceneName, sceneFilePath);
 
@@ -610,8 +614,8 @@ namespace Boom
             CleanupCurrentScene();
 
             // Load assets first
-            BOOM_INFO("[Scene] Loading assets...");
-            serializer.Deserialize(*m_Context->assets, assetsFilePath);
+            //BOOM_INFO("[Scene] Loading assets...");
+            //serializer.Deserialize(*m_Context->assets, assetsFilePath);
 
             // Then load scene
             BOOM_INFO("[Scene] Loading scene data...");
@@ -699,7 +703,7 @@ namespace Boom
 #endif
 
             // Reset asset registry (keeping EMPTY_ASSET sentinels)
-            * m_Context->assets = AssetRegistry();
+            //* m_Context->assets = AssetRegistry();
 
 
             // RESTORE PREFABS after registry reset

@@ -272,10 +272,10 @@ private:
 		std::unordered_set<std::filesystem::path> seenPaths;
 
 		if (rootNode) {
-			//TraverseAndRegister(rootNode.get(), seenPaths);
+			TraverseAndRegister(rootNode.get(), seenPaths);
 		}
 
-		//RemoveStaleAssets(seenPaths);
+		RemoveStaleAssets(seenPaths);
 	}
 
 	//recursively traverse into linked list tree to register/update assets
@@ -324,7 +324,6 @@ private:
 	BOOM_INLINE void RegisterAsset(const std::filesystem::path& path, GLuint& texId)
 	{
 		AssetID uid{ context->AssetIDFromPath(path) };  // your hash function
-		BOOM_DEBUG("{}:{}", path.generic_string(), uid);
 		if (context->GetAssetRegistry().Get<T>(uid).uid == EMPTY_ASSET) {
 			// New asset
 			texId = (GLuint)assetIcon;
@@ -345,6 +344,7 @@ private:
 		}
 	}
 
+	//should only remove .png/.dds and .fbx for now
 	BOOM_INLINE void RemoveStaleAssets(const std::unordered_set<std::filesystem::path>& seen)
 	{
 		for (auto& [type, map] : context->GetAssetRegistry().GetAll()) {
@@ -352,6 +352,11 @@ private:
 				auto first{ map.begin() };
 				++first;
 				for (auto it{ first }; it != map.end(); ) {
+					std::string ext{ GetExtension(it->second->source) };
+					if (ext != "png" || ext != "dds" || ext != ".fbx") {
+						++it;
+						continue;
+					}
 					//if file not located in seen path = deleted, must remove from assetmanager
 					if (seen.find(it->second->source) == seen.end()) {
 						it = map.erase(it);
@@ -413,6 +418,16 @@ private:
 			BOOM_ERROR("Directory.h_DeletePath:{}", dodo);
 			return false;
 		}
+	}
+
+	std::string GetExtension(std::string const& filename) {
+		uint32_t pos{ (uint32_t)filename.find_last_of('.') };
+		if (pos == std::string::npos || pos == filename.length() - 1) {
+			return ""; //no extension
+		}
+		std::string ext{ filename.substr(pos + 1) };
+		std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower); //lowercase
+		return ext;
 	}
 
 /////////////////////////////////////
