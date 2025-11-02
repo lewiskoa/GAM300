@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <memory>
-// CRITICAL: Include the complete definition, not just forward declaration
 #include "Application/Interface.h"  // For Boom::AppInterface complete type
 #include "Vendors/imgui/imgui.h"    // For ImVec2
 

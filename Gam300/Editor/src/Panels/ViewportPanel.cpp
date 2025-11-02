@@ -1,4 +1,4 @@
-﻿// ViewportPanel.cpp - CORRECTED (matches your working old editor)
+﻿// ViewportPanel.cpp - WITH FULLSCREEN SUPPORT
 #include "Panels/ViewportPanel.h"
 #include "Editor.h"
 #include "Context/Context.h"
@@ -17,6 +17,7 @@ namespace EditorUI {
 
     ViewportPanel::ViewportPanel(Editor* owner)
         : m_Owner(owner)
+        , m_IsFullscreen(false)
     {
         m_App = static_cast<Boom::AppInterface*>(m_Owner);
         m_Ctx = m_App ? owner->GetContext() : nullptr;
@@ -28,8 +29,45 @@ namespace EditorUI {
     {
         if (!m_ShowViewport) return;
 
-        if (ImGui::Begin(ICON_FA_IMAGE "\tViewport", &m_ShowViewport))
+        // Handle fullscreen toggle (F11 key)
+        if (ImGui::IsKeyPressed(ImGuiKey_F11)) {
+            m_IsFullscreen = !m_IsFullscreen;
+        }
+
+        // Window flags for fullscreen mode
+        ImGuiWindowFlags windowFlags = 0;
+        if (m_IsFullscreen) {
+            windowFlags |= ImGuiWindowFlags_NoTitleBar;
+            windowFlags |= ImGuiWindowFlags_NoCollapse;
+            windowFlags |= ImGuiWindowFlags_NoResize;
+            windowFlags |= ImGuiWindowFlags_NoMove;
+            windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
+            windowFlags |= ImGuiWindowFlags_NoNavFocus;
+            windowFlags |= ImGuiWindowFlags_NoBackground;
+
+            // Set window to cover the entire viewport
+            ImGuiViewport* viewport = ImGui::GetMainViewport();
+            ImGui::SetNextWindowPos(viewport->WorkPos);
+            ImGui::SetNextWindowSize(viewport->WorkSize);
+        }
+
+        if (ImGui::Begin(ICON_FA_IMAGE "\tViewport", &m_ShowViewport, windowFlags))
         {
+            // Add fullscreen toggle button in the top-right corner
+            if (!m_IsFullscreen) {
+                ImGui::SameLine(ImGui::GetWindowWidth() - 80);
+                if (ImGui::Button("Fullscreen")) {
+                    m_IsFullscreen = true;
+                }
+            }
+            else {
+                // Show exit fullscreen button
+                ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - 120, 10));
+                if (ImGui::Button("Exit Fullscreen") || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+                    m_IsFullscreen = false;
+                }
+            }
+
             // 1) Get available space & aspect
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
             m_Viewport = viewportSize;
@@ -58,7 +96,7 @@ namespace EditorUI {
                 const bool focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && hovered;
 
                 // 6) Convert to GLFW client-space and inform the engine window
-                const ImVec2 mainPos = ImGui::GetMainViewport()->Pos; // top-left of client area in screen space
+                const ImVec2 mainPos = ImGui::GetMainViewport()->Pos;
                 const double localX = double(itemMin.x - mainPos.x);
                 const double localY = double(itemMin.y - mainPos.y);
                 const double localW = double(rectSz.x);
@@ -68,7 +106,6 @@ namespace EditorUI {
                     m_Ctx->window->SetCameraInputRegion(localX, localY, localW, localH, /*allow*/ hovered && focused);
 
                 // 7) Build active camera view/projection with the current aspect
-                //    (Even if you don't use it here yet, this ensures your camera comp sees the right aspect.)
                 if (m_Ctx)
                 {
                     auto camView = m_Ctx->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
@@ -78,7 +115,6 @@ namespace EditorUI {
                         auto& camComp = camView.get<Boom::CameraComponent>(eid);
                         auto& trans = camView.get<Boom::TransformComponent>(eid);
 
-                        // These are ready for gizmos or any overlay you add later
                         const glm::mat4 view = camComp.camera.View(trans.transform);
                         const glm::mat4 proj = camComp.camera.Projection(aspect);
                         (void)view; (void)proj;
@@ -86,8 +122,8 @@ namespace EditorUI {
                 }
 
                 // Tooltip
-                if (hovered)
-                    ImGui::SetTooltip("Engine Viewport - Scene render output");
+                if (hovered && !m_IsFullscreen)
+                    ImGui::SetTooltip("Engine Viewport - Scene render output\nPress F11 for fullscreen");
             }
             else
             {
@@ -119,10 +155,6 @@ namespace EditorUI {
     {
         DEBUG_DLL_BOUNDARY("ViewportPanel::OnSelect");
         BOOM_INFO("ViewportPanel::OnSelect - Entity selected: {}", entity_id);
-
-        // If later you want gizmos here, you can store this selection into a member and
-        // manipulate its TransformComponent inside OnShow() using ImGuizmo with the camera matrices.
-        // (Left as-is to avoid header changes.)
     }
 
     void ViewportPanel::DebugViewportState() const
