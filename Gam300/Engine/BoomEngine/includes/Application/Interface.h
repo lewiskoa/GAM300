@@ -72,14 +72,13 @@ namespace Boom
                 return nullptr;
             }
 
-            auto* layer = new Layer(std::forward<Args>(args)...);
+            auto layer = new Layer(std::forward<Args>(args)...);
             m_Context->layers.push_back(layer);
 
-            layer->_InitLayer(m_Context, TypeID<Layer>());
+            layer->m_LayerID = TypeID<Layer>();
+            layer->m_Context = m_Context;
+            layer->OnStart();
 
-         
-            AppInterface* asBase = layer;
-            asBase->OnStart();
             return layer;
         }
         BOOM_INLINE double GetDeltaTime() const noexcept { return m_Context->DeltaTime; }
@@ -203,21 +202,28 @@ namespace Boom
         BOOM_INLINE void AssetTextureView(Task&& task) {
             auto& map = m_Context->assets->GetMap<TextureAsset>();
             for (auto& [uid, asset] : map) {
-                if (uid != EMPTY_ASSET) {
-                    TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset.get()) };
-                    if (!tex) continue;
-                    task(tex);
-                }
+                TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset.get()) };
+                if (!tex) continue;
+                task(tex);
+            }
+        }
+
+        template<class AssetType, class Task>
+        BOOM_INLINE void AssetTypeView(Task&& task) {
+            auto& map = m_Context->assets->GetMap<AssetType>();
+            for (auto& [uid, asset] : map) {
+                AssetType* customAsset{ dynamic_cast<AssetType*>(asset.get()) };
+                task(customAsset); //_Asset*
             }
         }
 
      
 
 
-        BOOM_INLINE uint32_t GetSceneFrame()
-        {
-			return m_Context->renderer->GetFrame();
-        }
+        // BOOM_INLINE uint32_t GetSceneFrame()
+        // {
+		// 	return m_Context->renderer->GetFrame();
+        // }
 
         BOOM_INLINE AppContext* GetContext() const noexcept { return m_Context; }
         //if you need to swap selected object call with (true)
@@ -272,6 +278,17 @@ namespace Boom
             return true;
         }
 
+        BOOM_INLINE uint32_t GetTexIDFromPath(std::string const& path) {
+            auto& map = m_Context->assets->GetMap<TextureAsset>();
+            for (auto& [uid, asset] : map) {
+                if (uid != EMPTY_ASSET && asset->source == path) {
+                    TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset.get()) };
+                    return tex ? *tex->data.get() : 0;
+                }
+            }
+            return 0;
+        }
+
         //Gets asset if from path for 100% unique ids
         BOOM_INLINE AssetID AssetIDFromPath(const std::filesystem::path& path)
         {
@@ -291,10 +308,7 @@ namespace Boom
         BOOM_INLINE virtual void OnUpdate() {}
 
         AppContext* m_Context{};   ///< Pointer to shared application context
-        void _InitLayer(AppContext* ctx, uint32_t id) {
-            m_Context = ctx;
-            m_LayerID = id;
-        }
+
     private:
         // Allow Application to set up layers
         friend struct Application;

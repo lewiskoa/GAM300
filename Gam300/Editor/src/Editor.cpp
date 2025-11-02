@@ -98,6 +98,11 @@ namespace EditorUI {
 
     void Editor::Init()
     {
+        { //load assets
+            DataSerializer serializer;
+            serializer.Deserialize(*m_Context->assets, "AssetsProp/assets.yaml");
+        }
+
         // Construct panels here; they persist across frames.
         // We pass `this` so panels can call owner->GetContext() etc.
         m_MenuBar = std::make_unique<MenuBarPanel>(this);
@@ -130,175 +135,6 @@ namespace EditorUI {
     {
         // draw one ImGui frame of the editor
         Render(); // you already wrote this to NewFrame(), draw panels, RenderDrawData()
-        // if (!m_ShowViewport) return;
-
-        // if (ImGui::Begin("Viewport", &m_ShowViewport)) {
-
-        //     // Show current scene info in menu bar
-        //     ImGui::BeginTable("TextLayout", 2, ImGuiTableFlags_BordersInner | ImGuiTableFlags_SizingFixedFit);
-        //     ImGui::TableNextColumn();
-        //     if (m_Application) {
-        //         if (m_Application->IsSceneLoaded()) {
-        //             std::string currentPath = m_Application->GetCurrentScenePath();
-        //             if (!currentPath.empty()) {
-        //                 // Extract just the filename
-        //                 size_t lastSlash = currentPath.find_last_of("/\\");
-        //                 std::string fileName = (lastSlash != std::string::npos) ?
-        //                     currentPath.substr(lastSlash + 1) : currentPath;
-        //                 ImGui::Text("Scene: %s", fileName.c_str());
-        //             }
-        //             else {
-        //                 ImGui::Text("Scene: Unsaved");
-        //             }
-        //         }
-        //         else {
-        //             ImGui::Text("Scene: None");
-        //         }
-
-        //         ImGui::TableNextColumn();
-        //         ImGui::Text("camera speed: %.2f", m_Context->window->camMoveMultiplier);
-        //         if (m_Context->window->isShiftDown) {
-        //             ImGui::SameLine();
-        //             ImGui::Text("* %.2f", CONSTANTS::CAM_RUN_MULTIPLIER);
-        //         }
-        //         ImGui::EndTable();
-
-        //         ImGui::Separator();
-        //     }
-            
-        //     // Get frame texture from engine
-        //     uint32_t frameTexture = GetSceneFrame();
-        //     ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-        //     //float aspectRatio = (viewportSize.y > 0) ? viewportSize.x / viewportSize.y : 1.0f;
-
-        //     if (frameTexture > 0 && viewportSize.x > 0 && viewportSize.y > 0) {
-        //         // Display the engine's rendered frame
-        //         ImGui::Image((ImTextureID)(uintptr_t)frameTexture, viewportSize, ImVec2(0, 1), ImVec2(1, 0));  // Flipped UV for OpenGL
-
-        //         m_Console.TrackLastItemAsViewport("Viewport");
-
-        //         ImVec2 itemMin = ImGui::GetItemRectMin();
-        //         ImVec2 itemMax = ImGui::GetItemRectMax();
-        //         m_VP_TopLeft = itemMin;
-        //         m_VP_Size = ImVec2(itemMax.x - itemMin.x, itemMax.y - itemMin.y);
-        //         m_VP_Hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
-        //         m_VP_Focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && m_VP_Hovered;
-
-        //         // Convert ImGui screen-space rect -> GLFW window client-space rect
-        //         ImVec2 mainPos = ImGui::GetMainViewport()->Pos; // top-left of GLFW client area in screen space
-        //         double localX = (double)(m_VP_TopLeft.x - mainPos.x);
-        //         double localY = (double)(m_VP_TopLeft.y - mainPos.y);
-        //         double localW = (double)m_VP_Size.x;
-        //         double localH = (double)m_VP_Size.y;
-
-        //         // Allow camera look only when viewport is both focused and hovered (your policy)
-        //         bool allowCamera = (m_VP_Hovered && m_VP_Focused);
-
-        //         // Push region & permission to the window (each frame)
-        //         m_Context->window->SetCameraInputRegion(localX, localY, localW, localH, allowCamera);
-
-        //         if ((m_VP_Focused || m_VP_Hovered) && !ImGuizmo::IsUsing()) {
-        //             // Top row
-        //             if (ImGui::IsKeyPressed(ImGuiKey_1)) m_GizmoOperation = ImGuizmo::TRANSLATE;
-        //             if (ImGui::IsKeyPressed(ImGuiKey_2)) m_GizmoOperation = ImGuizmo::ROTATE;
-        //             if (ImGui::IsKeyPressed(ImGuiKey_3)) m_GizmoOperation = ImGuizmo::SCALE;
-
-        //             // Numpad (optional)
-        //             if (ImGui::IsKeyPressed(ImGuiKey_Keypad1)) m_GizmoOperation = ImGuizmo::TRANSLATE;
-        //             if (ImGui::IsKeyPressed(ImGuiKey_Keypad2)) m_GizmoOperation = ImGuizmo::ROTATE;
-        //             if (ImGui::IsKeyPressed(ImGuiKey_Keypad3)) m_GizmoOperation = ImGuizmo::SCALE;
-
-        //             // Toggle local/world
-        //             if (ImGui::IsKeyPressed(ImGuiKey_L))
-        //                 m_gizmoMode = (m_gizmoMode == ImGuizmo::LOCAL) ? ImGuizmo::WORLD : ImGuizmo::LOCAL;
-        //         }
-
-        //         // Tooltip & debug
-        //         if (m_VP_Hovered) {
-        //             ImGui::SetTooltip("Engine Viewport - Scene render output");
-        //         }
-        //         static int debugCount = 0;
-        //         if (++debugCount % 300 == 0) {
-        //             BOOM_INFO("Viewport - Texture ID: {}, Size: {}x{}", frameTexture, viewportSize.x, viewportSize.y);
-        //         }
-
-        //         // Build camera matrices using the VIEWPORT aspect
-        //         glm::mat4 cameraView(1.0f);
-        //         glm::mat4 cameraProj(1.0f);
-        //         {
-        //             auto view = m_Context->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
-        //             if (view.begin() != view.end()) {
-        //                 auto eid = view.front();
-        //                 auto& camComp = view.get<Boom::CameraComponent>(eid);
-        //                 auto& trans = view.get<Boom::TransformComponent>(eid);
-        //                 cameraView = camComp.camera.View(trans.transform);
-        //                 cameraProj = camComp.camera.Projection(m_Context->renderer->AspectRatio());
-        //             }
-        //         }
-
-        //         // --------- GIZMO DRAW & MANIPULATE (inside viewport) ----------
-        //         if (m_SelectedEntity != entt::null) {
-        //             Boom::Entity selected{ &m_Context->scene, m_SelectedEntity };
-        //             if (selected.Has<Boom::TransformComponent>()) {
-        //                 auto& tc = selected.Get<Boom::TransformComponent>();
-        //                 glm::mat4 model = tc.transform.Matrix();
-
-        //                 // Set up ImGuizmo to draw in this window & rect only
-        //                 ImGuizmo::SetOrthographic(false);
-        //                 ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
-        //                 ImGuizmo::SetRect(m_VP_TopLeft.x, m_VP_TopLeft.y, m_VP_Size.x, m_VP_Size.y);
-
-        //                 // Allow interaction only when hovered & focused
-        //                 ImGuizmo::Enable(m_VP_Hovered && m_VP_Focused);
-
-        //                 if (ImGuizmo::Manipulate(glm::value_ptr(cameraView),
-        //                     glm::value_ptr(cameraProj),
-        //                     m_GizmoOperation,
-        //                     m_gizmoMode,
-        //                     glm::value_ptr(model))) {
-        //                     // Decompose back into TRS (ImGuizmo outputs degrees for rotation)
-        //                     glm::vec3 t, rDeg, s;
-        //                     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(model),
-        //                         glm::value_ptr(t),
-        //                         glm::value_ptr(rDeg),
-        //                         glm::value_ptr(s));
-        //                     // If your engine stores radians, convert rDeg -> radians here.
-        //                     tc.transform.translate = t;
-        //                     tc.transform.rotate = rDeg;   // or glm::radians(rDeg)
-        //                     tc.transform.scale = s;
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     else {
-        //         // Show debug info when texture is invalid
-        //         ImGui::Text("Frame Texture ID: %u", frameTexture);
-        //         ImGui::Text("Viewport Size: %.0fx%.0f", viewportSize.x, viewportSize.y);
-        //         ImGui::Text("Waiting for engine frame data...");
-
-        //         // Draw a placeholder
-        //         ImDrawList* drawList = ImGui::GetWindowDrawList();
-        //         ImVec2 canvasPos = ImGui::GetCursorScreenPos();
-        //         ImVec2 canvasSize = viewportSize;
-
-        //         if (canvasSize.x > 50 && canvasSize.y > 50) {
-        //             drawList->AddRectFilled(canvasPos,
-        //                 ImVec2(canvasPos.x + canvasSize.x, canvasPos.y + canvasSize.y),
-        //                 IM_COL32(64, 64, 64, 255));
-
-        //             drawList->AddText(ImVec2(canvasPos.x + 10, canvasPos.y + 10),
-        //                 IM_COL32(255, 255, 255, 255), "Engine Viewport");
-        //         }
-
-        //         m_VP_TopLeft = canvasPos;
-        //         m_VP_Size = canvasSize;
-        //         m_VP_Hovered = false;
-        //         m_VP_Focused = false;
-        //     }
-        // }
-
-
-        // ImGui::End();
     }
 
     void Editor::Render()

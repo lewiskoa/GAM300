@@ -24,6 +24,7 @@ namespace EditorUI {
             if (auto* ctx = m_Owner->GetContext()) {
                 m.ctx = ctx;
             }
+            m_App = dynamic_cast<Boom::AppInterface*>(owner);
 
             // If your Editor has an Application* getter, set m.app here as well.
             // Example (uncomment/adapt if you have such API):
@@ -141,6 +142,16 @@ namespace EditorUI {
             // Toggle your renderer's debug draw flag by *reference* if available.
             if (m.ctx && m.ctx->renderer) {
                 ImGui::MenuItem("Debug Draw", nullptr, &m.ctx->renderer->isDrawDebugMode);
+                ImGui::MenuItem("Normal View", nullptr, &m.ctx->renderer->showNormalTexture);
+                if (ImGui::BeginMenu("Low Poly Mode")) {
+                    ImGui::Checkbox("Enabled", &m.ctx->renderer->showLowPoly);
+                    if (m.ctx->renderer->showLowPoly) {
+                        ImGui::SliderFloat("Dither Threshold", &m.ctx->renderer->DitherThreshold(), 0.0f, 1.0f);
+                    }
+                    ImGui::EndMenu();
+                }
+                bool TEMPORARY_PLACEHOLDER_WIREFRAME_COLLISION{};
+                ImGui::MenuItem("Collision Lines", nullptr, TEMPORARY_PLACEHOLDER_WIREFRAME_COLLISION);
             }
             ImGui::EndMenu();
         }

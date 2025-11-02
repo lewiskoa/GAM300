@@ -17,7 +17,23 @@ ASSETS:
       MetallicMapID: 0
       OcclusionMapID: 0
       EmissiveMapID: 0
-
+  - Type: MATERIAL
+    UID: 2930779482462285987
+    Name: Gradient
+    Source: Gradient
+    Properties:
+      Data:
+        emissive: [0, 0, 0]
+        albedo: [1, 1, 1]
+        roughness: 0.400000006
+        metallic: 0.5
+        occlusion: 1
+      AlbedoMapID: 4789105407518014319
+      NormalMapID: 18399105239901256411
+      RoughnessMapID: 0
+      MetallicMapID: 0
+      OcclusionMapID: 0
+      EmissiveMapID: 0
   - Type: PREFAB
     UID: 5076640578672151242
     Name: Dance
@@ -89,6 +105,7 @@ ASSETS:
         AnimatorComponent:
           Sequence: 0
           Time: 870.897278
+
   - Type: TEXTURE
     UID: 3416052683593611135
     Name: asset
@@ -177,6 +194,17 @@ ASSETS:
         alphaThreshold: 128
         mipLevel: 10
         isGamma: true
+  - Type: TEXTURE
+    UID: 4789105407518014319
+    Name: gradient
+    Source: Resources/Textures/gradient.png
+    Properties:
+      Data:
+        CompileAsCompressed: true
+        quality: 0.5
+        alphaThreshold: 128
+        mipLevel: 10
+        isGamma: true
   - Type: SKYBOX
     UID: 10427935764841817814
     Name: sky
@@ -208,6 +236,12 @@ ASSETS:
     Properties:
       HasJoints: false
   - Type: MODEL
+    UID: 10510038847207197447
+    Name: run
+    Source: Resources/Models/run.fbx
+    Properties:
+      HasJoints: true
+  - Type: MODEL
     UID: 7633162898494281895
     Name: Cube
     Source: Resources/Models/Cube.FBX
@@ -235,5 +269,17 @@ ASSETS:
     UID: 12369161784125194221
     Name: walking
     Source: Resources/Models/walking.fbx
+    Properties:
+      HasJoints: true
+  - Type: MODEL
+    UID: 11271718863933913868
+    Name: idle
+    Source: Resources/Models/idle.fbx
+    Properties:
+      HasJoints: true
+  - Type: MODEL
+    UID: 5190089082055736376
+    Name: kick
+    Source: Resources/Models/kick.fbx
     Properties:
       HasJoints: true

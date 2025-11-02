@@ -11,11 +11,6 @@ namespace Boom {
 		//file path starts from Textures folder
 		//textures that shouldn't compress are often already really small in size, like icons
 		Texture2D(std::string const& filename);
-
-		//use this overload when importing new textures(.png) with the editor
-		//will output a (BC7 .dds) compressed texture and load it setting ID
-		//contains exception handling due to memory manipulation
-		Texture2D(std::string const& inputPngPath, std::string const& outputDDSPath);
 		~Texture2D();
 		void Use(int32_t uniform, int32_t unit);
 		void Bind();
@@ -31,7 +26,6 @@ namespace Boom {
 
 		void LoadUnCompressed(std::string const& filename);
 		void LoadCompressed(std::string const& filename);
-		void CompressTexture(std::string const& inputPng, std::string const& outputDDS);
 
 	private:
 		int32_t height;

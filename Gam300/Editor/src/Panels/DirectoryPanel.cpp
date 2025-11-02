@@ -3,9 +3,11 @@
 #include "Context/Context.h"
 #include "Context/DebugHelpers.h"
 #include "Vendors/imgui/imgui.h"
+#include "Graphics/Textures/Texture.h"
 #include <GLFW/glfw3.h>
 #include <filesystem>
 #include <algorithm>
+#include <cctype>
 
 // pull Interface so we can call AppInterface methods
 #include "Application/Interface.h"   // include path per your include dirs
@@ -30,15 +32,17 @@ namespace EditorUI {
         DEBUG_DLL_BOUNDARY("DirectoryPanel::Ctor");
         if (!m_Owner) { BOOM_ERROR("DirectoryPanel - null owner"); return; }
 
-        // FIXED: Since Editor now inherits from AppInterface, cast works
-        m_App = static_cast<Boom::AppInterface*>(m_Owner);
+        m_App = dynamic_cast<Boom::AppInterface*>(owner);
         DEBUG_POINTER(m_App, "AppInterface");
 
         // Get context through the AppInterface
         if (m_App) {
-            m_Ctx = m_App->GetContext();
+            m_Ctx = owner->GetContext();
             DEBUG_POINTER(m_Ctx, "AppContext");
         }
+
+        folderIcon = m_App->GetTexIDFromPath("Resources/Textures/Icons/folder.png");
+        assetIcon = m_App->GetTexIDFromPath("Resources/Textures/Icons/asset.png");
     }
 
     void DirectoryPanel::Init()
@@ -93,6 +97,7 @@ namespace EditorUI {
         {
             rootNode = BuildDirectoryTree();
             rTimer = 0.0;
+            UpdateAssetRegistry();
         }
     }
 
@@ -101,38 +106,31 @@ namespace EditorUI {
         if (!selectedPath.empty() && ImGui::IsKeyPressed(ImGuiKey_Delete, false))
             showDeleteConfirm = true;
 
-        if (showDeleteConfirm)
-        {
+        if (showDeleteConfirm) {
             ImGui::OpenPopup("Confirm Delete");
-            ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
-        }
+            ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 
-        if (ImGui::BeginPopupModal("Confirm Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-        {
-            ImGui::Text("Are you sure you want to delete:\n%s?", selectedPath.c_str());
-            ImGui::Separator();
-
-            if (ImGui::Button("Yes", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false))
-            {
-                if (!DeletePath(selectedPath))
-                {
-                    showDeleteError = true;
-                    deleteErrorMessage = "Failed to delete: " + selectedPath;
+            if (ImGui::BeginPopupModal("Confirm Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::Text("Are you sure you want to delete:\n%s?", selectedPath.c_str());
+                ImGui::Separator();
+                if (ImGui::Button("Yes", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
+                    if (DeletePath(selectedPath)) {
+                        selectedPath.clear(); // Clear selection after deletion
+                    }
+                    else {
+                        showDeleteError = true;
+                        deleteErrorMessage = "Failed to delete: " + selectedPath;
+                    }
+                    showDeleteConfirm = false;
+                    ImGui::CloseCurrentPopup();
                 }
-                selectedPath.clear();
-                showDeleteConfirm = false;
-                ImGui::CloseCurrentPopup();
+                ImGui::SameLine();
+                if (ImGui::Button("No", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+                    showDeleteConfirm = false;
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
             }
-
-            ImGui::SameLine();
-
-            if (ImGui::Button("No", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape))
-            {
-                showDeleteConfirm = false;
-                ImGui::CloseCurrentPopup();
-            }
-
-            ImGui::EndPopup();
         }
 
         if (showDeleteError)
@@ -180,7 +178,22 @@ namespace EditorUI {
                 {
                     const auto& path = entry.path();
                     bool isDir = entry.is_directory();
-                    unsigned id = 0;
+
+                    unsigned id{ isDir ? (unsigned)folderIcon : (unsigned)assetIcon }; // Assign icon based on type
+
+                    //custom sprites
+                    if (!isDir) {
+                        std::string ext{ path.extension().string() };
+                        if (ext == ".dds" || ext == ".png") {
+                            //finds the texture id to draw
+                            m_App->AssetTextureView([&path, &id](TextureAsset* tex) {
+                                if (tex->source == path.generic_string()) {
+                                    id = static_cast<unsigned>(*tex->data.get());
+                                    return;
+                                }
+                                });
+                        }
+                    }
 
                     auto child = std::make_unique<FileNode>(path.filename().string(), isDir, path, id);
                     if (isDir) scanDir(*child, depth + 1);
@@ -209,15 +222,45 @@ namespace EditorUI {
 
         ImGui::PushID(root->fullPath.string().c_str());
 
+        //keep memory of open states for auto refreshing
+        bool isOpen{ treeNodeOpenStatus[root->fullPath.string()] };
+        //new directories
+        if (root->isDirectory && treeNodeOpenStatus.find(root->fullPath.string()) == treeNodeOpenStatus.end()) {
+            isOpen = (root->fullPath == ROOT_PATH);
+        }
+        //assets
+        if (!root->isDirectory) {
+            isOpen = false;
+        }
+        if (isOpen) {
+            flags |= ImGuiTreeNodeFlags_DefaultOpen;
+        }
+        root->isHovered = false;
+
         if (root->texId) {
-            ImGui::Image((void*)(intptr_t)root->texId, ImVec2(24, 24));
+            ImGui::Image((void*)(intptr_t)root->texId, ImVec2(32, 32));
             ImGui::SameLine();
         }
 
         bool nodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)root.get(), flags, root->isDirectory ? "%s/" : "%s", root->name.c_str());
 
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly | ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem)) {
+            root->isHovered = true;
+            if (root->isDirectory) {
+                dropTargetPath = root->fullPath;
+                ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.3f, 0.6f, 0.4f));
+            }
+            else {
+                dropTargetPath = root->fullPath.parent_path(); //output to same directory
+            }
+        }
+
         if (ImGui::IsItemClicked())
             selectedPath = root->fullPath.string();
+
+        if (root->isDirectory) {
+            treeNodeOpenStatus[root->fullPath.string()] = nodeOpen;
+        }
 
         if (nodeOpen)
         {
@@ -226,7 +269,114 @@ namespace EditorUI {
             ImGui::TreePop();
         }
 
+        if (root->isHovered && root->isDirectory) {
+            ImGui::PopStyleColor();
+        }
         ImGui::PopID();
+    }
+
+    //update assetmanager based on files located:
+        // textures(.png/.dds)
+        // models(.fbx)
+        // skybox(.hdr)
+    //missing implementation file types : script, scene, prefab
+    void DirectoryPanel::UpdateAssetRegistry() {
+        std::unordered_set<std::filesystem::path> seenPaths;
+
+        if (rootNode) {
+            TraverseAndRegister(rootNode.get(), seenPaths);
+        }
+
+        RemoveStaleAssets(seenPaths);
+    }
+
+    //recursively traverse into linked list tree to register/update assets
+    void DirectoryPanel::TraverseAndRegister(FileNode* node, std::unordered_set<std::filesystem::path>& seen)
+    {
+        if (!node) return;
+
+        const auto& path = node->fullPath;
+        std::string ext{ path.extension().string() };
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) {return (char)::tolower(c); }); //lowercase
+
+        // --- TEXTURES ---
+        if (!node->isDirectory && (ext == ".png" || ext == ".dds")) {
+            seen.insert(path);
+            if (ext == ".dds" && Texture2D::IsHDR(path.generic_string()))
+                RegisterAsset<SkyboxAsset>(path, node->texId);
+            else
+                RegisterAsset<TextureAsset>(path, node->texId);
+        }
+        // --- MODELS ---
+        else if (!node->isDirectory && ext == ".fbx") {
+            seen.insert(path);
+            RegisterAsset<ModelAsset>(path, node->texId);
+        }
+        // --- SKYBOX ---
+        else if (!node->isDirectory && ext == ".hdr") {
+            seen.insert(path);
+            RegisterAsset<SkyboxAsset>(path, node->texId);
+        }
+        // --- PREFABS ---
+        else if (!node->isDirectory && ext == ".prefab") {
+            seen.insert(path);
+            RegisterAsset<PrefabAsset>(path, node->texId);
+        }
+        // --- more stuff in future ---
+
+        // Recurse into children
+        for (auto& child : node->children)
+        {
+            TraverseAndRegister(child.get(), seen);
+        }
+    }
+
+    //logic for update/register of asset
+    template <class T>
+    void DirectoryPanel::RegisterAsset(const std::filesystem::path& path, unsigned int& texId)
+    {
+        AssetID uid{ m_App->AssetIDFromPath(path) };  // your hash function
+        if (m_App->GetAssetRegistry().Get<T>(uid).uid == EMPTY_ASSET) {
+            // New asset
+            texId = (unsigned int)assetIcon;
+            if constexpr (std::is_same_v<T, TextureAsset>) {
+                texId = (GLuint)(*m_App->GetAssetRegistry().AddTexture(uid, path.generic_string()).get()->data);
+            }
+            else if constexpr (std::is_same_v<T, ModelAsset>) {
+                m_App->GetAssetRegistry().AddModel(uid, path.generic_string());
+            }
+            else if constexpr (std::is_same_v<T, SkyboxAsset>) {
+                m_App->GetAssetRegistry().AddSkybox(uid, path.generic_string());
+            }
+            else if constexpr (std::is_same_v<T, SkyboxAsset>) {
+                m_App->GetAssetRegistry().AddPrefab(uid, path.generic_string());
+            }
+            // --- more stuff in future ---
+
+        }
+    }
+
+    //should only remove .png/.dds and .fbx for now
+    void DirectoryPanel::RemoveStaleAssets(const std::unordered_set<std::filesystem::path>& seen)
+    {
+        for (auto& [type, map] : m_App->GetAssetRegistry().GetAll()) {
+            if (!map.empty()) {
+                auto first{ map.begin() };
+                ++first;
+                for (auto it{ first }; it != map.end(); ) {
+                    std::string ext{ GetExtension(it->second->source) };
+                    if (ext != "png" || ext != "dds" || ext != ".fbx") {
+                        ++it;
+                        continue;
+                    }
+                    //if file not located in seen path = deleted, must remove from assetmanager
+                    if (seen.find(it->second->source) == seen.end()) {
+                        it = map.erase(it);
+                    }
+                    else ++it;
+                }
+            }
+        }
     }
 
     void DirectoryPanel::CopyFilesToDirectory(const std::vector<std::string>& files, const std::filesystem::path& targetDir)
@@ -251,7 +401,8 @@ namespace EditorUI {
             catch (const std::filesystem::filesystem_error& e)
             {
 #ifdef DEBUG
-            BOOM_ERROR("DirectoryPanel::CopyFilesToDirectory: {}", e.what());
+                char const* dodo{ e.what() }; //needed due to warning level 4
+                BOOM_ERROR("Directory.h_CopyFilesToDirectory:{}", dodo);
 #endif // DEBUG
 
 			std::cout << "Error copying file: " << e.what() << std::endl;
@@ -274,12 +425,23 @@ namespace EditorUI {
         catch (const std::filesystem::filesystem_error& e)
         {
 #ifdef DEBUG
-            BOOM_ERROR("DirectoryPanel::DeletePath: {}", e.what());
+            char const* dodo{ e.what() }; //warning lvl 4
+            BOOM_ERROR("Directory.h_DeletePath:{}", dodo);
 #endif // DEBUG
 			std::cout << "Error deleting path: " << e.what() << std::endl;
             
             return false;
         }
+    }
+
+    std::string DirectoryPanel::GetExtension(std::string const& filename) {
+        uint32_t pos{ (uint32_t)filename.find_last_of('.') };
+        if (pos == std::string::npos || pos == filename.length() - 1) {
+            return ""; //no extension
+        }
+        std::string ext{ filename.substr(pos + 1) };
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](char c) {return (char)::tolower(c); }); //lowercase
+        return ext;
     }
 
     void DirectoryPanel::OnDrop(GLFWwindow*, int count, const char** paths)

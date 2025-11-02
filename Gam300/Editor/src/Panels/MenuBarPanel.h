@@ -10,6 +10,7 @@
 
 // entt (for entt::entity / entt::null)
 #include <entt/entity/entity.hpp>
+#include "Application/Interface.h"
 
 namespace Boom {
     struct Application;
@@ -70,6 +71,7 @@ namespace EditorUI {
     private:
         MenuBarConfig m{};
         Editor* m_Owner{ nullptr };
+        Boom::AppInterface* m_App = nullptr;
     };
 
 } // namespace EditorUI

@@ -19,7 +19,7 @@ namespace EditorUI {
         : m_Owner(owner)
     {
         m_App = static_cast<Boom::AppInterface*>(m_Owner);
-        m_Ctx = m_App ? m_App->GetContext() : nullptr;
+        m_Ctx = m_App ? owner->GetContext() : nullptr;
     }
 
     void ViewportPanel::Render() { OnShow(); }

@@ -1,6 +1,7 @@
 Version: 1.0
 ENTITIES:
   - {}
+  - {}
   - InfoComponent:
       Parent: 0
       Name: Player
@@ -19,7 +20,7 @@ ENTITIES:
       MaterialSource: ""
     AnimatorComponent:
       Sequence: 0
-      Time: 734.337646
+      Time: 753.820374
   - {}
   - {}
   - InfoComponent:
@@ -56,8 +57,8 @@ ENTITIES:
       UID: 9201024860084647067
     TransformComponent:
       Transform:
-        Translate: [-1.95089293, 0, 2.40915275]
-        Rotate: [0, -39, 0]
+        Translate: [0.443855196, 1.21253562, 2.94374704]
+        Rotate: [-19.375, 1.6875, 0]
         Scale: [1, 1, 1]
     CameraComponent:
       Camera:
@@ -118,7 +119,7 @@ ENTITIES:
       UID: 10000000000000000001
     TransformComponent:
       Transform:
-        Translate: [2.5, -0.19999972, 0]
+        Translate: [2.5, -0.19999975, 0]
         Rotate: [0, -0, 0]
         Scale: [1, 2, 1]
     RigidBodyComponent:
@@ -141,12 +142,12 @@ ENTITIES:
       UID: 6042260349840611439
     TransformComponent:
       Transform:
-        Translate: [0, 1.77999997, 0]
+        Translate: [0.49000001, 1.01999998, -1.29999995]
         Rotate: [0, 0, 0]
         Scale: [1, 1, 1]
     ModelComponent:
       ModelID: 11565258723769024311
-      MaterialID: 11573253777835523025
+      MaterialID: 2930779482462285987
       ModelName: sphere
       MaterialName: ""
       ModelSource: Resources/Models/walking.fbx
@@ -180,5 +181,6 @@ ENTITIES:
       MaterialName: ""
       ModelSource: Resources/Models/Cube.fbx
       MaterialSource: Marble
+  - {}
   - {}
   - {}

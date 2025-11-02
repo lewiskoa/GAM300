@@ -56,7 +56,7 @@ namespace EditorUI {
         ViewportPanel* GetViewportPanel() const { return m_Viewport.get(); }
 
 
-    protected:
+    public:
         void OnStart() override;
         void OnUpdate() override;
 
