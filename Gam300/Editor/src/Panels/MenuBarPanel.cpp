@@ -24,7 +24,7 @@ namespace EditorUI {
             if (auto* ctx = m_Owner->GetContext()) {
                 m.ctx = ctx;
             }
-            m_App = dynamic_cast<Boom::AppInterface*>(owner);
+            m.app = m_Owner->GetApp();
 
             // If your Editor has an Application* getter, set m.app here as well.
             // Example (uncomment/adapt if you have such API):
@@ -32,19 +32,21 @@ namespace EditorUI {
 
             // If your Editor stores the "show panel" flags, wire them here.
             // Example (pseudo):
-            // m.showInspector        = &m_Owner->m_ShowInspector;
-            // m.showHierarchy        = &m_Owner->m_ShowHierarchy;
-            // m.showViewport         = &m_Owner->m_ShowViewport;
-            // m.showPrefabBrowser    = &m_Owner->m_ShowPrefabBrowser;
-            // m.showPerformance      = &m_Owner->m_ShowPerformance;
-            // m.showPlaybackControls = &m_Owner->m_ShowPlaybackControls;
-            // m.showConsole          = &m_Owner->m_ShowConsole;
-            // m.showAudio            = &m_Owner->m_ShowAudio;
+             m.showInspector        = &m_Owner->m_ShowInspector;
+             m.showHierarchy        = &m_Owner->m_ShowHierarchy;
+             m.showViewport         = &m_Owner->m_ShowViewport;
+             m.showPrefabBrowser    = &m_Owner->m_ShowPrefabBrowser;
+             m.showPerformance      = &m_Owner->m_ShowPerformance;
+             m.showPlaybackControls = &m_Owner->m_ShowPlaybackControls;
+             m.showConsole          = &m_Owner->m_ShowConsole;
+             m.showAudio            = &m_Owner->m_ShowAudio;
 
-            // Dialog flags & helpers can also be wired here if Editor exposes them.
-            // m.showSaveDialog = &m_Owner->m_ShowSaveDialog;
-            // m.showLoadDialog = &m_Owner->m_ShowLoadDialog;
-            // m.RefreshSceneList = [this](bool force){ /* call Editor to refresh */ };
+             //Dialog flags & helpers can also be wired here if Editor exposes them.
+             m.showSaveDialog = &m_Owner->m_ShowSaveDialog;
+             m.showLoadDialog = &m_Owner->m_ShowLoadDialog;
+             m.sceneNameBuffer = m_Owner->m_SceneNameBuffer;
+             m.sceneNameBufferSize = sizeof(m_Owner->m_SceneNameBuffer);
+             m.RefreshSceneList = [this](bool force){ m_Owner->RefreshSceneList(force); };
         }
     }
 

@@ -38,7 +38,7 @@ namespace EditorUI {
         Editor& operator=(const Editor&) = delete;
         Editor(Editor&&) = delete;
         Editor& operator=(Editor&&) = delete;
-
+        void RefreshSceneList(bool force = false);
         // lifecycle
         void Init();
         void Render();
@@ -52,20 +52,30 @@ namespace EditorUI {
 
         // NEW: Get viewport size for renderer resizing
         ImVec2 GetViewportSize() const;
-
+        void RenderSceneDialogs();
         ViewportPanel* GetViewportPanel() const { return m_Viewport.get(); }
 
 
     public:
-        void OnStart() override;
-        void OnUpdate() override;
-
-    private:
+      
+        char m_SceneNameBuffer[256] = {};
         ImGuiContext* m_ImGuiContext = nullptr;
         entt::registry* m_Registry = nullptr;
         Boom::Application* m_App = nullptr;
+        void OnStart() override;
+        void OnUpdate() override;
+        bool m_ShowInspector = true;
+        bool m_ShowHierarchy = true;
+        bool m_ShowViewport = true;
+        bool m_ShowPrefabBrowser = false;
+        bool m_ShowPerformance = false;
+        bool m_ShowPlaybackControls = true;
+        bool m_ShowConsole = true;
+        bool m_ShowAudio = false;
 
-        // Panels (constructed in Init, destroyed in ~Editor)
+        bool m_ShowSaveDialog = false;
+        bool m_ShowLoadDialog = false;
+        bool m_ShowSavePrefabDialog = false;
         std::unique_ptr<MenuBarPanel>           m_MenuBar;
         std::unique_ptr<HierarchyPanel>         m_Hierarchy;
         std::unique_ptr<InspectorPanel>         m_Inspector;
@@ -77,6 +87,14 @@ namespace EditorUI {
         std::unique_ptr<ViewportPanel>          m_Viewport;
         std::unique_ptr<PerformancePanel>       m_Performance;
         std::unique_ptr<PlaybackControlsPanel>  m_Playback;
+    private:
+        std::filesystem::path m_ScenesDir = std::filesystem::path("Scenes");
+        std::unordered_map<std::string, std::filesystem::file_time_type> m_SceneStamp;
+        std::vector<std::string> m_AvailableScenes;
+        int m_SelectedSceneIndex = 0;
+
+       
+      
     };
 
 } // namespace EditorUI
