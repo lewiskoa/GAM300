@@ -182,10 +182,6 @@ namespace Boom
          */
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
-            { //load assets
-                DataSerializer serializer;
-                serializer.Deserialize(*m_Context->assets, "AssetsProp/assets.yaml");
-            }
             LoadScene("default");
 
             CameraController camera(

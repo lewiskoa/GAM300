@@ -8,6 +8,9 @@ namespace Boom {
 	using AssetID = uint64_t;
 	const AssetID EMPTY_ASSET = 0u;
 
+	template<std::string_view const& Payload>
+	struct PayloadToType;
+
 	enum class AssetType : uint8_t {
 		UNKNOWN = 0u,
 		MATERIAL,
@@ -277,6 +280,7 @@ namespace Boom {
 
 		template <class T>
 		BOOM_INLINE bool Remove(AssetID uid) {
+			#pragma warning(suppress: 26498)
 			const uint32_t type{ TypeID<T>() };
 			auto it{ registry.find(type) };
 			if (it != registry.end()) {
@@ -348,4 +352,7 @@ namespace Boom {
 		std::unordered_map<uint32_t, AssetMap> registry;
 	};
 
+	template<> struct PayloadToType<CONSTANTS::DND_PAYLOAD_TEXTURE> { using Type = TextureAsset; };
+	template<> struct PayloadToType<CONSTANTS::DND_PAYLOAD_MATERIAL> { using Type = MaterialAsset; };
+	template<> struct PayloadToType<CONSTANTS::DND_PAYLOAD_MODEL> { using Type = ModelAsset; };
 }

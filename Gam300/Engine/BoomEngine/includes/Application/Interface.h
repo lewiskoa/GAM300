@@ -271,6 +271,17 @@ namespace Boom
             return true;
         }
 
+        BOOM_INLINE uint32_t GetTexIDFromPath(std::string const& path) {
+            auto& map = m_Context->assets->GetMap<TextureAsset>();
+            for (auto& [uid, asset] : map) {
+                if (uid != EMPTY_ASSET && asset->source == path) {
+                    TextureAsset* tex{ dynamic_cast<TextureAsset*>(asset.get()) };
+                    return tex ? *tex->data.get() : 0;
+                }
+            }
+            return 0;
+        }
+
         //Gets asset if from path for 100% unique ids
         BOOM_INLINE AssetID AssetIDFromPath(const std::filesystem::path& path)
         {

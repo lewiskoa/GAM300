@@ -164,7 +164,7 @@ namespace Boom
             // Use Assimp to load just the animation data
             Assimp::Importer importer;
             const aiScene* ai_scene = importer.ReadFile(
-                (CONSTANTS::MODELS_LOCATION.data() + filepath).c_str(),
+                filepath.c_str(),
                 aiProcess_LimitBoneWeights
             );
 

@@ -98,6 +98,11 @@ namespace EditorUI {
 
     void Editor::Init()
     {
+        { //load assets
+            DataSerializer serializer;
+            serializer.Deserialize(*m_Context->assets, "AssetsProp/assets.yaml");
+        }
+
         // Construct panels here; they persist across frames.
         // We pass `this` so panels can call owner->GetContext() etc.
         m_MenuBar = std::make_unique<MenuBarPanel>(this);

@@ -4,8 +4,10 @@
 #include <vector>
 #include <unordered_map>
 #include <filesystem>
+#include <unordered_set>
+#include "imgui.h"
 
-namespace Boom { struct AppContext; struct AppInterface; }
+namespace Boom { struct AppContext; struct AppInterface; struct Texture2D; }
 struct GLFWwindow;
 
 namespace EditorUI {
@@ -31,10 +33,17 @@ namespace EditorUI {
         std::unique_ptr<FileNode> BuildDirectoryTree();
         void RenderDirectoryTree(std::unique_ptr<FileNode> const& root);
 
+        // Asset Managing
+        void UpdateAssetRegistry();
+        void TraverseAndRegister(FileNode* node, std::unordered_set<std::filesystem::path>& seen);
+        template <class T>
+        void RegisterAsset(const std::filesystem::path& path, unsigned int& texId);
+        void RemoveStaleAssets(const std::unordered_set<std::filesystem::path>& seen); //should only remove .png/.dds and .fbx for now
+
         // Filesystem ops
-        void CopyFilesToDirectory(const std::vector<std::string>& filePaths,
-            const std::filesystem::path& targetDir);
+        void CopyFilesToDirectory(const std::vector<std::string>& filePaths, const std::filesystem::path& targetDir);
         bool DeletePath(const std::filesystem::path& path);
+        std::string GetExtension(std::string const& filename);
 
         // Drag-and-drop callback
         static void OnDrop(GLFWwindow*, int count, const char** paths);
@@ -52,20 +61,23 @@ namespace EditorUI {
         const std::string_view CUSTOM_PAYLOAD_TYPE{ "_GLFW_DROP" };
 
         // UI state
-        std::unique_ptr<FileNode>      rootNode;
-        std::string                    selectedPath;
-        double                         rTimer = 0.0;
+        std::unique_ptr<FileNode>      rootNode{};
+        std::string                    selectedPath{};
+        double                         rTimer = AUTO_REFRESH_SEC;
         std::unordered_map<std::string, bool> treeNodeOpenStatus;
 
         // Drag & drop
         inline static std::vector<std::string> droppedFiles{};
         inline static bool filesDropped{ false };
-        std::filesystem::path dropTargetPath;
+        std::filesystem::path dropTargetPath{};
 
         // Delete handling
         bool        showDeleteConfirm{};
         bool        showDeleteError{};
-        std::string deleteErrorMessage;
+        std::string deleteErrorMessage{};
+
+        ImTextureID folderIcon;
+        ImTextureID assetIcon;
     };
 
 } // namespace EditorUI

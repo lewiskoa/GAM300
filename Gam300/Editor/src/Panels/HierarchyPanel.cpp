@@ -24,7 +24,7 @@ namespace EditorUI {
 
         // Get context through the AppInterface
         if (m_App) {
-            m_Ctx = m_App->GetContext();
+            m_Ctx = owner->GetContext();
             DEBUG_POINTER(m_Ctx, "AppContext");
         }
     }
