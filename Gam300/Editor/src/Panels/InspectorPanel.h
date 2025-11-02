@@ -17,10 +17,6 @@ namespace EditorUI {
         // Preferred: construct with the Editor owner; get context via owner->GetContext()
         explicit InspectorPanel(Editor* owner, bool* showFlag = nullptr);
 
-        // Optional helper if you really want to set selection externally
-        void SetSelectedEntity(entt::entity e) { m_SelectedEntity = e; m_HasSelection = (e != entt::null); }
-        void ClearSelection() { m_SelectedEntity = entt::null; m_HasSelection = false; }
-
         // Render entry point
         void Render();
 
@@ -44,7 +40,6 @@ namespace EditorUI {
         Boom::AppInterface* m_App = nullptr;
         bool* m_ShowInspector = nullptr;
         bool showDeletePopup{};
-        entt::entity   m_SelectedEntity{ entt::null };
         bool           m_HasSelection{ false };
         char           m_NameBuffer[128]{};
 

@@ -16,8 +16,9 @@ namespace EditorUI {
 
     InspectorPanel::InspectorPanel(Editor* owner, bool* showFlag)
         : m_Owner(owner)
-        , m_ShowInspector(showFlag) {
-        m_App = dynamic_cast<Boom::AppInterface*>(owner);
+        , m_ShowInspector(showFlag)
+        , m_App(dynamic_cast<Boom::AppInterface*>(owner))
+    {
         DEBUG_POINTER(m_App, "AppInterface");
     }
 
@@ -105,7 +106,7 @@ namespace EditorUI {
         Boom::AppContext* ctx = GetContext();
         // NOTE: adjust Entity wrapper to your real type/ctor signature
             // Assuming: Entity(Boom::Scene*, entt::entity)
-        Boom::Entity selected{ &ctx->scene, m_SelectedEntity };
+        Boom::Entity selected{ &ctx->scene, m_App->SelectedEntity()};
 
         // ===== ENTITY NAME =====
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 6));
@@ -138,7 +139,7 @@ namespace EditorUI {
         if (selected.Has<CameraComponent>()) {
             auto& cc = selected.Get<CameraComponent>();
             DrawComponentSection("Camera", &cc, GetCameraComponentProperties, true,
-                [&]() { ctx->scene.remove<CameraComponent>(m_SelectedEntity); });
+                [&]() { ctx->scene.remove<CameraComponent>(m_App->SelectedEntity()); });
         }
 
         // Model Component
@@ -159,37 +160,37 @@ namespace EditorUI {
         if (selected.Has<RigidBodyComponent>()) {
             auto& rc = selected.Get<RigidBodyComponent>();
             DrawComponentSection("Rigidbody", &rc, GetRigidBodyComponentProperties, true,
-                [&]() { ctx->scene.remove<RigidBodyComponent>(m_SelectedEntity); });
+                [&]() { ctx->scene.remove<RigidBodyComponent>(m_App->SelectedEntity()); });
         }
 
         if (selected.Has<ColliderComponent>()) {
             auto& col = selected.Get<ColliderComponent>();
             DrawComponentSection("Collider", &col, GetColliderComponentProperties, true,
-                [&]() { ctx->scene.remove<ColliderComponent>(m_SelectedEntity); });
+                [&]() { ctx->scene.remove<ColliderComponent>(m_App->SelectedEntity()); });
         }
 
         if (selected.Has<DirectLightComponent>()) {
             auto& dl = selected.Get<DirectLightComponent>();
             DrawComponentSection("Directional Light", &dl, GetDirectLightComponentProperties, true,
-                [&]() { ctx->scene.remove<DirectLightComponent>(m_SelectedEntity); });
+                [&]() { ctx->scene.remove<DirectLightComponent>(m_App->SelectedEntity()); });
         }
 
         if (selected.Has<PointLightComponent>()) {
             auto& pl = selected.Get<PointLightComponent>();
             DrawComponentSection("Point Light", &pl, GetPointLightComponentProperties, true,
-                [&]() { ctx->scene.remove<PointLightComponent>(m_SelectedEntity); });
+                [&]() { ctx->scene.remove<PointLightComponent>(m_App->SelectedEntity()); });
         }
 
         if (selected.Has<SpotLightComponent>()) {
             auto& sl = selected.Get<SpotLightComponent>();
             DrawComponentSection("Spot Light", &sl, GetSpotLightComponentProperties, true,
-                [&]() { ctx->scene.remove<SpotLightComponent>(m_SelectedEntity); });
+                [&]() { ctx->scene.remove<SpotLightComponent>(m_App->SelectedEntity()); });
         }
 
         if (selected.Has<SkyboxComponent>()) {
             auto& sky = selected.Get<SkyboxComponent>();
             DrawComponentSection("Skybox", &sky, GetSkyboxComponentProperties, true,
-                [&]() { ctx->scene.remove<SkyboxComponent>(m_SelectedEntity); });
+                [&]() { ctx->scene.remove<SkyboxComponent>(m_App->SelectedEntity()); });
         }
 
         // ===== Add Component =====

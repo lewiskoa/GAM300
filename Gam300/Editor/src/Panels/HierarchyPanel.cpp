@@ -48,13 +48,12 @@ namespace EditorUI {
             for (entt::entity e : view)
             {
                 const auto& info = view.get<Boom::InfoComponent>(e);
-                const bool isSelected = (m_SelectedEntity && *m_SelectedEntity == e);
+                const bool isSelected = (m_App->SelectedEntity() == e);
 
                 ImGui::PushID(static_cast<int>(entt::to_integral(e)));
                 if (ImGui::Selectable(info.name.c_str(), isSelected))
                 {
-                    if (m_SelectedEntity) *m_SelectedEntity = e;
-                    BOOM_INFO("[Hierarchy] Selected entity: {}", info.name);
+                    m_App->SelectedEntity(true) = e;
                 }
                 ImGui::PopID();
             }
