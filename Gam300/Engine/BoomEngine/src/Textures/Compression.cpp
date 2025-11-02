@@ -41,13 +41,14 @@ namespace Boom {
 
 			BOOM_INFO("======Compressing {}({})========", asset->name, asset->uid);
 			CMP_MipSet mipOut{};
-			status = CMP_ProcessTexture(&mipIn, &mipOut, kOpt, [](float p, size_t, size_t) -> bool { BOOM_INFO("{}%", p); return false; });
+			status = CMP_ProcessTexture(&mipIn, &mipOut, kOpt, Callback);
 			if (status != CMP_OK) {
 				CMP_FreeMipSet(&mipIn);
 				throw std::exception(("CMP_ProcessTexture() - error_code: " + std::to_string(status)).c_str());
 			}
 
-			status = CMP_SaveTexture(outputPath.data(), &mipOut);
+			std::string fullPath{ outputPath.data() + std::string("/") + asset->name + ".dds"};
+			status = CMP_SaveTexture(fullPath.c_str(), &mipOut);
 			BOOM_INFO("Saving...{}", outputPath.data());
 
 			//cleanup
@@ -79,6 +80,19 @@ namespace Boom {
 		kOpt.bc15.channelWeights[2] = 0.0820f;
 	}
 	
+	bool CompressAllTextures::Callback(float p, size_t, size_t) {
+		//limit resources used (its lagging at max lmao)
+		auto frame_start = std::chrono::steady_clock::now();
+		// ... compression work ...
+		auto frame_end = std::chrono::steady_clock::now();
+		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end - frame_start);
+		if (elapsed < std::chrono::milliseconds(16)) { // ~60 FPS
+			std::this_thread::sleep_for(std::chrono::milliseconds(16) - elapsed);
+		}
+		BOOM_INFO("{}%", p);
+		return false;
+	}
+
 	std::string CompressAllTextures::GetExtension(std::string const& filename) {
 		uint32_t pos{ (uint32_t)filename.find_last_of('.') };
 		if (pos == std::string::npos || pos == filename.length() - 1) {

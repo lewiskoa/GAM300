@@ -55,12 +55,12 @@ namespace EditorUI {
 		*/
 		ImGui::SameLine();
 		
+		/*
 		if (ImGui::Button("Compress Textures", { 160, 20 })) {
 			auto textureMap = m_App->GetAssetRegistry().GetMap<TextureAsset>();
 			CompressAllTextures(textureMap, CONSTANTS::COMPRESSED_TEXTURE_OUTPUT_PATH);
-		}
+		}*/
 
-		/*
 		static bool isCompressionStarted{};
 		static std::future<void> g_CompressFuture;
 		static float compressionTimeElapsed{};
@@ -86,7 +86,7 @@ namespace EditorUI {
 				compressionTimeElapsed += (float)m_App->GetDeltaTime();
 				ImGui::Text("Time elapsed: %.3f", compressionTimeElapsed);
 			}
-		}*/
+		}
 		
 
 		static int currentType{ static_cast<int>(AssetType::UNKNOWN) }; //unknown will show all assets
