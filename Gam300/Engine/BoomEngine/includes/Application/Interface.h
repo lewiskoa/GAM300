@@ -220,10 +220,10 @@ namespace Boom
      
 
 
-        // BOOM_INLINE uint32_t GetSceneFrame()
-        // {
-		// 	return m_Context->renderer->GetFrame();
-        // }
+         BOOM_INLINE uint32_t GetSceneFrame()
+         {
+		 	return m_Context->renderer->GetFrame();
+         }
 
         BOOM_INLINE AppContext* GetContext() const noexcept { return m_Context; }
         //if you need to swap selected object call with (true)
