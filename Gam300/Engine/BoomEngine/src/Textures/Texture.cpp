@@ -37,51 +37,8 @@ namespace Boom {
 			char const* tmp{ e.what() };
 			BOOM_ERROR("ERROR_Texture2D({}): {}", filename, tmp);
 		}
-		
-		//Compressonator is working, will be implemented for compiling textures as compressed for base game
-		/*
-		try {
-			if (ext != "dds" && !shouldCompress) {
-				LoadUnCompressed(assetFilePath);
-			}
-			else {
-				if (ext != "dds") {
-					std::string outName{ assetFilePath.substr(0, assetFilePath.find_last_of('.')) + ".dds" };
-					CompressTexture(assetFilePath, outName);
-					assetFilePath = outName;
-				}
-				LoadCompressed(assetFilePath);
-			}
-		}
-		catch (std::exception e) {
-			char const* tmp{ e.what() };
-			BOOM_ERROR("ERROR_Texture2D: {}", tmp);
-		}*/
 	}
 
-	Texture2D::Texture2D(std::string const& inputPngPath, std::string const& outputDDSPath)
-		: Texture2D() 
-	{
-		try {
-			//validation
-			if (!std::filesystem::exists(inputPngPath)) {
-				throw std::runtime_error("Input PNG non-existant: " + inputPngPath);
-			}
-
-			//create out dir if missing
-			std::filesystem::path outDir{ std::filesystem::path(outputDDSPath).parent_path() };
-			if (!outDir.empty() && !std::filesystem::exists(outDir)) {
-				std::filesystem::create_directories(outDir);
-			}
-
-			CompressTexture(inputPngPath, outputDDSPath);
-			LoadCompressed(outputDDSPath);
-		}
-		catch (std::exception const& e) {
-			char const* tmp{ e.what() };
-			BOOM_ERROR("ERROR_Texture2D: {}", tmp);
-		}
-	}
 	Texture2D::~Texture2D() {
 		if (id != 0) {
 			glDeleteTextures(1, &id);
@@ -198,65 +155,6 @@ namespace Boom {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		glBindTexture(GL_TEXTURE_2D, 0);
-	}
-
-	void Texture2D::CompressTexture(std::string const& inputFile, std::string const& outputDDS) {
-		if (!isCompileAsCompressed) return; //if designer prefers non compressed file format
-
-		CMP_InitFramework();
-
-		//BC7 is best compression (could be expanded if nesassary)
-		CMP_FORMAT destFormat{ CMP_FORMAT_BC7 }; 
-
-		CMP_MipSet mipIn{};
-		CMP_ERROR status{ CMP_LoadTexture(inputFile.c_str(), &mipIn) };
-		if (status != CMP_OK) {
-			throw std::exception(("CMP_LoadTexture() - error_code: " + std::to_string(status)).c_str());
-		}
-
-		if (mipIn.m_nMipLevels <= 1) {
-			CMP_INT minMipSize{ CMP_CalcMinMipSize(mipIn.m_nHeight, mipIn.m_nWidth, mipLevel) };
-			CMP_GenerateMIPLevels(&mipIn, minMipSize);
-		}
-
-		KernelOptions kOpt{};
-		kOpt.format = destFormat;
-		kOpt.fquality = quality;
-		kOpt.useSRGBFrames = isGamma;
-		kOpt.threads = 0;
-		kOpt.encodeWith = CMP_HPC;
-
-		//set bc15 props //TODO modify to descriptor reading
-		kOpt.bc15.useAlphaThreshold = true;
-		kOpt.bc15.alphaThreshold = alphaThreshold;
-		kOpt.bc15.useChannelWeights = true;
-		kOpt.bc15.channelWeights[0] = 0.3086f;
-		kOpt.bc15.channelWeights[1] = 0.6094f;
-		kOpt.bc15.channelWeights[2] = 0.0820f;
-
-		auto ComCallback = [](float fProg, CMP_DWORD_PTR, CMP_DWORD_PTR) -> bool {
-			//(void)fProg;
-			BOOM_INFO("Compression Progress: {}%", fProg);
-			return false;
-		};
-
-		BOOM_INFO("======Compressing {}========", inputFile);
-		CMP_MipSet mipOut{};
-		status = CMP_ProcessTexture(&mipIn, &mipOut, kOpt, ComCallback);
-		if (status != CMP_OK) {
-			CMP_FreeMipSet(&mipIn);
-			throw std::exception(("CMP_ProcessTexture() - error_code: " + std::to_string(status)).c_str());
-		}
-
-		status = CMP_SaveTexture(outputDDS.c_str(), &mipOut);
-
-		//cleanup
-		CMP_FreeMipSet(&mipIn);
-		CMP_FreeMipSet(&mipOut);
-
-		if (status != CMP_OK) {
-			throw std::exception(("CMP_SaveTexture() - error_code: " + std::to_string(status)).c_str());
-		}
 	}
 
 	//set's texture's active unit and uniform to graphics

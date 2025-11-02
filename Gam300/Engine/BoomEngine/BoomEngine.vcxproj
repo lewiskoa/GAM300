@@ -136,6 +136,7 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -206,6 +207,7 @@
     <ClInclude Include="includes\Graphics\Shaders\Shadow.h" />
     <ClInclude Include="includes\Graphics\Shaders\Skybox.h" />
     <ClInclude Include="includes\Graphics\Shaders\SkyMap.h" />
+    <ClInclude Include="includes\Graphics\Textures\Compression.h" />
     <ClInclude Include="includes\Graphics\Textures\Texture.h" />
     <ClInclude Include="includes\Graphics\Utilities\Culling.h" />
     <ClInclude Include="includes\Graphics\Utilities\Data.h" />
@@ -261,6 +263,7 @@
     <ClCompile Include="src\Scripting\ScriptRunTime.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Textures\Compression.cpp" />
     <ClCompile Include="src\Textures\Texture.cpp" />
   </ItemGroup>
   <ItemGroup>

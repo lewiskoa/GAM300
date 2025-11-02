@@ -238,7 +238,7 @@ namespace EditorUI {
         root->isHovered = false;
 
         if (root->texId) {
-            ImGui::Image((void*)(intptr_t)root->texId, ImVec2(24, 24));
+            ImGui::Image((void*)(intptr_t)root->texId, ImVec2(32, 32));
             ImGui::SameLine();
         }
 
