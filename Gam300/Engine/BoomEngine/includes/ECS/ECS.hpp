@@ -122,6 +122,7 @@ namespace Boom {
         BOOM_INLINE AnimatorComponent(const AnimatorComponent&) = default;
         BOOM_INLINE AnimatorComponent() = default;
         Animator3D animator;
+        //std::vector<std::string> additionalAnimFiles;
     };
 
     struct SkyboxComponent {

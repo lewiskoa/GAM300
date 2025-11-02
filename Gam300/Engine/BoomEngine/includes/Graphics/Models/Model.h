@@ -278,36 +278,39 @@ namespace Boom {
 		 */
 		BOOM_INLINE void ParseAnimations(const aiScene* ai_scene, JointMap& jointMap)
 		{
-			m_Animator->m_Animations.reserve(ai_scene->mNumAnimations);
+			m_Animator->m_Clips.reserve(ai_scene->mNumAnimations);
 
 			for (uint32_t i = 0; i < ai_scene->mNumAnimations; i++)
 			{
 				auto ai_anim = ai_scene->mAnimations[i];
-				Animation animation;
-				animation.name = ai_anim->mName.C_Str();
-				animation.duration = (float)ai_anim->mDuration;
-				animation.speed = (float)ai_anim->mTicksPerSecond;
 
+				// Create a new animation clip
+				auto clip = std::make_shared<AnimationClip>();
+				clip->name = ai_anim->mName.C_Str();
+				clip->duration = (float)ai_anim->mDuration;
+				clip->ticksPerSecond = (float)ai_anim->mTicksPerSecond;
+
+				// Parse each animation channel (one per animated joint)
 				for (uint32_t j = 0; j < ai_anim->mNumChannels; j++)
 				{
 					aiNodeAnim* ai_channel = ai_anim->mChannels[j];
+					std::string jointName(ai_channel->mNodeName.C_Str());
 
-					auto jointIt = jointMap.find(ai_channel->mNodeName.C_Str());
-					if (jointIt == jointMap.end()) continue;
+					// Create track for this joint
+					std::vector<KeyFrame>& track = clip->tracks[jointName];
 
-					auto& keys = jointIt->second.keys;
-					keys.reserve(ai_channel->mNumPositionKeys); // Or max of all key counts
+					uint32_t maxKeys = std::max({
+						ai_channel->mNumPositionKeys,
+						ai_channel->mNumRotationKeys,
+						ai_channel->mNumScalingKeys
+						});
 
-					// Handle mismatched key counts properly
-					uint32_t maxKeys = std::max({ ai_channel->mNumPositionKeys,
-												ai_channel->mNumRotationKeys,
-												ai_channel->mNumScalingKeys });
+					track.reserve(maxKeys);
 
 					for (uint32_t k = 0; k < maxKeys; k++)
 					{
 						KeyFrame key;
 
-						// Sample or interpolate from available keys
 						if (k < ai_channel->mNumPositionKeys)
 						{
 							key.position = AssimpToVec3(ai_channel->mPositionKeys[k].mValue);
@@ -322,13 +325,14 @@ namespace Boom {
 							key.scale = AssimpToVec3(ai_channel->mScalingKeys[k].mValue);
 						}
 
-						keys.push_back(key);
+						track.push_back(key);
 					}
 				}
 
-				m_Animator->m_Animations.push_back(std::move(animation));
+				m_Animator->m_Clips.push_back(clip);
 			}
 
+			// Build joint hierarchy (unchanged)
 			ParseHierarchy(ai_scene->mRootNode, m_Animator->m_Root, jointMap);
 			m_Animator->m_Transforms.resize(m_JointCount);
 		}

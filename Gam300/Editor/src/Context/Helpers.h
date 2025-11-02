@@ -5,8 +5,7 @@
 #define IMGUI_ENABLE_DOCKING
 #include <Vendors/imgui/imgui.h>
 #include <Vendors/imgui/imgui_internal.h>
-#include <Vendors/imgui/imgui_impl_glfw.h>
-#include <Vendors/imgui/imgui_impl_opengl3.h>
+
 
 using namespace Boom;
 

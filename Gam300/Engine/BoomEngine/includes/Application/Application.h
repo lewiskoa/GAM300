@@ -281,6 +281,103 @@ namespace Boom
                 // Always update delta time, but adjust for pause state
                 ComputeFrameDeltaTime();
 
+                // Animation testing controls
+                {
+                    // Press L to load additional animations
+                    static bool lastLPressed = false;
+                    bool lPressed = glfwGetKey(engineWindow.get(), GLFW_KEY_L) == GLFW_PRESS;
+                    if (lPressed && !lastLPressed) {
+                        EnttView<Entity, AnimatorComponent>([this]([[maybe_unused]] auto entity, auto& animComp) {
+
+                            auto& animator = animComp.animator;
+
+
+                            BOOM_INFO("=== Loading additional animations ===");
+                            size_t beforeCount = animator->GetClipCount();
+
+                            // Try to load these - they need to exist in your Models folder!
+                            animator->LoadAnimationFromFile("idle.fbx", "Idle");
+                            animator->LoadAnimationFromFile("walking.fbx", "Walk");
+                            animator->LoadAnimationFromFile("run.fbx", "Run");
+
+                            size_t afterCount = animator->GetClipCount();
+                            BOOM_WARN("Loaded {} new animations (total: {})", afterCount - beforeCount, afterCount);
+
+                            // List all animations
+                            for (size_t i = 0; i < animator->GetClipCount(); ++i) {
+                                const auto* clip = animator->GetClip(i);
+                                if (clip) {
+                                    BOOM_INFO("  [{}] '{}' - {:.2f}s", i, clip->name, clip->duration);
+                                }
+                            }
+                            });
+                    }
+                    lastLPressed = lPressed;
+
+                    // Press 1-9 to switch animations
+                    EnttView<Entity, AnimatorComponent>([this, &engineWindow]([[maybe_unused]]auto entity, auto& animComp) {
+
+                        auto& animator = animComp.animator;
+
+                        if (glfwGetKey(engineWindow.get(), GLFW_KEY_1) == GLFW_PRESS && animator->GetClipCount() > 0) {
+                            animator->PlayClip(0);
+#ifdef DEBUG
+                            const auto* clip = animator->GetClip(0);
+                            if (clip) BOOM_INFO("Switched to [0]: '{}'", clip->name);
+#endif // DEBUG
+
+                        }
+                        if (glfwGetKey(engineWindow.get(), GLFW_KEY_2) == GLFW_PRESS && animator->GetClipCount() > 1) {
+                            animator->PlayClip(1);
+                            
+#ifdef DEBUG
+                            const auto* clip = animator->GetClip(1);
+                            if (clip) BOOM_INFO("Switched to [1]: '{}'", clip->name);
+#endif // DEBUG
+
+                        }
+                        if (glfwGetKey(engineWindow.get(), GLFW_KEY_3) == GLFW_PRESS && animator->GetClipCount() > 2) {
+                            animator->PlayClip(2);
+                            
+#ifdef DEBUG
+                            const auto* clip = animator->GetClip(2);
+                            if (clip) BOOM_INFO("Switched to [2]: '{}'", clip->name);
+#endif // DEBUG
+                        }
+                        if (glfwGetKey(engineWindow.get(), GLFW_KEY_4) == GLFW_PRESS && animator->GetClipCount() > 3) {
+                            animator->PlayClip(3);
+#ifdef DEBUG
+                            const auto* clip = animator->GetClip(3);
+                            if (clip) BOOM_INFO("Switched to [3]: '{}'", clip->name); 
+#endif // DEBUG
+                        }
+
+                        // Press I for info about current animation
+                        static bool lastIPressed = false;
+                        bool iPressed = glfwGetKey(engineWindow.get(), GLFW_KEY_I) == GLFW_PRESS;
+                        if (iPressed && !lastIPressed) {
+                            BOOM_INFO("=== Current Animation Info ===");
+                            BOOM_INFO("Current Clip: {} / {}", animator->GetCurrentClip(), animator->GetClipCount() - 1);
+                            const auto* clip = animator->GetClip(animator->GetCurrentClip());
+                            if (clip) {
+#ifdef DEBUG
+
+                                BOOM_INFO("  Name: '{}'", clip->name);
+                                BOOM_INFO("  Duration: {:.2f}s", clip->duration);
+                                BOOM_INFO("  Current Time: {:.2f}s", animator->GetTime());
+                                BOOM_INFO("  Tracks: {}", clip->tracks.size());
+#endif // DEBUG
+
+                            }
+                        }
+                        static bool lastIState = iPressed;
+                        lastIPressed = iPressed;
+                        });
+                }
+
+
+                // ============ END NEW SECTION ============
+
                 m_Context->profiler.BeginFrame();
                 m_Context->profiler.Start("Total Frame");
                 m_Context->profiler.Start("Renderer Start Frame");
@@ -298,33 +395,6 @@ namespace Boom
                     ResetSphere();
                     m_SphereTimer = 0.0;
                 }
-                // When paused, m_TestRot stays at its current value
-
-                // Update sphere timer
-                //m_SphereTimer += m_Context->DeltaTime;
-
-                //if (m_SphereTimer >= m_SphereResetInterval) {
-                //    // Find the sphere entity by name (or UID)
-                //    EnttView<Entity, InfoComponent, TransformComponent>([this](auto entity, InfoComponent& info, TransformComponent& transform) {
-                //        if (info.name == "Sphere") {
-                //            transform.transform.translate = m_SphereInitialPosition;
-                //        }
-                //        });
-                //    m_SphereTimer = 0.0;
-                //}
-
-
-                //lights (always set up)
-               /* m_Context->renderer->SetLight(pl1, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                m_Context->renderer->SetLight(pl2, Transform3D({ 1.2f, 1.2f, .5f }, {}, {}), 1);
-                m_Context->renderer->SetPointLightCount(0);
-
-                glm::vec3 testDir{ -.7f, -.3f, .3f };
-                m_Context->renderer->SetLight(dl, Transform3D({}, testDir, {}), 0);
-                m_Context->renderer->SetDirectionalLightCount(1);
-
-                m_Context->renderer->SetLight(sl, Transform3D({ 0.f, 0.f, 3.f }, { 0.f, 0.f, -1.f }, {}), 0);
-                m_Context->renderer->SetSpotLightCount(0);*/
 
                 {
                     int points = 0;

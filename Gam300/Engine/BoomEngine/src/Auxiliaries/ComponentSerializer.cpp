@@ -90,7 +90,7 @@ namespace Boom
                 if (reg.all_of<AnimatorComponent>(ent)) {
                     auto& animatorComp = reg.get<AnimatorComponent>(ent);
                     e << YAML::Key << "AnimatorComponent" << YAML::Value << YAML::BeginMap;
-                    e << YAML::Key << "Sequence" << YAML::Value << animatorComp.animator->GetSequence();
+                    e << YAML::Key << "CurrentClip" << YAML::Value << animatorComp.animator->GetCurrentClip();
                     e << YAML::Key << "Time" << YAML::Value << animatorComp.animator->GetTime();
                     e << YAML::EndMap;
                 }
@@ -100,27 +100,28 @@ namespace Boom
                 if (reg.all_of<ModelComponent>(ent)) {
                     auto& modelComp = reg.get<ModelComponent>(ent);
                     ModelAsset& modelAsset = assets.Get<ModelAsset>(modelComp.modelID);
-
                     if (modelAsset.hasJoints) {
                         auto skeletalModel = std::dynamic_pointer_cast<SkeletalModel>(modelAsset.data);
-
                         // Clone the animator
                         auto newAnimator = skeletalModel->GetAnimator()->Clone();
 
+
                         // Get prefab's animation state
-                        int32_t sequence = data["Sequence"].as<int32_t>();
-                        float time = data["Time"].as<float>();
+                        size_t clipIndex = data["CurrentClip"].as<size_t>(0); // Default to clip 0
+                        float time = data["Time"].as<float>(0.0f);
 
                         // Log what we're loading
-                        BOOM_INFO("[AnimatorComponent] Prefab wants sequence: {}, time: {}", sequence, time);
-                        BOOM_INFO("[AnimatorComponent] Source animator has sequence: {}",
-                            skeletalModel->GetAnimator()->GetSequence());
+                        BOOM_INFO("[AnimatorComponent] Prefab wants clip: {}, time: {}", clipIndex, time);
+                        BOOM_INFO("[AnimatorComponent] Source animator has clip: {}",
+                            skeletalModel->GetAnimator()->GetCurrentClip());
 
-                        newAnimator->SetSequence(sequence);
-                        newAnimator->SetTime(time);
+                        // Apply the saved state
+                        newAnimator->PlayClip(clipIndex);
+                        // Note: We removed SetTime() - you'll need to add it back to Animator
 
                         auto& animatorComp = reg.emplace<AnimatorComponent>(ent);
                         animatorComp.animator = newAnimator;
+
                     }
                 }
             }
