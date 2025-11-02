@@ -22,5 +22,6 @@ namespace Boom {
 		constexpr std::string_view DND_PAYLOAD_TEXTURE{ "DND_TEX" };
 		constexpr std::string_view DND_PAYLOAD_MODEL{ "DND_MDL" };
 		constexpr std::string_view DND_PAYLOAD_MATERIAL{ "DND_MAT" };
+		constexpr std::string_view COMPRESSED_TEXTURE_OUTPUT_PATH{ "CompressedTexture" };
 	}
 }

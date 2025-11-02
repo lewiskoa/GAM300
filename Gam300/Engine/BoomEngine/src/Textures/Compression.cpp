@@ -1,23 +1,32 @@
 #include "Core.h"
-
-#include "Graphics/Textures/Compression.h"
 #include "GlobalConstants.h"
 #include "Auxiliaries/Assets.h"
 
-
+#include "Graphics/Textures/Compression.h"
 
 namespace Boom {
-	CompressAllTextures::CompressAllTextures(AppInterface* app, std::string_view const& outputPath)
-		: path{ outputPath } 
+	CompressAllTextures::CompressAllTextures(AssetMap textureMap, std::string_view const& outputPath)
 	{
-		if (!app) return; //failsafe
+		if (textureMap.empty()) return;
 
 		CMP_InitFramework();
-		//BC7 is best CompressAllTextures (could be expanded if nesassary)
 
-		app->AssetTextureView([&](TextureAsset* asset) {
+		//create in case of missing directories
+		std::filesystem::create_directories(outputPath);
+		
+		auto it{ textureMap.begin() };
+		++it; //skip first empty
+		for (; it != textureMap.end(); ++it) {
+			auto const& [id, sharedAsset] = *it;
+			TextureAsset* asset = dynamic_cast<TextureAsset*>(sharedAsset.get());
+
+			//already compressed simple copy paste
+			if (GetExtension(asset->source) == "dds") {
+				std::filesystem::copy_file(asset->source, outputPath, std::filesystem::copy_options::overwrite_existing);
+				continue;
+			}
 			CMP_MipSet mipIn{};
-			CMP_ERROR status{ CMP_LoadTexture(asset->source.c_str(), &mipIn)};
+			CMP_ERROR status{ CMP_LoadTexture(asset->source.c_str(), &mipIn) };
 			if (status != CMP_OK) {
 				throw std::exception(("CMP_LoadTexture() - error_code: " + std::to_string(status)).c_str());
 			}
@@ -30,16 +39,16 @@ namespace Boom {
 			KernelOptions kOpt{};
 			SetKernelOpt(kOpt, *asset->data);
 
-
 			BOOM_INFO("======Compressing {}({})========", asset->name, asset->uid);
 			CMP_MipSet mipOut{};
-			status = CMP_ProcessTexture(&mipIn, &mipOut, kOpt, ProgressCallback);
+			status = CMP_ProcessTexture(&mipIn, &mipOut, kOpt, [](float p, size_t, size_t) -> bool { BOOM_INFO("{}%", p); return false; });
 			if (status != CMP_OK) {
 				CMP_FreeMipSet(&mipIn);
 				throw std::exception(("CMP_ProcessTexture() - error_code: " + std::to_string(status)).c_str());
 			}
 
 			status = CMP_SaveTexture(outputPath.data(), &mipOut);
+			BOOM_INFO("Saving...{}", outputPath.data());
 
 			//cleanup
 			CMP_FreeMipSet(&mipIn);
@@ -48,7 +57,8 @@ namespace Boom {
 			if (status != CMP_OK) {
 				throw std::exception(("CMP_SaveTexture() - error_code: " + std::to_string(status)).c_str());
 			}
-		});
+
+		}
 
 		success = true;
 	}
@@ -68,11 +78,7 @@ namespace Boom {
 		kOpt.bc15.channelWeights[1] = 0.6094f;
 		kOpt.bc15.channelWeights[2] = 0.0820f;
 	}
-	bool CompressAllTextures::ProgressCallback(float percent, size_t, size_t) {
-		BOOM_INFO("CompressAllTextures Progress: {}%", percent);
-		return false;
-	}
-
+	
 	std::string CompressAllTextures::GetExtension(std::string const& filename) {
 		uint32_t pos{ (uint32_t)filename.find_last_of('.') };
 		if (pos == std::string::npos || pos == filename.length() - 1) {

@@ -11,22 +11,19 @@
 namespace Boom {
 	//called once to compress all TextureAssets
 	//MUST BE CALLED WITHIN TRY CATCH BLOCK
-	struct CompressAllTextures {
+	struct BOOM_API CompressAllTextures {
 
 		//called once to compress all TextureAssets
 		//MUST BE CALLED WITHIN TRY CATCH BLOCK
-		CompressAllTextures(AppInterface* app, std::string_view const& outputPath);
-
-		operator std::pair<bool, std::filesystem::path>() const noexcept { return { success, path }; }
+		//callback must be of type bool(float, size_t, size_t)
+		CompressAllTextures(AssetMap textureMap, std::string_view const& outputPath);
+		operator bool() const noexcept { return success; }
 
 	private:
 		void SetKernelOpt(KernelOptions& kOpt, Texture2D const& texRef);
-		static bool ProgressCallback(float percent, size_t, size_t);
 		std::string GetExtension(std::string const& filename);
-
 		CMP_FORMAT destFormat{ CMP_FORMAT_BC7 };
 
 		bool success{};
-		std::filesystem::path path{};
 	};
 }

@@ -5,6 +5,10 @@
 #include "Vendors/imgui/imgui.h"
 #include "Auxiliaries/Assets.h"
 #include "Graphics/Textures/Texture.h"
+#include "Graphics/Textures/Compression.h"
+
+#include <filesystem>
+#include <future>
 
 #ifndef ICON_FA_IMAGE
 #define ICON_FA_IMAGE ""
@@ -31,8 +35,8 @@ namespace EditorUI {
 		if (ImGui::Button("Save All Assets", { 128, 20 })) {
 			m_App->SaveAssets();
 		}
-		ImGui::SameLine();
 
+		ImGui::SameLine();
 		if (ImGui::Button("Create Empty Material", { 160, 20 })) {
 			showNamePopup = true;
 		}
@@ -41,6 +45,49 @@ namespace EditorUI {
 			ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x * 0.5f, ImGui::GetIO().DisplaySize.y * 0.5f), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 			CreateEmptyMaterial();
 		}
+
+
+		/*
+		bool CompressAllTextures::ProgressCallback(float percent, size_t, size_t) {
+			BOOM_INFO("Progress: {}%", percent);
+			return false;
+		}
+		*/
+		ImGui::SameLine();
+		
+		if (ImGui::Button("Compress Textures", { 160, 20 })) {
+			auto textureMap = m_App->GetAssetRegistry().GetMap<TextureAsset>();
+			CompressAllTextures(textureMap, CONSTANTS::COMPRESSED_TEXTURE_OUTPUT_PATH);
+		}
+
+		/*
+		static bool isCompressionStarted{};
+		static std::future<void> g_CompressFuture;
+		static float compressionTimeElapsed{};
+		if (ImGui::Button("Compress Textures", { 160, 20 }) && !isCompressionStarted) {
+			auto textureMap = m_App->GetAssetRegistry().GetMap<TextureAsset>();
+			g_CompressFuture = std::async(std::launch::async, [copy = std::move(textureMap)]() mutable {
+				CompressAllTextures(copy, CONSTANTS::COMPRESSED_TEXTURE_OUTPUT_PATH);
+			});
+			isCompressionStarted = true;
+			compressionTimeElapsed = 0.f;
+		}
+		if (isCompressionStarted) {
+			if (g_CompressFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+				try { g_CompressFuture.get(); }
+				catch (std::exception const& e) { 
+					char const* dodo{ e.what() }; 
+					BOOM_ERROR("{}", dodo);
+				}
+
+				isCompressionStarted = false;
+			}
+			else {
+				compressionTimeElapsed += (float)m_App->GetDeltaTime();
+				ImGui::Text("Time elapsed: %.3f", compressionTimeElapsed);
+			}
+		}*/
+		
 
 		static int currentType{ static_cast<int>(AssetType::UNKNOWN) }; //unknown will show all assets
 		ImGui::Combo("Filter", &currentType, TYPE_NAMES, IM_ARRAYSIZE(TYPE_NAMES));
