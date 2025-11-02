@@ -79,7 +79,6 @@ namespace EditorUI {
 					char const* dodo{ e.what() }; 
 					BOOM_ERROR("{}", dodo);
 				}
-
 				isCompressionStarted = false;
 			}
 			else {

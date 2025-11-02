@@ -47,9 +47,9 @@ namespace Boom {
 				throw std::exception(("CMP_ProcessTexture() - error_code: " + std::to_string(status)).c_str());
 			}
 
-			std::string fullPath{ outputPath.data() + std::string("/") + asset->name + ".dds"};
+			std::string fullPath{ outputPath.data() + ("/" + asset->name) + ".dds"};
 			status = CMP_SaveTexture(fullPath.c_str(), &mipOut);
-			BOOM_INFO("Saving...{}", outputPath.data());
+			BOOM_INFO("Saving Texture...");
 
 			//cleanup
 			CMP_FreeMipSet(&mipIn);
@@ -68,7 +68,7 @@ namespace Boom {
 		kOpt.format = destFormat;
 		kOpt.fquality = texRef.quality;
 		kOpt.useSRGBFrames = texRef.isGamma;
-		kOpt.threads = 0;
+		kOpt.threads = 1;
 		kOpt.encodeWith = CMP_HPC;
 
 		//set bc15 props //TODO modify to descriptor reading
@@ -80,16 +80,8 @@ namespace Boom {
 		kOpt.bc15.channelWeights[2] = 0.0820f;
 	}
 	
-	bool CompressAllTextures::Callback(float p, size_t, size_t) {
-		//limit resources used (its lagging at max lmao)
-		auto frame_start = std::chrono::steady_clock::now();
-		// ... compression work ...
-		auto frame_end = std::chrono::steady_clock::now();
-		auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end - frame_start);
-		if (elapsed < std::chrono::milliseconds(16)) { // ~60 FPS
-			std::this_thread::sleep_for(std::chrono::milliseconds(16) - elapsed);
-		}
-		BOOM_INFO("{}%", p);
+	bool CompressAllTextures::Callback(float, size_t, size_t) {
+		//BOOM_INFO("{}%", p);
 		return false;
 	}
 

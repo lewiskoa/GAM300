@@ -235,7 +235,12 @@ namespace Boom
             case AssetType::MATERIAL:
                 m_Context->assets->ModifyMaterialFromID(selectedAsset.id, f);
                 break;
-            default:
+            default: //create temporary blank asset for undone properties
+                static Asset tmp{};
+                tmp.name = selectedAsset.name;
+                tmp.uid = selectedAsset.id;
+                tmp.type = selectedAsset.type;
+                f(&tmp);
                 break;
             }
 

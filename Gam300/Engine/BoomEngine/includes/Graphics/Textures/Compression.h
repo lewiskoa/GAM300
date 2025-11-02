@@ -23,7 +23,7 @@ namespace Boom {
 		void SetKernelOpt(KernelOptions& kOpt, Texture2D const& texRef);
 		std::string GetExtension(std::string const& filename);
 		CMP_FORMAT destFormat{ CMP_FORMAT_BC7 };
-		bool Callback(float, size_t, size_t);
+		static bool Callback(float, size_t, size_t);
 
 		bool success{};
 	};

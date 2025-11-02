@@ -248,7 +248,7 @@ namespace EditorUI {
                 }
             }
             else {
-                ImGui::Button("nothing here!");
+                ImGui::Text("nothing here!", ImGuiTreeNodeFlags_DefaultOpen);
             }
             });
     }

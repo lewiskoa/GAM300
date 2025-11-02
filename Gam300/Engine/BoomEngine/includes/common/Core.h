@@ -39,6 +39,8 @@
 #include <random>
 #include<magic_enum.hpp>
 #include <atomic>
+#include <thread>
+#include <chrono>
 #pragma warning(pop)
 
 

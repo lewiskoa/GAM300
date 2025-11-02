@@ -35,52 +35,6 @@ ASSETS:
       OcclusionMapID: 0
       EmissiveMapID: 0
   - Type: PREFAB
-    UID: 5076640578672151242
-    Name: Dance
-    Source: Prefabs/Dance.prefab
-    Properties:
-      SerializedData: |
-        InfoComponent:
-          UID: 18299148976802030936
-          Name: Player
-          Parent: 0
-        TransformComponent:
-          Translate: [0, -1.20000005, 0]
-          Rotate: [0, 0, 0]
-          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
-        ModelComponent:
-          ModelID: 9625104056789884581
-          MaterialID: 11573253777835523025
-          ModelSource: dance.fbx
-          MaterialSource: Marble
-        AnimatorComponent:
-          Sequence: 0
-          Time: 832.96283
-
-  - Type: PREFAB
-    UID: 18004803294149376765
-    Name: Walk
-    Source: Prefabs/Walk.prefab
-    Properties:
-      SerializedData: |
-        InfoComponent:
-          UID: 18299148976802030936
-          Name: Model walk
-          Parent: 0
-        TransformComponent:
-          Translate: [0, -1.5, 0]
-          Rotate: [0, 0, 0]
-          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
-        ModelComponent:
-          ModelID: 12369161784125194221
-          MaterialID: 11573253777835523025
-          ModelSource: walking.fbx
-          MaterialSource: Marble
-        AnimatorComponent:
-          Sequence: 0
-          Time: 30.0344028
-
-  - Type: PREFAB
     UID: 8959324902145137880
     Name: Dancing Model
     Source: Prefabs/Dancing Model.prefab
@@ -106,10 +60,56 @@ ASSETS:
           Sequence: 0
           Time: 870.897278
 
+  - Type: PREFAB
+    UID: 18004803294149376765
+    Name: Walk
+    Source: Prefabs/Walk.prefab
+    Properties:
+      SerializedData: |
+        InfoComponent:
+          UID: 18299148976802030936
+          Name: Model walk
+          Parent: 0
+        TransformComponent:
+          Translate: [0, -1.5, 0]
+          Rotate: [0, 0, 0]
+          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+        ModelComponent:
+          ModelID: 12369161784125194221
+          MaterialID: 11573253777835523025
+          ModelSource: walking.fbx
+          MaterialSource: Marble
+        AnimatorComponent:
+          Sequence: 0
+          Time: 30.0344028
+
+  - Type: PREFAB
+    UID: 5076640578672151242
+    Name: Dance
+    Source: Prefabs/Dance.prefab
+    Properties:
+      SerializedData: |
+        InfoComponent:
+          UID: 18299148976802030936
+          Name: Player
+          Parent: 0
+        TransformComponent:
+          Translate: [0, -1.20000005, 0]
+          Rotate: [0, 0, 0]
+          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+        ModelComponent:
+          ModelID: 9625104056789884581
+          MaterialID: 11573253777835523025
+          ModelSource: dance.fbx
+          MaterialSource: Marble
+        AnimatorComponent:
+          Sequence: 0
+          Time: 832.96283
+
   - Type: TEXTURE
-    UID: 3416052683593611135
-    Name: asset
-    Source: Resources/Textures/asset.png
+    UID: 2000641971401327177
+    Name: folder
+    Source: Resources/Textures/Icons/folder.png
     Properties:
       Data:
         CompileAsCompressed: true
@@ -132,28 +132,6 @@ ASSETS:
     UID: 7762259362424041595
     Name: height
     Source: Resources/Textures/Marble/height.png
-    Properties:
-      Data:
-        CompileAsCompressed: true
-        quality: 0.5
-        alphaThreshold: 128
-        mipLevel: 10
-        isGamma: true
-  - Type: TEXTURE
-    UID: 2000641971401327177
-    Name: folder
-    Source: Resources/Textures/Icons/folder.png
-    Properties:
-      Data:
-        CompileAsCompressed: true
-        quality: 0.5
-        alphaThreshold: 128
-        mipLevel: 10
-        isGamma: true
-  - Type: TEXTURE
-    UID: 5059817982740227659
-    Name: folder
-    Source: Resources/Textures/folder.png
     Properties:
       Data:
         CompileAsCompressed: true
@@ -212,15 +190,21 @@ ASSETS:
     Properties:
       Size: 2048
   - Type: MODEL
+    UID: 11553622136344308773
+    Name: Cube - Copy (3)
+    Source: Resources/Models/Cube - Copy (3).FBX
+    Properties:
+      HasJoints: false
+  - Type: MODEL
     UID: 9625104056789884581
     Name: dance
     Source: Resources/Models/dance.fbx
     Properties:
       HasJoints: true
   - Type: MODEL
-    UID: 11553622136344308773
-    Name: Cube - Copy (3)
-    Source: Resources/Models/Cube - Copy (3).FBX
+    UID: 1538943657792452404
+    Name: Cube - Copy (2)
+    Source: Resources/Models/Cube - Copy (2).FBX
     Properties:
       HasJoints: false
   - Type: MODEL
@@ -230,9 +214,9 @@ ASSETS:
     Properties:
       HasJoints: false
   - Type: MODEL
-    UID: 1538943657792452404
-    Name: Cube - Copy (2)
-    Source: Resources/Models/Cube - Copy (2).FBX
+    UID: 4930468099905886477
+    Name: Cube - Copy
+    Source: Resources/Models/Cube - Copy.FBX
     Properties:
       HasJoints: false
   - Type: MODEL
@@ -245,12 +229,6 @@ ASSETS:
     UID: 7633162898494281895
     Name: Cube
     Source: Resources/Models/Cube.FBX
-    Properties:
-      HasJoints: false
-  - Type: MODEL
-    UID: 4930468099905886477
-    Name: Cube - Copy
-    Source: Resources/Models/Cube - Copy.FBX
     Properties:
       HasJoints: false
   - Type: MODEL

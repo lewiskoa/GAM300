@@ -255,8 +255,10 @@ namespace EditorUI {
             }
         }
 
-        if (ImGui::IsItemClicked())
+        if (ImGui::IsItemClicked()) {
+            m_App->ResetAllSelected();
             selectedPath = root->fullPath.string();
+        }
 
         if (root->isDirectory) {
             treeNodeOpenStatus[root->fullPath.string()] = nodeOpen;
