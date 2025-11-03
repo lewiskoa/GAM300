@@ -145,7 +145,7 @@ namespace EditorUI {
         // Model Component
         if (selected.Has<Boom::ModelComponent>()) {
             auto& mc = selected.Get<Boom::ModelComponent>();
-
+            ImGui::Spacing();
             if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
                 //2 for now (model.fbx & material)
                 ImGui::BeginTable("##maps", 6, ImGuiTableFlags_SizingFixedFit);
