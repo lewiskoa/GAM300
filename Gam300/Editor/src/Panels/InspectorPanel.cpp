@@ -133,7 +133,7 @@ namespace EditorUI {
         Boom::AppContext* ctx = GetContext();
         // NOTE: adjust Entity wrapper to your real type/ctor signature
             // Assuming: Entity(Boom::Scene*, entt::entity)
-        Boom::Entity selected{ &ctx->scene, m_App->SelectedEntity()};
+        Boom::Entity selected{ &ctx->scene, m_App->SelectedEntity() };
 
         // ===== ENTITY NAME =====
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 6));
@@ -172,28 +172,295 @@ namespace EditorUI {
         // Model Component
         if (selected.Has<Boom::ModelComponent>()) {
             auto& mc = selected.Get<Boom::ModelComponent>();
-            ImGui::Spacing();
+
+            // Use CollapsingHeader to match the style
             if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
-                //2 for now (model.fbx & material)
-                ImGui::BeginTable("##maps", 6, ImGuiTableFlags_SizingFixedFit);
-                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthStretch);
+
+                // --- UI for assigning model and material ---
+                ImGui::BeginTable("##maps", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersInnerV);
+                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("Asset", ImGuiTableColumnFlags_WidthStretch);
                 InputAssetWidget<CONSTANTS::DND_PAYLOAD_MODEL>("Model", mc.modelID);
                 InputAssetWidget<CONSTANTS::DND_PAYLOAD_MATERIAL>("Material", mc.materialID);
                 ImGui::EndTable();
+
+                ImGui::Spacing();
+                ImGui::SeparatorText("Physics"); // A nice separator
+
+                // --- UI for cooking the mesh collider ---
+                if (mc.modelID != EMPTY_ASSET) {
+                    ModelAsset& modelAsset = m_App->GetAssetRegistry().Get<ModelAsset>(mc.modelID);
+
+                    if (modelAsset.data) {
+                        if (ImGui::Button("Compile Mesh Collider from this Model", ImVec2(-1, 0))) {
+                            std::string saveDir = "Resources/Physics/";
+                            if (!std::filesystem::exists(saveDir)) {
+                                std::filesystem::create_directories(saveDir);
+                            }
+                            // Use model name for the .pxm file
+                            std::string savePath = saveDir + modelAsset.name + ".pxm";
+
+                            bool success = m_App->GetPhysicsContext().CompileAndSavePhysicsMesh(modelAsset, savePath);
+
+                            if (success) {
+                                AssetID newID = RandomU64(); // Assumes RandomU64() is available
+                                m_App->GetAssetRegistry().AddPhysicsMesh(newID, savePath)->name = modelAsset.name;
+                                BOOM_INFO("Successfully cooked and created PhysicsMeshAsset '{}'", modelAsset.name);
+                                m_App->SaveAssets();
+                            }
+                            else {
+                                BOOM_ERROR("Failed to cook physics mesh for '{}'. Check model data.", modelAsset.name);
+                            }
+                        }
+                    }
+                    else {
+                        ImGui::TextDisabled("Model data not yet loaded.");
+                    }
+                }
+                else {
+                    ImGui::TextDisabled("Assign a model to enable mesh cooking.");
+                }
             }
         }
 
-        if (selected.Has<RigidBodyComponent>()) {
-            auto& rc = selected.Get<RigidBodyComponent>();
-            DrawComponentSection("Rigidbody", &rc, GetRigidBodyComponentProperties, true,
-                [&]() { ctx->scene.remove<RigidBodyComponent>(m_App->SelectedEntity()); });
+        if (selected.Has<Boom::RigidBodyComponent>()) {
+            ImGui::PushID("Rigid Body");
+
+            // 1. Draw Header
+            bool isOpen = ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+
+            // 2. Draw "..." Button (to match photo)
+            const ImVec2 headerMin = ImGui::GetItemRectMin();
+            const ImVec2 headerMax = ImGui::GetItemRectMax();
+            const float  lineH = ImGui::GetFrameHeight();
+            const float y = headerMin.y + (headerMax.y - headerMin.y - lineH) * 0.5f;
+            ImGui::SetCursorScreenPos(ImVec2(headerMax.x - lineH, y));
+            if (ImGui::Button("...", ImVec2(lineH, lineH)))
+                ImGui::OpenPopup("RigidBodySettings");
+
+            bool removed = false;
+            if (ImGui::BeginPopup("RigidBodySettings")) {
+                if (ImGui::MenuItem("Remove Component")) {
+                    removed = true; // Set flag to remove later
+                }
+                ImGui::EndPopup();
+            }
+
+            // 3. Reset cursor
+            ImGui::SetCursorScreenPos(ImVec2(headerMin.x, headerMax.y + ImGui::GetStyle().ItemSpacing.y));
+
+            // 4. Draw Contents
+            if (isOpen) {
+                ImGui::Indent(12.0f);
+                ImGui::Spacing();
+
+                auto& rc = selected.Get<Boom::RigidBodyComponent>();
+
+                RigidBody3D::Type currentType = rc.RigidBody.type;
+                const char* currentTypeName;
+                switch (currentType)
+                {
+                case RigidBody3D::Type::STATIC:  currentTypeName = "Static";  break;
+                case RigidBody3D::Type::DYNAMIC: currentTypeName = "Dynamic"; break;
+                default:                         currentTypeName = "Unknown"; break;
+                }
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Body Type");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+
+                if (ImGui::BeginCombo("##BodyType", currentTypeName))
+                {
+                    bool isStaticSelected = (currentType == RigidBody3D::Type::STATIC);
+                    if (ImGui::Selectable("Static", isStaticSelected))
+                    {
+                        m_App->GetPhysicsContext().SetRigidBodyType(selected, RigidBody3D::Type::STATIC);
+                    }
+                    if (isStaticSelected) ImGui::SetItemDefaultFocus();
+
+                    bool isDynamicSelected = (currentType == RigidBody3D::Type::DYNAMIC);
+                    if (ImGui::Selectable("Dynamic", isDynamicSelected))
+                    {
+                        m_App->GetPhysicsContext().SetRigidBodyType(selected, RigidBody3D::Type::DYNAMIC);
+                    }
+                    if (isDynamicSelected) ImGui::SetItemDefaultFocus();
+
+                    ImGui::EndCombo();
+                }
+
+                auto* rigidBody = &rc.RigidBody;
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Density");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##Density", &rigidBody->density, 0.01f, 0.0f, 1000.0f);
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Mass");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##Mass", &rigidBody->mass, 0.1f, 0.0f, 1000.0f);
+
+                ImGui::Spacing();
+                ImGui::Unindent(12.0f);
+            }
+
+            ImGui::PopID();
+
+            if (removed) {
+                ctx->scene.remove<Boom::RigidBodyComponent>(m_App->SelectedEntity());
+                return; // Exit EntityUpdate early
+            }
+            ImGui::Spacing();
         }
 
-        if (selected.Has<ColliderComponent>()) {
-            auto& col = selected.Get<ColliderComponent>();
-            DrawComponentSection("Collider", &col, GetColliderComponentProperties, true,
-                [&]() { ctx->scene.remove<ColliderComponent>(m_App->SelectedEntity()); });
+        if (selected.Has<Boom::ColliderComponent>()) {
+            ImGui::PushID("Collider");
+
+            // 1. Draw Header
+            bool isOpen = ImGui::CollapsingHeader("Collider", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+
+            // 2. Draw "..." Button
+            const ImVec2 headerMin = ImGui::GetItemRectMin();
+            const ImVec2 headerMax = ImGui::GetItemRectMax();
+            const float  lineH = ImGui::GetFrameHeight();
+            const float y = headerMin.y + (headerMax.y - headerMin.y - lineH) * 0.5f;
+            ImGui::SetCursorScreenPos(ImVec2(headerMax.x - lineH, y));
+            if (ImGui::Button("...", ImVec2(lineH, lineH)))
+                ImGui::OpenPopup("ColliderSettings");
+
+            bool removed = false;
+            if (ImGui::BeginPopup("ColliderSettings")) {
+                if (ImGui::MenuItem("Remove Component")) {
+                    removed = true;
+                }
+                ImGui::EndPopup();
+            }
+
+            // 3. Reset cursor
+            ImGui::SetCursorScreenPos(ImVec2(headerMin.x, headerMax.y + ImGui::GetStyle().ItemSpacing.y));
+
+            // 4. Draw Contents
+            if (isOpen) {
+                ImGui::Indent(12.0f);
+                ImGui::Spacing();
+
+                auto& col = selected.Get<Boom::ColliderComponent>();
+
+                float oldDynamicFriction = col.Collider.dynamicFriction;
+                float oldStaticFriction = col.Collider.staticFriction;
+                float oldRestitution = col.Collider.restitution;
+
+                Collider3D::Type currentType = col.Collider.type;
+                const char* currentTypeName = "Unknown";
+                switch (currentType)
+                {
+                case Collider3D::Type::BOX:     currentTypeName = "Box";     break;
+                case Collider3D::Type::SPHERE:  currentTypeName = "Sphere";  break;
+                case Collider3D::Type::CAPSULE: currentTypeName = "Capsule"; break;
+                case Collider3D::Type::MESH:    currentTypeName = "Mesh";    break;
+                }
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Shape Type");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+
+                if (ImGui::BeginCombo("##ColliderType", currentTypeName))
+                {
+                    const char* types[] = { "Box", "Sphere", "Capsule", "Mesh" };
+                    for (int i = 0; i < IM_ARRAYSIZE(types); ++i) {
+                        bool isSelected = (currentType == static_cast<Collider3D::Type>(i));
+                        if (ImGui::Selectable(types[i], isSelected)) {
+                            m_App->GetPhysicsContext().SetColliderType(selected, static_cast<Collider3D::Type>(i), m_App->GetAssetRegistry());
+                        }
+                        if (isSelected) ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+
+                if (currentType == Collider3D::Type::MESH)
+                {
+                    ImGui::Spacing();
+                    ImGui::Separator();
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Physics Mesh");
+                    ImGui::SameLine(150);
+                    ImGui::SetNextItemWidth(-1);
+
+                    auto& assetRegistry = m_App->GetAssetRegistry();
+                    auto& currentAsset = assetRegistry.Get<PhysicsMeshAsset>(col.Collider.physicsMeshID);
+                    const char* currentName = (currentAsset.uid != EMPTY_ASSET) ? currentAsset.name.c_str() : "Select a mesh...";
+
+                    if (ImGui::BeginCombo("##PhysicsMesh", currentName))
+                    {
+                        auto& map = assetRegistry.GetMap<PhysicsMeshAsset>();
+
+                        bool isNoneSelected = (col.Collider.physicsMeshID == EMPTY_ASSET);
+                        if (ImGui::Selectable("None", isNoneSelected))
+                        {
+                            col.Collider.physicsMeshID = EMPTY_ASSET;
+                            m_App->GetPhysicsContext().UpdateColliderShape(selected, m_App->GetAssetRegistry());
+                        }
+                        if (isNoneSelected) ImGui::SetItemDefaultFocus();
+
+                        for (auto& [uid, asset] : map)
+                        {
+                            if (uid == EMPTY_ASSET) continue;
+                            bool isSelected = (col.Collider.physicsMeshID == uid);
+                            if (ImGui::Selectable(asset->name.c_str(), isSelected))
+                            {
+                                col.Collider.physicsMeshID = uid;
+                                m_App->GetPhysicsContext().UpdateColliderShape(selected, m_App->GetAssetRegistry());
+                            }
+                            if (isSelected) ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+                    ImGui::Separator();
+                    ImGui::Spacing();
+                }
+
+                auto* collider = &col.Collider;
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Dynamic Friction");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##DynamicFriction", &collider->dynamicFriction, 0.01f, 0.0f, 100.0f);
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Static Friction");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##StaticFriction", &collider->staticFriction, 0.01f, 0.0f, 100.0f);
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Restitution");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##Restitution", &collider->restitution, 0.01f, 0.0f, 100.0f);
+
+                if (col.Collider.dynamicFriction != oldDynamicFriction ||
+                    col.Collider.staticFriction != oldStaticFriction ||
+                    col.Collider.restitution != oldRestitution)
+                {
+                    m_App->GetPhysicsContext().UpdatePhysicsMaterial(selected);
+                }
+
+                ImGui::Spacing();
+                ImGui::Unindent(12.0f);
+            }
+            ImGui::PopID();
+
+            if (removed) {
+                ctx->scene.remove<Boom::ColliderComponent>(m_App->SelectedEntity());
+                return; // Exit EntityUpdate early
+            }
+            ImGui::Spacing();
         }
 
         if (selected.Has<DirectLightComponent>()) {
@@ -275,7 +542,7 @@ namespace EditorUI {
                 }
             }
             else {
-                ImGui::Text("nothing here!", ImGuiTreeNodeFlags_DefaultOpen);
+                ImGui::Button("nothing here!");
             }
             });
     }

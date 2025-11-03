@@ -17,7 +17,7 @@ namespace Boom {
         glm::vec3 initialVelocity = glm::vec3(0.0f); // Default to zero
         glm::vec3 previousScale = glm::vec3(0.0f);
         // rigidbody type
-        enum Type{
+        enum Type {
             DYNAMIC = 0,
             STATIC,
         } type;
@@ -52,6 +52,8 @@ namespace Boom {
         float staticFriction = 0.0f;
         float restitution = 0.1f;
 
+        AssetID physicsMeshID = EMPTY_ASSET;
+
         // mesh for custom shape
         PxConvexMeshGeometry mesh;
 
@@ -59,7 +61,7 @@ namespace Boom {
         PxShape* Shape = nullptr;
 
         // collider shape type
-        enum Type{
+        enum Type {
             BOX = 0,
             SPHERE,
             CAPSULE,
@@ -73,10 +75,11 @@ namespace Boom {
             obj_member<"DynamicFriction", &Boom::Collider3D::dynamicFriction>,
             obj_member<"StaticFriction", &Boom::Collider3D::staticFriction>,
             obj_member<"Restitution", &Boom::Collider3D::restitution>,
+            obj_member<"PhysicsMesh", &Boom::Collider3D::physicsMeshID>,
             obj_member<"Type", &Boom::Collider3D::type,
             member_enum_value<"BOX", Boom::Collider3D::Type::BOX>,
             member_enum_value<"SPHERE", Boom::Collider3D::Type::SPHERE>,
-			member_enum_value<"CAPSULE", Boom::Collider3D::Type::CAPSULE>,
+            member_enum_value<"CAPSULE", Boom::Collider3D::Type::CAPSULE>,
             member_enum_value<"MESH", Boom::Collider3D::Type::MESH>
             >
         )

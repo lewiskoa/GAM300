@@ -1,4 +1,5 @@
 #pragma once
+#include "PxPhysicsAPI.h" 
 #include "Graphics/Models/Model.h"
 #include "Graphics/Textures/Texture.h"
 #include "Graphics/Utilities/Data.h"
@@ -19,9 +20,10 @@ namespace Boom {
 		SCRIPT,
 		SCENE,
 		MODEL,
-		PREFAB
+		PHYSICS_MESH,
+		PREFAB,
 	};
-	constexpr char const* TYPE_NAMES[] {
+	constexpr char const* TYPE_NAMES[]{
 		"All",
 		"Materials",
 		"Textures",
@@ -29,6 +31,7 @@ namespace Boom {
 		"Scripts",
 		"Scenes",
 		"Models(.fbx)",
+		"Physics Meshes (.pxm)",
 		"Prefab",
 	};
 
@@ -53,7 +56,7 @@ namespace Boom {
 
 		XPROPERTY_DEF(
 			"MaterialAsset", MaterialAsset,
-			obj_member<"Data", &MaterialAsset::data>,                    
+			obj_member<"Data", &MaterialAsset::data>,
 			obj_member<"AlbedoMapID", &MaterialAsset::albedoMapID>,
 			obj_member<"NormalMapID", &MaterialAsset::normalMapID>,
 			obj_member<"RoughnessMapID", &MaterialAsset::roughnessMapID>,
@@ -63,15 +66,34 @@ namespace Boom {
 		)
 	};
 
+	struct PhysicsMeshAsset : Asset
+	{
+		BOOM_INLINE PhysicsMeshAsset() { type = AssetType::PHYSICS_MESH; }
+
+		// This will hold the live PhysX mesh object after loading
+		physx::PxConvexMesh* mesh = nullptr;
+
+		// The path to the compiled .pxm file on disk
+		std::string cookedMeshPath;
+
+		// Destructor to release the PhysX resource and prevent memory leaks
+		BOOM_INLINE virtual ~PhysicsMeshAsset() {
+			if (mesh) {
+				mesh->release();
+				mesh = nullptr;
+			}
+		}
+	};
+
 	struct TextureAsset : Asset {
 		Texture data{};		//Runtime only, no need to serialize
 
 		TextureAsset() { type = AssetType::TEXTURE; }
 
-		 XPROPERTY_DEF(
-		 	"TextureAsset", TextureAsset,
-			 obj_member<"Data", &TextureAsset::data>
-		 )
+		XPROPERTY_DEF(
+			"TextureAsset", TextureAsset,
+			obj_member<"Data", &TextureAsset::data>
+		)
 	};
 
 	struct SkyboxAsset : Asset
@@ -131,6 +153,7 @@ namespace Boom {
 			AddEmpty<PrefabAsset>();
 			AddEmpty<ScriptAsset>();
 			AddEmpty<SceneAsset>();
+			AddEmpty<PhysicsMeshAsset>();
 		}
 
 
@@ -258,6 +281,14 @@ namespace Boom {
 			return asset;
 		}
 
+		BOOM_INLINE auto AddPhysicsMesh(AssetID uid, std::string const& path) {
+			auto asset = std::make_shared<PhysicsMeshAsset>();
+			asset->type = AssetType::PHYSICS_MESH;
+			asset->cookedMeshPath = path;
+			Add(uid, path, asset);
+			return asset;
+		}
+
 		BOOM_INLINE AssetID FindModelByName(const std::string& name) {
 			auto& map = GetMap<ModelAsset>();
 			for (auto& [uid, asset] : map) {
@@ -280,7 +311,7 @@ namespace Boom {
 
 		template <class T>
 		BOOM_INLINE bool Remove(AssetID uid) {
-			#pragma warning(suppress: 26498)
+#pragma warning(suppress: 26498)
 			const uint32_t type{ TypeID<T>() };
 			auto it{ registry.find(type) };
 			if (it != registry.end()) {

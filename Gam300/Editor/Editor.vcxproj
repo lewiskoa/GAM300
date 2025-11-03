@@ -227,6 +227,15 @@ if exist "$(glew_BIN_DIRS)" xcopy /y /i "$(glew_BIN_DIRS)\*.dll" "$(TargetDir)"<
     <ClCompile Include="src\Panels\PropertiesImgui.cpp" />
     <ClCompile Include="src\Panels\ResourcePanel.cpp" />
     <ClCompile Include="src\Panels\ViewportPanel.cpp" />
+    <ClCompile Include="src\Vendors\imGuizmo\GraphEditor.cpp">
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="src\Vendors\imGuizmo\ImCurveEdit.cpp" />
+    <ClCompile Include="src\Vendors\imGuizmo\ImGradient.cpp" />
+    <ClCompile Include="src\Vendors\imGuizmo\ImGuizmo.cpp">
+      <TreatWarningAsError Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</TreatWarningAsError>
+    </ClCompile>
+    <ClCompile Include="src\Vendors\imGuizmo\ImSequencer.cpp" />
     <ClCompile Include="src\Vendors\imgui\imgui.cpp" />
     <ClCompile Include="src\Vendors\imgui\imgui_draw.cpp" />
     <ClCompile Include="src\Vendors\imgui\imgui_tables.cpp" />
@@ -259,6 +268,12 @@ if exist "$(glew_BIN_DIRS)" xcopy /y /i "$(glew_BIN_DIRS)\*.dll" "$(TargetDir)"<
     <ClInclude Include="src\Panels\ResourcePanel.h" />
     <ClInclude Include="src\Panels\ViewportPanel.h" />
     <ClInclude Include="src\Vendors\FA.h" />
+    <ClInclude Include="src\Vendors\imGuizmo\GraphEditor.h" />
+    <ClInclude Include="src\Vendors\imGuizmo\ImCurveEdit.h" />
+    <ClInclude Include="src\Vendors\imGuizmo\ImGradient.h" />
+    <ClInclude Include="src\Vendors\imGuizmo\ImGuizmo.h" />
+    <ClInclude Include="src\Vendors\imGuizmo\ImSequencer.h" />
+    <ClInclude Include="src\Vendors\imGuizmo\ImZoomSlider.h" />
     <ClInclude Include="src\Vendors\imgui\imgui.h" />
     <ClInclude Include="src\Vendors\imgui\imgui_internal.h" />
     <ClInclude Include="src\Vendors\imgui\backends\imgui_impl_glfw.h" />

@@ -12,6 +12,42 @@
 #ifndef ICON_FA_IMAGE
 #define ICON_FA_IMAGE ""
 #endif
+namespace {
+    // Helper to decompose a matrix back into position, rotation (euler), and scale
+    void DecomposeTransform(const glm::mat4& matrix, glm::vec3& position, glm::vec3& rotation, glm::vec3& scale)
+    {
+        // Extract translation
+        position = glm::vec3(matrix[3]);
+
+        // Extract scale
+        glm::vec3 col0(matrix[0]);
+        glm::vec3 col1(matrix[1]);
+        glm::vec3 col2(matrix[2]);
+
+        scale.x = glm::length(col0);
+        scale.y = glm::length(col1);
+        scale.z = glm::length(col2);
+
+        // Remove scale from the matrix to get pure rotation
+        if (scale.x != 0) col0 /= scale.x;
+        if (scale.y != 0) col1 /= scale.y;
+        if (scale.z != 0) col2 /= scale.z;
+
+        glm::mat3 rotationMatrix(col0, col1, col2);
+
+        // Convert rotation matrix to euler angles (in radians)
+        rotation.y = asin(-rotationMatrix[0][2]);
+
+        if (cos(rotation.y) != 0) {
+            rotation.x = atan2(rotationMatrix[1][2], rotationMatrix[2][2]);
+            rotation.z = atan2(rotationMatrix[0][1], rotationMatrix[0][0]);
+        }
+        else {
+            rotation.x = atan2(-rotationMatrix[2][1], rotationMatrix[1][1]);
+            rotation.z = 0;
+        }
+    }
+}
 
 namespace EditorUI {
 
@@ -27,85 +63,53 @@ namespace EditorUI {
 
     void ViewportPanel::OnShow()
     {
+
         if (!m_ShowViewport) return;
 
-        // Handle fullscreen toggle (F11 key)
-        if (ImGui::IsKeyPressed(ImGuiKey_F11)) {
-            m_IsFullscreen = !m_IsFullscreen;
-        }
-
-        // Window flags for fullscreen mode
-        ImGuiWindowFlags windowFlags = 0;
-        if (m_IsFullscreen) {
-            windowFlags |= ImGuiWindowFlags_NoTitleBar;
-            windowFlags |= ImGuiWindowFlags_NoCollapse;
-            windowFlags |= ImGuiWindowFlags_NoResize;
-            windowFlags |= ImGuiWindowFlags_NoMove;
-            windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
-            windowFlags |= ImGuiWindowFlags_NoNavFocus;
-            windowFlags |= ImGuiWindowFlags_NoBackground;
-
-            // Set window to cover the entire viewport
-            ImGuiViewport* viewport = ImGui::GetMainViewport();
-            ImGui::SetNextWindowPos(viewport->WorkPos);
-            ImGui::SetNextWindowSize(viewport->WorkSize);
-        }
-
-        if (ImGui::Begin(ICON_FA_IMAGE "\tViewport", &m_ShowViewport, windowFlags))
+        if (ImGui::Begin(ICON_FA_IMAGE "\tViewport", &m_ShowViewport))
         {
-            // Add fullscreen toggle button in the top-right corner
-            if (!m_IsFullscreen) {
-                ImGui::SameLine(ImGui::GetWindowWidth() - 80);
-                if (ImGui::Button("Fullscreen")) {
-                    m_IsFullscreen = true;
-                }
-            }
-            else {
-                // Show exit fullscreen button
-                ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - 120, 10));
-                if (ImGui::Button("Exit Fullscreen") || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-                    m_IsFullscreen = false;
-                }
-            }
-
             // 1) Get available space & aspect
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
             m_Viewport = viewportSize;
-            const float aspect = (viewportSize.y > 1.0f) ? (viewportSize.x / viewportSize.y) : 1.0f;
+            //const float aspect = (viewportSize.y > 1.0f) ? (viewportSize.x / viewportSize.y) : 1.0f;
 
             // 2) Get the frame texture from the engine
             const uint32_t frameTexture = QuerySceneFrame();
 
             if (frameTexture > 0 && viewportSize.x > 1.0f && viewportSize.y > 1.0f)
             {
-                // 3) Draw the backbuffer/scene image
-                ImGui::Image(
+                // 3) Draw the backbuffer/scene image WITHOUT blocking input
+                ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+                ImGui::GetWindowDrawList()->AddImage(
                     (ImTextureID)(uintptr_t)frameTexture,
-                    viewportSize,
-                    ImVec2(0, 1),  // flip for OpenGL
+                    cursorPos,
+                    ImVec2(cursorPos.x + viewportSize.x, cursorPos.y + viewportSize.y),
+                    ImVec2(0, 1),  // UV flip for OpenGL
                     ImVec2(1, 0)
                 );
 
-                // 4) Determine the viewport rect in ImGui space
+                // Move cursor but DON'T create any interactive widget
+                ImGui::Dummy(viewportSize);
+
+
+                // 6) Determine the viewport rect in ImGui space
                 const ImVec2 itemMin = ImGui::GetItemRectMin();
                 const ImVec2 itemMax = ImGui::GetItemRectMax();
                 const ImVec2 rectSz = ImVec2(itemMax.x - itemMin.x, itemMax.y - itemMin.y);
 
-                // 5) Hover/focus: only allow camera input when actually over this image
+                // 7) Check hover/focus state
                 const bool hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
                 const bool focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && hovered;
 
-                // 6) Convert to GLFW client-space and inform the engine window
-                const ImVec2 mainPos = ImGui::GetMainViewport()->Pos;
-                const double localX = double(itemMin.x - mainPos.x);
-                const double localY = double(itemMin.y - mainPos.y);
-                const double localW = double(rectSz.x);
-                const double localH = double(rectSz.y);
+                // Debug what's blocking input
+                BOOM_INFO("IsItemHovered (RectOnly): {}", ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly));
+                BOOM_INFO("IsItemHovered (AllowWhenBlocked): {}", ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem));
+                BOOM_INFO("IsWindowHovered: {}", ImGui::IsWindowHovered());
+                BOOM_INFO("IsAnyItemHovered: {}", ImGui::IsAnyItemHovered());
+                BOOM_INFO("IsAnyItemActive: {}", ImGui::IsAnyItemActive());
 
-                if (m_Ctx && m_Ctx->window)
-                    m_Ctx->window->SetCameraInputRegion(localX, localY, localW, localH, /*allow*/ hovered && focused);
-
-                // 7) Build active camera view/projection with the current aspect
+                // 8) Build camera matrices
+                bool gizmoWantsInput = false;
                 if (m_Ctx)
                 {
                     auto camView = m_Ctx->scene.view<Boom::CameraComponent, Boom::TransformComponent>();
@@ -116,17 +120,168 @@ namespace EditorUI {
                         auto& trans = camView.get<Boom::TransformComponent>(eid);
 
                         const glm::mat4 view = camComp.camera.View(trans.transform);
-                        const glm::mat4 proj = camComp.camera.Projection(aspect);
-                        (void)view; (void)proj;
+                        const glm::mat4 proj = camComp.camera.Projection(m_Ctx->renderer->AspectRatio());
+
+                        // 9) ImGuizmo manipulation (if entity selected)
+                        entt::entity selectedEntity = m_App->SelectedEntity();
+                        if (selectedEntity != entt::null)
+                        {
+                            if (m_Ctx->scene.valid(selectedEntity) &&
+                                m_Ctx->scene.all_of<Boom::TransformComponent>(selectedEntity))
+                            {
+                                auto& ltrans = m_Ctx->scene.get<Boom::TransformComponent>(selectedEntity);
+                                glm::mat4 matrix = ltrans.transform.Matrix();
+
+                                // Set ImGuizmo to draw in this viewport window
+                                ImGuizmo::SetOrthographic(false);
+                                ImGuizmo::SetDrawlist();
+
+                                // Test 2: Use window-relative coordinates instead of screen coordinates
+                                ImVec2 windowPos = ImGui::GetWindowPos();
+                                ImGuizmo::SetRect(itemMin.x, itemMin.y, rectSz.x, rectSz.y);
+
+                                // Make gizmo more visible
+                                ImGuizmo::SetGizmoSizeClipSpace(0.15f);
+
+                                // Handle keyboard shortcuts
+                                const bool viewportFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
+                                if (viewportFocused && !ImGui::GetIO().WantCaptureKeyboard)
+                                {
+                                    if (ImGui::IsKeyPressed(ImGuiKey_W)) m_GizmoOperation = ImGuizmo::TRANSLATE;
+                                    if (ImGui::IsKeyPressed(ImGuiKey_E)) m_GizmoOperation = ImGuizmo::ROTATE;
+                                    if (ImGui::IsKeyPressed(ImGuiKey_R)) m_GizmoOperation = ImGuizmo::SCALE;
+                                    if (ImGui::IsKeyPressed(ImGuiKey_T))
+                                        m_GizmoMode = (m_GizmoMode == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
+                                }
+
+                                // Verify ImGuizmo setup
+                                BOOM_INFO("Current ImGui context: {}", (void*)ImGui::GetCurrentContext());
+
+                                // Ensure context is set
+                                ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
+
+                                // Draw and manipulate the gizmo
+                                ImGuizmo::Manipulate(
+                                    glm::value_ptr(view),
+                                    glm::value_ptr(proj),
+                                    (ImGuizmo::OPERATION)m_GizmoOperation,
+                                    (ImGuizmo::MODE)m_GizmoMode,
+                                    glm::value_ptr(matrix),
+                                    nullptr,
+                                    m_UseSnap ? m_SnapValues : nullptr
+                                );
+
+                                /*
+                                // Draw a sphere at the entity position in screen space to verify projection
+                                glm::vec4 entityPosWorld = glm::vec4(ltrans.transform.translate, 1.0f);
+                                glm::vec4 entityPosClip = proj * view * entityPosWorld;
+                                glm::vec3 entityPosNDC = glm::vec3(entityPosClip) / entityPosClip.w;
+
+                                // Convert NDC to screen space
+                                float screenX = itemMin.x + (entityPosNDC.x * 0.5f + 0.5f) * rectSz.x;
+                                float screenY = itemMin.y + (1.0f - (entityPosNDC.y * 0.5f + 0.5f)) * rectSz.y;
+
+                                BOOM_INFO("Entity screen pos: ({}, {}), NDC: ({}, {}, {})",
+                                    screenX, screenY, entityPosNDC.x, entityPosNDC.y, entityPosNDC.z);
+
+                                // Draw a circle at the calculated screen position
+                                ImGui::GetWindowDrawList()->AddCircleFilled(
+                                    ImVec2(screenX, screenY),
+                                    15.0f,
+                                    IM_COL32(255, 0, 0, 255)
+                                );
+
+                                // ===== COMPREHENSIVE DEBUG =====
+                                ImVec2 mousePos = ImGui::GetMousePos();
+                                ImVec2 mouseLocalPos = ImVec2(mousePos.x - itemMin.x, mousePos.y - itemMin.y);
+
+                                // Always draw debug info (not just when hovering)
+                                ImGui::GetWindowDrawList()->AddText(
+                                    ImVec2(itemMin.x + 10, itemMin.y + 10),
+                                    IM_COL32(255, 255, 0, 255),
+                                    fmt::format("Mouse: ({:.0f}, {:.0f})", mousePos.x, mousePos.y).c_str()
+                                );
+                                ImGui::GetWindowDrawList()->AddText(
+                                    ImVec2(itemMin.x + 10, itemMin.y + 30),
+                                    IM_COL32(255, 255, 0, 255),
+                                    fmt::format("Local: ({:.0f}, {:.0f})", mouseLocalPos.x, mouseLocalPos.y).c_str()
+                                );
+                                ImGui::GetWindowDrawList()->AddText(
+                                    ImVec2(itemMin.x + 10, itemMin.y + 50),
+                                    IM_COL32(255, 255, 0, 255),
+                                    fmt::format("Rect: ({:.0f}, {:.0f}) - ({:.0f}, {:.0f})", itemMin.x, itemMin.y, itemMax.x, itemMax.y).c_str()
+                                );
+                                ImGui::GetWindowDrawList()->AddText(
+                                    ImVec2(itemMin.x + 10, itemMin.y + 70),
+                                    IM_COL32(255, 255, 0, 255),
+                                    fmt::format("IsOver: {}, IsUsing: {}", ImGuizmo::IsOver(), ImGuizmo::IsUsing()).c_str()
+                                );
+                                ImGui::GetWindowDrawList()->AddText(
+                                    ImVec2(itemMin.x + 10, itemMin.y + 90),
+                                    IM_COL32(255, 255, 0, 255),
+                                    fmt::format("Hovered: {}, Focused: {}", hovered, focused).c_str()
+                                );
+
+                                // Draw crosshair at mouse position
+                                ImGui::GetWindowDrawList()->AddLine(
+                                    ImVec2(mousePos.x - 10, mousePos.y),
+                                    ImVec2(mousePos.x + 10, mousePos.y),
+                                    IM_COL32(255, 0, 255, 255),
+                                    2.0f
+                                );
+                                ImGui::GetWindowDrawList()->AddLine(
+                                    ImVec2(mousePos.x, mousePos.y - 10),
+                                    ImVec2(mousePos.x, mousePos.y + 10),
+                                    IM_COL32(255, 0, 255, 255),
+                                    2.0f
+                                );
+
+                                // Draw viewport bounds
+                                ImGui::GetWindowDrawList()->AddRect(
+                                    itemMin,
+                                    itemMax,
+                                    IM_COL32(0, 255, 255, 255),
+                                    0.0f,
+                                    0,
+                                    2.0f
+                                );*/
+
+                                // NOW check if gizmo wants input (AFTER Manipulate call)
+                                gizmoWantsInput = ImGuizmo::IsOver() || ImGuizmo::IsUsing();
+
+                                // Update transform if gizmo was manipulated
+                                if (ImGuizmo::IsUsing())
+                                {
+                                    glm::vec3 newPosition, newRotation, newScale;
+                                    DecomposeTransform(matrix, newPosition, newRotation, newScale);
+
+                                    ltrans.transform.translate = newPosition;
+                                    ltrans.transform.rotate = newRotation;
+                                    ltrans.transform.scale = newScale;
+                                }
+                            }
+                        }
                     }
                 }
 
+                // 10) NOW set camera input region (AFTER ImGuizmo has processed input)
+                const ImVec2 mainPos = ImGui::GetMainViewport()->Pos;
+                const double localX = double(itemMin.x - mainPos.x);
+                const double localY = double(itemMin.y - mainPos.y);
+                const double localW = double(rectSz.x);
+                const double localH = double(rectSz.y);
+
+                if (m_Ctx && m_Ctx->window)
+                {
+                    // Only allow camera movement when NOT using gizmo
+                    const bool allowCameraInput = hovered && focused && !gizmoWantsInput;
+                    m_Ctx->window->SetCameraInputRegion(localX, localY, localW, localH, allowCameraInput);
+                }
+
                 // Tooltip
-                if (hovered && !m_IsFullscreen)
-                    ImGui::SetTooltip("Engine Viewport - Scene render output\nPress F11 for fullscreen");
+                if (hovered) ImGui::SetTooltip("Engine Viewport - Scene render output");
             }
-            else
-            {
+            else {
                 // Fallback UI when no frame is available
                 ImGui::Text("Frame Texture ID: %u", frameTexture);
                 ImGui::Text("Viewport Size: %.0fx%.0f", viewportSize.x, viewportSize.y);
@@ -147,8 +302,8 @@ namespace EditorUI {
                     );
                 }
             }
+            ImGui::End();
         }
-        ImGui::End();
     }
 
     void ViewportPanel::OnSelect(std::uint32_t entity_id)

@@ -257,6 +257,10 @@ namespace Boom
             return *m_Context->assets;
         }
 
+        BOOM_INLINE PhysicsContext& GetPhysicsContext() {
+            return *m_Context->physics;
+        }
+
         BOOM_INLINE void DeleteAsset(AssetID uid, AssetType type) {
             if (type == AssetType::TEXTURE) m_Context->assets->Remove<TextureAsset>(uid);
             else if (type == AssetType::MATERIAL) m_Context->assets->Remove<MaterialAsset>(uid);

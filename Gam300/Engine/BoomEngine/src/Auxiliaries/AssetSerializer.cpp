@@ -228,6 +228,22 @@ namespace Boom
             }
         );
 
+        // === PHYSICS MESH ===
+        registry.RegisterAssetSerializer(
+            AssetType::PHYSICS_MESH, // Or whatever your enum is called
+            // Serialize (no properties)
+            [](YAML::Emitter&, Asset*) {
+                // No properties to serialize, the path is enough
+            },
+            // Deserialize
+            [](AssetRegistry& reg, AssetID uid, const std::string& src, const YAML::Node&) -> Asset* {
+                // This just adds the asset to the registry. 
+                // The 'src' is the path to the .pxm file.
+                return static_cast<Asset*>(reg.AddPhysicsMesh(uid, src).get());
+            }
+        );
+
+
         // === SCENE ===
         registry.RegisterAssetSerializer(
             AssetType::SCENE,
