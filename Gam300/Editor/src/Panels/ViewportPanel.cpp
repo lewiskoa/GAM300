@@ -71,7 +71,7 @@ namespace EditorUI {
             // 1) Get available space & aspect
             ImVec2 viewportSize = ImGui::GetContentRegionAvail();
             m_Viewport = viewportSize;
-            const float aspect = (viewportSize.y > 1.0f) ? (viewportSize.x / viewportSize.y) : 1.0f;
+            //const float aspect = (viewportSize.y > 1.0f) ? (viewportSize.x / viewportSize.y) : 1.0f;
 
             // 2) Get the frame texture from the engine
             const uint32_t frameTexture = QuerySceneFrame();
@@ -120,7 +120,7 @@ namespace EditorUI {
                         auto& trans = camView.get<Boom::TransformComponent>(eid);
 
                         const glm::mat4 view = camComp.camera.View(trans.transform);
-                        const glm::mat4 proj = camComp.camera.Projection(aspect);
+                        const glm::mat4 proj = camComp.camera.Projection(m_Ctx->renderer->AspectRatio());
 
                         // 9) ImGuizmo manipulation (if entity selected)
                         entt::entity selectedEntity = m_App->SelectedEntity();
