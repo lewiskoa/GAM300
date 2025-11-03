@@ -151,8 +151,7 @@ namespace Boom {
             }
         }
 
-        BOOM_INLINE void UpdateColliderShape(Entity& entity)
-        {
+        BOOM_INLINE void UpdateColliderShape(Entity& entity, AssetRegistry& assetRegistry) {
             if (!entity.Has<RigidBodyComponent>() || !entity.Has<ColliderComponent>()) {
                 return;
             }
@@ -201,7 +200,28 @@ namespace Boom {
                 else if (majorAxis == AXIS_Z) localQ = PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f));
                 collider.Shape->setLocalPose(PxTransform(PxVec3(0.0f), localQ));
             }
-            // (Add your MESH logic here if it needs to be rescaled too)
+            else if (collider.type == Collider3D::MESH) {
+                if (collider.physicsMeshID == EMPTY_ASSET) {
+                    BOOM_WARN("Mesh collider has no PhysicsMeshAsset assigned. No shape will be created.");
+                    return; // Return early, leaving Shape as nullptr
+                }
+
+                auto& physicsMeshAsset = assetRegistry.Get<PhysicsMeshAsset>(collider.physicsMeshID);
+
+                if (!physicsMeshAsset.mesh) {
+                    physicsMeshAsset.mesh = LoadCookedMesh(physicsMeshAsset.cookedMeshPath);
+                }
+
+                if (physicsMeshAsset.mesh) {
+                    // Create the geometry and apply the entity's scale
+                    PxConvexMeshGeometry convexGeom(physicsMeshAsset.mesh, PxMeshScale(ToPxVec3(transform.scale)));
+                    collider.Shape = m_Physics->createShape(convexGeom, *collider.material);
+                }
+                else {
+                    BOOM_ERROR("Failed to load or create mesh shape for asset ID {}", collider.physicsMeshID);
+                    return; // Return early
+                }
+            }
 
             // 3. --- Attach the new shape and update physics properties ---
             if (collider.Shape) {
@@ -325,67 +345,31 @@ namespace Boom {
                 }
 
                 else if (collider.type == Collider3D::MESH) {
-                    std::cout << "Creating MESH collider from actual model geometry..." << std::endl;
-
-                    if (entity.template Has<ModelComponent>()) {
-                        auto& modelComp = entity.Get<ModelComponent>();
-                        if (modelComp.modelID) {
-
-                            auto& modelAsset = assetRegistry.Get<ModelAsset>(modelComp.modelID);
-                            Model3D modelPtr = modelAsset.data;
-
-                            // Only support StaticModel for mesh colliders
-                            auto staticModel = std::dynamic_pointer_cast<StaticModel>(modelPtr);
-                            if (staticModel) {
-                                auto physicsMeshData = staticModel->GetMeshData();
-
-                                if (!physicsMeshData.empty()) {
-                                    // Use the first mesh (you could combine multiple meshes)
-                                    auto& meshData = physicsMeshData[0];
-
-                                    // Scale vertices by transform
-                                    MeshData<ShadedVert> scaledMeshData = meshData;
-                                    for (auto& vertex : scaledMeshData.vtx) {
-                                        vertex.pos *= transform.scale;
-                                    }
-
-                                    std::cout << "Using actual model geometry: " << scaledMeshData.vtx.size() << " vertices" << std::endl;
-
-                                    // Cook the actual mesh geometry
-                                    collider.mesh = CookMesh(scaledMeshData);
-                                    collider.Shape = m_Physics->createShape(collider.mesh, *collider.material);
-
-                                    if (!collider.Shape) {
-                                        BOOM_ERROR("Failed to create mesh collider shape");
-                                        return;
-                                    }
-
-                                    std::cout << "REAL MESH collider created successfully!" << std::endl;
-                                }
-                                else {
-                                    BOOM_ERROR("StaticModel has no physics mesh data");
-                                    return;
-                                }
-                            }
-                            else {
-                                BOOM_ERROR("Mesh colliders currently only support StaticModel");
-                                return;
-                            }
-                        }
-                        else {
-                            BOOM_ERROR("Entity has ModelComponent but no model loaded");
-                            return;
-                        }
-                    }
-                    else {
-                        BOOM_ERROR("Mesh collider requires ModelComponent");
+                    if (collider.physicsMeshID == EMPTY_ASSET) {
+                        BOOM_WARN("Mesh collider has no PhysicsMeshAsset assigned.");
                         return;
                     }
-                }
-                else
-                {
-                    BOOM_ERROR("Error creating collider invalid type provided");
-                    return;
+
+                    // Get the asset from the registry
+                    auto& physicsMeshAsset = assetRegistry.Get<PhysicsMeshAsset>(collider.physicsMeshID);
+
+                    // If the mesh isn't loaded yet, load it from the cooked file
+                    if (!physicsMeshAsset.mesh) {
+                        physicsMeshAsset.mesh = LoadCookedMesh(physicsMeshAsset.cookedMeshPath);
+                    }
+
+                    if (physicsMeshAsset.mesh) {
+                        PxConvexMeshGeometry convexGeom(physicsMeshAsset.mesh);
+
+                        // Apply the entity's scale to the geometry
+                        convexGeom.scale.scale = ToPxVec3(transform.scale);
+
+                        collider.Shape = m_Physics->createShape(convexGeom, *collider.material);
+                    }
+                    else {
+                        BOOM_ERROR("Failed to load or create mesh shape for asset ID {}", collider.physicsMeshID);
+                        return;
+                    }
                 }
 
                 // Ensure shape is included in debug viz
@@ -500,6 +484,19 @@ namespace Boom {
             body.type = newType;
         }
 
+        BOOM_INLINE void SetColliderType(Entity& entity, Collider3D::Type newType, AssetRegistry& assetRegistry) {
+            if (!entity.Has<ColliderComponent>()) return;
+            auto& collider = entity.Get<ColliderComponent>().Collider;
+
+            if (collider.type == newType) {
+                return;
+            }
+            collider.type = newType;
+
+            // Pass the asset registry to the update function
+            UpdateColliderShape(entity, assetRegistry);
+        }
+
 
 
         // Mesh Colliders
@@ -566,6 +563,92 @@ namespace Boom {
                 material->setStaticFriction(collider.staticFriction);
                 material->setRestitution(collider.restitution);
             }
+        }
+
+        BOOM_INLINE physx::PxConvexMesh* LoadCookedMesh(const std::string& path)
+        {
+            std::ifstream file(path, std::ios::binary | std::ios::ate);
+            if (!file.is_open()) {
+                BOOM_ERROR("Failed to open cooked mesh file: {}", path);
+                return nullptr;
+            }
+
+            std::streamsize size = file.tellg();
+            file.seekg(0, std::ios::beg);
+
+            char* buffer = new char[size];
+            if (!file.read(buffer, size)) {
+                BOOM_ERROR("Failed to read cooked mesh file: {}", path);
+                delete[] buffer;
+                return nullptr;
+            }
+
+            PxDefaultMemoryInputData input(reinterpret_cast<PxU8*>(buffer), static_cast<PxU32>(size));
+
+            physx::PxConvexMesh* convexMesh = m_Physics->createConvexMesh(input);
+
+            delete[] buffer;
+            return convexMesh;
+        }
+
+        BOOM_INLINE bool CompileAndSavePhysicsMesh(ModelAsset& modelAsset, const std::string& savePath)
+        {
+            if (!modelAsset.data) return false;
+
+            auto staticModel = std::dynamic_pointer_cast<StaticModel>(modelAsset.data);
+            if (!staticModel) {
+                BOOM_ERROR("Physics mesh cooking only supports StaticModel.");
+                return false;
+            }
+
+            auto physicsMeshData = staticModel->GetMeshData();
+            if (physicsMeshData.empty()) {
+                BOOM_ERROR("Model has no mesh data to cook.");
+                return false;
+            }
+
+            auto& meshData = physicsMeshData[0]; // Using the first mesh
+
+            std::vector<PxVec3> vertices;
+            vertices.reserve(meshData.vtx.size());
+            for (const auto& vertex : meshData.vtx) {
+                vertices.push_back(ToPxVec3(vertex.pos));
+            }
+
+            PxConvexMeshDesc meshDesc;
+            meshDesc.points.data = vertices.data();
+            meshDesc.points.stride = sizeof(PxVec3);
+            meshDesc.points.count = static_cast<PxU32>(vertices.size());
+            meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+
+            PxCookingParams params(m_Physics->getTolerancesScale());
+            PxCooking* cooking = PxCreateCooking(PX_PHYSICS_VERSION, *m_Foundation, params);
+            if (!cooking) {
+                BOOM_ERROR("Failed to create PhysX cooking");
+                return false;
+            }
+
+            PxDefaultMemoryOutputStream buf;
+            //PxConvexMeshCookingResult::Enum result;
+            bool status = cooking->cookConvexMesh(meshDesc, buf);
+            cooking->release();
+
+            if (!status) {
+                BOOM_ERROR("Failed to cook convex mesh.");
+                return false;
+            }
+
+            // Save the cooked data to file
+            std::ofstream outFile(savePath, std::ios::binary);
+            if (!outFile) {
+                BOOM_ERROR("Failed to open file for writing cooked mesh: {}", savePath);
+                return false;
+            }
+            outFile.write(reinterpret_cast<const char*>(buf.getData()), buf.getSize());
+            outFile.close();
+
+            BOOM_INFO("Successfully cooked and saved physics mesh to {}", savePath);
+            return true;
         }
 
 

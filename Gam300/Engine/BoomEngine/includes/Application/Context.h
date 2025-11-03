@@ -13,7 +13,7 @@ namespace Boom
 	// Forward declaration of the base interface
 	struct  AppInterface;
 
-	
+
 	/**
 	* @brief Holds global state and owns all attached layers.
 	*/
@@ -32,7 +32,7 @@ namespace Boom
 		}
 
 
-		/** @brief Destructor that deletes and nulls out all layer pointers. */ 
+		/** @brief Destructor that deletes and nulls out all layer pointers. */
 		~AppContext();
 		//BOOM_INLINE ~AppContext()
 		//{
@@ -53,8 +53,8 @@ namespace Boom
 		EventDispatcher dispatcher;
 		std::unique_ptr<AppWindow> window;
 		std::unique_ptr<GraphicsRenderer> renderer;
-		std::unique_ptr<AssetRegistry> assets;
 		std::unique_ptr<PhysicsContext> physics; //physics context
+		std::unique_ptr<AssetRegistry> assets;
 		Boom::Profiler profiler;
 		double DeltaTime{};
 		EntityRegistry scene;

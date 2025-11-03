@@ -4,63 +4,6 @@ ENTITIES:
   - {}
   - InfoComponent:
       Parent: 0
-      Name: Player
-      UID: 18299148976802030936
-    TransformComponent:
-      Transform:
-        Translate: [0, -1.20000005, 0]
-        Rotate: [0, 0, 0]
-        Scale: [0.00999999978, 0.00999999978, 0.00999999978]
-    ModelComponent:
-      ModelID: 9625104056789884581
-      MaterialID: 11573253777835523025
-      ModelName: ""
-      MaterialName: ""
-      ModelSource: ""
-      MaterialSource: ""
-    AnimatorComponent:
-      Sequence: 0
-      Time: 753.820374
-  - InfoComponent:
-      Parent: 18299148976802030936
-      Name: Player_PhysicsBody
-      UID: 18299148976802030937
-    TransformComponent:
-      Transform:
-        Translate: [0, 0.8, 0]
-        Rotate: [0, 0, 0]
-        Scale: [0.85, 2.37, 0.5]
-    RigidBodyComponent:
-      RigidBody:
-        Density: 1.0
-        Type: STATIC
-    ColliderComponent:
-      Collider:
-        DynamicFriction: 0.5
-        StaticFriction: 0.5
-        Restitution: 0.1
-        Type: CAPSULE
-  - {}
-  - {}
-  - InfoComponent:
-      Parent: 0
-      Name: Ball 2
-      UID: 6042260349840611439
-    TransformComponent:
-      Transform:
-        Translate: [1.28999996, 1, 0]
-        Rotate: [0, 0, 0]
-        Scale: [0.5, 0.5, 0.5]
-    ModelComponent:
-      ModelID: 11565258723769024311
-      MaterialID: 11573253777835523025
-      ModelName: ""
-      MaterialName: ""
-      ModelSource: ""
-      MaterialSource: ""
-  - {}
-  - InfoComponent:
-      Parent: 0
       Name: Skybox
       UID: 3009173759421305309
     TransformComponent:
@@ -76,8 +19,8 @@ ENTITIES:
       UID: 9201024860084647067
     TransformComponent:
       Transform:
-        Translate: [0.443855196, 1.21253562, 2.94374704]
-        Rotate: [-19.375, 1.6875, 0]
+        Translate: [-10, 2, 10]
+        Rotate: [-10, -45, 0]
         Scale: [1, 1, 1]
     CameraComponent:
       Camera:
@@ -130,23 +73,23 @@ ENTITIES:
       Collider:
         DynamicFriction: 0.5
         StaticFriction: 0.5
-        Restitution: 0.600000024
-        Type: CAPSULE
+        Restitution: 0.6
+        Type: SPHERE
     InfoComponent:
       Parent: 0
-      Name: Sphere
+      Name: Sphere1
       UID: 10000000000000000001
     TransformComponent:
       Transform:
-        Translate: [2.5, -0.19999975, 0]
-        Rotate: [0, -0, 0]
-        Scale: [1, 2, 1]
+        Translate: [10, 0, 0]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
     RigidBodyComponent:
       RigidBody:
         Density: 1
         Mass: 1
-        InitialVelocity: [0, 0, 0]
-        Previous Scale: [1, 2, 1]
+        InitialVelocity: [-5, 0, 0]
+        Previous Scale: [1, 1, 1]
         Type: DYNAMIC
     ModelComponent:
       ModelID: 11565258723769024311
@@ -155,21 +98,92 @@ ENTITIES:
       MaterialName: ""
       ModelSource: Resources/Models/sphere.fbx
       MaterialSource: Marble
-  - InfoComponent:
+  - ColliderComponent:
+      Collider:
+        DynamicFriction: 0.5
+        StaticFriction: 0.5
+        Restitution: 0.6
+        Type: SPHERE
+    InfoComponent:
       Parent: 0
-      Name: Ball 1
-      UID: 6042260349840611439
+      Name: Sphere2
+      UID: 10000000000000000003
     TransformComponent:
       Transform:
-        Translate: [0.49000001, 1.01999998, -1.29999995]
+        Translate: [-10, 0, 0]
         Rotate: [0, 0, 0]
         Scale: [1, 1, 1]
+    RigidBodyComponent:
+      RigidBody:
+        Density: 1
+        Mass: 1
+        InitialVelocity: [5, 0, 0]
+        Previous Scale: [1, 1, 1]
+        Type: DYNAMIC
     ModelComponent:
       ModelID: 11565258723769024311
-      MaterialID: 2930779482462285987
+      MaterialID: 11573253777835523025
       ModelName: sphere
       MaterialName: ""
-      ModelSource: Resources/Models/walking.fbx
+      ModelSource: Resources/Models/sphere.fbx
+      MaterialSource: Marble
+  - ColliderComponent:
+      Collider:
+        DynamicFriction: 0.5
+        StaticFriction: 0.5
+        Restitution: 0.6
+        Type: SPHERE
+    InfoComponent:
+      Parent: 0
+      Name: Sphere3
+      UID: 10000000000000000004
+    TransformComponent:
+      Transform:
+        Translate: [0, 0, 10]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
+    RigidBodyComponent:
+      RigidBody:
+        Density: 1
+        Mass: 1
+        InitialVelocity: [0, 0, -5]
+        Previous Scale: [1, 1, 1]
+        Type: DYNAMIC
+    ModelComponent:
+      ModelID: 11565258723769024311
+      MaterialID: 11573253777835523025
+      ModelName: sphere
+      MaterialName: ""
+      ModelSource: Resources/Models/sphere.fbx
+      MaterialSource: Marble
+  - ColliderComponent:
+      Collider:
+        DynamicFriction: 0.5
+        StaticFriction: 0.5
+        Restitution: 0.6
+        Type: SPHERE
+    InfoComponent:
+      Parent: 0
+      Name: Sphere4
+      UID: 10000000000000000005
+    TransformComponent:
+      Transform:
+        Translate: [0, 0, -10]
+        Rotate: [0, 0, 0]
+        Scale: [1, 1, 1]
+    RigidBodyComponent:
+      RigidBody:
+        Density: 1
+        Mass: 1
+        InitialVelocity: [0, 0, 5]
+        Previous Scale: [1, 1, 1]
+        Type: DYNAMIC
+    ModelComponent:
+      ModelID: 11565258723769024311
+      MaterialID: 11573253777835523025
+      ModelName: sphere
+      MaterialName: ""
+      ModelSource: Resources/Models/sphere.fbx
       MaterialSource: Marble
   - ColliderComponent:
       Collider:
@@ -185,13 +199,13 @@ ENTITIES:
       Transform:
         Translate: [0, -1.29999995, 0]
         Rotate: [0, 0, 0]
-        Scale: [20, 0.200000003, 20]
+        Scale: [50, 0.200000003, 50]
     RigidBodyComponent:
       RigidBody:
         Density: 1
         Mass: 0
         InitialVelocity: [0, 0, 0]
-        Previous Scale: [20, 0.200000003, 20]
+        Previous Scale: [50, 0.200000003, 50]
         Type: STATIC
     ModelComponent:
       ModelID: 7633162898494281895

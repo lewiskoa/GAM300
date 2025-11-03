@@ -12,6 +12,9 @@
 #include "../Graphics/Utilities/Culling.h"
 #include "Input/CameraManager.h"
 #include "Graphics/Shaders/DebugLines.h"
+#include "imgui.h"
+#include "ImGuizmo.h"
+#include <glm/gtc/type_ptr.hpp>
 
 namespace Boom
 {
@@ -247,7 +250,7 @@ namespace Boom
                     prevF10 = f10Pressed;
                 }
 
-				//   F11 for testing change of rigid body type
+                //   F11 for testing change of rigid body type
                 {
                     static bool prevF11 = false;
                     bool f11Pressed = glfwGetKey(engineWindow.get(), GLFW_KEY_F11) == GLFW_PRESS;
@@ -325,7 +328,7 @@ namespace Boom
                         }
                         if (glfwGetKey(engineWindow.get(), GLFW_KEY_2) == GLFW_PRESS && animator->GetClipCount() > 1) {
                             animator->PlayClip(1);
-                            
+
 #ifdef DEBUG
                             const auto* clip = animator->GetClip(1);
                             if (clip) BOOM_INFO("Switched to [1]: '{}'", clip->name);
@@ -334,7 +337,7 @@ namespace Boom
                         }
                         if (glfwGetKey(engineWindow.get(), GLFW_KEY_3) == GLFW_PRESS && animator->GetClipCount() > 2) {
                             animator->PlayClip(2);
-                            
+
 #ifdef DEBUG
                             const auto* clip = animator->GetClip(2);
                             if (clip) BOOM_INFO("Switched to [2]: '{}'", clip->name);
@@ -344,7 +347,7 @@ namespace Boom
                             animator->PlayClip(3);
 #ifdef DEBUG
                             const auto* clip = animator->GetClip(3);
-                            if (clip) BOOM_INFO("Switched to [3]: '{}'", clip->name); 
+                            if (clip) BOOM_INFO("Switched to [3]: '{}'", clip->name);
 #endif // DEBUG
                         }
 
@@ -383,11 +386,13 @@ namespace Boom
                 // Only update rotation when running
                 if (m_AppState == ApplicationState::RUNNING) {
                     script_update_all(static_cast<float>(m_Context->DeltaTime));
+                    UpdateStaticTransforms();
                     RunPhysicsSimulation();
                 }
 
                 m_SphereTimer += m_Context->DeltaTime;
                 if (m_SphereTimer >= m_SphereResetInterval) {
+                    ResetAllSpheres();
                     ResetSphere();
                     m_SphereTimer = 0.0;
                 }
@@ -484,7 +489,7 @@ namespace Boom
                         if (tc.transform.scale != rbc.RigidBody.previousScale)
                         {
                             // If it changed, update the collider shape
-                            m_Context->physics->UpdateColliderShape(entity);
+                            m_Context->physics->UpdateColliderShape(entity, GetAssetRegistry());
 
                             // Then, update the stored scale to the new value for the next frame
                             rbc.RigidBody.previousScale = tc.transform.scale;
@@ -519,6 +524,16 @@ namespace Boom
                         m_Context->renderer->SetJoints(joints);
                     }
 
+                    glm::mat4 worldMatrix = GetWorldMatrix(entity);
+
+                    Transform3D worldTransform;
+                    ImGuizmo::DecomposeMatrixToComponents(
+                        glm::value_ptr(worldMatrix),
+                        glm::value_ptr(worldTransform.translate),
+                        glm::value_ptr(worldTransform.rotate), // Outputs degrees
+                        glm::value_ptr(worldTransform.scale)
+                    );
+
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
                     //ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
 
@@ -552,7 +567,7 @@ namespace Boom
                             }
                         }
 
-                        m_Context->renderer->Draw(model.data, transform, material.data);
+                        m_Context->renderer->Draw(model.data, worldTransform, material.data);
                     }
 
                     renderCount++;
@@ -618,12 +633,6 @@ namespace Boom
                 for (auto layer : m_Context->layers)
                 {
                     layer->OnUpdate();
-                }
-                //update layers only when running
-                if (m_AppState == ApplicationState::RUNNING)
-                {
-                    // Run physics simulation only when running
-                    RunPhysicsSimulation();
                 }
 
                 m_Context->profiler.End("Total Frame");
@@ -729,12 +738,112 @@ namespace Boom
          */
         BOOM_INLINE bool IsSceneLoaded() const { return m_SceneLoaded; }
 
+        BOOM_INLINE glm::mat4 GetWorldMatrix(Entity& entity)
+        {
+            // 1. Get this entity's local matrix (e.g., the visual model's transform)
+            glm::mat4 localMatrix(1.0f);
+            if (entity.Has<TransformComponent>()) {
+                localMatrix = entity.Get<TransformComponent>().transform.Matrix();
+            }
+
+            // 2. Get the parent's world matrix (e.g., the physics body's transform)
+            glm::mat4 pMatrix(1.0f);
+            if (entity.Has<InfoComponent>()) {
+                uint64_t parentUID = entity.Get<InfoComponent>().parent;
+
+                if (parentUID != 0) // 0 means root/no parent
+                {
+                    entt::entity parentEnttID = entt::null;
+                    auto view = m_Context->scene.view<InfoComponent>();
+                    for (auto e : view) {
+                        if (view.get<InfoComponent>(e).uid == parentUID) {
+                            parentEnttID = e;
+                            break;
+                        }
+                    }
+
+                    if (parentEnttID != entt::null) {
+                        Entity parentEntity{ &m_Context->scene, parentEnttID };
+                        pMatrix = GetWorldMatrix(parentEntity); // Recurse
+                    }
+                }
+            }
+
+            // 3. Decompose the parent's matrix into T, R, and S
+            glm::vec3 pTranslate, pRotate, pScale;
+            ImGuizmo::DecomposeMatrixToComponents(
+                glm::value_ptr(pMatrix),
+                glm::value_ptr(pTranslate),
+                glm::value_ptr(pRotate),
+                glm::value_ptr(pScale)
+            );
+
+            // 4. Recompose the parent's matrix *without* its scale
+            glm::mat4 pMatrix_NoScale;
+            ImGuizmo::RecomposeMatrixFromComponents(
+                glm::value_ptr(pTranslate),
+                glm::value_ptr(pRotate),
+                glm::value_ptr(glm::vec3(1.0f, 1.0f, 1.0f)), // Force scale to 1.0
+                glm::value_ptr(pMatrix_NoScale)
+            );
+
+            // 5. Return the parent's (T*R) multiplied by the child's (T*R*S)
+            return pMatrix_NoScale * localMatrix;
+        }
+
+        BOOM_INLINE void UpdateStaticTransforms()
+        {
+            EnttView<Entity, RigidBodyComponent>(
+                [this](auto entity, RigidBodyComponent& rb)
+                {
+                    if (rb.RigidBody.type == RigidBody3D::Type::STATIC)
+                    {
+                        auto* actor = rb.RigidBody.actor;
+                        if (!actor) return;
+
+                        // Get the FINAL world matrix of the physics body,
+                        // no matter how deep it is in the hierarchy.
+                        glm::mat4 worldMatrix = GetWorldMatrix(entity);
+
+                        // Decompose the world matrix to get the final T and R
+                        glm::vec3 worldTranslate, worldRotate, worldScale;
+                        ImGuizmo::DecomposeMatrixToComponents(
+                            glm::value_ptr(worldMatrix),
+                            glm::value_ptr(worldTranslate),
+                            glm::value_ptr(worldRotate),
+                            glm::value_ptr(worldScale)
+                        );
+                        // --- END FIX ---
+
+                        physx::PxTransform currentPose = actor->getGlobalPose();
+
+                        // Convert new world transform to PhysX
+                        glm::quat rotQuat = glm::quat(glm::radians(worldRotate));
+
+                        physx::PxVec3 newPos(worldTranslate.x, worldTranslate.y, worldTranslate.z);
+                        physx::PxQuat newRot(rotQuat.x, rotQuat.y, rotQuat.z, rotQuat.w);
+
+                        if (currentPose.p != newPos || currentPose.q != newRot)
+                        {
+                            actor->setGlobalPose(physx::PxTransform(newPos, newRot));
+                        }
+                    }
+                });
+        }
+
     private:
         std::unique_ptr<Boom::DebugLinesShader> m_DebugLinesShader;
         std::vector<Boom::PhysicsContext::DebugLine> m_PhysLinesCPU;
         bool m_DebugRigidBodiesOnly = true;
         char m_CurrentScenePath[512] = "\0";
         bool m_SceneLoaded = false;
+
+        std::map<std::string, std::pair<glm::vec3, glm::vec3>> m_SphereInitialStates = {
+        { "Sphere1", { glm::vec3(10, 0, 0),    glm::vec3(-5, 0, 0) } }, // Pos, Vel
+        { "Sphere2", { glm::vec3(-10, 0, 0),   glm::vec3(5, 0, 0) } },  // Pos, Vel
+        { "Sphere3", { glm::vec3(0, 0, 10),    glm::vec3(0, 0, -5) } }, // Pos, Vel
+        { "Sphere4", { glm::vec3(0, -0, -10),   glm::vec3(0, 0, 5) } }   // Pos, Vel
+        };
 
         /**
         * @brief Cleans up the current scene and physics actors
@@ -893,6 +1002,45 @@ namespace Boom
                 });
         }
 
+
+        BOOM_INLINE void ResetAllSpheres()
+        {
+            EnttView<Entity, InfoComponent, TransformComponent, RigidBodyComponent>(
+                [this](auto entity, InfoComponent& info, TransformComponent& transform, RigidBodyComponent& rb)
+                {
+                    (void)entity; // Silence the "unused parameter" warning
+
+                    // 1. Check if this entity is one of the spheres we want to reset
+                    auto it = m_SphereInitialStates.find(info.name);
+                    if (it == m_SphereInitialStates.end()) {
+                        return; // Not a sphere we care about, skip it
+                    }
+
+                    // 2. Get the dynamic actor
+                    auto* dyn = rb.RigidBody.actor->is<physx::PxRigidDynamic>();
+                    if (!dyn) return; // Skip if it's not a dynamic body
+
+                    // 3. Get the initial state from our map
+                    const glm::vec3& initialPos = it->second.first;
+                    const glm::vec3& initialVel = it->second.second;
+
+                    // 4. Create the PhysX pose and velocity
+                    const physx::PxVec3 p(initialPos.x, initialPos.y, initialPos.z);
+                    const physx::PxVec3 v(initialVel.x, initialVel.y, initialVel.z);
+                    const physx::PxQuat q(0.f, 0.f, 0.f, 1.f); // Identity rotation
+
+                    // 5. Teleport the PhysX actor and reset its velocity
+                    const physx::PxTransform pose(p, q);
+                    dyn->setGlobalPose(pose);
+                    dyn->setLinearVelocity(v);
+                    dyn->setAngularVelocity(physx::PxVec3(0.f, 0.f, 0.f));
+
+                    // 6. Update the ECS transform to match (so it's correct next frame)
+                    transform.transform.translate = initialPos;
+                    transform.transform.rotate = glm::vec3(0.0f);
+                });
+        }
+
         BOOM_INLINE void DestroyPhysicsActors()
         {
             EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
@@ -923,7 +1071,7 @@ namespace Boom
                         auto& transform = entity.template Get<TransformComponent>().transform;
                         auto pose = comp.RigidBody.actor->getGlobalPose();
                         if (comp.RigidBody.actor->is<physx::PxRigidDynamic>()) {
-                            glm::quat rot(pose.q.w, pose.q.x, pose.q.y, pose.q.z); // This is CORRECT
+                            glm::quat rot(pose.q.w, pose.q.x, pose.q.y, pose.q.z);
                             transform.rotate = glm::degrees(glm::eulerAngles(rot));
                             transform.translate = PxToVec3(pose.p);
                         }

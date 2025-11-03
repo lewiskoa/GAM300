@@ -10,10 +10,10 @@ namespace Boom {
 
 	namespace CONSTANTS {
 		int const CHAR_BUFFER_SIZE{ 256 };
-		constexpr std::tuple<float, float, float, float> DEFAULT_BACKGROUND_COLOR = {.3f, .3f, .3f, 1.f};
+		constexpr std::tuple<float, float, float, float> DEFAULT_BACKGROUND_COLOR = { .3f, .3f, .3f, 1.f };
 		constexpr std::string_view SHADERS_LOCATION = "Resources/Shaders/";
 		constexpr float CAM_PAN_SPEED{ .25f };
-		constexpr float CAM_RUN_MULTIPLIER{ 1.5f }; 
+		constexpr float CAM_RUN_MULTIPLIER{ 1.5f };
 		constexpr float MIN_FOV{ 45.f };
 		constexpr float MAX_FOV{ 100.f };
 		int const WINDOW_WIDTH = 1800;
@@ -23,5 +23,6 @@ namespace Boom {
 		constexpr std::string_view DND_PAYLOAD_MODEL{ "DND_MDL" };
 		constexpr std::string_view DND_PAYLOAD_MATERIAL{ "DND_MAT" };
 		constexpr std::string_view COMPRESSED_TEXTURE_OUTPUT_PATH{ "CompressedTexture" };
+		constexpr std::string_view DND_PAYLOAD_PHYSICS_MESH{ "DND_PHY_MSH" };
 	}
 }
