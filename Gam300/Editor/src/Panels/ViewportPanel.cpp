@@ -131,43 +131,6 @@ namespace EditorUI {
                             {
                                 auto& ltrans = m_Ctx->scene.get<Boom::TransformComponent>(selectedEntity);
                                 glm::mat4 matrix = ltrans.transform.Matrix();
-                                //glm::mat4 matrix = glm::mat4(1.0f);  // Identity matrix for testing
-                                //BOOM_INFO("USING IDENTITY MATRIX FOR TEST");
-
-
-                                // DEBUG THE MATRICES
-                                BOOM_INFO("=== Transform Debug ===");
-                                BOOM_INFO("Entity position: ({}, {}, {})",
-                                    ltrans.transform.translate.x,
-                                    ltrans.transform.translate.y,
-                                    ltrans.transform.translate.z);
-                                BOOM_INFO("Entity rotation: ({}, {}, {})",
-                                    ltrans.transform.rotate.x,
-                                    ltrans.transform.rotate.y,
-                                    ltrans.transform.rotate.z);
-                                BOOM_INFO("Entity scale: ({}, {}, {})",
-                                    ltrans.transform.scale.x,
-                                    ltrans.transform.scale.y,
-                                    ltrans.transform.scale.z);
-
-                                // Check if matrix is valid
-                                float det = glm::determinant(matrix);
-                                BOOM_INFO("Transform matrix determinant: {}", det);
-
-                                // Debug view/projection matrices
-                                BOOM_INFO("Camera position: ({}, {}, {})",
-                                    trans.transform.translate.x,
-                                    trans.transform.translate.y,
-                                    trans.transform.translate.z);
-
-                                glm::vec3 forward = glm::vec3(view[0][2], view[1][2], view[2][2]); // Extract forward vector
-                                BOOM_INFO("Camera forward: ({}, {}, {})", forward.x, forward.y, forward.z);
-
-                                // Check if object is in front of camera
-                                glm::vec3 toObject = ltrans.transform.translate - trans.transform.translate;
-                                float distToCamera = glm::length(toObject);
-                                float dotProduct = glm::dot(glm::normalize(toObject), forward);
-                                BOOM_INFO("Distance to object: {}, Dot product (should be negative): {}", distToCamera, dotProduct);
 
                                 // Set ImGuizmo to draw in this viewport window
                                 ImGuizmo::SetOrthographic(false);
@@ -176,15 +139,11 @@ namespace EditorUI {
                                 // Test 2: Use window-relative coordinates instead of screen coordinates
                                 ImVec2 windowPos = ImGui::GetWindowPos();
                                 ImGuizmo::SetRect(
-                                    itemMin.x - windowPos.x,
-                                    itemMin.y - windowPos.y,
+                                    itemMin.x,
+                                    itemMin.y,
                                     rectSz.x,
                                     rectSz.y
                                 );
-                                BOOM_INFO("SetRect - Window relative: ({}, {}, {}, {})",
-                                    itemMin.x - windowPos.x, itemMin.y - windowPos.y, rectSz.x, rectSz.y);
-
-
 
                                 // Make gizmo more visible
                                 ImGuizmo::SetGizmoSizeClipSpace(0.15f);
@@ -217,6 +176,7 @@ namespace EditorUI {
                                     m_UseSnap ? m_SnapValues : nullptr
                                 );
 
+                                /*
                                 // Draw a sphere at the entity position in screen space to verify projection
                                 glm::vec4 entityPosWorld = glm::vec4(ltrans.transform.translate, 1.0f);
                                 glm::vec4 entityPosClip = proj * view * entityPosWorld;
@@ -235,8 +195,6 @@ namespace EditorUI {
                                     15.0f,
                                     IM_COL32(255, 0, 0, 255)
                                 );
-
-
 
                                 // ===== COMPREHENSIVE DEBUG =====
                                 ImVec2 mousePos = ImGui::GetMousePos();
@@ -291,33 +249,10 @@ namespace EditorUI {
                                     0.0f,
                                     0,
                                     2.0f
-                                );
+                                );*/
 
                                 // NOW check if gizmo wants input (AFTER Manipulate call)
                                 gizmoWantsInput = ImGuizmo::IsOver() || ImGuizmo::IsUsing();
-
-                                BOOM_INFO("=== ImGuizmo Debug ===");
-                                BOOM_INFO("Mouse pos: ({}, {})", mousePos.x, mousePos.y);
-                                BOOM_INFO("Viewport rect: ({}, {}) to ({}, {})", itemMin.x, itemMin.y, itemMax.x, itemMax.y);
-                                BOOM_INFO("Mouse in rect: {}", (mousePos.x >= itemMin.x && mousePos.x <= itemMax.x && mousePos.y >= itemMin.y && mousePos.y <= itemMax.y));
-                                BOOM_INFO("IsOver: {}, IsUsing: {}", ImGuizmo::IsOver(), ImGuizmo::IsUsing());
-                                BOOM_INFO("Hovered: {}, Focused: {}", hovered, focused);
-                                BOOM_INFO("GizmoWantsInput: {}", gizmoWantsInput);
-                                // ===== END DEBUG =====
-
-                                // Debug (original code - keep this too)
-                                if (ImGuizmo::IsOver()) {
-                                    BOOM_INFO("Mouse is over gizmo!");
-                                    ImGui::GetWindowDrawList()->AddCircleFilled(
-                                        ImGui::GetMousePos(),
-                                        10.0f,
-                                        IM_COL32(0, 255, 0, 255)
-                                    );
-                                }
-
-                                if (ImGuizmo::IsUsing()) {
-                                    BOOM_INFO("Gizmo is being manipulated!");
-                                }
 
                                 // Update transform if gizmo was manipulated
                                 if (ImGuizmo::IsUsing())
@@ -349,29 +284,27 @@ namespace EditorUI {
                 }
 
                 // Tooltip
-                if (hovered)
-                    ImGui::SetTooltip("Engine Viewport - Scene render output");
-                else
-                {
-                    // Fallback UI when no frame is available
-                    ImGui::Text("Frame Texture ID: %u", frameTexture);
-                    ImGui::Text("Viewport Size: %.0fx%.0f", viewportSize.x, viewportSize.y);
-                    ImGui::Text("Waiting for engine frame data...");
+                if (hovered) ImGui::SetTooltip("Engine Viewport - Scene render output");
+            }
+            else {
+                // Fallback UI when no frame is available
+                ImGui::Text("Frame Texture ID: %u", frameTexture);
+                ImGui::Text("Viewport Size: %.0fx%.0f", viewportSize.x, viewportSize.y);
+                ImGui::Text("Waiting for engine frame data...");
 
-                    if (viewportSize.x > 50 && viewportSize.y > 50) {
-                        ImDrawList* drawList = ImGui::GetWindowDrawList();
-                        ImVec2 canvasPos = ImGui::GetCursorScreenPos();
-                        drawList->AddRectFilled(
-                            canvasPos,
-                            ImVec2(canvasPos.x + viewportSize.x, canvasPos.y + viewportSize.y),
-                            IM_COL32(64, 64, 64, 255)
-                        );
-                        drawList->AddText(
-                            ImVec2(canvasPos.x + 10, canvasPos.y + 10),
-                            IM_COL32(255, 255, 255, 255),
-                            "Engine Viewport"
-                        );
-                    }
+                if (viewportSize.x > 50 && viewportSize.y > 50) {
+                    ImDrawList* drawList = ImGui::GetWindowDrawList();
+                    ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+                    drawList->AddRectFilled(
+                        canvasPos,
+                        ImVec2(canvasPos.x + viewportSize.x, canvasPos.y + viewportSize.y),
+                        IM_COL32(64, 64, 64, 255)
+                    );
+                    drawList->AddText(
+                        ImVec2(canvasPos.x + 10, canvasPos.y + 10),
+                        IM_COL32(255, 255, 255, 255),
+                        "Engine Viewport"
+                    );
                 }
             }
             ImGui::End();
