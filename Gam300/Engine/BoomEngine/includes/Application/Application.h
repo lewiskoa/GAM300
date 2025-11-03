@@ -12,9 +12,37 @@
 #include "../Graphics/Utilities/Culling.h"
 #include "Input/CameraManager.h"
 #include "Graphics/Shaders/DebugLines.h"
-#include "imgui.h"
-#include "ImGuizmo.h"
+//#include "../../../Editor/src/Vendors/imgui/imgui.h"
+//#include "../../../Editor/src/Vendors/imGuizmo/ImGuizmo.h"
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+
+
+namespace Boom {
+
+    inline void DecomposeMatrix(const glm::mat4& matrix,
+        glm::vec3& translation,
+        glm::vec3& rotation,
+        glm::vec3& scale)
+    {
+        glm::vec3 skew;
+        glm::vec4 perspective;
+        glm::quat orientation;
+
+        glm::decompose(matrix, scale, orientation, translation, skew, perspective);
+        rotation = glm::degrees(glm::eulerAngles(orientation));
+    }
+
+    inline glm::mat4 RecomposeMatrix(const glm::vec3& translation,
+        const glm::vec3& rotation,
+        const glm::vec3& scale)
+    {
+        glm::mat4 matrix = glm::translate(glm::mat4(1.0f), translation);
+        matrix *= glm::mat4_cast(glm::quat(glm::radians(rotation)));
+        matrix = glm::scale(matrix, scale);
+        return matrix;
+    }
+}
 
 namespace Boom
 {
@@ -527,12 +555,10 @@ namespace Boom
                     glm::mat4 worldMatrix = GetWorldMatrix(entity);
 
                     Transform3D worldTransform;
-                    ImGuizmo::DecomposeMatrixToComponents(
-                        glm::value_ptr(worldMatrix),
-                        glm::value_ptr(worldTransform.translate),
-                        glm::value_ptr(worldTransform.rotate), // Outputs degrees
-                        glm::value_ptr(worldTransform.scale)
-                    );
+                    DecomposeMatrix(worldMatrix,
+                        worldTransform.translate,
+                        worldTransform.rotate,
+                        worldTransform.scale);
 
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
                     //ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
@@ -771,21 +797,12 @@ namespace Boom
 
             // 3. Decompose the parent's matrix into T, R, and S
             glm::vec3 pTranslate, pRotate, pScale;
-            ImGuizmo::DecomposeMatrixToComponents(
-                glm::value_ptr(pMatrix),
-                glm::value_ptr(pTranslate),
-                glm::value_ptr(pRotate),
-                glm::value_ptr(pScale)
-            );
+            DecomposeMatrix(pMatrix, pTranslate, pRotate, pScale);
+
 
             // 4. Recompose the parent's matrix *without* its scale
             glm::mat4 pMatrix_NoScale;
-            ImGuizmo::RecomposeMatrixFromComponents(
-                glm::value_ptr(pTranslate),
-                glm::value_ptr(pRotate),
-                glm::value_ptr(glm::vec3(1.0f, 1.0f, 1.0f)), // Force scale to 1.0
-                glm::value_ptr(pMatrix_NoScale)
-            );
+            pMatrix_NoScale = RecomposeMatrix(pTranslate, pRotate, glm::vec3(1.0f));
 
             // 5. Return the parent's (T*R) multiplied by the child's (T*R*S)
             return pMatrix_NoScale * localMatrix;
@@ -807,12 +824,7 @@ namespace Boom
 
                         // Decompose the world matrix to get the final T and R
                         glm::vec3 worldTranslate, worldRotate, worldScale;
-                        ImGuizmo::DecomposeMatrixToComponents(
-                            glm::value_ptr(worldMatrix),
-                            glm::value_ptr(worldTranslate),
-                            glm::value_ptr(worldRotate),
-                            glm::value_ptr(worldScale)
-                        );
+                        DecomposeMatrix(worldMatrix, worldTranslate, worldRotate, worldScale);
                         // --- END FIX ---
 
                         physx::PxTransform currentPose = actor->getGlobalPose();

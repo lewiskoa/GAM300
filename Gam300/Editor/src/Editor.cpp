@@ -20,7 +20,7 @@
 #include "BoomEngine.h"
 
 // Gizmo
-#include "ImGuizmo.h"
+#include "Vendors/imGuizmo/ImGuizmo.h"
 
 // GL loader must be included somewhere before GL calls.
 // If your project uses glad/glew, include it *once* in a common cpp.

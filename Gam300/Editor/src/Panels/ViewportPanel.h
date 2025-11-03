@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>                 // for uint32_t
 #include "Vendors/imgui/imgui.h"   // for ImTextureID, ImVec2
-#include "ImGuizmo.h"
+#include "Vendors/imGuizmo/ImGuizmo.h"
 #include <glm/gtc/type_ptr.hpp>
 
 namespace Boom { struct AppContext; }
@@ -44,6 +44,11 @@ namespace EditorUI {
         ImTextureID  m_Frame = (ImTextureID)0;  // set in ctor
         std::uint32_t m_FrameId = 0;
         ImVec2       m_Viewport{ 0.0f, 0.0f };
+
+        int m_GizmoOperation = ImGuizmo::TRANSLATE;
+        int m_GizmoMode = ImGuizmo::WORLD;
+        bool m_UseSnap = false;
+        float m_SnapValues[3] = { 1.0f, 15.0f, 0.5f };
     };
 
 } // namespace EditorUI

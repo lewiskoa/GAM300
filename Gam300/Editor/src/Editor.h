@@ -2,6 +2,7 @@
 #include <memory>
 #include "Application/Interface.h"  // For Boom::AppInterface complete type
 #include "Vendors/imgui/imgui.h"    // For ImVec2
+#include "Vendors/imGuizmo/ImGuizmo.h"
 
 // Keep heavy headers out of here to avoid cycles.
 // Just forward-declare the few types we need.

@@ -3,7 +3,7 @@
 #include "Context/Context.h"      // Boom::AppContext (complete type)
 #include "Context/DebugHelpers.h" // BOOM_INFO / BOOM_ERROR
 #include "Vendors/imgui/imgui.h"
-#include "ImGuizmo.h"
+#include "Vendors/imGuizmo/ImGuizmo.h"
 
 #include <string>
 #include <cstdio>

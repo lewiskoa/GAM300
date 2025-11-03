@@ -396,7 +396,8 @@ namespace Boom {
                 }
                 else if (body.type == RigidBody3D::STATIC)
                 {
-                    body.actor = PxCreateStatic(*m_Physics,
+                    body.actor 
+                        = PxCreateStatic(*m_Physics,
                         pose, *collider.Shape);
                 }
             }
