@@ -138,12 +138,7 @@ namespace EditorUI {
 
                                 // Test 2: Use window-relative coordinates instead of screen coordinates
                                 ImVec2 windowPos = ImGui::GetWindowPos();
-                                ImGuizmo::SetRect(
-                                    itemMin.x,
-                                    itemMin.y,
-                                    rectSz.x,
-                                    rectSz.y
-                                );
+                                ImGuizmo::SetRect(itemMin.x, itemMin.y, rectSz.x, rectSz.y);
 
                                 // Make gizmo more visible
                                 ImGuizmo::SetGizmoSizeClipSpace(0.15f);
