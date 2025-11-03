@@ -206,7 +206,9 @@ namespace EditorUI {
         namespace fs = std::filesystem;
 
         if (!fs::exists(m_ScenesDir)) {
+#ifdef DEBUG
             BOOM_WARN("[Editor] '{}' directory doesn't exist, creating it...", m_ScenesDir.string());
+#endif DEBUG
             fs::create_directory(m_ScenesDir);
         }
 
@@ -255,9 +257,9 @@ namespace EditorUI {
             m_SelectedSceneIndex = static_cast<int>(m_AvailableScenes.size()) - 1;
         if (m_SelectedSceneIndex < 0)
             m_SelectedSceneIndex = 0;
-
+#ifdef DEBUG
         BOOM_INFO("[Editor] Scene list refreshed ({} items).", static_cast<int>(m_AvailableScenes.size()));
-
+#endif DEBUG
 
     }
     static std::string ToBaseName(const char* buf) {
@@ -306,7 +308,11 @@ namespace EditorUI {
                         ImGui::CloseCurrentPopup();
                     }
                     catch (const std::exception& e) {
+#ifdef DEBUG
                         BOOM_ERROR("[Editor] SaveScene exception: {}", e.what());
+#endif // DEBUG
+						std::cerr << "SaveScene exception: " << e.what() << std::endl;
+                       
                     }
                 }
             }
@@ -354,16 +360,23 @@ namespace EditorUI {
                         // If Application::LoadScene expects a full path, keep this:
                         const fs::path src = fs::path("Scenes") / (baseName + ".yaml");
                         if (!fs::exists(src)) {
+#ifdef DEBUG
                             BOOM_WARN("[Editor] LoadScene: file not found '{}'", src.string());
+#endif DEBUG
                         }
                         else {
                             m_App->LoadScene(baseName);
+#ifdef DEBUG
                             BOOM_INFO("[Editor] Loaded scene: {}", src.string());
+#endif DEBUG
                             ImGui::CloseCurrentPopup();
                         }
                     }
                     catch (const std::exception& e) {
+                    #ifdef DEBUG
                         BOOM_ERROR("[Editor] LoadScene exception: {}", e.what());
+                    #endif DEBUG
+						std::cerr << "LoadScene exception: " << e.what() << std::endl;
                     }
                 }
                 else {
