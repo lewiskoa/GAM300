@@ -26,7 +26,7 @@ namespace Boom
          * @brief  Virtual destructor for safe polymorphic cleanup.
          *
          * BOOM_INLINE hints the compiler to inline this call,
-         * minimizing overhead in the engine’s hot loops.
+         * minimizing overhead in the engineï¿½s hot loops.
          */
         BOOM_INLINE virtual ~AppInterface() = default;
 
@@ -41,7 +41,7 @@ namespace Boom
             // Compile-time check: Layer inherits from AppInterface
             BOOM_STATIC_ASSERT(std::is_base_of<AppInterface, Layer>::value);
 
-            // Search the context’s layer list by matching the LayerID
+            // Search the contextï¿½s layer list by matching the LayerID
             auto it = std::find_if(
                 m_Context->layers.begin(),
                 m_Context->layers.end(),
@@ -58,7 +58,7 @@ namespace Boom
         /**
          * @brief   Create and attach a new layer of type Layer.
          * @tparam  Layer      Must derive from AppInterface.
-         * @param   args       Arguments forwarded to Layer’s constructor.
+         * @param   args       Arguments forwarded to Layerï¿½s constructor.
          * @return  Pointer to the newly created layer, or nullptr on error.
          */
         template<typename Layer, typename... Args>
@@ -88,10 +88,7 @@ namespace Boom
             return m_Context->window->Handle();
         }
 
-        BOOM_INLINE uint32_t GetSceneFrame()
-        {
-            return m_Context->renderer->GetFrame();
-        }
+        
 
     /////////////////////////////////////
     //EventSystem Manipulation Logistics
@@ -219,6 +216,16 @@ namespace Boom
                 task(customAsset); //_Asset*
             }
         }
+
+     
+
+
+         BOOM_INLINE uint32_t GetSceneFrame()
+         {
+		 	return m_Context->renderer->GetFrame();
+         }
+
+        BOOM_INLINE AppContext* GetContext() const noexcept { return m_Context; }
         //if you need to swap selected object call with (true)
         // otherwise if used for comparison/no reset of selected needed
         BOOM_INLINE AssetInfo& SelectedAsset(bool isResetAllSelected = false) {

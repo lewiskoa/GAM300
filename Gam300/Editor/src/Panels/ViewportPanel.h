@@ -1,5 +1,4 @@
 #pragma once
-
 #include <cstdint>                 // for uint32_t
 #include "Vendors/imgui/imgui.h"   // for ImTextureID, ImVec2
 #include "ImGuizmo.h"
@@ -9,7 +8,6 @@ namespace Boom { struct AppContext; }
 namespace Boom { struct AppInterface; }
 
 namespace EditorUI {
-
     class Editor;
 
     class ViewportPanel {
@@ -25,6 +23,11 @@ namespace EditorUI {
         bool IsVisible() const { return m_ShowViewport; }
         ImVec2 GetSize() const { return m_Viewport; }
 
+        // Fullscreen controls
+        void SetFullscreen(bool fullscreen) { m_IsFullscreen = fullscreen; }
+        bool IsFullscreen() const { return m_IsFullscreen; }
+        void ToggleFullscreen() { m_IsFullscreen = !m_IsFullscreen; }
+
     private:
         // helpers
         std::uint32_t QuerySceneFrame() const;   // prefers AppInterface::GetSceneFrame()
@@ -36,12 +39,11 @@ namespace EditorUI {
         Boom::AppContext* m_Ctx = nullptr;  // optionally cached via owner
 
         bool         m_ShowViewport = true;
+        bool         m_IsFullscreen = false;  // ADD THIS LINE
+
         ImTextureID  m_Frame = (ImTextureID)0;  // set in ctor
         std::uint32_t m_FrameId = 0;
         ImVec2       m_Viewport{ 0.0f, 0.0f };
-
-
     };
 
 } // namespace EditorUI
-

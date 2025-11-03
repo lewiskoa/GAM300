@@ -37,7 +37,8 @@ namespace EditorUI {
         bool* showPlaybackControls{ nullptr };
         bool* showConsole{ nullptr };
         bool* showAudio{ nullptr };
-
+		bool* showResources{ nullptr };
+		bool* showDirectory{ nullptr };
         // Dialog flags
         bool* showSaveDialog{ nullptr };
         bool* showLoadDialog{ nullptr };

@@ -5,7 +5,7 @@
 #include "Vendors/imgui/imgui.h"
 #include "Auxiliaries/Assets.h"
 #include "Context/DebugHelpers.h"
-
+#include "Panels/PropertiesImgui.h"
 using namespace EditorUI;
 
 Boom::AppContext* InspectorPanel::GetContext() const {
@@ -39,43 +39,70 @@ namespace EditorUI {
 
         bool open = ImGui::TreeNodeEx((void*)comp, flags, "%s", title);
 
-        float lineHeight = ImGui::GetTextLineHeight();
-        float availX = ImGui::GetContentRegionAvail().x;
-        ImGui::SameLine(availX - lineHeight * 1.25f);
+        const ImVec2 headerMin = ImGui::GetItemRectMin();
+        const ImVec2 headerMax = ImGui::GetItemRectMax();
+        const float  lineH = ImGui::GetFrameHeight();
 
+        // right-align the "..." inside the header, unique popup per component
+        ImGui::PushID(comp);
         if (removable) {
-            if (ImGui::Button("...", ImVec2(lineHeight, lineHeight))) {
+            const float y = headerMin.y + (headerMax.y - headerMin.y - lineH) * 0.5f;
+            ImGui::SetCursorScreenPos(ImVec2(headerMax.x - lineH, y));
+            if (ImGui::Button("...", ImVec2(lineH, lineH)))
                 ImGui::OpenPopup("ComponentSettings");
-            }
+
             if (ImGui::BeginPopup("ComponentSettings")) {
                 if (ImGui::MenuItem("Remove Component")) {
                     if (onRemove) onRemove();
                     ImGui::EndPopup();
                     if (open) ImGui::TreePop();
+                    ImGui::PopID();
                     return;
                 }
                 ImGui::EndPopup();
             }
         }
+        ImGui::PopID();
+
+        ImGui::SetCursorScreenPos(ImVec2(headerMin.x, headerMax.y + ImGui::GetStyle().ItemSpacing.y));
 
         if (open) {
-            if constexpr (std::is_invocable_v<GetPropsFn, TComponent&>) {
-                getProps(*comp);
+            using SchemaT = const xproperty::type::object*;
+            SchemaT schema = nullptr;
+
+            // Try all reasonable call forms; your macro declares: SchemaT GetXxx(void*)
+            if constexpr (std::is_invocable_r_v<SchemaT, GetPropsFn, void*>) {
+                schema = getProps(static_cast<void*>(comp));
             }
-            else if constexpr (std::is_invocable_v<GetPropsFn, void*>) {
-                getProps(static_cast<void*>(comp));
+            else if constexpr (std::is_invocable_r_v<SchemaT, GetPropsFn, TComponent*>) {
+                schema = getProps(comp);
             }
-            else if constexpr (std::is_invocable_v<GetPropsFn, const void*>) {
-                getProps(static_cast<const void*>(comp));
+            else if constexpr (std::is_invocable_r_v<SchemaT, GetPropsFn, const TComponent*>) {
+                schema = getProps(static_cast<const TComponent*>(comp));
+            }
+            else if constexpr (std::is_invocable_r_v<SchemaT, GetPropsFn, TComponent&>) {
+                schema = getProps(*comp);
+            }
+            else if constexpr (std::is_invocable_r_v<SchemaT, GetPropsFn, const TComponent&>) {
+                schema = getProps(static_cast<const TComponent&>(*comp));
             }
             else {
-                static_assert([] {return false; }(),
-                    "getProps must be invocable with TComponent& or (const) void*");
+                // (Fallback: if someone passes a void-returning drawer)
+                if constexpr (std::is_invocable_v<GetPropsFn, void*>)               getProps(static_cast<void*>(comp));
+                else if constexpr (std::is_invocable_v<GetPropsFn, TComponent*>)    getProps(comp);
+                else if constexpr (std::is_invocable_v<GetPropsFn, const TComponent*>) getProps(static_cast<const TComponent*>(comp));
+                else if constexpr (std::is_invocable_v<GetPropsFn, TComponent&>)    getProps(*comp);
+                else if constexpr (std::is_invocable_v<GetPropsFn, const TComponent&>) getProps(static_cast<const TComponent&>(*comp));
             }
+
+            // If we got a schema, render it with your UI bridge
+            if (schema) {
+                DrawPropertiesUI(schema, static_cast<void*>(comp));
+            }
+
             ImGui::TreePop();
         }
     }
-
     void InspectorPanel::Render()
     {
         if (m_ShowInspector && !*m_ShowInspector) return;
@@ -111,8 +138,8 @@ namespace EditorUI {
         // ===== ENTITY NAME =====
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 6));
 
-        if (selected.Has<InfoComponent>()) {
-            auto& info = selected.Get<InfoComponent>();
+        if (selected.Has<Boom::InfoComponent>()) {
+            auto& info = selected.Get<Boom::InfoComponent>();
             ImGui::TextUnformatted("Entity");
             ImGui::SameLine();
             ImGui::PushItemWidth(-1);
@@ -131,15 +158,15 @@ namespace EditorUI {
         ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 
         // ===== COMPONENTS =====
-        if (selected.Has<TransformComponent>()) {
-            auto& tc = selected.Get<TransformComponent>();
-            DrawComponentSection("Transform", &tc, GetTransformComponentProperties, false, nullptr);
+        if (selected.Has<Boom::TransformComponent>()) {
+            auto& tc = selected.Get<Boom::TransformComponent>();
+            DrawComponentSection("Transform", &tc, Boom::GetTransformComponentProperties, false, nullptr);
         }
 
-        if (selected.Has<CameraComponent>()) {
-            auto& cc = selected.Get<CameraComponent>();
+        if (selected.Has<Boom::CameraComponent>()) {
+            auto& cc = selected.Get<Boom::CameraComponent>();
             DrawComponentSection("Camera", &cc, GetCameraComponentProperties, true,
-                [&]() { ctx->scene.remove<CameraComponent>(m_App->SelectedEntity()); });
+                [&]() { ctx->scene.remove<Boom::CameraComponent>(m_App->SelectedEntity()); });
         }
 
         // Model Component

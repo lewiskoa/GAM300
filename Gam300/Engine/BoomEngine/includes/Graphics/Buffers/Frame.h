@@ -44,25 +44,26 @@ namespace Boom {
 		BOOM_INLINE void Resize(int32_t w, int32_t h) {
 			width = w;
 			height = h;
-
+			const int tw = targetW();	
+			const int th = targetH();
 			//resize color attachment
 			glBindTexture(GL_TEXTURE_2D, color);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, tw, th, 0, GL_RGBA, GL_FLOAT, NULL);
 			glBindTexture(GL_TEXTURE_2D, 0);
 
 			//resize depth attachment
 			glBindRenderbuffer(GL_RENDERBUFFER, render);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, tw, th);
 			glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
 			//resize brightness attachment
 			glBindTexture(GL_TEXTURE_2D, brightness);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, tw, th, 0, GL_RGBA, GL_FLOAT, NULL);
 			glBindTexture(GL_TEXTURE_2D, 0);
 
 			//resize render buffer
 			glBindRenderbuffer(GL_RENDERBUFFER, render);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, tw, th);
 			glBindRenderbuffer(GL_RENDERBUFFER, 0);
 		}
 		[[nodiscard]] BOOM_INLINE uint32_t GetTexture() const {
@@ -102,6 +103,7 @@ namespace Boom {
 			}
 			glDisable(GL_SAMPLES);
 			glDisable(GL_DEPTH_TEST);
+		
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		}
@@ -129,7 +131,7 @@ namespace Boom {
 		BOOM_INLINE void CreateRenderBuffer() {
 			glGenRenderbuffers(1, &render);
 			glBindRenderbuffer(GL_RENDERBUFFER, render);
-			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+			glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, targetW(), targetH());
 			glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render);
 		}
 		BOOM_INLINE void CreateBrightnessAttachment() {
@@ -139,9 +141,12 @@ namespace Boom {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, isLowPoly ? GL_NEAREST : GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, targetW(), targetH(), 0, GL_RGBA, GL_FLOAT, NULL);
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, brightness, 0);
 		}
+		//lowpoly needs to resize using this, not width/height directly
+		BOOM_INLINE int targetW() const { return isLowPoly ? 320 : width; }
+		BOOM_INLINE int targetH() const { return isLowPoly ? 240 : height; }
 
 	private:
 		uint32_t brightness;
@@ -152,5 +157,8 @@ namespace Boom {
 		int32_t height;
 
 		bool isLowPoly;
+	
+
+	
 	};
 }
