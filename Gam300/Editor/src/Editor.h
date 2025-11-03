@@ -72,8 +72,8 @@ namespace EditorUI {
         bool m_ShowPlaybackControls = true;
         bool m_ShowConsole = true;
         bool m_ShowAudio = false;
-		bool m_ShowResources = false;
-		bool m_ShowDirectory = false;
+		bool m_ShowResources = true;
+		bool m_ShowDirectory = true;
         
         bool m_ShowSaveDialog = false;
         bool m_ShowLoadDialog = false;
