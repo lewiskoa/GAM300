@@ -23,8 +23,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-#pragma warning(disable : 4101) // unused variable
-#pragma warning(disable : 4244) // possible loss of data
+#pragma warning(disable : 4100 4101 4189 4244 4245 4267 4365 4458 5054 6001 6255 26819 6262 26495)
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
