@@ -112,6 +112,7 @@ namespace EditorUI {
 
             if (ImGui::MenuItem("Load Scene", "Ctrl+O")) {
                 if (m.showLoadDialog) *m.showLoadDialog = true;
+           
                 if (m.RefreshSceneList) m.RefreshSceneList(false);
             }
 

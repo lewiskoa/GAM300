@@ -323,6 +323,7 @@ namespace EditorUI {
             RefreshSceneList(false);
             ImGui::OpenPopup("Load Scene");
             m_ShowLoadDialog = false;
+
         }
 
         if (ImGui::BeginPopupModal("Load Scene", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
@@ -356,7 +357,7 @@ namespace EditorUI {
                             BOOM_WARN("[Editor] LoadScene: file not found '{}'", src.string());
                         }
                         else {
-                            m_App->LoadScene(src.string());
+                            m_App->LoadScene(baseName);
                             BOOM_INFO("[Editor] Loaded scene: {}", src.string());
                             ImGui::CloseCurrentPopup();
                         }
