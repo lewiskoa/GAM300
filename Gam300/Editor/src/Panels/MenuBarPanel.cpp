@@ -41,6 +41,7 @@ namespace EditorUI {
              m.showConsole          = &m_Owner->m_ShowConsole;
              m.showAudio            = &m_Owner->m_ShowAudio;
 			 m.showResources        = &m_Owner->m_ShowResources;
+			 m.showDirectory        = &m_Owner->m_ShowDirectory;
              //Dialog flags & helpers can also be wired here if Editor exposes them.
              m.showSaveDialog = &m_Owner->m_ShowSaveDialog;
              m.showLoadDialog = &m_Owner->m_ShowLoadDialog;
@@ -136,6 +137,7 @@ namespace EditorUI {
             if (m.showConsole)          ImGui::MenuItem("Debug Console", nullptr, m.showConsole);
             if (m.showAudio)            ImGui::MenuItem("Audio", nullptr, m.showAudio);
 			if (m.showResources)     ImGui::MenuItem("Resources", nullptr, m.showResources);
+			if (m.showDirectory)       ImGui::MenuItem("Directory", nullptr, m.showDirectory);
             ImGui::EndMenu();
         }
 

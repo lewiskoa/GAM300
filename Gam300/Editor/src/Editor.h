@@ -73,7 +73,7 @@ namespace EditorUI {
         bool m_ShowAudio = false;
 		bool m_ShowResources = false;
 		bool m_ShowDirectory = false;
-
+        
         bool m_ShowSaveDialog = false;
         bool m_ShowLoadDialog = false;
         bool m_ShowSavePrefabDialog = false;
