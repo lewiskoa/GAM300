@@ -126,8 +126,7 @@ namespace EditorUI {
         }
 
         // --------------------------- View ----------------------------------------
-        if (ImGui::BeginMenu("View"))
-        {
+        if (ImGui::BeginMenu("View")) {
             if (m.showInspector)        ImGui::MenuItem("Inspector", nullptr, m.showInspector);
             if (m.showHierarchy)        ImGui::MenuItem("Hierarchy", nullptr, m.showHierarchy);
             if (m.showViewport)         ImGui::MenuItem("Viewport", nullptr, m.showViewport);

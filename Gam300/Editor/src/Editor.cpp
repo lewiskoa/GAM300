@@ -188,16 +188,16 @@ namespace EditorUI {
         // --- Panels (menu first, then windows) ---
         if (m_MenuBar)        m_MenuBar->Render();
         RenderSceneDialogs();
-        if (m_Viewport)       m_Viewport->Render();
-        if (m_Hierarchy)      m_Hierarchy->Render();
-        if (m_Inspector)      m_Inspector->Render();
-        if (m_Resources)      m_Resources->OnShow();
-        if (m_Directory)      m_Directory->OnShow();
-        if (m_PrefabBrowser)  m_PrefabBrowser->Render();
-        if (m_Console)        m_Console->Render();
-        if (m_Audio)          m_Audio->Render();
-        if (m_Performance)    m_Performance->Render();
-        if (m_Playback)       m_Playback->OnShow();
+        if (m_ShowViewport && m_Viewport)      m_Viewport->Render();
+        if (m_ShowHierarchy && m_Hierarchy)     m_Hierarchy->Render();
+        if (m_ShowInspector && m_Inspector)     m_Inspector->Render();
+        if (m_ShowResources && m_Resources)     m_Resources->OnShow();   
+        if (m_ShowDirectory && m_Directory)     m_Directory->OnShow();
+        if (m_ShowPrefabBrowser && m_PrefabBrowser) m_PrefabBrowser->Render();
+        if (m_ShowConsole && m_Console)       m_Console->Render();
+        if (m_ShowAudio && m_Audio)         m_Audio->Render();
+        if (m_ShowPerformance && m_Performance)  m_Performance->Render();
+        if (m_ShowPlaybackControls && m_Playback) m_Playback->OnShow();
 
         // --- End frame / draw ---
         EndImguiFrame();
