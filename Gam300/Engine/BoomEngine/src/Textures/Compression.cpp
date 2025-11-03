@@ -14,10 +14,8 @@ namespace Boom {
 		//create in case of missing directories
 		std::filesystem::create_directories(outputPath);
 		
-		auto it{ textureMap.begin() };
-		++it; //skip first empty
-		for (; it != textureMap.end(); ++it) {
-			auto const& [id, sharedAsset] = *it;
+		for (auto const& [id, sharedAsset] : textureMap) {
+			if (id == 0) continue;
 			TextureAsset* asset = dynamic_cast<TextureAsset*>(sharedAsset.get());
 
 			//already compressed simple copy paste
@@ -28,7 +26,7 @@ namespace Boom {
 			CMP_MipSet mipIn{};
 			CMP_ERROR status{ CMP_LoadTexture(asset->source.c_str(), &mipIn) };
 			if (status != CMP_OK) {
-				throw std::exception(("CMP_LoadTexture() - error_code: " + std::to_string(status)).c_str());
+				throw std::exception((asset->source + "_CMP_LoadTexture() - error_code: " + std::to_string(status)).c_str());
 			}
 
 			if (mipIn.m_nMipLevels <= 1) {
@@ -44,7 +42,7 @@ namespace Boom {
 			status = CMP_ProcessTexture(&mipIn, &mipOut, kOpt, Callback);
 			if (status != CMP_OK) {
 				CMP_FreeMipSet(&mipIn);
-				throw std::exception(("CMP_ProcessTexture() - error_code: " + std::to_string(status)).c_str());
+				throw std::exception((asset->source + "_CMP_ProcessTexture() - error_code: " + std::to_string(status)).c_str());
 			}
 
 			std::string fullPath{ outputPath.data() + ("/" + asset->name) + ".dds"};
@@ -56,7 +54,7 @@ namespace Boom {
 			CMP_FreeMipSet(&mipOut);
 
 			if (status != CMP_OK) {
-				throw std::exception(("CMP_SaveTexture() - error_code: " + std::to_string(status)).c_str());
+				throw std::exception((asset->source + "_CMP_SaveTexture() - error_code: " + std::to_string(status)).c_str());
 			}
 
 		}
