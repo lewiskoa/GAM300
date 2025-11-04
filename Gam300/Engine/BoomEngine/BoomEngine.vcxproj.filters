@@ -71,6 +71,10 @@
     <ClInclude Include="includes\Input\CameraManager.h" />
     <ClInclude Include="includes\Input\InputHandler.h" />
     <ClInclude Include="includes\Graphics\Textures\Compression.h" />
+    <ClInclude Include="includes\AI\Grid.h" />
+    <ClInclude Include="includes\AI\GridAStar.h" />
+    <ClInclude Include="includes\AI\GridReverseDjik.h" />
+    <ClInclude Include="includes\AI\GridChaseAI.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="thirdparty\dotnet\nethost.lib" />

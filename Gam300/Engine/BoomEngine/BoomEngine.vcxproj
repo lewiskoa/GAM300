@@ -172,6 +172,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="includes\AI\Grid.h" />
+    <ClInclude Include="includes\AI\GridAStar.h" />
+    <ClInclude Include="includes\AI\GridChaseAI.h" />
+    <ClInclude Include="includes\AI\GridReverseDjik.h" />
     <ClInclude Include="includes\Application\Application.h" />
     <ClInclude Include="includes\Application\Context.h" />
     <ClInclude Include="includes\Application\Interface.h" />
