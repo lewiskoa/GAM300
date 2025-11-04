@@ -154,13 +154,14 @@ namespace Boom {
         }
 
         BOOM_INLINE void ShowFrame(bool useFBO) {
+            
             if (showLowPoly) {
                 if (m_TouchViewport) glViewport(0, 0, lowPolyFrame->GetWidth(), lowPolyFrame->GetHeight());
-                finalShader->Render(lowPolyFrame->GetTexture(), bloom->GetMap(), useFBO, false);
+                finalShader->Render(lowPolyFrame->GetTexture(), bloom->GetMap(), useFBO, enabledBloom);
             }
             else {
                 if (m_TouchViewport) glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-                finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, false); // toggle bloom inside final if needed
+                finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, enabledBloom); // toggle bloom inside final if needed
             }
         }
 
@@ -180,7 +181,7 @@ namespace Boom {
         }
 
         BOOM_INLINE uint32_t GetFrame() const {
-            return showLowPoly ? lowPolyFrame->GetTexture() : frame->GetTexture();
+            return finalShader->GetMap();
         }
 
         BOOM_INLINE float& DitherThreshold() { return pbrShader->ditherThreshold; }
@@ -253,6 +254,7 @@ namespace Boom {
         bool isDrawDebugMode{};
         bool showLowPoly{ true };
         bool showNormalTexture{};
+        bool enabledBloom{ false };
     };
 
 } // namespace Boom

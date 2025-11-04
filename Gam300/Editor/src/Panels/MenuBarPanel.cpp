@@ -157,6 +157,7 @@ namespace EditorUI {
                 }
                 bool TEMPORARY_PLACEHOLDER_WIREFRAME_COLLISION{};
                 ImGui::MenuItem("Collision Lines", nullptr, TEMPORARY_PLACEHOLDER_WIREFRAME_COLLISION);
+				ImGui::MenuItem("Bloom", nullptr, &m.ctx->renderer->enabledBloom);
             }
             ImGui::EndMenu();
         }
