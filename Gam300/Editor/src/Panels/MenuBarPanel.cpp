@@ -165,9 +165,40 @@ namespace EditorUI {
         // --------------------------- GameObjects ---------------------------------
         if (ImGui::BeginMenu("GameObjects"))
         {
-            if (ImGui::MenuItem("Create Empty Object")) {
-                if (m.ctx) {
-                    BOOM_INFO("[Editor] Requested: Create Empty Object (delegate to Editor)");
+            if (ImGui::MenuItem("Create Empty Object"))
+            {
+                if (!m.ctx) {
+                    BOOM_ERROR("[Editor] Create Empty Object failed: no context.");
+                }
+                else {
+                    auto& reg = m.ctx->scene;
+
+                    // Create entity (use whichever ctor your wrapper supports)
+                    Entity go{ &reg };                      // if this constructs a new entt::entity
+                    // Entity go{ &reg, reg.create() };     // use this form if your wrapper needs an explicit entity id
+
+                    // Make a unique name: GameObject, GameObject (1), ...
+                    auto nameExists = [&](const std::string& n) {
+                        auto view = reg.view<InfoComponent>();
+                        for (auto e : view) {
+                            if (view.get<InfoComponent>(e).name == n) return true;
+                        }
+                        return false;
+                        };
+                    std::string name = "New Entity";
+                    for (int i = 1; nameExists(name); ++i)
+                        name = "New Entity (" + std::to_string(i) + ")";
+
+                    // Attach components
+                    go.Attach<InfoComponent>().name = name;
+                    go.Attach<TransformComponent>(); // default transform
+
+        
+
+                    // Select the newly created object
+                    m.selectedEntity = go.ID();
+
+                    BOOM_INFO("[Editor] Created {}", name);
                 }
             }
 
@@ -178,7 +209,7 @@ namespace EditorUI {
             ImGui::Separator();
 
             if (ImGui::MenuItem("Save Selected as Prefab")) {
-                if (m.selectedEntity && *m.selectedEntity != entt::null) {
+                if ( m.selectedEntity != entt::null) {
                     if (m.showSavePrefabDialog) *m.showSavePrefabDialog = true;
                 }
             }
@@ -186,7 +217,7 @@ namespace EditorUI {
             ImGui::Separator();
 
             if (ImGui::MenuItem("Delete Selected")) {
-                if (m.selectedEntity && *m.selectedEntity != entt::null) {
+                if (m.selectedEntity != entt::null) {
                     BOOM_INFO("[Editor] Requested: Delete Selected (delegate to Editor)");
                 }
             }
