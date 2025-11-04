@@ -67,11 +67,11 @@ namespace EditorUI {
         bool m_ShowInspector = true;
         bool m_ShowHierarchy = true;
         bool m_ShowViewport = true;
-        bool m_ShowPrefabBrowser = false;
-        bool m_ShowPerformance = false;
+        bool m_ShowPrefabBrowser = true;
+        bool m_ShowPerformance = true;
         bool m_ShowPlaybackControls = true;
         bool m_ShowConsole = true;
-        bool m_ShowAudio = false;
+        bool m_ShowAudio = true;
 		bool m_ShowResources = true;
 		bool m_ShowDirectory = true;
         

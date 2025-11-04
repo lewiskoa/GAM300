@@ -323,9 +323,9 @@ namespace Boom
                             size_t beforeCount = animator->GetClipCount();
 
                             // Try to load these - they need to exist in your Models folder!
-                            animator->LoadAnimationFromFile("idle.fbx", "Idle");
-                            animator->LoadAnimationFromFile("walking.fbx", "Walk");
-                            animator->LoadAnimationFromFile("run.fbx", "Run");
+                            animator->LoadAnimationFromFile("Resources/Models/idle.fbx", "Idle");
+                            animator->LoadAnimationFromFile("Resources/Models/walking.fbx", "Walk");
+                            animator->LoadAnimationFromFile("Resources/Models/run.fbx", "Run");
 
                             size_t afterCount = animator->GetClipCount();
                             BOOM_WARN("Loaded {} new animations (total: {})", afterCount - beforeCount, afterCount);
