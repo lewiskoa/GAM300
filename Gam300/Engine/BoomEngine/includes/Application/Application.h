@@ -7,8 +7,6 @@
 #include "Audio/Audio.hpp"   
 #include "Auxiliaries/DataSerializer.h"
 #include "Auxiliaries/PrefabUtility.h"
-#include "Scripting/ScriptAPI.h"
-#include "Scripting/ScriptRuntime.h"
 #include "../Graphics/Utilities/Culling.h"
 #include "Input/CameraManager.h"
 #include "Graphics/Shaders/DebugLines.h"
@@ -225,8 +223,6 @@ namespace Boom
                 m_Context->renderer->InitSkybox(skybox.data, skybox.envMap, skybox.size);
                 });
 
-            CreateScriptInstancesFromScene();
-
             m_DebugLinesShader = std::make_unique<Boom::DebugLinesShader>("debug_lines.glsl");
             m_Context->physics->EnableDebugVisualization(m_PhysDebugViz, 1.0f);
 
@@ -413,7 +409,6 @@ namespace Boom
 
                 // Only update rotation when running
                 if (m_AppState == ApplicationState::RUNNING) {
-                    script_update_all(static_cast<float>(m_Context->DeltaTime));
                     UpdateStaticTransforms();
                     RunPhysicsSimulation();
                 }
@@ -900,8 +895,6 @@ namespace Boom
 #if defined(_DEBUG)
             BOOM_INFO("[Scene] Restored {} prefabs", savedPrefabs.size());
 #endif
-            // Destroy script instances first
-            DestroyScriptInstancesFromScene();
 
             // Reset any scene-specific state
 
@@ -928,8 +921,6 @@ namespace Boom
                 m_Context->physics->AddRigidBody(entity, *m_Context->assets);
                 });
 
-            // Recreate script instances for newly loaded entities
-            CreateScriptInstancesFromScene();
 
             BOOM_INFO("[Scene] Scene systems reinitialization complete");
         }
@@ -956,7 +947,6 @@ namespace Boom
             m_Context->physics->SetEventCallback([this](auto e)
                 {
                     (void)e;
-                    // Scripting/event logic can be added here
                 });
 
             // Attach window resize event callback
@@ -1089,29 +1079,6 @@ namespace Boom
                         }
                     });
             }
-        }
-
-
-        BOOM_INLINE void CreateScriptInstancesFromScene()
-        {
-            EnttView<Entity, ScriptComponent>([this](auto entity, ScriptComponent& sc) {
-                if (sc.TypeName.empty()) return;
-                // Create a managed instance and remember its ID on the component
-                sc.InstanceId = script_create_instance(sc.TypeName.c_str(), static_cast<ScriptEntityId>(entity.ID()));
-                BOOM_INFO("[Scripting] Created instance '{}' -> entt {}",
-                    sc.TypeName,
-                    static_cast<uint32_t>(entity.ID()));
-                });
-        }
-
-        BOOM_INLINE void DestroyScriptInstancesFromScene()
-        {
-            EnttView<Entity, ScriptComponent>([this](auto, ScriptComponent& sc) {
-                if (sc.InstanceId) {
-                    script_destroy_instance(sc.InstanceId);
-                    sc.InstanceId = 0;
-                }
-                });
         }
 
         BOOM_INLINE static glm::mat4 PxToGlm(const physx::PxTransform& t)
