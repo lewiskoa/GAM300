@@ -672,7 +672,54 @@ namespace Boom {
             m_EventCallback.m_Callback = callback;
         }
 
+        BOOM_INLINE PxScene* GetPxScene() const { return m_Scene; }
 
+        // Add this new function inside your PhysicsContext struct in Context.h
+//
+        BOOM_INLINE void RemoveRigidBody(Entity& entity)
+        {
+            // 1. Make sure the entity has a body to remove
+            if (!entity.Has<RigidBodyComponent>()) {
+                return;
+            }
+
+            auto& rb = entity.Get<RigidBodyComponent>();
+            auto* actor = rb.RigidBody.actor;
+
+            if (!actor) {
+                return; // Nothing to remove
+            }
+
+            // 2. Clean up Collider Pointers (if they exist)
+            if (entity.Has<ColliderComponent>())
+            {
+                auto& collider = entity.Get<ColliderComponent>().Collider;
+                if (collider.material) {
+                    collider.material->release();
+                    collider.material = nullptr;
+                }
+                if (collider.Shape) {
+                    // The shape is auto-detached by removeActor,
+                    // but we must release its memory.
+                    collider.Shape->release();
+                    collider.Shape = nullptr;
+                }
+            }
+
+            // 3. Clean up User Data
+            if (actor->userData) {
+                EntityID* owner = static_cast<EntityID*>(actor->userData);
+                BOOM_DELETE(owner);
+                actor->userData = nullptr;
+            }
+
+            // 4. Remove Actor from Scene (The missing step!)
+            m_Scene->removeActor(*actor);
+
+            // 5. Release Actor Memory
+            actor->release();
+            rb.RigidBody.actor = nullptr;
+        }
 
     private:
         // custom collision filter shader callback
