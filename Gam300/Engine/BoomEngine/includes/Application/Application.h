@@ -16,10 +16,74 @@
 //#include "../../../Editor/src/Vendors/imGuizmo/ImGuizmo.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
-
+#include "AI/GridChaseAI.h"
 
 namespace Boom {
+    inline entt::entity CreateEnemySphere(entt::registry& reg, const std::string& name,
+        const glm::vec3& pos, float radius)
+    {
+        Entity e{ &reg };
+        // Name + transform
+        auto& info = e.Attach<InfoComponent>(); info.name = name;
+        auto& tr = e.Attach<TransformComponent>().transform;
+        tr.translate = pos;
+        tr.scale = glm::vec3(radius);   // 1:1 radius if your collider reads scale
 
+        // Visuals (optional if you rely on PhysX debug viz):
+        // If you have a sphere model/material, attach ModelComponent here.
+
+        // Physics
+        auto& rb = e.Attach<RigidBodyComponent>().RigidBody;
+        rb.type = RigidBody3D::DYNAMIC;    // your code already toggles this type elsewhere
+
+        e.Attach<ColliderComponent>();     // collider details are handled by physics on Add/Update
+        // (Your Application calls m_Context->physics->AddRigidBody(...) elsewhere when (re)initializing scene.)
+
+        // AI
+        e.Attach<VisionComponent>();
+        e.Attach<ChaserComponent>();
+
+        return e.ID();
+    }
+    inline void UpdateEnemyDirectChase(entt::registry& reg,
+        const std::string& playerName,
+        float dt /* unused for now */)
+    {
+        entt::entity player = FindEntityByName(reg, playerName);
+        if (player == entt::null) return;
+
+        auto& pTr = reg.get<TransformComponent>(player).transform;
+        glm::vec3 ppos = pTr.translate;
+
+        auto view = reg.view<VisionComponent, ChaserComponent, TransformComponent, RigidBodyComponent>();
+        for (auto e : view) {
+            auto& vis = view.get<VisionComponent>(e);
+            auto& cha = view.get<ChaserComponent>(e);
+            auto& tr = view.get<TransformComponent>(e).transform;
+            auto& rb = view.get<RigidBodyComponent>(e).RigidBody;
+
+            // Perception
+            bool inRange = glm::length2(ppos - tr.translate) <= vis.radius * vis.radius;
+            bool inFov = inRange ? InFOV_XZ(tr.translate, /*forward*/glm::vec3(0, 0, -1), ppos, vis.fovDeg)
+                : false;
+            vis.hasLOS = inRange && inFov;   // (add a proper LOS later if you want)
+
+            // Steering
+            glm::vec3 desired = vis.hasLOS ? Seek(tr.translate, ppos, cha.speed)
+                : glm::vec3(0);
+
+            // Push velocity into PhysX if dynamic; else fall back to ECS transform
+            if (rb.actor) {
+                if (auto* dyn = rb.actor->is<physx::PxRigidDynamic>()) {
+                    dyn->setLinearVelocity(physx::PxVec3(desired.x, desired.y, desired.z));
+                }
+            }
+            else {
+                // No actor yet — integrate locally (optional)
+                tr.translate += desired * dt;
+            }
+        }
+    }
     inline void DecomposeMatrix(const glm::mat4& matrix,
         glm::vec3& translation,
         glm::vec3& rotation,
@@ -415,6 +479,26 @@ namespace Boom
                 if (m_AppState == ApplicationState::RUNNING) {
                     script_update_all(static_cast<float>(m_Context->DeltaTime));
                     UpdateStaticTransforms();
+                    static entt::entity enemy = entt::null;     // persist across frames
+                    if (enemy == entt::null || !m_Context->scene.valid(enemy)) {
+                        // Optional: place above ground
+                        float groundY = 0.f;
+                        if (auto ground = Boom::FindEntityByName(m_Context->scene, "ground");
+                            ground != entt::null && m_Context->scene.all_of<TransformComponent>(ground)) {
+                            groundY = m_Context->scene.get<TransformComponent>(ground).transform.translate.y;
+                        }
+
+                        // Create once
+                        enemy = CreateEnemySphere(m_Context->scene, "Enemy", { 2.f, 1.f, 2.f }, 0.5f);
+
+                        // wrap the entt::entity in a named Boom::Entity handle (an lvalue)
+                        Boom::Entity enemyHandle{ &m_Context->scene, enemy };
+
+                        // now pass the lvalue
+                        m_Context->physics->AddRigidBody(enemyHandle, *m_Context->assets);
+                       
+                    }
+                    UpdateEnemyDirectChase(m_Context->scene, /* player name */ "Player", (float)m_Context->DeltaTime);
                     RunPhysicsSimulation();
                 }
 
@@ -1081,13 +1165,27 @@ namespace Boom
                 EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
                     {
                         auto& transform = entity.template Get<TransformComponent>().transform;
-                        auto pose = comp.RigidBody.actor->getGlobalPose();
+
+                        // --- guard / lazy create ---
+                        if (!comp.RigidBody.actor) {
+                            // optional: try to create now
+                            if (m_Context->physics)
+                                m_Context->physics->AddRigidBody(entity, *m_Context->assets);
+
+                            if (!comp.RigidBody.actor) {
+                                // still null -> skip this entity this frame
+                                return;
+                            }
+                        }
+
+                        const auto pose = comp.RigidBody.actor->getGlobalPose();
                         if (comp.RigidBody.actor->is<physx::PxRigidDynamic>()) {
                             glm::quat rot(pose.q.w, pose.q.x, pose.q.y, pose.q.z);
                             transform.rotate = glm::degrees(glm::eulerAngles(rot));
                             transform.translate = PxToVec3(pose.p);
                         }
                     });
+
             }
         }
 

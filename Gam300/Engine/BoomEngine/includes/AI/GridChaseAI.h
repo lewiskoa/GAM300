@@ -3,17 +3,19 @@
 #include "GridAStar.h"
 #include "GridReverseDjik.h"
 #include "ECS/ECS.hpp"
-
+#include "Core.h"
 namespace Boom {
 
     struct VelocityComponent { glm::vec3 vel{ 0 }; };
 
     struct VisionComponent {
-        float radius = 12.f, fovDeg = 90.f, loseAfter = 1.f;
+        float radius = 12.f, fovDeg = 360.f, loseAfter = 1.f;
         bool hasLOS = false; float lastSeenTimer = 0.f;
         glm::vec3 lastSeenPos{ 0 };
     };
-
+    struct ChaserComponent {
+        float speed = 4.0f;       // m/s
+    };
     enum class GridAlgo : uint8_t { AStar, FlowField };
 
     struct GridAgentComponent {
@@ -24,7 +26,11 @@ namespace Boom {
         glm::vec3 lastPlannedGoal{ std::numeric_limits<float>::infinity() };
         std::vector<glm::vec3> waypoints; size_t wpIndex = 0;
     };
-
+    BOOM_INLINE glm::vec3 ForwardFromYawDeg(float yawDeg) {
+        float y = glm::radians(yawDeg);
+        // OpenGL-ish: forward = -Z; XZ plane only
+        return glm::normalize(glm::vec3(std::sin(y), 0.0f, -std::cos(y)));
+    }
     // cheap FOV (XZ)
     inline bool InFOV_XZ(const glm::vec3& pos, const glm::vec3& fwd, const glm::vec3& tgt, float fovDeg)
     {
@@ -68,11 +74,11 @@ namespace Boom {
             GridAgentComponent& agent)
             {
                 // 1) Perception (range + FOV + LOS via grid)
-                glm::vec3 playerPos = tPl.position;
-                bool inRange = glm::length2(playerPos - tAI.position) <= vis.radius * vis.radius;
-                bool inFov = inRange ? InFOV_XZ(tAI.position, tAI.forward, playerPos, vis.fovDeg) : false;
-                bool los = inRange && inFov && HasGridLOS(grid, tAI.position, playerPos);
-
+                glm::vec3 playerPos = tPl.transform.translate;
+                bool inRange = glm::length2(playerPos - tAI.transform.translate) <= vis.radius * vis.radius;
+                glm::vec3 fwd = ForwardFromYawDeg(tAI.transform.rotate.y);
+                bool inFov = inRange ? InFOV_XZ(tAI.transform.translate, fwd, playerPos, vis.fovDeg) : false;
+                bool los = inRange && inFov && HasGridLOS(grid, tAI.transform.translate, playerPos);
                 vis.hasLOS = los;
                 if (los) { vis.lastSeenPos = playerPos; vis.lastSeenTimer = 0.f; }
                 else      vis.lastSeenTimer += dt;
@@ -82,8 +88,14 @@ namespace Boom {
                 if (los) {
                     // Direct chase (no path)
                     agent.waypoints.clear(); agent.wpIndex = 0; agent.lastPlannedGoal = playerPos;
-                    vel.vel = Seek(tAI.position, playerPos, agent.speed);
-                    if (glm::length2(vel.vel) > 1e-6f) tAI.forward = glm::normalize(vel.vel);
+                    vel.vel = Seek(tAI.transform.translate, playerPos, agent.speed);
+                    if (glm::length2(vel.vel) > 1e-6f) {
+                        // Face movement direction on XZ
+                        glm::vec2 dir{ vel.vel.x, vel.vel.z };
+                        // If your forward is -Z, yaw = atan2(+x, -z). If your forward is +Z, use atan2(+x, +z).
+                        float yawRad = std::atan2(dir.x, -dir.y);
+                        tAI.transform.rotate.y = glm::degrees(yawRad);  // use yawRad directly if your rotate is in radians
+                    }
                     return;
                 }
 
@@ -92,7 +104,7 @@ namespace Boom {
                     bool needReplan = (agent.replanTimer <= 0.f) ||
                         (glm::length2(agent.lastPlannedGoal - vis.lastSeenPos) > 0.5f * 0.5f);
                     if (needReplan) {
-                        auto s = grid.worldToCell(tAI.position);
+                        auto s = grid.worldToCell(tAI.transform.translate);
                         auto g = grid.worldToCell(vis.lastSeenPos);
                         auto path = AStarGrid(grid, s, g, ctx.agentY);
                         agent.waypoints = path.ok ? path.waypoints : std::vector<glm::vec3>{};
@@ -104,7 +116,7 @@ namespace Boom {
                     glm::vec3 target = vis.lastSeenPos;
                     if (agent.wpIndex < agent.waypoints.size()) {
                         target = agent.waypoints[agent.wpIndex];
-                        if (glm::length2(target - tAI.position) <= agent.waypointEps * agent.waypointEps) {
+                        if (glm::length2(target - tAI.transform.translate) <= agent.waypointEps * agent.waypointEps) {
                             ++agent.wpIndex;
                             if (agent.wpIndex < agent.waypoints.size())
                                 target = agent.waypoints[agent.wpIndex];
@@ -112,20 +124,26 @@ namespace Boom {
                                 target = vis.lastSeenPos;
                         }
                     }
-                    vel.vel = Seek(tAI.position, target, agent.speed);
+                    vel.vel = Seek(tAI.transform.translate, target, agent.speed);
 
                 }
                 else { // GridAlgo::FlowField
                     if (!ctx.flow) return;
 
                     // Step toward neighbor with lowest distance
-                    glm::ivec2 cur = grid.worldToCell(tAI.position);
+                    glm::ivec2 cur = grid.worldToCell(tAI.transform.translate);
                     glm::ivec2 nxt = ctx.flow->bestNeighbor(grid, cur);
                     glm::vec3 target = (nxt == cur) ? vis.lastSeenPos : grid.cellToWorld(nxt.x, nxt.y, ctx.agentY);
-                    vel.vel = Seek(tAI.position, target, agent.speed * 0.95f);
+                    vel.vel = Seek(tAI.transform.translate, target, agent.speed * 0.95f);
                 }
 
-                if (glm::length2(vel.vel) > 1e-6f) tAI.forward = glm::normalize(vel.vel);
+                if (glm::length2(vel.vel) > 1e-6f) {
+                    // Face movement direction on XZ
+                    glm::vec2 dir{ vel.vel.x, vel.vel.z };
+                    // If your forward is -Z, yaw = atan2(+x, -z). If your forward is +Z, use atan2(+x, +z).
+                    float yawRad = std::atan2(dir.x, -dir.y);
+                    tAI.transform.rotate.y = glm::degrees(yawRad);  // use yawRad directly if your rotate is in radians
+                }
             });
     }
 
