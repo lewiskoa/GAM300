@@ -135,7 +135,6 @@ namespace Boom {
 				);
 
 				if (glGetError() != GL_NO_ERROR) {
-					glDeleteTextures(1, &id);
 					isFailed = true;
 					++failedCounter;
 					break;
@@ -144,6 +143,7 @@ namespace Boom {
 		} while (isFailed && failedCounter < 10);
 		if (failedCounter == 10) {
 			throw std::exception("LoadCompressed() - glCompressedTexImage2D() failed.");
+			glDeleteTextures(1, &id);
 		}
 
 		//textures has different options if they have multiple levels of mipmaps

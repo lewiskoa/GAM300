@@ -112,18 +112,18 @@ ASSETS:
 
   - Type: TEXTURE
     UID: 16300877889967123005
-    Name: asset
+    Name: asset.png
     Source: Resources/Textures/Icons/asset.png
     Properties:
       Data:
-        CompileAsCompressed: true
+        CompileAsCompressed: false
         quality: 0.5
         alphaThreshold: 128
         mipLevel: 10
         isGamma: true
   - Type: TEXTURE
     UID: 7762259362424041595
-    Name: height
+    Name: height.png
     Source: Resources/Textures/Marble/height.png
     Properties:
       Data:
@@ -134,7 +134,7 @@ ASSETS:
         isGamma: true
   - Type: TEXTURE
     UID: 16490361536122300952
-    Name: roughness
+    Name: roughness.png
     Source: Resources/Textures/Marble/roughness.png
     Properties:
       Data:
@@ -145,18 +145,18 @@ ASSETS:
         isGamma: true
   - Type: TEXTURE
     UID: 2000641971401327177
-    Name: folder
+    Name: folder.png
     Source: Resources/Textures/Icons/folder.png
     Properties:
       Data:
-        CompileAsCompressed: true
+        CompileAsCompressed: false
         quality: 0.5
         alphaThreshold: 128
         mipLevel: 10
         isGamma: true
   - Type: TEXTURE
     UID: 5741204174820446725
-    Name: albedo
+    Name: albedo.png
     Source: Resources/Textures/Marble/albedo.png
     Properties:
       Data:
@@ -167,7 +167,7 @@ ASSETS:
         isGamma: true
   - Type: TEXTURE
     UID: 4789105407518014319
-    Name: gradient
+    Name: gradient.png
     Source: Resources/Textures/gradient.png
     Properties:
       Data:
@@ -178,7 +178,7 @@ ASSETS:
         isGamma: true
   - Type: TEXTURE
     UID: 18399105239901256411
-    Name: normal
+    Name: normal.png
     Source: Resources/Textures/Marble/normal.png
     Properties:
       Data:
@@ -189,79 +189,79 @@ ASSETS:
         isGamma: true
   - Type: SKYBOX
     UID: 10427935764841817814
-    Name: sky
+    Name: sky.DDS
     Source: Resources/Textures/Skybox/sky.DDS
     Properties:
       Size: 2048
   - Type: MODEL
     UID: 9625104056789884581
-    Name: dance
+    Name: dance.FBX
     Source: Resources/Models/dance.fbx
     Properties:
       HasJoints: true
   - Type: MODEL
     UID: 11553622136344308773
-    Name: Cube - Copy (3)
+    Name: Cube - Copy (3).FBX
     Source: Resources/Models/Cube - Copy (3).FBX
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 9170159486869422342
-    Name: Cube - Copy (4)
+    Name: Cube - Copy (4).FBX
     Source: Resources/Models/Cube - Copy (4).FBX
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 1538943657792452404
-    Name: Cube - Copy (2)
+    Name: Cube - Copy (2).FBX
     Source: Resources/Models/Cube - Copy (2).FBX
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 10510038847207197447
-    Name: run
+    Name: run.fbx
     Source: Resources/Models/run.fbx
     Properties:
       HasJoints: true
   - Type: MODEL
     UID: 7633162898494281895
-    Name: Cube
+    Name: Cube.FBX
     Source: Resources/Models/Cube.FBX
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 4930468099905886477
-    Name: Cube - Copy
+    Name: Cube - Copy.FBX
     Source: Resources/Models/Cube - Copy.FBX
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 13629756360523159207
-    Name: Cube - Copy (5)
+    Name: Cube - Copy (5).FBX
     Source: Resources/Models/Cube - Copy (5).FBX
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 11565258723769024311
-    Name: sphere
+    Name: sphere.fbx
     Source: Resources/Models/sphere.fbx
     Properties:
       HasJoints: false
   - Type: MODEL
     UID: 12369161784125194221
-    Name: walking
+    Name: walking.fbx
     Source: Resources/Models/walking.fbx
     Properties:
       HasJoints: true
   - Type: MODEL
     UID: 11271718863933913868
-    Name: idle
+    Name: idle.fbx
     Source: Resources/Models/idle.fbx
     Properties:
       HasJoints: true
   - Type: MODEL
     UID: 5190089082055736376
-    Name: kick
+    Name: kick.fbx
     Source: Resources/Models/kick.fbx
     Properties:
       HasJoints: true
