@@ -6,6 +6,9 @@
 #include "Auxiliaries/Assets.h"
 #include "Context/DebugHelpers.h"
 #include "Panels/PropertiesImgui.h"
+
+#include"Physics/Context.h"
+
 using namespace EditorUI;
 
 Boom::AppContext* InspectorPanel::GetContext() const {
@@ -574,6 +577,20 @@ namespace EditorUI {
                 ImGui::Separator();
                 if (ImGui::Button("Yes", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
                     if (m_App->SelectedEntity() != entt::null) {
+
+                        // === BEGIN PHYSICS CLEANUP ===
+
+                        // 1. Get the entity
+                        Boom::Entity entity{ &m_App->GetEntityRegistry(), m_App->SelectedEntity() };
+
+                        // 2. Call your new function
+                        Boom::PhysicsContext* physicsCtx = &m_App->GetPhysicsContext();
+                        if (physicsCtx) {
+                            physicsCtx->RemoveRigidBody(entity);
+                        }
+
+                        // === END PHYSICS CLEANUP ===
+
                         m_App->GetEntityRegistry().destroy(m_App->SelectedEntity());
                         m_App->ResetAllSelected();
                     }
