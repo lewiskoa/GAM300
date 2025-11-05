@@ -358,7 +358,7 @@ namespace Boom {
 			asset->uid = uid;
 			asset->source = source;
 			std::filesystem::path path{ source };
-			asset->name = path.stem().string();
+			asset->name = path.filename().string(); //path.stem().string();
 
 			// Add validation for textures
 			if constexpr (std::is_same_v<T, TextureAsset>) {
