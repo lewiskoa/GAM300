@@ -5,7 +5,7 @@
 #include "Auxiliaries/Assets.h"
 #include "Physics/Utilities.h"  
 #include "BoomProperties.h"
-#include "AI/GridChaseAI.h"
+
 
 
 namespace Boom {
@@ -13,65 +13,7 @@ namespace Boom {
     using EntityID = entt::entity;
     constexpr EntityID NENTT = entt::null;
 
-   //AI components
-    struct VelocityComponentAI {
-        BOOM_INLINE VelocityComponentAI() = default;
-        BOOM_INLINE VelocityComponentAI(const VelocityComponentAI&) = default;
 
-        VelocityAI velocityAI;
-
-        XPROPERTY_DEF("VelocityComponentAI", VelocityComponentAI,
-            obj_member<"Velocity", &VelocityComponentAI::velocityAI> // shows inner object (with its fields)
-        )
-    };
-
-    // Vision
-    struct VisionComponentAI {
-        BOOM_INLINE VisionComponentAI() = default;
-        BOOM_INLINE VisionComponentAI(const VisionComponentAI&) = default;
-
-        VisionAI visionAI;
-
-        XPROPERTY_DEF("VisionComponentAI", VisionComponentAI,
-            obj_member<"Vision", &VisionComponentAI::visionAI>
-        )
-    };
-
-    // Chaser
-    struct ChaserComponentAI {
-        BOOM_INLINE ChaserComponentAI() = default;
-        BOOM_INLINE ChaserComponentAI(const ChaserComponentAI&) = default;
-
-        ChaserAI chaserAI;
-
-        XPROPERTY_DEF("ChaserComponentAI", ChaserComponentAI,
-            obj_member<"Chaser", &ChaserComponentAI::chaserAI>
-        )
-    };
-
-    // Direct chase behaviour toggle
-    struct DirectChaseComponent {
-        BOOM_INLINE DirectChaseComponent() = default;
-        BOOM_INLINE DirectChaseComponent(const DirectChaseComponent&) = default;
-
-        DirectChaseAI directChaseAI;
-
-        XPROPERTY_DEF("DirectChaseComponent", DirectChaseComponent,
-            obj_member<"DirectChase", &DirectChaseComponent::directChaseAI>
-        )
-    };
-
-    // Grid/path
-    struct GridAgentComponentAI {
-        BOOM_INLINE GridAgentComponentAI() = default;
-        BOOM_INLINE GridAgentComponentAI(const GridAgentComponentAI&) = default;
-
-        GridAgentAI gridAgentAI;
-
-        XPROPERTY_DEF("GridAgentComponentAI", GridAgentComponentAI,
-            obj_member<"GridAgent", &GridAgentComponentAI::gridAgentAI>
-        )
-    };
     // transform component
     struct TransformComponent
     {
@@ -84,13 +26,6 @@ namespace Boom {
             , obj_member<"Transform", &TransformComponent::transform>
         )
     }; 
-    BOOM_INLINE void EnsureChaseDeps(entt::registry& reg, entt::entity e) {
-        if (!reg.all_of<TransformComponent>(e))   reg.emplace<TransformComponent>(e);
-        if (!reg.all_of<VelocityComponentAI>(e))  reg.emplace<VelocityComponentAI>(e);
-        if (!reg.all_of<VisionComponentAI>(e))    reg.emplace<VisionComponentAI>(e);
-        if (!reg.all_of<ChaserComponentAI>(e))    reg.emplace<ChaserComponentAI>(e);
-        if (!reg.all_of<RigidBodyComponent>(e))   reg.emplace<RigidBodyComponent>(e);
-    }
 
     // camera component
     struct CameraComponent
@@ -213,13 +148,6 @@ namespace Boom {
             obj_member<"UID", &InfoComponent::uid>
         )
     };
-    BOOM_INLINE entt::entity FindEntityByName(entt::registry& reg, std::string_view name) {
-        auto view = reg.view<const InfoComponent>();
-        for (auto [e, info] : view.each()) {
-            if (info.name == name) return e;
-        }
-        return entt::null;
-    }
 
     struct DirectLightComponent
     {
@@ -383,8 +311,7 @@ namespace Boom {
         {
             return m_Registry->get<T>(m_EnttID);
         }
-   
-   
+
     protected:
         EntityRegistry* m_Registry = nullptr;
         EntityID m_EnttID = NENTT;

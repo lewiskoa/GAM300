@@ -16,7 +16,7 @@
 //#include "../../../Editor/src/Vendors/imGuizmo/ImGuizmo.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
-#include "AI/GridChaseAI.h"
+
 
 namespace Boom {
 
@@ -229,9 +229,7 @@ namespace Boom
 
             m_DebugLinesShader = std::make_unique<Boom::DebugLinesShader>("debug_lines.glsl");
             m_Context->physics->EnableDebugVisualization(m_PhysDebugViz, 1.0f);
-			// Ensure DirectChaseComponent has its dependencies
-            m_Context->scene.on_construct<DirectChaseComponent>()
-                .connect<&EnsureChaseDeps>();
+
             //temp input for mouse motion
             glm::dvec2 curMP{};
             glm::dvec2 prevMP{};
@@ -305,7 +303,7 @@ namespace Boom
                     }
                     prevF11 = f11Pressed;
                 }
-                
+
 
                 // Always update delta time, but adjust for pause state
                 ComputeFrameDeltaTime();
@@ -417,33 +415,6 @@ namespace Boom
                 if (m_AppState == ApplicationState::RUNNING) {
                     script_update_all(static_cast<float>(m_Context->DeltaTime));
                     UpdateStaticTransforms();
-                    static bool spawned = false;
-                    if (!spawned) {
-                        // Find ground to position enemy above it (optional)
-                        entt::entity ground = Boom::FindEntityByName(m_Context->scene, "ground");
-                        float groundY = 0.f;
-                        if (ground != entt::null && m_Context->scene.all_of<TransformComponent>(ground)) {
-                            groundY = m_Context->scene.get<TransformComponent>(ground).transform.translate.y;
-                        }
-
-                        // Create enemy sphere named "Enemy"
-                        auto enemy = CreateEnemySphere(m_Context->scene, "Enemy", { 2.f, 1.f, 2.f }, 0.5f);
-
-                        // wrap the entt::entity in a named Boom::Entity handle (an lvalue)
-                        Boom::Entity enemyHandle{ &m_Context->scene, enemy };
-
-                        // now pass the lvalue
-                        m_Context->physics->AddRigidBody(enemyHandle, *m_Context->assets);
-                        // IMPORTANT: register the new rigidbody with PhysX so rb.actor is valid
-                        // (matches how you rebuild physics on scene load)
-                        // If your PhysicsContext exposes this, call:
-                        // m_Context->physics->AddRigidBody(Boom::Entity{ &m_Context->scene, enemy }, *m_Context->assets);
-
-                        spawned = true;
-                    }
-
-                    // 2) Run direct-chase AI (uses "player" by name)
-                    UpdateEnemyDirectChase(m_Context->scene, /*playerName*/ "Player", static_cast<float>(m_Context->DeltaTime));
                     RunPhysicsSimulation();
                 }
 
@@ -1347,71 +1318,6 @@ namespace Boom
             const glm::vec3 closest = a + t * ab;
             return glm::distance(p, closest);
         }
-        BOOM_INLINE entt::entity CreateEnemySphere(entt::registry& reg, const std::string& name,
-            const glm::vec3& pos, float radius)
-        {
-            Entity e{ &reg };
-            // Name + transform
-            auto& info = e.Attach<InfoComponent>(); info.name = name;
-            auto& tr = e.Attach<TransformComponent>().transform;
-            tr.translate = pos;
-            tr.scale = glm::vec3(radius);   // 1:1 radius if your collider reads scale
-
-            // Visuals (optional if you rely on PhysX debug viz):
-            // If you have a sphere model/material, attach ModelComponent here.
-
-            // Physics
-            auto& rb = e.Attach<RigidBodyComponent>().RigidBody;
-            rb.type = RigidBody3D::DYNAMIC;    // your code already toggles this type elsewhere
-
-            e.Attach<ColliderComponent>();     // collider details are handled by physics on Add/Update
-            // (Your Application calls m_Context->physics->AddRigidBody(...) elsewhere when (re)initializing scene.)
-
-            // AI
-          
-
-            return e.ID();
-        }
-        BOOM_INLINE void UpdateEnemyDirectChase(entt::registry& reg,
-            const std::string& playerName,
-            float dt /* unused for now */)
-        {
-            entt::entity player = FindEntityByName(reg, playerName);
-            if (player == entt::null) return;
-
-            auto& pTr = reg.get<TransformComponent>(player).transform;
-            glm::vec3 ppos = pTr.translate;
-
-            auto view = reg.view<VisionComponentAI, ChaserComponentAI, TransformComponent, RigidBodyComponent>();
-            for (auto e : view) {
-                auto& vis = view.get<VisionComponentAI>(e).visionAI;
-                auto& cha = view.get<ChaserComponentAI>(e).chaserAI;
-                auto& tr = view.get<TransformComponent>(e).transform;
-                auto& rb = view.get<RigidBodyComponent>(e).RigidBody;
-
-                // Perception
-                bool inRange = glm::length2(ppos - tr.translate) <= vis.radius * vis.radius;
-                bool inFov = inRange ? InFOV_XZ(tr.translate, /*forward*/glm::vec3(0, 0, -1), ppos, vis.fovDeg)
-                    : false;
-                vis.hasLOS = inRange && inFov;   // (add a proper LOS later if you want)
-
-                // Steering
-                glm::vec3 desired = vis.hasLOS ? Seek(tr.translate, ppos, cha.speed)
-                    : glm::vec3(0);
-
-                // Push velocity into PhysX if dynamic; else fall back to ECS transform
-                if (rb.actor) {
-                    if (auto* dyn = rb.actor->is<physx::PxRigidDynamic>()) {
-                        dyn->setLinearVelocity(physx::PxVec3(desired.x, desired.y, desired.z));
-                    }
-                }
-                else {
-                    // No actor yet — integrate locally (optional)
-                    tr.translate += desired * dt;
-                }
-            }
-        }
-
     };
 
 }
