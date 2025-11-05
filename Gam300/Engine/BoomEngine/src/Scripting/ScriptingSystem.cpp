@@ -1,5 +1,5 @@
 #include "Scripting/ScriptingSystem.h"
-#include "core.h"
+#include "Core.h"
 
 namespace Boom {
 
@@ -7,8 +7,9 @@ namespace Boom {
     {
         m_ScriptsDir = scriptsDir;
         if (!m_Mono.Init("BoomDomain", scriptsDir.c_str())) return false;
-
+#ifdef DEBUG
         BOOM_INFO("[Scripting] Mono ready. {}", m_Mono.RuntimeInfo());
+#endif // DEBUG
         return true;
     }
 

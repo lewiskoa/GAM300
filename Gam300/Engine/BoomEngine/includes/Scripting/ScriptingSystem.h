@@ -1,5 +1,4 @@
 #pragma once
-#include "Core.h"
 #include <string>
 #include "Scripting/MonoRuntime.h"
 

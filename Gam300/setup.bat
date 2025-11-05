@@ -1,15 +1,24 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM ------------------------------------------------------------------------
+REM ================================================================
+REM  GAM300 setup (CMake + Conan + Mono)
+REM  Layout:
+REM   <repo>\Gam300\          (your solution / CMake root)
+REM   <repo>\mono\            (sibling; contains bin/, include/, lib/)
+REM     bin\mono-2.0-sgen.dll
+REM     lib\mono-2.0-sgen.lib
+REM     include\mono-2.0\mono\jit\jit.h ...
+REM ================================================================
+
+REM ----------------------------------------------------------------
 REM 0) Ensure CMake is available (install only if missing)
-REM ------------------------------------------------------------------------
+REM ----------------------------------------------------------------
 call :FindCMake
 if defined CMAKE_EXE (
     echo [INFO] CMake found: "%CMAKE_EXE%"
     goto :cmake_ready
 )
-
 echo [INFO] CMake not found. Installing...
 call :InstallCMake
 if not defined CMAKE_EXE (
@@ -18,37 +27,34 @@ if not defined CMAKE_EXE (
 )
 
 :cmake_ready
-REM Put CMake on PATH for *this session*
 set "PATH=%CMAKE_DIR%;%PATH%"
 echo [INFO] CMake ready: "%CMAKE_EXE%"
-
-REM Quick version check to ensure it works
 "%CMAKE_EXE%" --version >nul 2>&1 || (
     echo [ERROR] CMake installed but not working properly.
     pause & exit /b 1
 )
 
-REM ------------------------------------------------------------------------
+REM ----------------------------------------------------------------
 REM 1) Ensure Python is available
-REM ------------------------------------------------------------------------
+REM ----------------------------------------------------------------
 python --version >nul 2>&1 || (
     echo [ERROR] Python 3.8+ not found. Please install Python and add to PATH.
     pause & exit /b 1
 )
-echo [INFO] Python found: & python --version
+for /f "tokens=1,*" %%a in ('python --version') do echo [INFO] Python found: %%a %%b
 
-REM ------------------------------------------------------------------------
-REM 2) Install/upgrade pip tools (only if needed)
-REM ------------------------------------------------------------------------
+REM ----------------------------------------------------------------
+REM 2) Ensure pip tooling exists
+REM ----------------------------------------------------------------
 echo [STEP] Checking pip, setuptools, wheel...
 python -c "import pip, setuptools, wheel" >nul 2>&1 || (
     echo [STEP] Upgrading pip tooling...
     python -m pip install --upgrade pip setuptools wheel --quiet
 )
 
-REM ------------------------------------------------------------------------
+REM ----------------------------------------------------------------
 REM 3) Ensure Conan is installed (install only if missing)
-REM ------------------------------------------------------------------------
+REM ----------------------------------------------------------------
 where conan >nul 2>&1
 if errorlevel 1 (
     echo [STEP] Installing Conan...
@@ -61,34 +67,85 @@ if errorlevel 1 (
     echo [INFO] Conan already available.
 )
 
-REM ------------------------------------------------------------------------
+REM ----------------------------------------------------------------
 REM 4) Locate conan.exe and add to PATH
-REM ------------------------------------------------------------------------
+REM ----------------------------------------------------------------
 call :FindConan
 if not defined CONAN_EXE (
-    echo [ERROR] Conan installed but not found.
+    echo [ERROR] Conan installed but not found on PATH.
     pause & exit /b 1
 )
-
 set "PATH=%CONAN_DIR%;%PATH%"
 echo [INFO] Conan ready: "%CONAN_EXE%"
-
-REM Configure CMake path in Conan (suppress output)
 conan config set tools.cmake.cmake_program="%CMAKE_EXE%" >nul 2>&1
 
-REM ------------------------------------------------------------------------
-REM 5) Setup Conan profile
-REM ------------------------------------------------------------------------
-echo [STEP] Setting up Conan profile...
-conan profile detect --force >nul 2>&1
-if errorlevel 1 (
-    echo [WARN] Conan profile detect failed, continuing...
+REM ----------------------------------------------------------------
+REM 5) Repo root and third-party locations
+REM ----------------------------------------------------------------
+for %%i in ("%~dp0..") do set "REPO_ROOT=%%~fi"
+echo [INFO] REPO_ROOT = "%REPO_ROOT%"
+
+REM ---- FMOD ----
+set "FMOD_DIR=%REPO_ROOT%\FMOD Studio API Windows\api"
+if not exist "%FMOD_DIR%\core\lib\x64\fmod_vc.lib" (
+  echo [ERROR] FMOD API not found at: "%FMOD_DIR%"
+  echo         Expect: core\inc, core\lib\x64\fmod_vc.lib, studio\inc, studio\lib\x64\fmodstudio_vc.lib
+  pause & exit /b 1
+)
+echo [INFO] FMOD_DIR = "%FMOD_DIR%"
+
+REM ---- Compressonator ----
+set "COMPRESSONATOR_DIR=%REPO_ROOT%\Compressonator"
+if not exist "%COMPRESSONATOR_DIR%\Compressonator_MD.lib" (
+   echo [ERROR] COMPRESSONATOR not found at: "%COMPRESSONATOR_DIR%"
+   echo         Expect: Compressonator_MD.lib, Compressonator_MDd.lib, include\cmp_core.h, include\compressonator.h
+   pause & exit /b 1
+)
+echo [INFO] COMPRESSONATOR_DIR = "%COMPRESSONATOR_DIR%"
+
+REM ---- MONO ----
+set "MONO_ROOT=%REPO_ROOT%\mono"
+set "MONO_INCLUDE_DIR="
+set "MONO_LIB_DIR="
+set "MONO_BIN_DIR="
+
+if exist "%MONO_ROOT%\include\mono-2.0\mono\jit\jit.h" set "MONO_INCLUDE_DIR=%MONO_ROOT%\include\mono-2.0"
+if exist "%MONO_ROOT%\lib\mono-2.0-sgen.lib" set "MONO_LIB_DIR=%MONO_ROOT%\lib"
+if exist "%MONO_ROOT%\bin\mono-2.0-sgen.dll" set "MONO_BIN_DIR=%MONO_ROOT%\bin"
+
+if not defined MONO_INCLUDE_DIR (
+  echo [ERROR] Mono headers not found. Expected "%MONO_ROOT%\include\mono-2.0\mono\jit\jit.h"
+  pause & exit /b 1
+)
+if not defined MONO_LIB_DIR (
+  echo [ERROR] Mono import lib not found. Expected "%MONO_ROOT%\lib\mono-2.0-sgen.lib"
+  pause & exit /b 1
+)
+if not defined MONO_BIN_DIR (
+  echo [ERROR] Mono runtime DLL not found. Expected "%MONO_ROOT%\bin\mono-2.0-sgen.dll"
+  pause & exit /b 1
 )
 
-REM Ensure custom profile directory exists
+echo [INFO] MONO_INCLUDE_DIR = "%MONO_INCLUDE_DIR%"
+echo [INFO] MONO_LIB_DIR     = "%MONO_LIB_DIR%"
+echo [INFO] MONO_BIN_DIR     = "%MONO_BIN_DIR%"
+
+REM Write CMake snippet the projects can include
+set "CMAKE_SNIPPET_DIR=%REPO_ROOT%\Gam300\cmake"
+if not exist "%CMAKE_SNIPPET_DIR%" mkdir "%CMAKE_SNIPPET_DIR%"
+(
+  echo # Auto-generated by setup.bat
+  echo set(MONO_INCLUDE_DIR "%MONO_INCLUDE_DIR%" CACHE PATH "Mono include dir")
+  echo set(MONO_LIB_DIR     "%MONO_LIB_DIR%"     CACHE PATH "Mono lib dir")
+  echo set(MONO_BIN_DIR     "%MONO_BIN_DIR%"     CACHE PATH "Mono bin dir")
+) > "%CMAKE_SNIPPET_DIR%\MonoPaths.cmake"
+echo [INFO] Wrote "%CMAKE_SNIPPET_DIR%\MonoPaths.cmake"
+
+REM ----------------------------------------------------------------
+REM 6) Conan profile + installs (MSBuildDeps)
+REM ----------------------------------------------------------------
 if not exist profiles mkdir profiles
 
-REM Create optimized MSVC profile
 (
     echo [settings]
     echo os=Windows
@@ -100,30 +157,6 @@ REM Create optimized MSVC profile
     echo build_type=Release
 ) > profiles\msvc17
 
-REM ---- FMOD Studio API in repo root ----
-for %%i in ("%~dp0..") do set "REPO_ROOT=%%~fi"
-set "FMOD_DIR=%REPO_ROOT%\FMOD Studio API Windows\api"
-
-if not exist "%FMOD_DIR%\core\lib\x64\fmod_vc.lib" (
-  echo [ERROR] FMOD API not found at: "%FMOD_DIR%"
-  echo         Expect: core\inc, core\lib\x64\fmod_vc.lib, studio\inc, studio\lib\x64\fmodstudio_vc.lib
-  pause & exit /b 1
-)
-echo [INFO] FMOD_DIR = "%FMOD_DIR%"
-
-REM ---- Compressonator in repo root ----
-set "COMPRESSONATOR_DIR=%REPO_ROOT%\Compressonator"
-
-if not exist "%COMPRESSONATOR_DIR%\Compressonator_MD.lib" (
-   echo [ERROR] COMPRESSONATOR API not found at: "%COMPRESSONATOR_DIR%"
-   echo         Expect: Compressonator_MD.lib, Compressonator_MDd.lib, include\cmp_core.h, include\compressonator.h
-   pause & exit /b 1
-)
-echo [INFO] COMPRESSONATOR_DIR = "%COMPRESSONATOR_DIR"
-
-REM ------------------------------------------------------------------------
-REM 6) Install dependencies for both configurations
-REM ------------------------------------------------------------------------
 echo [STEP] Installing dependencies for Release...
 conan install . -of conanbuild\Release -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
   -s build_type=Release -g MSBuildDeps --build=missing ^
@@ -134,49 +167,33 @@ conan install . -of conanbuild\Debug -pr:h profiles\msvc17 -pr:b profiles\msvc17
   -s build_type=Debug -g MSBuildDeps --build=missing ^
   -o glfw/*:shared=True -o glew/*:shared=True
 
+REM ----------------------------------------------------------------
+REM 7) Copy Mono runtime DLLs next to Editor.exe (if present)
+REM ----------------------------------------------------------------
+set "EDITOR_DBG=%REPO_ROOT%\Gam300\Editor\x64\Debug"
+set "EDITOR_REL=%REPO_ROOT%\Gam300\Editor\x64\Release"
+
+call :CopyMonoDlls "%EDITOR_DBG%"
+call :CopyMonoDlls "%EDITOR_REL%"
+
 echo.
-echo ==== Setup Complete! Dependencies are in conanbuild/ ====
+echo ==== Setup Complete! ====
+echo - CMake: include(^"${CMAKE_SNIPPET_DIR:\=\\}^/MonoPaths.cmake^")
+echo - Link BoomEngine with: ^"${MONO_LIB_DIR}\mono-2.0-sgen.lib^"
+echo - Keep code includes as: ^<mono/jit/jit.h^>, ^<mono/metadata/assembly.h^>, ^<mono/metadata/debug-helpers.h^>
 pause
 exit /b 0
-
-REM ------------------------------------------------------------------------
-REM 7) Install dependencies for both configurations
-REM ------------------------------------------------------------------------
-echo [STEP] Installing dependencies for Release...
-conan install . -of conanbuild\Release -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
-    -s build_type=Release -g CMakeDeps -g CMakeToolchain --build=missing
-
-echo [STEP] Installing dependencies for Debug...
-conan install . -of conanbuild\Debug -pr:h profiles\msvc17 -pr:b profiles\msvc17 ^
-    -s build_type=Debug -g CMakeDeps -g CMakeToolchain --build=missing
-
-REM ------------------------------------------------------------------------
-REM 8) Build managed projects now that dotnet is guaranteed
-REM     - Uncomment these if you want the batch to build C# after deps.
-REM ------------------------------------------------------------------------
-if exist "Managed\EngineDotNet\EngineDotNet.csproj" (
-    echo [STEP] Building Managed\EngineDotNet...
-    dotnet build Managed\EngineDotNet\EngineDotNet.csproj -c Debug
-)
-if exist "Managed\GameScripts\GameScripts.csproj" (
-    echo [STEP] Building Managed\GameScripts...
-    dotnet build Managed\GameScripts\GameScripts.csproj -c Debug
-)
 
 REM ===================== Helper Functions =====================
 
 :FindCMake
-REM Check if already in PATH
 for /f "usebackq delims=" %%p in (`where cmake 2^>nul`) do (
     set "CMAKE_EXE=%%p"
     for %%d in ("%%p") do set "CMAKE_DIR=%%~dpd"
     goto :eof
 )
-
-REM Check common installation paths
 set "PATHS[0]=C:\Program Files\CMake\bin\cmake.exe"
 set "PATHS[1]=%LOCALAPPDATA%\Programs\CMake\bin\cmake.exe"
-
 for /l %%i in (0,1,1) do (
     if defined PATHS[%%i] if exist "!PATHS[%%i]!" (
         set "CMAKE_EXE=!PATHS[%%i]!"
@@ -184,36 +201,28 @@ for /l %%i in (0,1,1) do (
         goto :eof
     )
 )
-
-REM Try Visual Studio bundled CMake as last resort
 call :FindVSCMake
 goto :eof
 
 :InstallCMake
-REM Try winget first (most reliable and lightweight)
 where winget >nul 2>&1 && (
     echo [STEP] Installing CMake with winget...
     winget install -e --id Kitware.CMake --silent --accept-source-agreements --accept-package-agreements >nul 2>&1
     call :FindCMake
     if defined CMAKE_EXE goto :eof
 )
-
-REM Fallback to Chocolatey
 where choco >nul 2>&1 && (
     echo [STEP] Installing CMake with Chocolatey...
     choco install cmake -y --no-progress --limit-output >nul 2>&1
     call :FindCMake
     if defined CMAKE_EXE goto :eof
 )
-
-REM Last resort: try Visual Studio bundled version
 call :FindVSCMake
 goto :eof
 
 :FindVSCMake
 set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
 if not exist "%VSWHERE%" goto :eof
-
 for /f "usebackq delims=" %%p in (`
     "%VSWHERE%" -latest -products * -requires Microsoft.Component.MSBuild ^
     -find Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe 2^>nul
@@ -227,14 +236,11 @@ for /f "usebackq delims=" %%p in (`
 goto :eof
 
 :FindConan
-REM Check if already in PATH
 for /f "usebackq delims=" %%p in (`where conan 2^>nul`) do (
     set "CONAN_EXE=%%p"
     for %%d in ("%%p") do set "CONAN_DIR=%%~dpd"
     goto :eof
 )
-
-REM Check Python user scripts directory
 for /f "usebackq delims=" %%i in (`python -c "import sysconfig; print(sysconfig.get_path('scripts','nt_user'))" 2^>nul`) do (
     if exist "%%i\conan.exe" (
         set "CONAN_EXE=%%i\conan.exe"
@@ -242,8 +248,6 @@ for /f "usebackq delims=" %%i in (`python -c "import sysconfig; print(sysconfig.
         goto :eof
     )
 )
-
-REM Check common Python installation paths
 for /d %%d in ("%LOCALAPPDATA%\Programs\Python\*") do (
     if exist "%%d\Scripts\conan.exe" (
         set "CONAN_EXE=%%d\Scripts\conan.exe"
@@ -251,61 +255,23 @@ for /d %%d in ("%LOCALAPPDATA%\Programs\Python\*") do (
         goto :eof
     )
 )
-
 set "CONAN_EXE="
 set "CONAN_DIR="
 goto :eof
 
-:EnsureDotNet
-REM Usage: call :EnsureDotNet 8.0.100
-set "REQUIRED_SDK=%~1"
-if not defined REQUIRED_SDK set "REQUIRED_SDK=8.0.100"
-
-REM Prefer repo-local .dotnet; fall back to system, else install local
-set "ROOT=%~dp0"
-set "DOTNET_DIR=%ROOT%.dotnet"
-set "DOTNET_EXE=%DOTNET_DIR%\dotnet.exe"
-
-REM Check local first
-if exist "%DOTNET_EXE%" (
-  for /f "tokens=1" %%v in ('"%DOTNET_EXE%" --version') do set "CUR_VER_LOCAL=%%v"
-  echo [INFO] Local dotnet found: %CUR_VER_LOCAL%
-  set "DOTNET=%DOTNET_EXE%"
-  goto :SetDotnetEnv
+:CopyMonoDlls
+set "DST=%~1"
+if not defined DST goto :eof
+if not exist "%DST%" (
+  echo [WARN] Output dir not found yet: "%DST%" (build Editor once, then re-run copy if needed)
+  goto :eof
 )
-
-REM Check system dotnet
-where dotnet >nul 2>&1 && (
-  for /f "tokens=1" %%v in ('dotnet --version') do set "CUR_VER_SYS=%%v"
-  echo [INFO] System dotnet found: %CUR_VER_SYS%
-  set "DOTNET=dotnet"
-  goto :SetDotnetEnv
+if exist "%MONO_BIN_DIR%\mono-2.0-sgen.dll" (
+  copy /Y "%MONO_BIN_DIR%\mono-2.0-sgen.dll" "%DST%\mono-2.0-sgen.dll" >nul
+  echo [INFO] Copied mono-2.0-sgen.dll to "%DST%"
 )
-
-REM None found -> install local
-call :InstallDotNet "%REQUIRED_SDK%" "%DOTNET_DIR%" || exit /b 1
-set "DOTNET=%DOTNET_EXE%"
-
-:SetDotnetEnv
-REM Always prefer local if it exists; else use system
-if exist "%DOTNET_EXE%" set "DOTNET=%DOTNET_EXE%"
-
-set "DOTNET_ROOT=%DOTNET_DIR%"
-set "PATH=%DOTNET_DIR%;%PATH%"
-REM Smoke test
-"%DOTNET%" --info >nul 2>&1 || exit /b 1
-exit /b 0
-
-:InstallDotNet
-REM Args: %1 = version, %2 = install dir
-set "SDK_VER=%~1"
-set "DEST=%~2"
-echo [STEP] Installing .NET SDK %SDK_VER% to "%DEST%"
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "mkdir -ea 0 '%DEST%' | Out-Null; " ^
-  "$u='https://dot.net/v1/dotnet-install.ps1'; " ^
-  "$s=Join-Path $env:TEMP 'dotnet-install.ps1'; " ^
-  "Invoke-WebRequest $u -UseBasicParsing -OutFile $s; " ^
-  "powershell -ExecutionPolicy Bypass -File $s -Version %SDK_VER% -InstallDir '%DEST%'; "
-if errorlevel 1 exit /b 1
-exit /b 0
+if exist "%MONO_BIN_DIR%\MonoPosixHelper.dll" (
+  copy /Y "%MONO_BIN_DIR%\MonoPosixHelper.dll" "%DST%\MonoPosixHelper.dll" >nul
+  echo [INFO] Copied MonoPosixHelper.dll to "%DST%"
+)
+goto :eof
