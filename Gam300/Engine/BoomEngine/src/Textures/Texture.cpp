@@ -143,6 +143,7 @@ namespace Boom {
 			}
 		} while (isFailed && failedCounter < 10);
 		if (failedCounter == 10) {
+			glDeleteTextures(1, &id);
 			throw std::exception("LoadCompressed() - glCompressedTexImage2D() failed.");
 		}
 
