@@ -5,28 +5,80 @@
 #include "ECS/ECS.hpp"
 
 namespace Boom {
+    BOOM_INLINE glm::vec3 ForwardFromYawDeg(float yawDeg) {
+        float y = glm::radians(yawDeg);
+        // OpenGL-ish: forward = -Z; XZ plane only
+        return glm::normalize(glm::vec3(std::sin(y), 0.0f, -std::cos(y)));
+    }
+    struct VelocityAI {
+        glm::vec3 vel{ 0.f };
+        XPROPERTY_DEF("VelocityAI", VelocityAI,
+            obj_member<"vel", &VelocityAI::vel>
+        )
+    };
 
-    struct VelocityComponent { glm::vec3 vel{ 0 }; };
+    struct VisionAI {
+        float     radius = 12.f;
+        float     fovDeg = 360.f;
+        float     loseAfter = 1.f;
+        bool      hasLOS = false;
+        float     lastSeenTimer = 0.f;
+        glm::vec3 lastSeenPos{ 0.f,0.f,0.f };
 
-    struct VisionComponent {
-        float radius = 12.f, fovDeg = 90.f, loseAfter = 1.f;
-        bool hasLOS = false; float lastSeenTimer = 0.f;
-        glm::vec3 lastSeenPos{ 0 };
+        XPROPERTY_DEF("VisionAI", VisionAI,
+            obj_member<"radius", &VisionAI::radius>,
+            obj_member<"fovDeg", &VisionAI::fovDeg>,
+            obj_member<"loseAfter", &VisionAI::loseAfter>,
+            obj_member<"hasLOS", &VisionAI::hasLOS>,
+            obj_member<"lastSeenTimer", &VisionAI::lastSeenTimer>,
+            obj_member<"lastSeenPos", &VisionAI::lastSeenPos>
+        )
+    };
+
+    struct ChaserAI {
+        float speed = 10.f;
+        XPROPERTY_DEF("ChaserAI", ChaserAI,
+            obj_member<"speed", &ChaserAI::speed>
+        )
+    };
+
+    struct DirectChaseAI {
+        std::string  targetName = "player";
+        entt::entity target = entt::null;   // runtime cache
+        float        reacquireEvery = 0.25f;
+        float        timer = 0.f;
+
+        XPROPERTY_DEF("DirectChaseAI", DirectChaseAI,
+            obj_member<"targetName", &DirectChaseAI::targetName>,
+            obj_member<"reacquireEvery", &DirectChaseAI::reacquireEvery>
+            // omit 'target' and 'timer' from UI (runtime)
+        )
     };
 
     enum class GridAlgo : uint8_t { AStar, FlowField };
 
-    struct GridAgentComponent {
+    struct GridAgentAI {
         GridAlgo algo = GridAlgo::AStar;
-        float speed = 4.0f;
-        float waypointEps = 0.1f;
-        float replanCooldown = 0.25f; float replanTimer = 0.f;
-        glm::vec3 lastPlannedGoal{ std::numeric_limits<float>::infinity() };
-        std::vector<glm::vec3> waypoints; size_t wpIndex = 0;
+        float    speed = 4.0f;
+        float    waypointEps = 0.1f;
+        float    replanCooldown = 0.25f;
+        float    replanTimer = 0.f;
+
+        glm::vec3              lastPlannedGoal{ std::numeric_limits<float>::infinity() };
+        std::vector<glm::vec3> waypoints;
+        size_t                 wpIndex = 0;
+
+        XPROPERTY_DEF("GridAgentAI", GridAgentAI,
+            obj_member<"algo", &GridAgentAI::algo>,
+            obj_member<"speed", &GridAgentAI::speed>,
+            obj_member<"waypointEps", &GridAgentAI::waypointEps>,
+            obj_member<"replanCooldown", &GridAgentAI::replanCooldown>
+            // runtime: replanTimer/lastPlannedGoal/waypoints/wpIndex omitted
+        )
     };
 
     // cheap FOV (XZ)
-    inline bool InFOV_XZ(const glm::vec3& pos, const glm::vec3& fwd, const glm::vec3& tgt, float fovDeg)
+    BOOM_INLINE bool InFOV_XZ(const glm::vec3& pos, const glm::vec3& fwd, const glm::vec3& tgt, float fovDeg)
     {
         glm::vec2 d{ tgt.x - pos.x, tgt.z - pos.z };
         float L2 = d.x * d.x + d.y * d.y; if (L2 < 1e-8f) return true;
@@ -36,7 +88,7 @@ namespace Boom {
     }
 
     // Bresenham-based LOS in world space (via grid)
-    inline bool HasGridLOS(const Grid& grid, const glm::vec3& from, const glm::vec3& to)
+    BOOM_INLINE bool HasGridLOS(const Grid& grid, const glm::vec3& from, const glm::vec3& to)
     {
         return gridLineOfSightClear(grid, grid.worldToCell(from), grid.worldToCell(to));
     }
@@ -54,78 +106,60 @@ namespace Boom {
         float agentY = 0.f;         // y-level for waypoint centers
     };
 
-    inline void UpdateGridChase(entt::registry& reg, entt::entity player, const GridContext& ctx, float dt)
-    {
-        if (!ctx.grid) return;
-        const Grid& grid = *ctx.grid;
-        const auto& tPl = reg.get<TransformComponent>(player);
+    BOOM_INLINE void RunDirectChaseSystem(entt::registry& reg, float dt) {
+        auto view = reg.view<DirectChaseComponent, VisionComponentAI, ChaserComponentAI,
+            TransformComponent, RigidBodyComponent>();
 
-        auto view = reg.view<TransformComponent, VelocityComponent, VisionComponent, GridAgentComponent>();
-        view.each([&](auto,
-            TransformComponent& tAI,
-            VelocityComponent& vel,
-            VisionComponent& vis,
-            GridAgentComponent& agent)
+        view.each([&](entt::entity e,
+            DirectChaseComponent& aiC,
+            VisionComponentAI& visC,
+            ChaserComponentAI& chC,
+            TransformComponent& tc,
+            RigidBodyComponent& rb)
             {
-                // 1) Perception (range + FOV + LOS via grid)
-                glm::vec3 playerPos = tPl.position;
-                bool inRange = glm::length2(playerPos - tAI.position) <= vis.radius * vis.radius;
-                bool inFov = inRange ? InFOV_XZ(tAI.position, tAI.forward, playerPos, vis.fovDeg) : false;
-                bool los = inRange && inFov && HasGridLOS(grid, tAI.position, playerPos);
-
-                vis.hasLOS = los;
-                if (los) { vis.lastSeenPos = playerPos; vis.lastSeenTimer = 0.f; }
-                else      vis.lastSeenTimer += dt;
-
-                agent.replanTimer -= dt;
-
-                if (los) {
-                    // Direct chase (no path)
-                    agent.waypoints.clear(); agent.wpIndex = 0; agent.lastPlannedGoal = playerPos;
-                    vel.vel = Seek(tAI.position, playerPos, agent.speed);
-                    if (glm::length2(vel.vel) > 1e-6f) tAI.forward = glm::normalize(vel.vel);
-                    return;
+                // Re-acquire target by name periodically or if missing
+                auto& ai = aiC.directChaseAI;
+                auto& vis = visC.visionAI;
+                auto& chase = chC.chaserAI;
+                ai.timer -= dt;
+                if (ai.target == entt::null || ai.timer <= 0.f) {
+                    ai.target = FindEntityByName(reg, ai.targetName);
+                    ai.timer = ai.reacquireEvery;
+                    if (ai.target == entt::null) return; // no target yet
                 }
 
-                // 2) No LOS ? use grid pathing toward last-seen cell
-                if (agent.algo == GridAlgo::AStar) {
-                    bool needReplan = (agent.replanTimer <= 0.f) ||
-                        (glm::length2(agent.lastPlannedGoal - vis.lastSeenPos) > 0.5f * 0.5f);
-                    if (needReplan) {
-                        auto s = grid.worldToCell(tAI.position);
-                        auto g = grid.worldToCell(vis.lastSeenPos);
-                        auto path = AStarGrid(grid, s, g, ctx.agentY);
-                        agent.waypoints = path.ok ? path.waypoints : std::vector<glm::vec3>{};
-                        agent.wpIndex = 0;
-                        agent.lastPlannedGoal = vis.lastSeenPos;
-                        agent.replanTimer = agent.replanCooldown;
+                // Read target position
+                const auto& tPl = reg.get<TransformComponent>(ai.target).transform;
+                const glm::vec3 playerPos = tPl.translate;
+
+                // Perception (keep simple: 360° range check)
+                const glm::vec3 myPos = tc.transform.translate;
+                const bool inRange = glm::length2(playerPos - myPos) <= vis.radius * vis.radius;
+                vis.hasLOS = inRange;                  // plug your LOS/FOV later if desired
+                if (vis.hasLOS) vis.lastSeenPos = playerPos;
+
+                // Choose destination
+                const glm::vec3 goal = vis.hasLOS ? playerPos : vis.lastSeenPos;
+
+                // Desired velocity
+                const glm::vec3 desired = Seek(myPos, goal, chase.speed);
+
+                // Apply (PhysX if present; else fallback to manual integration)
+                if (rb.RigidBody.actor) {
+                    if (auto* dyn = rb.RigidBody.actor->is<physx::PxRigidDynamic>()) {
+                        dyn->setLinearVelocity(physx::PxVec3(desired.x, desired.y, desired.z));
                     }
-
-                    glm::vec3 target = vis.lastSeenPos;
-                    if (agent.wpIndex < agent.waypoints.size()) {
-                        target = agent.waypoints[agent.wpIndex];
-                        if (glm::length2(target - tAI.position) <= agent.waypointEps * agent.waypointEps) {
-                            ++agent.wpIndex;
-                            if (agent.wpIndex < agent.waypoints.size())
-                                target = agent.waypoints[agent.wpIndex];
-                            else
-                                target = vis.lastSeenPos;
-                        }
-                    }
-                    vel.vel = Seek(tAI.position, target, agent.speed);
-
                 }
-                else { // GridAlgo::FlowField
-                    if (!ctx.flow) return;
-
-                    // Step toward neighbor with lowest distance
-                    glm::ivec2 cur = grid.worldToCell(tAI.position);
-                    glm::ivec2 nxt = ctx.flow->bestNeighbor(grid, cur);
-                    glm::vec3 target = (nxt == cur) ? vis.lastSeenPos : grid.cellToWorld(nxt.x, nxt.y, ctx.agentY);
-                    vel.vel = Seek(tAI.position, target, agent.speed * 0.95f);
+                else {
+                    tc.transform.translate += desired * dt;
                 }
 
-                if (glm::length2(vel.vel) > 1e-6f) tAI.forward = glm::normalize(vel.vel);
+                // Face movement direction on XZ (optional)
+                if (glm::length2(desired) > 1e-6f) {
+                    const glm::vec2 dir{ desired.x, desired.z };
+                    const float yaw = std::atan2(dir.x, -dir.y);
+                    tc.transform.rotate.y = glm::degrees(yaw);
+                }
             });
     }
 
