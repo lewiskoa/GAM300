@@ -219,6 +219,8 @@
     <ClInclude Include="includes\Physics\Context.h" />
     <ClInclude Include="includes\Physics\Helpers.h" />
     <ClInclude Include="includes\Physics\Utilities.h" />
+    <ClInclude Include="includes\Scripting\MonoRuntime.h" />
+    <ClInclude Include="includes\Scripting\ScriptingSystem.h" />
     <ClInclude Include="includes\Window\InputSystem.h" />
   </ItemGroup>
   <ItemGroup>
@@ -249,6 +251,8 @@
     <ClCompile Include="src\Logger.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\Scripting\MonoRuntime.cpp" />
+    <ClCompile Include="src\Scripting\ScriptingSystem.cpp" />
     <ClCompile Include="src\Textures\Compression.cpp" />
     <ClCompile Include="src\Textures\Texture.cpp" />
   </ItemGroup>

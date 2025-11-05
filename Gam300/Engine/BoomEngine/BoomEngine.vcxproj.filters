@@ -13,6 +13,8 @@
     <ClCompile Include="src\Logger.cpp" />
     <ClCompile Include="src\Textures\Texture.cpp" />
     <ClCompile Include="src\Textures\Compression.cpp" />
+    <ClCompile Include="src\Scripting\MonoRuntime.cpp" />
+    <ClCompile Include="src\Scripting\ScriptingSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Application\Application.h" />
@@ -60,10 +62,10 @@
     <ClInclude Include="includes\Physics\Helpers.h" />
     <ClInclude Include="includes\Physics\Utilities.h" />
     <ClInclude Include="includes\Window\InputSystem.h" />
-    <ClInclude Include="thirdparty\dotnet\hostfxr.h" />
-    <ClInclude Include="thirdparty\dotnet\nethost.h" />
     <ClInclude Include="includes\Input\CameraManager.h" />
     <ClInclude Include="includes\Input\InputHandler.h" />
     <ClInclude Include="includes\Graphics\Textures\Compression.h" />
+    <ClInclude Include="includes\Scripting\MonoRuntime.h" />
+    <ClInclude Include="includes\Scripting\ScriptingSystem.h" />
   </ItemGroup>
 </Project>
