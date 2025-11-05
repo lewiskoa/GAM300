@@ -142,8 +142,8 @@ namespace Boom {
 			}
 		} while (isFailed && failedCounter < 10);
 		if (failedCounter == 10) {
-			throw std::exception("LoadCompressed() - glCompressedTexImage2D() failed.");
 			glDeleteTextures(1, &id);
+			throw std::exception("LoadCompressed() - glCompressedTexImage2D() failed.");
 		}
 
 		//textures has different options if they have multiple levels of mipmaps
