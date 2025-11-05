@@ -9,13 +9,6 @@
 
 #include <filesystem>
 #include <future>
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#ifdef APIENTRY  //redefinition conflict
-#undef APIENTRY
-#endif
-#include <Windows.h>
-#include <shellapi.h>
 
 #ifndef ICON_FA_IMAGE
 #define ICON_FA_IMAGE ""
@@ -37,33 +30,14 @@ namespace EditorUI {
 
     void ResourcePanel::OnShow()
     {
-		static bool isCompressionStarted{};
-		static std::future<void> g_CompressFuture;
-		static float compressionTimeElapsed{};
-		bool showCompressionText{};
-
-		if (isCompressionStarted) {
-			if (g_CompressFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-				try { g_CompressFuture.get(); }
-				catch (std::exception const& e) {
-					char const* dodo{ e.what() };
-					BOOM_ERROR("{}", dodo);
-				}
-				isCompressionStarted = false;
-			}
-			else {
-				compressionTimeElapsed += (float)m_App->GetDeltaTime();
-				showCompressionText = true;
-			}
-		}
         if (!ImGui::Begin("Resources")) { ImGui::End(); return; }
 
-		if (ImGui::Button("Save All Assets")) {
+		if (ImGui::Button("Save All Assets", { 128, 20 })) {
 			m_App->SaveAssets();
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("Create Empty Material")) {
+		if (ImGui::Button("Create Empty Material", { 160, 20 })) {
 			showNamePopup = true;
 		}
 		if (showNamePopup) {
@@ -72,8 +46,25 @@ namespace EditorUI {
 			CreateEmptyMaterial();
 		}
 
+
+		/*
+		bool CompressAllTextures::ProgressCallback(float percent, size_t, size_t) {
+			BOOM_INFO("Progress: {}%", percent);
+			return false;
+		}
+		*/
 		ImGui::SameLine();
-		if (ImGui::Button("Compress Textures") && !isCompressionStarted) {
+		
+		/*
+		if (ImGui::Button("Compress Textures", { 160, 20 })) {
+			auto textureMap = m_App->GetAssetRegistry().GetMap<TextureAsset>();
+			CompressAllTextures(textureMap, CONSTANTS::COMPRESSED_TEXTURE_OUTPUT_PATH);
+		}*/
+
+		static bool isCompressionStarted{};
+		static std::future<void> g_CompressFuture;
+		static float compressionTimeElapsed{};
+		if (ImGui::Button("Compress Textures", { 160, 20 }) && !isCompressionStarted) {
 			auto textureMap = m_App->GetAssetRegistry().GetMap<TextureAsset>();
 			g_CompressFuture = std::async(std::launch::async, [copy = std::move(textureMap)]() mutable {
 				CompressAllTextures(copy, CONSTANTS::COMPRESSED_TEXTURE_OUTPUT_PATH);
@@ -81,17 +72,21 @@ namespace EditorUI {
 			isCompressionStarted = true;
 			compressionTimeElapsed = 0.f;
 		}
-
-		ImGui::SameLine();
-		if (ImGui::Button("Open Output Folder")) {
-			std::filesystem::path outputPath{CONSTANTS::COMPRESSED_TEXTURE_OUTPUT_PATH};
-			std::filesystem::create_directories(outputPath);
-			ShellExecuteW(nullptr, L"open", outputPath.wstring().c_str(), nullptr, nullptr, SW_SHOWDEFAULT);
+		if (isCompressionStarted) {
+			if (g_CompressFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+				try { g_CompressFuture.get(); }
+				catch (std::exception const& e) { 
+					char const* dodo{ e.what() }; 
+					BOOM_ERROR("{}", dodo);
+				}
+				isCompressionStarted = false;
+			}
+			else {
+				compressionTimeElapsed += (float)m_App->GetDeltaTime();
+				ImGui::Text("Time elapsed: %.3f", compressionTimeElapsed);
+			}
 		}
-
-		if (showCompressionText) {
-			ImGui::Text("Compressing textures... time elapsed: %.3f", compressionTimeElapsed);
-		}
+		
 
 		static int currentType{ static_cast<int>(AssetType::UNKNOWN) }; //unknown will show all assets
 		ImGui::Combo("Filter", &currentType, TYPE_NAMES, IM_ARRAYSIZE(TYPE_NAMES));
