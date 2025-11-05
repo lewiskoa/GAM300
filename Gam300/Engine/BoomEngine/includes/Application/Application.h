@@ -743,12 +743,10 @@ namespace Boom
             BOOM_INFO("[Scene] Creating new scene '{}'", sceneName);
 
             // Clean up current scene
-            //CleanupCurrentScene();
+            CleanupCurrentScene();
 
             // Create basic scene with camera
-            //CreateDefaultScene();
-
-			LoadScene("templateScene");
+            CreateDefaultScene();
 
             m_CurrentScenePath[0] = '\0'; // Clear the path
             m_SceneLoaded = false;
@@ -1057,44 +1055,19 @@ namespace Boom
 
         BOOM_INLINE void DestroyPhysicsActors()
         {
-            // Get the scene from the physics context *once* outside the loop
-            auto* pxScene = m_Context->physics->GetPxScene();
-            if (!pxScene) {
-                BOOM_ERROR("DestroyPhysicsActors failed: No PxScene available.");
-                return;
-            }
-
-            // Iterate over all entities with a RigidBodyComponent
-            EnttView<Entity, RigidBodyComponent>([this, pxScene](auto entity, auto& comp)
+            EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
                 {
-                    auto* actor = comp.RigidBody.actor;
-                    if (!actor) return; // Skip if no actor
-
-                    // 1. Clean up Collider Pointers (if they exist)
                     if (entity.template Has<ColliderComponent>())
                     {
                         auto& collider = entity.template Get<ColliderComponent>().Collider;
-                        if (collider.material) {
-                            collider.material->release();
-                            collider.material = nullptr;
-                        }
-                        if (collider.Shape) {
-                            collider.Shape->release();
-                            collider.Shape = nullptr;
-                        }
+                        collider.material->release();
+                        collider.Shape->release();
                     }
-
-                    // 2. Destroy actor user data
-                    if (actor->userData) {
-                        EntityID* owner = static_cast<EntityID*>(actor->userData);
-                        BOOM_DELETE(owner);
-                        actor->userData = nullptr;
-                    }
-
-                    // 3. (THE FIX) Remove from scene, THEN release memory
-                    pxScene->removeActor(*actor);
-                    actor->release();
-                    comp.RigidBody.actor = nullptr;
+                    // Destroy actor user data
+                    EntityID* owner = static_cast<EntityID*>(comp.RigidBody.actor->userData);
+                    BOOM_DELETE(owner);
+                    // Destroy actor instance
+                    comp.RigidBody.actor->release();
                 });
         }
 
