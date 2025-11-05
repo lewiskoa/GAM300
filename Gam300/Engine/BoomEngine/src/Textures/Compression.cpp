@@ -17,20 +17,13 @@ namespace Boom {
 		for (auto const& [id, sharedAsset] : textureMap) {
 			if (id == 0) continue;
 			TextureAsset* asset = dynamic_cast<TextureAsset*>(sharedAsset.get());
-			if (!asset) continue;
 
-			//already compressed simple copy paste (textures that are already compressed or not to be compressed)
-			if (GetExtension(asset->source) == "dds" || !asset->data->isCompileAsCompressed) {
-				std::error_code ec;
-				if (!std::filesystem::copy_file(asset->source, std::filesystem::path{ outputPath } / asset->name, std::filesystem::copy_options::overwrite_existing, ec)) {
-					std::string dodo{ ec.message() };
-					std::string destPathString{ (std::filesystem::path{ outputPath } / asset->name).generic_string() };
-					BOOM_ERROR("copy failed - error_code:{}, source:{}, dest:{}", dodo, asset->source, destPathString);
-				}
+			//already compressed simple copy paste
+			if (GetExtension(asset->source) == "dds") {
+				std::filesystem::copy_file(asset->source, outputPath, std::filesystem::copy_options::overwrite_existing);
 				continue;
 			}
-			CMP_MipSet mipIn;
-			memset(&mipIn, 0, sizeof(CMP_MipSet));
+			CMP_MipSet mipIn{};
 			CMP_ERROR status{ CMP_LoadTexture(asset->source.c_str(), &mipIn) };
 			if (status != CMP_OK) {
 				throw std::exception((asset->source + "_CMP_LoadTexture() - error_code: " + std::to_string(status)).c_str());
@@ -44,16 +37,15 @@ namespace Boom {
 			KernelOptions kOpt{};
 			SetKernelOpt(kOpt, *asset->data);
 
-			BOOM_INFO("======Compressing {}({}-{})========", asset->name, asset->uid, asset->source);
-			CMP_MipSet mipOut;
-			memset(&mipOut, 0, sizeof(CMP_MipSet));
+			BOOM_INFO("======Compressing {}({})========", asset->name, asset->uid);
+			CMP_MipSet mipOut{};
 			status = CMP_ProcessTexture(&mipIn, &mipOut, kOpt, Callback);
 			if (status != CMP_OK) {
 				CMP_FreeMipSet(&mipIn);
 				throw std::exception((asset->source + "_CMP_ProcessTexture() - error_code: " + std::to_string(status)).c_str());
 			}
 
-			std::string fullPath{ outputPath.data() + ("/" + std::filesystem::path(asset->name).stem().string()) + ".dds"};
+			std::string fullPath{ outputPath.data() + ("/" + asset->name) + ".dds"};
 			status = CMP_SaveTexture(fullPath.c_str(), &mipOut);
 			BOOM_INFO("Saving Texture...");
 
@@ -64,6 +56,7 @@ namespace Boom {
 			if (status != CMP_OK) {
 				throw std::exception((asset->source + "_CMP_SaveTexture() - error_code: " + std::to_string(status)).c_str());
 			}
+
 		}
 
 		success = true;
@@ -73,7 +66,7 @@ namespace Boom {
 		kOpt.format = destFormat;
 		kOpt.fquality = texRef.quality;
 		kOpt.useSRGBFrames = texRef.isGamma;
-		kOpt.threads = 2;
+		kOpt.threads = 1;
 		kOpt.encodeWith = CMP_HPC;
 
 		//set bc15 props //TODO modify to descriptor reading

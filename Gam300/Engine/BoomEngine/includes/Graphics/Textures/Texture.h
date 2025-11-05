@@ -28,9 +28,9 @@ namespace Boom {
 		void LoadCompressed(std::string const& filename);
 
 	private:
-		int32_t height{};
-		int32_t width{};
-		uint32_t id{};
+		int32_t height;
+		int32_t width;
+		uint32_t id;
 
 	public: //descriptions
 		bool isCompileAsCompressed;
