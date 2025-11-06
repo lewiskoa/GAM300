@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace GameScripts
 {
-    public class Class1
+    public static class Entry
     {
+        public static void Start()
+        {
+            Console.WriteLine("[C#] Hello from GameScripts.Entry.Start!");
+        }
     }
 }
