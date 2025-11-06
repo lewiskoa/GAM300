@@ -1,5 +1,5 @@
-#include "Scripting/ScriptingSystem.h"
 #include "Core.h"
+#include "Scripting/ScriptingSystem.h"
 
 namespace Boom {
 

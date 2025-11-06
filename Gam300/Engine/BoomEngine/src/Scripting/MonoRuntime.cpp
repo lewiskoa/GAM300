@@ -1,5 +1,7 @@
-#include "Scripting/MonoRuntime.h" // BOOM_INFO/ERROR macros
+
 #include "Core.h"
+#include "Scripting/MonoRuntime.h" // BOOM_INFO/ERROR macros
+
 namespace Boom {
 
     bool MonoRuntime::Init(const char* domainName, const char* assembliesPath)
@@ -15,7 +17,6 @@ namespace Boom {
         if (!m_RootDomain) { 
 #ifdef DEBUG
             BOOM_ERROR("Mono: mono_jit_init_version failed"); return false;
-
 #endif // DEBUG
         }
 
@@ -41,7 +42,11 @@ namespace Boom {
             mono_jit_cleanup(m_RootDomain);
             m_RootDomain = nullptr;
         }
+#ifdef DEBUG
         BOOM_INFO("[Mono] Shutdown complete");
+#endif // DEBUG
+
+    
     }
 
     MonoAssembly* MonoRuntime::LoadAssembly(const char* path)
@@ -56,8 +61,13 @@ namespace Boom {
 
             return nullptr;
         }
-        const MonoImage* img = mono_assembly_get_image(asmHandle);
+        
+#ifdef DEBUG
+        MonoImage* img = mono_assembly_get_image(asmHandle);
         BOOM_INFO("[Mono] Loaded assembly: {} (image ok={})", path, img ? "true" : "false");
+#endif // DEBUG
+
+
 
         // NEW: remember it
         m_LoadedAssemblies.push_back(asmHandle);
