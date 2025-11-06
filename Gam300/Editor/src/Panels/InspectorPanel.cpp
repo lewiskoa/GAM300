@@ -175,7 +175,6 @@ namespace EditorUI {
 
             // Use CollapsingHeader to match the style
             if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
-
                 // --- UI for assigning model and material ---
                 ImGui::BeginTable("##maps", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersInnerV);
                 ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed);
@@ -493,6 +492,7 @@ namespace EditorUI {
             ImGui::OpenPopup("AddComponentPopup");
         }
         // (AddComponentPopup contents go here)
+        ComponentSelector(selected);
     }
 
     void InspectorPanel::AssetUpdate() {
@@ -591,6 +591,48 @@ namespace EditorUI {
                 }
                 ImGui::EndPopup();
             }
+        }
+    }
+
+    void InspectorPanel::ComponentSelector(Boom::Entity& selected) {
+        if (ImGui::BeginPopup("AddComponentPopup")) {
+            ImGui::SetNextWindowSizeConstraints(ImVec2(300, 200), ImVec2(500, 600));
+
+            ImGui::Text("Select component to add:");
+            ImGui::Separator();
+            if (ImGui::BeginChild("ComponentScrollArea", ImVec2(0, 250), false, ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
+                if (ImGui::BeginTable("Component Table", 1, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg)) {
+                    UpdateComponent<Boom::InfoComponent>(Boom::ComponentID::INFO, selected);
+                    UpdateComponent<Boom::TransformComponent>(Boom::ComponentID::TRANSFORM, selected);
+                    UpdateComponent<Boom::CameraComponent>(Boom::ComponentID::CAMERA, selected);
+                    UpdateComponent<Boom::RigidBodyComponent>(Boom::ComponentID::RIGIDBODY, selected);
+                    UpdateComponent<Boom::ColliderComponent>(Boom::ComponentID::COLLIDER, selected);
+                    UpdateComponent<Boom::ModelComponent>(Boom::ComponentID::MODEL, selected);
+                    UpdateComponent<Boom::AnimatorComponent>(Boom::ComponentID::ANIMATOR, selected);
+                    UpdateComponent<Boom::DirectLightComponent>(Boom::ComponentID::DIRECT_LIGHT, selected);
+                    UpdateComponent<Boom::PointLightComponent>(Boom::ComponentID::POINT_LIGHT, selected);
+                    UpdateComponent<Boom::SpotLightComponent>(Boom::ComponentID::SPOT_LIGHT, selected);
+                    UpdateComponent<Boom::SoundComponent>(Boom::ComponentID::SOUND, selected);
+                    UpdateComponent<Boom::ScriptComponent>(Boom::ComponentID::SCRIPT, selected);
+                    ImGui::EndTable();
+                }
+            }
+            ImGui::EndChild();
+            ImGui::EndPopup();
+        }
+    }
+
+    template <class Type> 
+    void InspectorPanel::UpdateComponent(Boom::ComponentID id, Boom::Entity& selected) {
+        if (!selected.Has<Type>()) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::PushID(static_cast<int>(id));
+            if (ImGui::Selectable(COMPONENT_NAMES[static_cast<size_t>(id)].data())) { 
+                selected.Attach<Type>();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::PopID();
         }
     }
 

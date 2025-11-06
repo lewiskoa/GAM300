@@ -4,6 +4,7 @@
 #include <entt/entt.hpp>
 #include "Vendors/imgui/imgui.h"
 #include "GlobalConstants.h"
+#include "ECS/ECS.hpp"
 
 namespace Boom { struct AppContext; struct AppInterface; }
 
@@ -30,6 +31,8 @@ namespace EditorUI {
         void EntityUpdate();
         void AssetUpdate();
         void DeleteUpdate();
+        void ComponentSelector(Boom::Entity& selected);
+        template <class Type> void UpdateComponent(Boom::ComponentID id, Boom::Entity& selected);
 
         void AcceptIDDrop(uint64_t& data, char const* payloadType);
         template <std::string_view const& Payload>

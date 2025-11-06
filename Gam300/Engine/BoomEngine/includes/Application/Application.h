@@ -460,30 +460,6 @@ namespace Boom
                 glm::mat4 dbgView(1.0f);
                 glm::mat4 dbgProj(1.0f);
                 glm::vec3 dbgCamPos(0.0f);
-                //camera (always set up, but rotation freezes when paused)
-                //EnttView<Entity, CameraComponent>([this, &curMP, &prevMP](auto entity, CameraComponent& comp) {
-                //    //Transform3D& transform{ entity.template Get<TransformComponent>().transform };
-
-                //    ////get dir vector of current camera
-                //    //transform.rotate.x += m_Context->window->camRot.x;
-                //    //transform.rotate.y += m_Context->window->camRot.y;
-                //    //glm::quat quat{ glm::radians(transform.rotate) };
-                //    //glm::vec3 dir{ quat * m_Context->window->camMoveDir };
-                //    //transform.translate += dir;
-
-                //    //camera.attachCamera(&comp.camera);
-                //    //if (curMP == prevMP) {
-                //    //    m_Context->window->camRot = {};
-                //    //    if (m_Context->window->isMiddleClickDown)
-                //    //        m_Context->window->camMoveDir = {};
-                //    //}
-
-                //    //m_Context->renderer->SetCamera(comp.camera, transform);
-
-                //});
-
-
-
 
                 EnttView<Entity, CameraComponent>([this, &curMP, &prevMP, &dbgView, &dbgProj, &dbgCamPos](auto entity, CameraComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
@@ -531,14 +507,13 @@ namespace Boom
                     static bool debugModelsPrinted = false;
 
                     if (!debugModelsPrinted && renderCount < 5) {
-                        BOOM_INFO("[Render] Rendering model entity, ModelID: {}, MaterialID: {}",
-                            comp.modelID, comp.materialID);
+                        BOOM_INFO("[Render] Rendering model entity, ModelID: {}, MaterialID: {}", comp.modelID, comp.materialID);
                     }
 
                     ModelAsset* modelPtr{ m_Context->assets->TryGet<ModelAsset>(comp.modelID) };
 
-                    if (!modelPtr) {
-                        BOOM_ERROR("[Render] Model data is null for ModelID: {} ({})", comp.modelID, comp.modelName);
+                    if (!modelPtr || modelPtr->uid == EMPTY_ASSET) {
+                        //BOOM_ERROR("[Render] Model data is null for ModelID: {} ({})", comp.modelID, comp.modelName);
                         return; // Skip rendering this model
                     }
                     ModelAsset& model{ *modelPtr };
@@ -569,7 +544,7 @@ namespace Boom
                             transform.scale.x, transform.scale.y, transform.scale.z);
                     }
 
-                    //draw model with material if it has one
+                    //draw model with material if it has one otherwise draw default material
                     if (comp.materialID != EMPTY_ASSET) {
                         auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
 
@@ -594,6 +569,9 @@ namespace Boom
                         }
 
                         m_Context->renderer->Draw(model.data, worldTransform, material.data);
+                    }
+                    else {
+                        m_Context->renderer->Draw(model.data, worldTransform);
                     }
 
                     renderCount++;
