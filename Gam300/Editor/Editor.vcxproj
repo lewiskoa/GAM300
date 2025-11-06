@@ -81,9 +81,11 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="VendorSettings.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="VendorSettings.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <!-- (Optional legacy) IncludePath – harmless to keep -->
@@ -292,6 +294,7 @@ if exist "$(glew_BIN_DIRS)" xcopy /y /i "$(glew_BIN_DIRS)\*.dll" "$(TargetDir)"<
   <ItemGroup>
     <None Include="src\Vendors\imgui\examples\example_glfw_wgpu\web\index.html" />
     <None Include="src\Vendors\imgui\examples\libs\emscripten\shell_minimal.html" />
+    <None Include="VendorSettings.props" />
   </ItemGroup>
   <!-- Resolve conanbuild folder: prefer SolutionDir, fallback to ProjectDir -->
   <PropertyGroup Label="ConanImportSettings">

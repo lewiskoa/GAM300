@@ -5,7 +5,7 @@
 #include <DetourNavMesh.h>
 #include <DetourNavMeshQuery.h>
 #include <DetourCommon.h>
-#include <Recast.h>
+//#include <Recast.h>
 #include <DetourAlloc.h>
 namespace Boom {
 
