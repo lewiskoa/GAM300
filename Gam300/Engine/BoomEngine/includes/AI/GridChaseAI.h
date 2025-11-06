@@ -1,9 +1,12 @@
 // GridChaseAI.h
 #pragma once
+#include "Core.h"
 #include "GridAStar.h"
 #include "GridReverseDjik.h"
 #include "ECS/ECS.hpp"
-#include "Core.h"
+
+
+
 namespace Boom {
 
     struct VelocityComponent { glm::vec3 vel{ 0 }; };

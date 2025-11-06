@@ -102,11 +102,7 @@ namespace EditorUI {
                 const bool focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && hovered;
 
                 // Debug what's blocking input
-                BOOM_INFO("IsItemHovered (RectOnly): {}", ImGui::IsItemHovered(ImGuiHoveredFlags_RectOnly));
-                BOOM_INFO("IsItemHovered (AllowWhenBlocked): {}", ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem));
-                BOOM_INFO("IsWindowHovered: {}", ImGui::IsWindowHovered());
-                BOOM_INFO("IsAnyItemHovered: {}", ImGui::IsAnyItemHovered());
-                BOOM_INFO("IsAnyItemActive: {}", ImGui::IsAnyItemActive());
+            
 
                 // 8) Build camera matrices
                 bool gizmoWantsInput = false;

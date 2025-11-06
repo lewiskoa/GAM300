@@ -180,10 +180,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="includes\AI\DetourNavSystem.h" />
     <ClInclude Include="includes\AI\Grid.h" />
     <ClInclude Include="includes\AI\GridAStar.h" />
     <ClInclude Include="includes\AI\GridChaseAI.h" />
     <ClInclude Include="includes\AI\GridReverseDjik.h" />
+    <ClInclude Include="includes\AI\NavAgent.h" />
     <ClInclude Include="includes\Application\Application.h" />
     <ClInclude Include="includes\Application\Context.h" />
     <ClInclude Include="includes\Application\Interface.h" />
@@ -239,6 +241,8 @@
     <ClInclude Include="thirdparty\dotnet\nethost.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="includes\AI\DetourNavSystem.cpp" />
+    <ClCompile Include="includes\AI\NavAgent.cpp" />
     <ClCompile Include="includes\Audio\Audio.cpp" />
     <ClCompile Include="src\Application\Context.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
