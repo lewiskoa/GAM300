@@ -65,9 +65,11 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="VendorSettings.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="VendorSettings.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -137,6 +139,11 @@
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>
+				$(CompressonatorInc);
+				$(FMODCoreInc);$(FMODStudioInc);%(AdditionalIncludeDirectories)
+			;$(ProjectDir)Vendors;$(ProjectDir)Vendors\Recast\Include;$(ProjectDir)Vendors\DetourCrowd\Include;$(ProjectDir)Vendors\DetourTileCache\Include;$(ProjectDir)Vendors\Detour\Include;$(ProjectDir)Vendors\DebugUtils\Include</AdditionalIncludeDirectories>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -159,9 +166,10 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)\Core</PrecompiledHeaderOutputFile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\Vendors\xproperty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\Vendors\xproperty;%(AdditionalIncludeDirectories);$(ProjectDir)Vendors;$(ProjectDir)Vendors\Recast\Include;$(ProjectDir)Vendors\DetourCrowd\Include;$(ProjectDir)Vendors\DetourTileCache\Include;$(ProjectDir)Vendors\Detour\Include;$(ProjectDir)Vendors\DebugUtils\Include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4273</DisableSpecificWarnings>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -272,6 +280,9 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="thirdparty\dotnet\nethost.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="VendorSettings.props" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
