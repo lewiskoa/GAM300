@@ -1,10 +1,6 @@
 #include "Core.h"
 #include "DetourNavSystem.h"
-#include <DetourNavMesh.h>
-#include <DetourNavMeshQuery.h>
-#include <DetourCommon.h>
-//#include <Recast.h>
-#include <DetourAlloc.h>
+
 #include <cstdio>
 #include <cstring>
 #include <fstream>

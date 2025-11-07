@@ -2,10 +2,12 @@
 
 #include "Core.h"
 
-struct dtNavMesh;
-struct dtNavMeshQuery;
-struct dtQueryFilter;
-using dtPolyRef = unsigned long long;  // Detour typedef
+
+#include <DetourNavMesh.h>
+#include <DetourNavMeshQuery.h>
+#include <DetourCommon.h>
+#include <DetourAlloc.h>
+//#include <Recast.h>
 
 namespace Boom {
 
