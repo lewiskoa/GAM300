@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<PropertyGroup Label="UserMacros" />
+
+	<!-- Vendor Include Paths -->
+	<ItemDefinitionGroup>
+		<ClCompile>
+			<AdditionalIncludeDirectories>
+				$(ProjectDir)src\Vendors;
+				$(ProjectDir)src\Vendors\Recast\Include;
+				%(AdditionalIncludeDirectories)
+			</AdditionalIncludeDirectories>
+		</ClCompile>
+	</ItemDefinitionGroup>
+
+	<!-- Disable PCH and warnings for all vendor files -->
+	<ItemDefinitionGroup>
+		<ClCompile>
+			<!-- Vendor files: No PCH, No Warnings, No Error Treatment -->
+		</ClCompile>
+	</ItemDefinitionGroup>
+
+	<ItemGroup>
+		<!-- Recast Navigation -->
+		<ClCompile Include="$(ProjectDir)Vendors\Recast\Source\*.cpp">
+			<PrecompiledHeader>NotUsing</PrecompiledHeader>
+			<WarningLevel>TurnOffAllWarnings</WarningLevel>
+			<TreatWarningAsError>false</TreatWarningAsError>
+		</ClCompile>
+
+		<ClCompile Include="$(ProjectDir)Vendors\Detour\Source\*.cpp">
+			<PrecompiledHeader>NotUsing</PrecompiledHeader>
+			<WarningLevel>TurnOffAllWarnings</WarningLevel>
+			<TreatWarningAsError>false</TreatWarningAsError>
+		</ClCompile>
+
+		<ClCompile Include="$(ProjectDir)Vendors\DetourCrowd\Source\*.cpp">
+			<PrecompiledHeader>NotUsing</PrecompiledHeader>
+			<WarningLevel>TurnOffAllWarnings</WarningLevel>
+			<TreatWarningAsError>false</TreatWarningAsError>
+		</ClCompile>
+
+		<ClCompile Include="$(ProjectDir)Vendors\DetourTileCache\Source\*.cpp">
+			<PrecompiledHeader>NotUsing</PrecompiledHeader>
+			<WarningLevel>TurnOffAllWarnings</WarningLevel>
+			<TreatWarningAsError>false</TreatWarningAsError>
+		</ClCompile>
+
+		<ClCompile Include="$(ProjectDir)Vendors\DebugUtils\Source\*.cpp">
+			<PrecompiledHeader>NotUsing</PrecompiledHeader>
+			<WarningLevel>TurnOffAllWarnings</WarningLevel>
+			<TreatWarningAsError>false</TreatWarningAsError>
+		</ClCompile>
+
+		<!-- Add any other vendor libraries here in the future -->
+		<!-- Example for ImGuizmo if you move it to engine:
+    <ClCompile Include="$(ProjectDir)Vendors\ImGuizmo\*.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+      <TreatWarningAsError>false</TreatWarningAsError>
+    </ClCompile>
+    -->
+	</ItemGroup>
+</Project>
