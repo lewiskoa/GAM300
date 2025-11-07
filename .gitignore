@@ -12,7 +12,6 @@
 *.exp
 *.iobj
 *.ipdb
-bin
 Debug
 Release
 Gam300/conanbuild/cmakedeps_macros.cmake
