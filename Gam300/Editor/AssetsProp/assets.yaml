@@ -213,7 +213,7 @@ ASSETS:
         transform:
           Translate: [0, 0, 0]
           Rotate: [0, 0, 0]
-          Scale: [1, 1, 1]
+          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
       HasJoints: true
   - Type: MODEL
     UID: 1538943657792452404
@@ -257,7 +257,7 @@ ASSETS:
         transform:
           Translate: [0, 0, 0]
           Rotate: [0, 0, 0]
-          Scale: [1, 1, 1]
+          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
       HasJoints: true
   - Type: MODEL
     UID: 7633162898494281895
@@ -301,7 +301,7 @@ ASSETS:
         transform:
           Translate: [0, 0, 0]
           Rotate: [0, 0, 0]
-          Scale: [1, 1, 1]
+          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
       HasJoints: true
   - Type: MODEL
     UID: 11271718863933913868
@@ -312,7 +312,7 @@ ASSETS:
         transform:
           Translate: [0, 0, 0]
           Rotate: [0, 0, 0]
-          Scale: [1, 1, 1]
+          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
       HasJoints: true
   - Type: MODEL
     UID: 5190089082055736376
@@ -323,5 +323,5 @@ ASSETS:
         transform:
           Translate: [0, 0, 0]
           Rotate: [0, 0, 0]
-          Scale: [1, 1, 1]
+          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
       HasJoints: true

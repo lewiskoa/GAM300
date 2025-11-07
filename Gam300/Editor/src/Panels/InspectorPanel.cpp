@@ -160,7 +160,7 @@ namespace EditorUI {
         // ===== COMPONENTS =====
         if (selected.Has<Boom::TransformComponent>()) {
             auto& tc = selected.Get<Boom::TransformComponent>();
-            if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
                 //modified as dragging speed should vary between variables
                 ImGui::DragFloat3("Translate", &tc.transform.translate[0], 0.01f); 
                 ImGui::DragFloat3("Rotation", &tc.transform.rotate[0], .3142f);
