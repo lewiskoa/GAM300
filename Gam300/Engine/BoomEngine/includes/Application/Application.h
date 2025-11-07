@@ -2,16 +2,17 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
+#pragma once
 #ifdef _WIN32
-#ifndef MAX_PATH
-#define MAX_PATH 260
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #endif
-typedef unsigned long DWORD;
-extern "C" __declspec(dllimport) DWORD __stdcall GetModuleFileNameA(
-    void* hModule,
-    char* lpFilename,
-    DWORD nSize
-);
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#undef APIENTRY
+#include <Windows.h>
+
 #endif
 
 #include "Interface.h"

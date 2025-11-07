@@ -18,8 +18,9 @@ target_compile_definitions(BoomEngine
     GLEW_STATIC
     $<$<CONFIG:Debug>:MY_DEBUG_DEF>
     $<$<CONFIG:Release>:NDEBUG>
+    WIN32_LEAN_AND_MEAN
+    NOMINMAX
 )
-
 # 2c) Your custom compiler flags
 target_compile_options(BoomEngine
   PRIVATE
