@@ -8,6 +8,7 @@
 			<AdditionalIncludeDirectories>
 				$(ProjectDir)src\Vendors;
 				$(ProjectDir)src\Vendors\Recast\Include;
+				$(ProjectDir)src\Vendors\DebugUtils\Include;
 				%(AdditionalIncludeDirectories)
 			</AdditionalIncludeDirectories>
 		</ClCompile>
