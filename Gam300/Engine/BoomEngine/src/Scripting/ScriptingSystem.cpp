@@ -1,22 +1,41 @@
 #include "Core.h"
 #include "Scripting/ScriptingSystem.h"
 
-void ScriptingSystem::Init(const ScriptRuntime::EngineHooks& hooks) {
-    ScriptRuntime::Initialize(hooks);     // or ScriptRuntime::SetHooks(hooks)
-}
+namespace Boom {
 
-void ScriptingSystem::Shutdown() {
-    ScriptRuntime::Shutdown();
-}
+    bool ScriptingSystem::Init(const std::string& scriptsDir)
+    {
+        m_ScriptsDir = scriptsDir;
+        if (!m_Mono.Init("BoomDomain", scriptsDir.c_str())) return false;
+#ifdef DEBUG
+        BOOM_INFO("[Scripting] Mono ready. {}", m_Mono.RuntimeInfo());
+#endif // DEBUG
+        return true;
+    }
 
-void ScriptingSystem::Update(float dt) {
-    ScriptRuntime::UpdateAll(dt);
-}
+    void ScriptingSystem::Shutdown()
+    {
+        m_Scripts = nullptr;
+        m_Mono.Shutdown();
+    }
 
-std::uint64_t ScriptingSystem::Create(const char* typeName, Boom::EntityId e) {
-    return ScriptRuntime::CreateInstance(typeName, e);
-}
+    bool ScriptingSystem::LoadScriptsDll(const std::string& dllPath)
+    {
+        m_Scripts = m_Mono.LoadAssembly(dllPath.c_str());
+        return (m_Scripts != nullptr);
+    }
 
-void ScriptingSystem::Destroy(std::uint64_t id) {
-    ScriptRuntime::DestroyInstance(id);
-}
+    bool ScriptingSystem::CallStart()
+    {
+        // Fully-qualified static method: Namespace.Type:Method(signature)
+        return m_Mono.InvokeStatic("Scripts.Entry:Start()");
+    }
+
+    bool ScriptingSystem::CallUpdate(float dt)
+    {
+        void* args[1];
+        args[0] = &dt; // Mono expects float* for single-precision
+        return m_Mono.InvokeStatic("Scripts.Entry:Update(single)", args, 1);
+    }
+
+} // namespace Boom

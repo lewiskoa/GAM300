@@ -99,7 +99,6 @@ namespace EditorUI {
                 // 7) Check hover/focus state
                 const bool hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
                 const bool focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && hovered;
-
                 // 8) Build camera matrices
                 bool gizmoWantsInput = false;
                 if (m_Ctx)

@@ -1,16 +1,23 @@
 #pragma once
-#include "Core.h"
-#include "Scripting/ScriptRuntime.h"
+#include <string>
+#include "Scripting/MonoRuntime.h"
 
-// A thin engine-facing wrapper that orchestrates ScriptRuntime.
-// (Nothing here redefines hooks or globals.)
-class ScriptingSystem {
-public:
-    void Init(const ScriptRuntime::EngineHooks& hooks);
-    void Shutdown();
-    void Update(float dt);
+namespace Boom {
 
-    // Optional sugar helpers for your engine/game code:
-    std::uint64_t Create(const char* typeName, Boom::EntityId e);
-    void          Destroy(std::uint64_t id);
-};
+    class BOOM_API ScriptingSystem {
+    public:
+        bool Init(const std::string& scriptsDir);     // call from Editor on startup
+        void Shutdown();
+
+        // quick helpers
+        bool LoadScriptsDll(const std::string& dllPath);
+        bool CallStart();                  // calls Scripts.Entry:Start()
+        bool CallUpdate(float dt);         // calls Scripts.Entry:Update(float)
+
+    private:
+        MonoRuntime m_Mono;
+        MonoAssembly* m_Scripts = nullptr;
+        std::string m_ScriptsDir;
+    };
+
+} // namespace Boom

@@ -532,7 +532,8 @@ IMPLEMENTING SUPPORT for ImGuiBackendFlags_RendererHasTextures:
                          moved ImGuiConfigFlags_NavNoCaptureKeyboard to standalone io.ConfigNavCaptureKeyboard bool (note the inverted value!).
                          kept legacy names (will obsolete) + code that copies settings once the first time. Dynamically changing the old value won't work. Switch to using the new value!
  - 2024/10/10 (1.91.4) - the typedef for ImTextureID now defaults to ImU64 instead of void*. (#1641)
-                         this removes the requirement to redefine it for backends which are e.g. storing descriptor sets or other 64-bits structures when building on 32-bits archs. It therefore simplify various building scripts/helpers.
+                         this removes the requirement to redefine it for backends which are e.g. storing de
+                         or sets or other 64-bits structures when building on 32-bits archs. It therefore simplify various building scripts/helpers.
                          you may have compile-time issues if you were casting to 'void*' instead of 'ImTextureID' when passing your types to functions taking ImTextureID values, e.g. ImGui::Image().
                          in doubt it is almost always better to do an intermediate intptr_t cast, since it allows casting any pointer/integer type without warning:
                             - May warn:    ImGui::Image((void*)MyTextureData, ...);

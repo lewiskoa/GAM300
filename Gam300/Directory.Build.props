@@ -1,86 +1,100 @@
-<Project>	
-	<ImportGroup Label="PropertySheets">
-		<!-- Debug -->
-		<Import Project="conanbuild\Debug\conandeps.props"
-				Condition="Exists('conanbuild\Debug\conandeps.props') AND '$(Configuration)'=='Debug'" />
-		<!-- Release -->
-		<Import Project="conanbuild\Release\conandeps.props"
-				Condition="Exists('conanbuild\Release\conandeps.props') AND '$(Configuration)'=='Release'" />
-	</ImportGroup>
+<Project>
+  <!-- Conan generated properties per-config -->
+  <ImportGroup Label="PropertySheets">
+    <!-- Debug -->
+    <Import Project="conanbuild\Debug\conandeps.props"
+            Condition="Exists('conanbuild\Debug\conandeps.props') AND '$(Configuration)'=='Debug'" />
+    <!-- Release -->
+    <Import Project="conanbuild\Release\conandeps.props"
+            Condition="Exists('conanbuild\Release\conandeps.props') AND '$(Configuration)'=='Release'" />
+  </ImportGroup>
 
-	<ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
-		<ClCompile>
-			<!--MACRO DEFINITION FOR DEBUG MODE-->
-			<PreprocessorDefinitions>
-				BOOM_ENABLE_LOG;
-				%(PreprocessorDefinitions)
-			</PreprocessorDefinitions>
-		</ClCompile>
-	</ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>
+        BOOM_ENABLE_LOG;
+        %(PreprocessorDefinitions)
+      </PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
 
-	<PropertyGroup>
-		<!-- 1) Engine import lib folder -->
-		<AdditionalLibraryDirectories>
-			$(MSBuildThisFileDirectory)Engine\BoomEngine\x64\$(Configuration);
-			%(AdditionalLibraryDirectories)
-		</AdditionalLibraryDirectories>
+  <!-- ===== Engine import lib for Editor linking ===== -->
+  <PropertyGroup>
+    <AdditionalLibraryDirectories>
+      $(MSBuildThisFileDirectory)Engine\BoomEngine\x64\$(Configuration);
+      %(AdditionalLibraryDirectories)
+    </AdditionalLibraryDirectories>
+    <AdditionalDependencies>
+      BoomEngine.lib;
+      %(AdditionalDependencies)
+    </AdditionalDependencies>
+  </PropertyGroup>
 
-		<!-- 2) Pull in the engine import library itself -->
-		<AdditionalDependencies>
-			BoomEngine.lib;
-			%(AdditionalDependencies)
-		</AdditionalDependencies>
-	</PropertyGroup>
+  <!-- ===== Compressonator ===== -->
+  <PropertyGroup Label="Compressonator">
+    <CompressonatorRoot>$(SolutionDir)..\Compressonator</CompressonatorRoot>
+    <CompressonatorInc>$(CompressonatorRoot)\include</CompressonatorInc>
+    <CompressonatorLibDir>$(CompressonatorRoot)</CompressonatorLibDir>
+    <CompressonatorDebugSuffix Condition="'$(Configuration)'=='Debug'">d</CompressonatorDebugSuffix>
+  </PropertyGroup>
 
-	<PropertyGroup Label="Compressonator">
-		<!-- ..\ because Directory.Build.props sits next to the .sln in Gam300\ -->
-		<CompressonatorRoot>$(SolutionDir)..\Compressonator</CompressonatorRoot>
-		<CompressonatorInc>$(CompressonatorRoot)\include</CompressonatorInc>
-		<CompressonatorLibDir>$(CompressonatorRoot)</CompressonatorLibDir>
+  <!-- ===== FMOD ===== -->
+  <PropertyGroup Label="FMOD">
+    <FMODRoot>$(SolutionDir)..\FMOD Studio API Windows\api</FMODRoot>
+    <FMODCoreInc>$(FMODRoot)\core\inc</FMODCoreInc>
+    <FMODStudioInc>$(FMODRoot)\studio\inc</FMODStudioInc>
+    <FMODCoreLibDir>$(FMODRoot)\core\lib\x64</FMODCoreLibDir>
+    <FMODStudioLibDir>$(FMODRoot)\studio\lib\x64</FMODStudioLibDir>
+    <FMODDebugSuffix Condition="'$(Configuration)'=='Debug'">L</FMODDebugSuffix>
+  </PropertyGroup>
 
-		<!-- Debug builds use the 'd' suffixed lib -->
-		<CompressonatorDebugSuffix Condition="'$(Configuration)'=='Debug'">d</CompressonatorDebugSuffix>
-	</PropertyGroup>
-	
-	<PropertyGroup Label="FMOD">
-		<!-- ..\ because Directory.Build.props sits next to the .sln in Gam300\ -->
-		<FMODRoot>$(SolutionDir)..\FMOD Studio API Windows\api</FMODRoot>
-		<FMODCoreInc>$(FMODRoot)\core\inc</FMODCoreInc>
-		<FMODStudioInc>$(FMODRoot)\studio\inc</FMODStudioInc>
-		<FMODCoreLibDir>$(FMODRoot)\core\lib\x64</FMODCoreLibDir>
-		<FMODStudioLibDir>$(FMODRoot)\studio\lib\x64</FMODStudioLibDir>
+  <!-- ===== MONO (sibling of Gam300: $(SolutionDir)..\mono ) ===== -->
+  <PropertyGroup Label="Mono">
+    <MonoRoot>$(SolutionDir)..\mono</MonoRoot>
+    <MonoInc>$(MonoRoot)\include\mono-2.0</MonoInc>
+    <MonoLibDir>$(MonoRoot)\lib</MonoLibDir>
+    <MonoBinDir>$(MonoRoot)\bin</MonoBinDir>
+  </PropertyGroup>
 
-		<!-- Debug builds use the 'L' suffixed libs/DLLs -->
-		<FMODDebugSuffix Condition="'$(Configuration)'=='Debug'">L</FMODDebugSuffix>
-	</PropertyGroup>
-	
-	<ItemDefinitionGroup>
-		<ClCompile>
-			<AdditionalIncludeDirectories>
-				$(CompressonatorInc);
-				$(FMODCoreInc);$(FMODStudioInc);%(AdditionalIncludeDirectories)
-			</AdditionalIncludeDirectories>
-		</ClCompile>
+  <!-- ===== Common compile/link settings for all projects ===== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>
+        $(CompressonatorInc);
+        $(FMODCoreInc);$(FMODStudioInc);
+        $(MonoInc);
+        %(AdditionalIncludeDirectories)
+      </AdditionalIncludeDirectories>
+    </ClCompile>
 
-		<Link>
-			<AdditionalLibraryDirectories>
-				$(CompressonatorLibDir);
-				$(FMODCoreLibDir);$(FMODStudioLibDir);%(AdditionalLibraryDirectories)
-			</AdditionalLibraryDirectories>
-			<!-- Studio pulls in Core API; keep both to be explicit -->
-			<AdditionalDependencies>
-				Compressonator_MD$(CompressonatorDebugSuffix).lib;
-				fmod$(FMODDebugSuffix)_vc.lib;fmodstudio$(FMODDebugSuffix)_vc.lib;%(AdditionalDependencies)
-			</AdditionalDependencies>
-		</Link>
+    <Link>
+      <AdditionalLibraryDirectories>
+        $(CompressonatorLibDir);
+        $(FMODCoreLibDir);$(FMODStudioLibDir);
+        $(MonoLibDir);
+        %(AdditionalLibraryDirectories)
+      </AdditionalLibraryDirectories>
+      <AdditionalDependencies>
+        Compressonator_MD$(CompressonatorDebugSuffix).lib;
+        fmod$(FMODDebugSuffix)_vc.lib;fmodstudio$(FMODDebugSuffix)_vc.lib;
+        mono-2.0-sgen.lib;
+        %(AdditionalDependencies)
+      </AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
 
-		<!-- Copy the correct DLLs next to the EXE on every build -->
-		<PostBuildEvent>
-			<Command>
-				xcopy /Y /D "$(FMODCoreLibDir)\fmod$(FMODDebugSuffix).dll" "$(OutDir)"
-				xcopy /Y /D "$(FMODStudioLibDir)\fmodstudio$(FMODDebugSuffix).dll" "$(OutDir)"
-			</Command>
-		</PostBuildEvent>
-	</ItemDefinitionGroup>
-
+  <!-- ===== Copy runtime DLLs for Editor only ===== -->
+  <ItemDefinitionGroup Condition="'$(MSBuildProjectName)'=='Editor'">
+    <PostBuildEvent>
+      <Command>
+        REM --- FMOD runtime ---
+        xcopy /Y /D "$(FMODCoreLibDir)\fmod$(FMODDebugSuffix).dll" "$(OutDir)"
+        xcopy /Y /D "$(FMODStudioLibDir)\fmodstudio$(FMODDebugSuffix).dll" "$(OutDir)"
+        REM --- Mono runtime (required by managed scripting) ---
+        xcopy /Y /D "$(MonoBinDir)\mono-2.0-sgen.dll" "$(OutDir)"
+        REM Optional helper (present in many Mono builds)
+        if exist "$(MonoBinDir)\MonoPosixHelper.dll" xcopy /Y /D "$(MonoBinDir)\MonoPosixHelper.dll" "$(OutDir)"
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
 </Project>
