@@ -637,18 +637,19 @@ namespace EditorUI {
             ImGui::Separator();
             if (ImGui::BeginChild("ComponentScrollArea", ImVec2(0, 250), false, ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
                 if (ImGui::BeginTable("Component Table", 1, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg)) {
+                    //commented out code are components that are incomplete (will crash when trying to add them/nothing to show in inspector)
                     UpdateComponent<Boom::InfoComponent>(Boom::ComponentID::INFO, selected);
                     UpdateComponent<Boom::TransformComponent>(Boom::ComponentID::TRANSFORM, selected);
                     UpdateComponent<Boom::CameraComponent>(Boom::ComponentID::CAMERA, selected);
-                    UpdateComponent<Boom::RigidBodyComponent>(Boom::ComponentID::RIGIDBODY, selected);
-                    UpdateComponent<Boom::ColliderComponent>(Boom::ComponentID::COLLIDER, selected);
+                    //UpdateComponent<Boom::RigidBodyComponent>(Boom::ComponentID::RIGIDBODY, selected);
+                    //UpdateComponent<Boom::ColliderComponent>(Boom::ComponentID::COLLIDER, selected);
                     UpdateComponent<Boom::ModelComponent>(Boom::ComponentID::MODEL, selected);
-                    UpdateComponent<Boom::AnimatorComponent>(Boom::ComponentID::ANIMATOR, selected);
+                    //UpdateComponent<Boom::AnimatorComponent>(Boom::ComponentID::ANIMATOR, selected);
                     UpdateComponent<Boom::DirectLightComponent>(Boom::ComponentID::DIRECT_LIGHT, selected);
                     UpdateComponent<Boom::PointLightComponent>(Boom::ComponentID::POINT_LIGHT, selected);
                     UpdateComponent<Boom::SpotLightComponent>(Boom::ComponentID::SPOT_LIGHT, selected);
-                    UpdateComponent<Boom::SoundComponent>(Boom::ComponentID::SOUND, selected);
-                    UpdateComponent<Boom::ScriptComponent>(Boom::ComponentID::SCRIPT, selected);
+                    //UpdateComponent<Boom::SoundComponent>(Boom::ComponentID::SOUND, selected);
+                    //UpdateComponent<Boom::ScriptComponent>(Boom::ComponentID::SCRIPT, selected);
                     ImGui::EndTable();
                 }
             }
