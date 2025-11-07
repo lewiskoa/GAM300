@@ -16,36 +16,9 @@
     <ClCompile Include="src\Scripting\ScriptRunTime.cpp" />
     <ClCompile Include="src\Textures\Texture.cpp" />
     <ClCompile Include="src\Textures\Compression.cpp" />
-    <ClCompile Include="Vendors\DebugUtils\Source\DebugDraw.cpp" />
-    <ClCompile Include="Vendors\DebugUtils\Source\DetourDebugDraw.cpp" />
-    <ClCompile Include="Vendors\DebugUtils\Source\RecastDebugDraw.cpp" />
-    <ClCompile Include="Vendors\DebugUtils\Source\RecastDump.cpp" />
-    <ClCompile Include="Vendors\Detour\Source\DetourAlloc.cpp" />
-    <ClCompile Include="Vendors\Detour\Source\DetourAssert.cpp" />
-    <ClCompile Include="Vendors\Detour\Source\DetourCommon.cpp" />
-    <ClCompile Include="Vendors\Detour\Source\DetourNavMesh.cpp" />
-    <ClCompile Include="Vendors\Detour\Source\DetourNavMeshBuilder.cpp" />
-    <ClCompile Include="Vendors\Detour\Source\DetourNavMeshQuery.cpp" />
-    <ClCompile Include="Vendors\Detour\Source\DetourNode.cpp" />
-    <ClCompile Include="Vendors\DetourCrowd\Source\DetourCrowd.cpp" />
-    <ClCompile Include="Vendors\DetourCrowd\Source\DetourLocalBoundary.cpp" />
-    <ClCompile Include="Vendors\DetourCrowd\Source\DetourObstacleAvoidance.cpp" />
-    <ClCompile Include="Vendors\DetourCrowd\Source\DetourPathCorridor.cpp" />
-    <ClCompile Include="Vendors\DetourCrowd\Source\DetourPathQueue.cpp" />
-    <ClCompile Include="Vendors\DetourCrowd\Source\DetourProximityGrid.cpp" />
-    <ClCompile Include="Vendors\DetourTileCache\Source\DetourTileCache.cpp" />
-    <ClCompile Include="Vendors\DetourTileCache\Source\DetourTileCacheBuilder.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\Recast.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\RecastAlloc.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\RecastArea.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\RecastAssert.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\RecastContour.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\RecastFilter.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\RecastLayers.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\RecastMesh.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\RecastMeshDetail.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\RecastRasterization.cpp" />
-    <ClCompile Include="Vendors\Recast\Source\RecastRegion.cpp" />
+    <ClCompile Include="includes\AI\DetourNavSystem.cpp" />
+    <ClCompile Include="includes\AI\NavAgent.cpp" />
+    <ClCompile Include="includes\AI\DetourBuildAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Application\Application.h" />
@@ -105,6 +78,9 @@
     <ClInclude Include="includes\AI\GridAStar.h" />
     <ClInclude Include="includes\AI\GridReverseDjik.h" />
     <ClInclude Include="includes\AI\GridChaseAI.h" />
+    <ClInclude Include="includes\AI\DetourNavSystem.h" />
+    <ClInclude Include="includes\AI\NavAgent.h" />
+    <ClInclude Include="includes\AI\DetourBuildAPI.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="thirdparty\dotnet\nethost.lib" />

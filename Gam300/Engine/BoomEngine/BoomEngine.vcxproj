@@ -180,6 +180,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="includes\AI\DetourBuildAPI.h" />
     <ClInclude Include="includes\AI\DetourNavSystem.h" />
     <ClInclude Include="includes\AI\Grid.h" />
     <ClInclude Include="includes\AI\GridAStar.h" />
@@ -241,6 +242,7 @@
     <ClInclude Include="thirdparty\dotnet\nethost.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="includes\AI\DetourBuildAPI.cpp" />
     <ClCompile Include="includes\AI\DetourNavSystem.cpp" />
     <ClCompile Include="includes\AI\NavAgent.cpp" />
     <ClCompile Include="includes\Audio\Audio.cpp" />
