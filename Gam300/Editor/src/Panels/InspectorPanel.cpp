@@ -163,7 +163,13 @@ namespace EditorUI {
         // ===== COMPONENTS =====
         if (selected.Has<Boom::TransformComponent>()) {
             auto& tc = selected.Get<Boom::TransformComponent>();
-            DrawComponentSection("Transform", &tc, Boom::GetTransformComponentProperties, false, nullptr);
+            if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
+                //modified as dragging speed should vary between variables
+                ImGui::DragFloat3("Translate", &tc.transform.translate[0], 0.01f); 
+                ImGui::DragFloat3("Rotation", &tc.transform.rotate[0], .3142f);
+                ImGui::DragFloat3("Scale", &tc.transform.scale[0], 0.01f);
+                tc.transform.scale = glm::max(glm::vec3(0.01f), tc.transform.scale); //limit scale to positive
+            }
         }
 
         if (selected.Has<Boom::CameraComponent>()) {
@@ -177,7 +183,8 @@ namespace EditorUI {
             auto& mc = selected.Get<Boom::ModelComponent>();
 
             // Use CollapsingHeader to match the style
-            if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap)) {
+                ComponentSettings<Boom::ModelComponent>(ctx);
 
                 // --- UI for assigning model and material ---
                 ImGui::BeginTable("##maps", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersInnerV);
@@ -496,6 +503,7 @@ namespace EditorUI {
             ImGui::OpenPopup("AddComponentPopup");
         }
         // (AddComponentPopup contents go here)
+        ComponentSelector(selected);
     }
 
     void InspectorPanel::AssetUpdate() {
@@ -542,6 +550,16 @@ namespace EditorUI {
                         ImGui::SliderInt("Mip Level", &tex->data->mipLevel, 1, 24);
                         ImGui::Checkbox("Gamma", &tex->data->isGamma);
                     }
+                }
+            }
+            else if (asset->type == AssetType::MODEL) {
+                ModelAsset* m{ dynamic_cast<ModelAsset*>(asset) };
+                //TODO: showcase model without texture
+
+                if (ImGui::CollapsingHeader("Model Offset", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::DragFloat3("Translate", &m->data->modelTransform.translate[0], 0.01f);
+                    ImGui::DragFloat3("Rotation", &m->data->modelTransform.rotate[0], 1.f, 0.f, 360.f);
+                    ImGui::DragFloat3("Scale", &m->data->modelTransform.scale[0], 0.01f, 0.01f);
                 }
             }
             else {
@@ -608,6 +626,64 @@ namespace EditorUI {
                 }
                 ImGui::EndPopup();
             }
+        }
+    }
+
+    void InspectorPanel::ComponentSelector(Boom::Entity& selected) {
+        if (ImGui::BeginPopup("AddComponentPopup")) {
+            ImGui::SetNextWindowSizeConstraints(ImVec2(300, 200), ImVec2(500, 600));
+
+            ImGui::Text("Select component to add:");
+            ImGui::Separator();
+            if (ImGui::BeginChild("ComponentScrollArea", ImVec2(0, 250), false, ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
+                if (ImGui::BeginTable("Component Table", 1, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg)) {
+                    UpdateComponent<Boom::InfoComponent>(Boom::ComponentID::INFO, selected);
+                    UpdateComponent<Boom::TransformComponent>(Boom::ComponentID::TRANSFORM, selected);
+                    UpdateComponent<Boom::CameraComponent>(Boom::ComponentID::CAMERA, selected);
+                    UpdateComponent<Boom::RigidBodyComponent>(Boom::ComponentID::RIGIDBODY, selected);
+                    UpdateComponent<Boom::ColliderComponent>(Boom::ComponentID::COLLIDER, selected);
+                    UpdateComponent<Boom::ModelComponent>(Boom::ComponentID::MODEL, selected);
+                    UpdateComponent<Boom::AnimatorComponent>(Boom::ComponentID::ANIMATOR, selected);
+                    UpdateComponent<Boom::DirectLightComponent>(Boom::ComponentID::DIRECT_LIGHT, selected);
+                    UpdateComponent<Boom::PointLightComponent>(Boom::ComponentID::POINT_LIGHT, selected);
+                    UpdateComponent<Boom::SpotLightComponent>(Boom::ComponentID::SPOT_LIGHT, selected);
+                    UpdateComponent<Boom::SoundComponent>(Boom::ComponentID::SOUND, selected);
+                    UpdateComponent<Boom::ScriptComponent>(Boom::ComponentID::SCRIPT, selected);
+                    ImGui::EndTable();
+                }
+            }
+            ImGui::EndChild();
+            ImGui::EndPopup();
+        }
+    }
+
+    template <class Type> 
+    void InspectorPanel::UpdateComponent(Boom::ComponentID id, Boom::Entity& selected) {
+        if (!selected.Has<Type>()) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::PushID(static_cast<int>(id));
+            if (ImGui::Selectable(COMPONENT_NAMES[static_cast<size_t>(id)].data())) { 
+                selected.Attach<Type>();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::PopID();
+        }
+    }
+
+    template <class CType> 
+    void InspectorPanel::ComponentSettings(Boom::AppContext* ctx) {
+        const ImVec2 headerMin = ImGui::GetItemRectMin();
+        const ImVec2 headerMax = ImGui::GetItemRectMax();
+        const float  lineH = ImGui::GetFrameHeight();
+        ImGui::SetCursorScreenPos(ImVec2(headerMax.x - lineH, headerMin.y + (headerMax.y - headerMin.y - lineH) * 0.5f));
+        if (ImGui::Button("...", ImVec2(lineH, lineH)))
+            ImGui::OpenPopup("ComponentSettings");
+        if (ImGui::BeginPopup("ComponentSettings")) {
+            if (ImGui::MenuItem("Remove Component")) {
+                ctx->scene.remove<CType>(m_App->SelectedEntity());
+            }
+            ImGui::EndPopup();
         }
     }
 

@@ -120,6 +120,7 @@ namespace Boom {
 
 		XPROPERTY_DEF(
 			"ModelAsset", ModelAsset,
+			obj_member<"Model Transform", &ModelAsset::data>,
 			obj_member<"HasJoints", &ModelAsset::hasJoints>
 		)
 	};
@@ -325,28 +326,6 @@ namespace Boom {
 			return registry;
 		}
 
-	public: //helper functions for imgui context
-		template <class Func>
-		BOOM_INLINE void ModifyMaterialFromID(AssetID id, Func f) {
-			auto& map = GetMap<MaterialAsset>();
-			for (auto& [uid, asset] : map) {
-				if (uid == id) {
-					f(asset.get());
-					break;
-				}
-			}
-		}
-
-		template <class Func>
-		BOOM_INLINE void ModifyTextureFromID(AssetID id, Func f) {
-			auto& map = GetMap<TextureAsset>();
-			for (auto& [uid, asset] : map) {
-				if (uid == id) {
-					f(asset.get());
-					break;
-				}
-			}
-		}
 	private:
 		// In your Add() method for debugging
 		template <class T>

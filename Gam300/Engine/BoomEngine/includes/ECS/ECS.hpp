@@ -13,6 +13,28 @@ namespace Boom {
     using EntityID = entt::entity;
     constexpr EntityID NENTT = entt::null;
 
+    //for now include only important components instead of all
+    //new includes need to add into enum and string_view and within ComponentSelector() in InspectorPanel.cpp
+    enum class ComponentID : size_t {
+        INFO, TRANSFORM, CAMERA, RIGIDBODY, COLLIDER,
+        MODEL, ANIMATOR, DIRECT_LIGHT, POINT_LIGHT, SPOT_LIGHT,
+        SOUND, SCRIPT,
+        COUNT
+    };
+    constexpr std::string_view COMPONENT_NAMES[]{
+        "Info",         //0
+        "Transform",    //1
+        "Camera",       //2
+        "Rigidbody",    //3
+        "Collider",     //4
+        "Model",        //5
+        "Animator",     //6
+        "Direct Light", //7
+        "Point Light",  //8
+        "Spot Light",   //9
+        "Sound",        //10
+        "Script"        //11
+    };
 
     // transform component
     struct TransformComponent
@@ -281,8 +303,7 @@ namespace Boom {
         template<typename T, typename... Args>
         BOOM_INLINE T& Attach(Args&&... args)
         {
-            return m_Registry->get_or_emplace<T>
-                (m_EnttID, std::forward<Args>(args)...);
+            return m_Registry->get_or_emplace<T>(m_EnttID, std::forward<Args>(args)...);
         }
 
         template<typename T>
@@ -316,6 +337,4 @@ namespace Boom {
         EntityRegistry* m_Registry = nullptr;
         EntityID m_EnttID = NENTT;
     };
-
-
 }

@@ -1,6 +1,7 @@
 #include "Core.h"
 #include "Graphics/Textures/Texture.h"
 #include "GlobalConstants.h"
+#include "BoomProperties.h"
 
 #pragma warning(push)
 #pragma warning(disable : 4244 4267 4458 4100 5054 4189 26819 6262 26495) //library warnings ignored

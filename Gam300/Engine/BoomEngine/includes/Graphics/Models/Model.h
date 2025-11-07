@@ -2,12 +2,12 @@
 #include "GlobalConstants.h"
 #include "Helper.h"
 #include "Animator.h"
+#include "BoomProperties.h"
+#include "Graphics/Utilities/Data.h"
 
 #include <assimp/postprocess.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
-
-
 
 namespace Boom {
 	struct Model
@@ -15,7 +15,7 @@ namespace Boom {
 		BOOM_INLINE Model() = default;
 		BOOM_INLINE Model(std::string const&) {};
 		BOOM_INLINE virtual bool HasJoint() { return false; }
-		BOOM_INLINE virtual void Draw(uint32_t = GL_TRIANGLES) = 0;
+		BOOM_INLINE virtual void Draw(uint32_t = GL_TRIANGLES) {};
 
 		static BOOM_INLINE bool CheckForJoints(std::string const& filename) {
 			Assimp::Importer importer; //will auto free
@@ -34,11 +34,19 @@ namespace Boom {
 			}
 			return false;
 		}
+
+	public:
+		Transform3D modelTransform{};
+		XPROPERTY_DEF(
+			"Model", Model,
+			obj_member<"transform", &Model::modelTransform>
+		)
 	};
 
 	//---------------------------Static Model------------------------------
 	struct StaticModel : Model
 	{
+		BOOM_INLINE StaticModel() = default;
 		/**
 		 * @brief Loads meshes from a static (non-skeletal) model file via Assimp.
 		 * @param filename File name relative to CONSTANTS::MODELS_LOCATION.
@@ -71,7 +79,6 @@ namespace Boom {
 		BOOM_INLINE const std::vector<MeshData<ShadedVert>>& GetMeshData() const {
 			return m_PhysicsMeshData;
 		}
-
 
 		BOOM_INLINE void Draw(uint32_t mode = GL_TRIANGLES) override
 		{
@@ -141,6 +148,7 @@ namespace Boom {
 	{
 		using JointMap = std::unordered_map<std::string, Joint>;
 
+		BOOM_INLINE SkeletalModel() = default;
 		/**
 		* @brief Load meshes, skeleton, and animation clips via Assimp.
 		* @param path File path relative to CONSTANTS::MODELS_LOCATION.

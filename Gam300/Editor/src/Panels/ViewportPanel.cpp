@@ -154,9 +154,6 @@ namespace EditorUI {
                                         m_GizmoMode = (m_GizmoMode == ImGuizmo::WORLD) ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
                                 }
 
-                                // Verify ImGuizmo setup
-                                BOOM_INFO("Current ImGui context: {}", (void*)ImGui::GetCurrentContext());
-
                                 // Ensure context is set
                                 ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
 
@@ -170,81 +167,6 @@ namespace EditorUI {
                                     nullptr,
                                     m_UseSnap ? m_SnapValues : nullptr
                                 );
-
-                                /*
-                                // Draw a sphere at the entity position in screen space to verify projection
-                                glm::vec4 entityPosWorld = glm::vec4(ltrans.transform.translate, 1.0f);
-                                glm::vec4 entityPosClip = proj * view * entityPosWorld;
-                                glm::vec3 entityPosNDC = glm::vec3(entityPosClip) / entityPosClip.w;
-
-                                // Convert NDC to screen space
-                                float screenX = itemMin.x + (entityPosNDC.x * 0.5f + 0.5f) * rectSz.x;
-                                float screenY = itemMin.y + (1.0f - (entityPosNDC.y * 0.5f + 0.5f)) * rectSz.y;
-
-                                BOOM_INFO("Entity screen pos: ({}, {}), NDC: ({}, {}, {})",
-                                    screenX, screenY, entityPosNDC.x, entityPosNDC.y, entityPosNDC.z);
-
-                                // Draw a circle at the calculated screen position
-                                ImGui::GetWindowDrawList()->AddCircleFilled(
-                                    ImVec2(screenX, screenY),
-                                    15.0f,
-                                    IM_COL32(255, 0, 0, 255)
-                                );
-
-                                // ===== COMPREHENSIVE DEBUG =====
-                                ImVec2 mousePos = ImGui::GetMousePos();
-                                ImVec2 mouseLocalPos = ImVec2(mousePos.x - itemMin.x, mousePos.y - itemMin.y);
-
-                                // Always draw debug info (not just when hovering)
-                                ImGui::GetWindowDrawList()->AddText(
-                                    ImVec2(itemMin.x + 10, itemMin.y + 10),
-                                    IM_COL32(255, 255, 0, 255),
-                                    fmt::format("Mouse: ({:.0f}, {:.0f})", mousePos.x, mousePos.y).c_str()
-                                );
-                                ImGui::GetWindowDrawList()->AddText(
-                                    ImVec2(itemMin.x + 10, itemMin.y + 30),
-                                    IM_COL32(255, 255, 0, 255),
-                                    fmt::format("Local: ({:.0f}, {:.0f})", mouseLocalPos.x, mouseLocalPos.y).c_str()
-                                );
-                                ImGui::GetWindowDrawList()->AddText(
-                                    ImVec2(itemMin.x + 10, itemMin.y + 50),
-                                    IM_COL32(255, 255, 0, 255),
-                                    fmt::format("Rect: ({:.0f}, {:.0f}) - ({:.0f}, {:.0f})", itemMin.x, itemMin.y, itemMax.x, itemMax.y).c_str()
-                                );
-                                ImGui::GetWindowDrawList()->AddText(
-                                    ImVec2(itemMin.x + 10, itemMin.y + 70),
-                                    IM_COL32(255, 255, 0, 255),
-                                    fmt::format("IsOver: {}, IsUsing: {}", ImGuizmo::IsOver(), ImGuizmo::IsUsing()).c_str()
-                                );
-                                ImGui::GetWindowDrawList()->AddText(
-                                    ImVec2(itemMin.x + 10, itemMin.y + 90),
-                                    IM_COL32(255, 255, 0, 255),
-                                    fmt::format("Hovered: {}, Focused: {}", hovered, focused).c_str()
-                                );
-
-                                // Draw crosshair at mouse position
-                                ImGui::GetWindowDrawList()->AddLine(
-                                    ImVec2(mousePos.x - 10, mousePos.y),
-                                    ImVec2(mousePos.x + 10, mousePos.y),
-                                    IM_COL32(255, 0, 255, 255),
-                                    2.0f
-                                );
-                                ImGui::GetWindowDrawList()->AddLine(
-                                    ImVec2(mousePos.x, mousePos.y - 10),
-                                    ImVec2(mousePos.x, mousePos.y + 10),
-                                    IM_COL32(255, 0, 255, 255),
-                                    2.0f
-                                );
-
-                                // Draw viewport bounds
-                                ImGui::GetWindowDrawList()->AddRect(
-                                    itemMin,
-                                    itemMax,
-                                    IM_COL32(0, 255, 255, 255),
-                                    0.0f,
-                                    0,
-                                    2.0f
-                                );*/
 
                                 // NOW check if gizmo wants input (AFTER Manipulate call)
                                 gizmoWantsInput = ImGuizmo::IsOver() || ImGuizmo::IsUsing();
