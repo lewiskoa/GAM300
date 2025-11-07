@@ -88,7 +88,12 @@ namespace Boom
             return m_Context->window->Handle();
         }
 
-        
+        BOOM_INLINE uint32_t GetSceneFrame()
+        {
+            return m_Context->renderer->GetFrame();
+        }
+
+        BOOM_INLINE AppContext* GetContext() const noexcept { return m_Context; }
 
     /////////////////////////////////////
     //EventSystem Manipulation Logistics
@@ -123,8 +128,6 @@ namespace Boom
         {
             m_Context->dispatcher.DetachCallback<Event>(m_LayerID);
         }
-
-        
 
     /////////////////////////////////////
     //Entity Manipulation Logistics
@@ -217,15 +220,6 @@ namespace Boom
             }
         }
 
-     
-
-
-         BOOM_INLINE uint32_t GetSceneFrame()
-         {
-		 	return m_Context->renderer->GetFrame();
-         }
-
-        BOOM_INLINE AppContext* GetContext() const noexcept { return m_Context; }
         //if you need to swap selected object call with (true)
         // otherwise if used for comparison/no reset of selected needed
         BOOM_INLINE AssetInfo& SelectedAsset(bool isResetAllSelected = false) {
@@ -237,10 +231,13 @@ namespace Boom
         BOOM_INLINE void ModifyAsset(Task f) {
             switch (selectedAsset.type) {
             case AssetType::TEXTURE:
-                m_Context->assets->ModifyTextureFromID(selectedAsset.id, f);
+                f(&GetAssetRegistry().Get<TextureAsset>(selectedAsset.id));
                 break;
             case AssetType::MATERIAL:
-                m_Context->assets->ModifyMaterialFromID(selectedAsset.id, f);
+                f(&GetAssetRegistry().Get<MaterialAsset>(selectedAsset.id));
+                break;
+            case AssetType::MODEL:
+                f(&GetAssetRegistry().Get<ModelAsset>(selectedAsset.id));
                 break;
             default: //create temporary blank asset for undone properties
                 static Asset tmp{};

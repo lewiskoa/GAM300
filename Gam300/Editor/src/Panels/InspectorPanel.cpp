@@ -160,7 +160,13 @@ namespace EditorUI {
         // ===== COMPONENTS =====
         if (selected.Has<Boom::TransformComponent>()) {
             auto& tc = selected.Get<Boom::TransformComponent>();
-            DrawComponentSection("Transform", &tc, Boom::GetTransformComponentProperties, false, nullptr);
+            if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+                //modified as dragging speed should vary between variables
+                ImGui::DragFloat3("Translate", &tc.transform.translate[0], 0.01f); 
+                ImGui::DragFloat3("Rotation", &tc.transform.rotate[0], .3142f);
+                ImGui::DragFloat3("Scale", &tc.transform.scale[0], 0.01f);
+                tc.transform.scale = glm::max(glm::vec3(0.01f), tc.transform.scale); //limit scale to positive
+            }
         }
 
         if (selected.Has<Boom::CameraComponent>()) {
@@ -541,6 +547,16 @@ namespace EditorUI {
                         ImGui::SliderInt("Mip Level", &tex->data->mipLevel, 1, 24);
                         ImGui::Checkbox("Gamma", &tex->data->isGamma);
                     }
+                }
+            }
+            else if (asset->type == AssetType::MODEL) {
+                ModelAsset* m{ dynamic_cast<ModelAsset*>(asset) };
+                //TODO: showcase model without texture
+
+                if (ImGui::CollapsingHeader("Model Offset", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::DragFloat3("Translate", &m->data->modelTransform.translate[0], 0.01f);
+                    ImGui::DragFloat3("Rotation", &m->data->modelTransform.rotate[0], 1.f, 0.f, 360.f);
+                    ImGui::DragFloat3("Scale", &m->data->modelTransform.scale[0], 0.01f, 0.01f);
                 }
             }
             else {
