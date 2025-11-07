@@ -174,7 +174,9 @@ namespace EditorUI {
             auto& mc = selected.Get<Boom::ModelComponent>();
 
             // Use CollapsingHeader to match the style
-            if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap)) {
+                ComponentSettings<Boom::ModelComponent>(ctx);
+
                 // --- UI for assigning model and material ---
                 ImGui::BeginTable("##maps", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersInnerV);
                 ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed);
@@ -633,6 +635,22 @@ namespace EditorUI {
                 ImGui::CloseCurrentPopup();
             }
             ImGui::PopID();
+        }
+    }
+
+    template <class CType> 
+    void InspectorPanel::ComponentSettings(Boom::AppContext* ctx) {
+        const ImVec2 headerMin = ImGui::GetItemRectMin();
+        const ImVec2 headerMax = ImGui::GetItemRectMax();
+        const float  lineH = ImGui::GetFrameHeight();
+        ImGui::SetCursorScreenPos(ImVec2(headerMax.x - lineH, headerMin.y + (headerMax.y - headerMin.y - lineH) * 0.5f));
+        if (ImGui::Button("...", ImVec2(lineH, lineH)))
+            ImGui::OpenPopup("ComponentSettings");
+        if (ImGui::BeginPopup("ComponentSettings")) {
+            if (ImGui::MenuItem("Remove Component")) {
+                ctx->scene.remove<CType>(m_App->SelectedEntity());
+            }
+            ImGui::EndPopup();
         }
     }
 
