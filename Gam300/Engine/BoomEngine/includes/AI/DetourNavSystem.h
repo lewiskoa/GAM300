@@ -2,11 +2,11 @@
 
 #include "Core.h"
 
-#include <DetourNavMesh.h>
-#include <DetourNavMeshQuery.h>
-#include <DetourCommon.h>
-//#include <Recast.h>
-#include <DetourAlloc.h>
+struct dtNavMesh;
+struct dtNavMeshQuery;
+struct dtQueryFilter;
+using dtPolyRef = unsigned long long;  // Detour typedef
+
 namespace Boom {
 
     // Poly flags (mirror the RecastDemo defaults; adjust for your project)

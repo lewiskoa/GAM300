@@ -31,18 +31,17 @@ namespace Boom {
 
         void update(entt::registry& reg, float dt, DetourNavSystem& nav)
         {
-            auto view = reg.view<Transform3D, NavAgentComponent>();
+            auto view = reg.view<TransformComponent, NavAgentComponent>();               // <= CHANGED
             for (auto e : view) {
-                auto& tr = view.get<Transform3D>(e);
+                auto& tr = view.get<TransformComponent>(e);                              // <= CHANGED
                 auto& ag = view.get<NavAgentComponent>(e);
                 if (!ag.active) continue;
 
-                // FOLLOW MODE: keep target synced to the followed entity (e.g., player)
-                if (ag.follow != entt::null && reg.valid(ag.follow) && reg.all_of<Transform3D>(ag.follow)) {
+                // FOLLOW mode: keep target synced to the followed entity (e.g., Player)
+                if (ag.follow != entt::null && reg.valid(ag.follow) && reg.all_of<TransformComponent>(ag.follow)) {  // <= CHANGED
                     ag.repathTimer -= dt;
-                    const glm::vec3 desired = reg.get<Transform3D>(ag.follow).translate;
+                    const glm::vec3 desired = reg.get<TransformComponent>(ag.follow).transform.translate;
 
-                    // Only re-path if enough time passed AND target moved meaningfully.
                     if (ag.repathTimer <= 0.f &&
                         glm::distance2(desired, ag.target) > ag.retargetDist * ag.retargetDist) {
                         ag.target = desired;
@@ -52,13 +51,12 @@ namespace Boom {
                 }
 
                 if (ag.dirty) {
-                    requestPath(reg, e, nav); // builds straight path into ag.path
+                    requestPath(reg, e, nav); // fills ag.path
                 }
 
-                // Move along path (unchanged)
                 if (ag.path.empty() || ag.waypoint >= (int)ag.path.size()) continue;
 
-                const glm::vec3 pos = tr.translate;
+                const glm::vec3 pos = tr.transform.translate;                           // <= CHANGED
                 const glm::vec3 goal = ag.path[ag.waypoint];
                 const glm::vec3 to = goal - pos;
                 const float d = glm::length(to);
@@ -70,7 +68,7 @@ namespace Boom {
                 }
 
                 const glm::vec3 dir = (d > 0.f) ? (to / d) : glm::vec3(0);
-                tr.translate += dir * ag.speed * dt;  // kinematic move (swap in physics if needed)
+                tr.transform.translate += dir * ag.speed * dt;                            // <= CHANGED
             }
         }
     };

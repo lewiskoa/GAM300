@@ -16,7 +16,7 @@
 #include "Panels/ViewportPanel.h"
 #include "Panels/PerformancePanel.h"
 #include "Panels/PlaybackControlsPanel.h"
-
+#include "Panels/NavMeshPanel.h"
 #include "BoomEngine.h"
 
 // Gizmo
@@ -146,7 +146,7 @@ namespace EditorUI {
         m_Viewport = std::make_unique<ViewportPanel>(this);
         m_Performance = std::make_unique<PerformancePanel>(this);
         m_Playback = std::make_unique<PlaybackControlsPanel>(this, m_App);
-
+		m_Navmesh = std::make_unique<NavmeshPanel>(this);
         // Panel-specific init
         if (m_Directory) m_Directory->Init();
     }
@@ -198,7 +198,7 @@ namespace EditorUI {
         if (m_ShowAudio && m_Audio)         m_Audio->Render();
         if (m_ShowPerformance && m_Performance)  m_Performance->Render();
         if (m_ShowPlaybackControls && m_Playback) m_Playback->OnShow();
-
+		if (m_ShowNavmesh && m_Navmesh)       m_Navmesh->Render();
         // --- End frame / draw ---
         EndImguiFrame();
     }

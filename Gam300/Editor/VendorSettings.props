@@ -8,7 +8,7 @@
 			<AdditionalIncludeDirectories>
 				$(ProjectDir)src\Vendors;
 				$(ProjectDir)src\Vendors\Recast\Include;
-				//$(ProjectDir)src\Vendors\DebugUtils\Include;
+				$(ProjectDir)src\Vendors\DebugUtils\Include;
 				%(AdditionalIncludeDirectories)
 			</AdditionalIncludeDirectories>
 		</ClCompile>
@@ -23,7 +23,7 @@
 
 	<ItemGroup>
 		<!-- Recast Navigation -->
-		<ClCompile Include="$(ProjectDir)src\Vendors\Recast\Source\*.cpp">
+		<ClCompile Include="$(ProjectDir)Vendors\Recast\Source\*.cpp">
 			<PrecompiledHeader>NotUsing</PrecompiledHeader>
 			<WarningLevel>TurnOffAllWarnings</WarningLevel>
 			<TreatWarningAsError>false</TreatWarningAsError>

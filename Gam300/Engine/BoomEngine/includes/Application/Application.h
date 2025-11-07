@@ -17,9 +17,10 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include "AI/GridChaseAI.h"
-
+#include "AI/DetourNavSystem.h"
+#include "AI/NavAgent.h"
 namespace Boom {
-  
+   
     inline void DecomposeMatrix(const glm::mat4& matrix,
         glm::vec3& translation,
         glm::vec3& rotation,
@@ -307,7 +308,9 @@ namespace Boom
 
                 // Always update delta time, but adjust for pause state
                 ComputeFrameDeltaTime();
-
+                if (m_Nav) {
+                    m_NavAgents.update(m_Context->scene, static_cast<float>(m_Context->DeltaTime), *m_Nav);
+                }
                 // Animation testing controls
                 {
                     // Press L to load additional animations
@@ -416,6 +419,7 @@ namespace Boom
                     script_update_all(static_cast<float>(m_Context->DeltaTime));
                     UpdateStaticTransforms();
                     RunPhysicsSimulation();
+                    InitNavRuntime();
                 }
 
                 m_SphereTimer += m_Context->DeltaTime;
@@ -849,7 +853,56 @@ namespace Boom
         bool m_DebugRigidBodiesOnly = true;
         char m_CurrentScenePath[512] = "\0";
         bool m_SceneLoaded = false;
+        std::unique_ptr<DetourNavSystem> m_Nav;
+        Boom::NavAgentSystem                   m_NavAgents;
+        entt::entity                           m_PlayerE = entt::null;
+        entt::entity                           m_AgentE = entt::null;
+        BOOM_INLINE void InitNavRuntime()
+        {
+            // 1) Load navmesh binary
+            const char* kNavPath = "Resources/NavData/solo_navmesh.bin";
+            m_Nav = std::make_unique<Boom::DetourNavSystem>();
+            if (!m_Nav || !m_Nav->initFromFile(kNavPath)) { // if your API is Load(...), rename here
+                BOOM_ERROR("[Nav] Failed to load navmesh: {}", kNavPath);
+                return;
+            }
+            BOOM_INFO("[Nav] Loaded navmesh: {}", kNavPath);
 
+            // 2) Find the Player entity by name
+            auto& reg = m_Context->scene;
+            m_PlayerE = Boom::FindEntityByName(reg, "Player");  // uses ECS helper
+            if (m_PlayerE == entt::null) {
+                BOOM_WARN("[Nav] Could not find entity named 'Player' to follow.");
+            }
+
+            // 3) Find or create a follower agent (try an existing "Enemy" first)
+            m_AgentE = Boom::FindEntityByName(reg, "Enemy");
+            if (m_AgentE == entt::null) {
+                // Create a simple agent entity
+                Boom::Entity agent{ &reg };
+                agent.Attach<Boom::InfoComponent>().name = "NavAgent";
+                auto& tc = agent.Attach<Boom::TransformComponent>().transform;
+                tc.translate = glm::vec3(0.f, 0.f, 0.f); // spawn where you like
+                agent.Attach<Boom::NavAgentComponent>();
+                m_AgentE = agent.ID();
+                BOOM_INFO("[Nav] Spawned 'NavAgent' entity.");
+            }
+            else {
+                // Ensure the existing entity has required components
+                if (!reg.all_of<Boom::TransformComponent>(m_AgentE))
+                    reg.emplace<Boom::TransformComponent>(m_AgentE);
+                if (!reg.all_of<Boom::NavAgentComponent>(m_AgentE))
+                    reg.emplace<Boom::NavAgentComponent>(m_AgentE);
+            }
+
+            // 4) Configure the agent to follow the Player
+            if (m_PlayerE != entt::null) {
+                auto& ag = reg.get<Boom::NavAgentComponent>(m_AgentE);
+                ag.follow = m_PlayerE;
+                ag.dirty = true;        // force first path build
+                BOOM_INFO("[Nav] Agent is now following 'Player'.");
+            }
+        }
         std::map<std::string, std::pair<glm::vec3, glm::vec3>> m_SphereInitialStates = {
         { "Sphere1", { glm::vec3(10, 0, 0),    glm::vec3(-5, 0, 0) } }, // Pos, Vel
         { "Sphere2", { glm::vec3(-10, 0, 0),   glm::vec3(5, 0, 0) } },  // Pos, Vel

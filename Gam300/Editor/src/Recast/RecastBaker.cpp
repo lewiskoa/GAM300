@@ -135,11 +135,18 @@ namespace EditorUI {
 
         // Set flags
         const int nPolys = pmesh->npolys;
-        std::vector<unsigned short> polyFlags(nPolys);
+        std::vector<unsigned short> polyFlags(nPolys, 0);
+        int walkableCount = 0;
         for (int i = 0; i < nPolys; ++i) {
-            const unsigned char area = pmesh->areas[i];
-            polyFlags[i] = (area == RC_NULL_AREA) ? 0 : 0x01; // walk or not
+            const unsigned char a = pmesh->areas[i];
+            if (a == RC_WALKABLE_AREA) {
+                polyFlags[i] = 0x01; // POLYFLAGS_WALK
+                ++walkableCount;
+            }
         }
+        // Quick info to help debug if everything turned non-walkable.
+        BOOM_INFO("[NavBake] pmesh: nverts={}, npolys={}, walkablePolys={}",
+            pmesh->nverts, pmesh->npolys, walkableCount);
 
         // Call ENGINE to write .bin (no Detour in editor)
         Boom::BoomNavCreateParams p{};
@@ -158,7 +165,8 @@ namespace EditorUI {
         p.bmin[0] = pmesh->bmin[0]; p.bmin[1] = pmesh->bmin[1]; p.bmin[2] = pmesh->bmin[2];
         p.bmax[0] = pmesh->bmax[0]; p.bmax[1] = pmesh->bmax[1]; p.bmax[2] = pmesh->bmax[2];
         p.cs = rcCfg.cs; p.ch = rcCfg.ch; p.buildBvTree = 1;
-
+        BOOM_INFO("[NavBake] Hand-off: nverts={}, npolys={}, nvp={}, dVerts={}, dTris={}",
+            pmesh->nverts, pmesh->npolys, pmesh->nvp, dmesh->nverts, dmesh->ntris);
         if (!Boom::BuildDetourBinaryToFile(p, outPath.c_str())) {
             if (error) *error = "BuildDetourBinaryToFile failed";
             return false;
