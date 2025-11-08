@@ -40,6 +40,12 @@ public:
     BOOM_API void  SetGroupVolume(const std::string& groupName, float volume);
     BOOM_API float GetGroupVolume(const std::string& groupName) const;
 
+    // Set3D position of a currently playing channel by name (entity-attached sounds use this)
+    BOOM_API void  SetSoundPosition(const std::string& name, const glm::vec3& position);
+
+    // Set listener attributes (call from camera update)
+    BOOM_API void  SetListenerAttributes(const glm::vec3& pos, const glm::vec3& vel, const glm::vec3& forward, const glm::vec3& up);
+
 private:
     FMOD::System* mSystem = nullptr;
     std::unordered_map<std::string, FMOD::Sound*>   mSounds;
