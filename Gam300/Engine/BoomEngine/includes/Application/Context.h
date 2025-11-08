@@ -58,6 +58,8 @@ namespace Boom
 		Boom::Profiler profiler;
 		double DeltaTime{};
 		EntityRegistry scene;
+		bool ShowNavDebug = false;      // draw mesh edges + poly "nodes"
+		bool ShowNavCorridor = false;   // (optional) draw agent path corridor
 	};
 
 }// namespace Boom

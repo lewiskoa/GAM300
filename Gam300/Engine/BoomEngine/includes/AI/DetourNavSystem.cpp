@@ -4,7 +4,8 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
-
+#include "Application/Application.h"
+#include "Graphics/Shaders/DebugLines.h" 
 namespace Boom {
 
     static inline void toDt(const glm::vec3& v, float out[3]) { out[0] = v.x; out[1] = v.y; out[2] = v.z; }
@@ -168,5 +169,76 @@ namespace Boom {
         hitPos = toGlm(hit);
         return true;
     }
+    void DetourNavSystem::DrawDetourNavMesh_Query(Boom::DebugLinesShader& shader,
+        const glm::mat4& view, const glm::mat4& proj,
+        const glm::vec3& centerWs, float radius) const
+    {
+        if (!m_mesh || !m_query) return;
 
+        dtQueryFilter filter;
+        filter.setIncludeFlags(0xFFFF);
+        filter.setExcludeFlags(0);
+
+        const float center[3] = { centerWs.x, centerWs.y, centerWs.z };
+        const float extents[3] = { radius, radius, radius }; // e.g. 40~80
+
+        std::vector<dtPolyRef> refs(2048);
+        int n = 0;
+        for (;;)
+        {
+            dtStatus st = m_query->queryPolygons(center, extents, &filter,
+                refs.data(), &n, (int)refs.size());
+            if (dtStatusFailed(st)) return;
+            if (dtStatusDetail(st, DT_BUFFER_TOO_SMALL)) { refs.resize(refs.size() * 2); continue; }
+            refs.resize(n);
+            break;
+        }
+
+        std::vector<Boom::LineVert> lines;
+        lines.reserve(refs.size() * 6);
+
+        const glm::vec4 edgeCol(0.0f, 0.7f, 1.0f, 1.0f);
+        const glm::vec4 nodeCol(1.0f, 0.8f, 0.0f, 1.0f);
+        const float     nodeR = 0.05f;
+
+        for (dtPolyRef ref : refs)
+        {
+            const dtMeshTile* tile = nullptr;
+            const dtPoly* poly = nullptr;
+            if (dtStatusFailed(m_mesh->getTileAndPolyByRef(ref, &tile, &poly)) ||
+                !tile || !tile->header || !poly) continue;
+
+            const int nv = poly->vertCount;
+            if (nv < 3) continue;
+
+            // Draw only boundary/portal edges to avoid double-drawing interior edges.
+            for (int j = 0; j < nv; ++j)
+            {
+                const unsigned short nei = poly->neis[j];
+                if (nei && !(nei & DT_EXT_LINK)) continue; // interior edge -> skip
+
+                const int ia = poly->verts[j];
+                const int ib = poly->verts[(j + 1) % nv];
+                const float* va = &tile->verts[ia * 3];
+                const float* vb = &tile->verts[ib * 3];
+
+                Boom::Application::AppendLine(lines,
+                    { va[0],va[1],va[2] }, { vb[0],vb[1],vb[2] },
+                    edgeCol, edgeCol);
+            }
+
+            // small centroid mark
+            glm::vec3 C(0.f);
+            for (int j = 0; j < nv; ++j) {
+                const float* p = &tile->verts[poly->verts[j] * 3];
+                C += glm::vec3{p[0], p[1], p[2]};
+            }
+            C /= float(nv);
+            Boom::Application::AppendLine(lines, C + glm::vec3(-nodeR, 0, 0), C + glm::vec3(+nodeR, 0, 0), nodeCol, nodeCol);
+            Boom::Application::AppendLine(lines, C + glm::vec3(0, 0, -nodeR), C + glm::vec3(0, 0, +nodeR), nodeCol, nodeCol);
+        }
+
+        if (!lines.empty())
+            shader.Draw(view, proj, lines, 1.5f);
+    }
 } // namespace Boom

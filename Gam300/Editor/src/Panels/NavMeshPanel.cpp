@@ -175,7 +175,13 @@ namespace EditorUI {
                 }
             }
         }
-
+        ImGui::Separator();
+        ImGui::TextUnformatted("Debug Visualization");
+        if (!m_Ctx) ImGui::TextDisabled("No context");
+        else {
+            ImGui::Checkbox("Draw Navmesh (edges + centroids)", &m_Ctx->ShowNavDebug);
+            ImGui::SameLine();
+        }
         ImGui::End();
     }
 

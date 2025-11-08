@@ -20,7 +20,31 @@
 #include "AI/DetourNavSystem.h"
 #include "AI/NavAgent.h"
 namespace Boom {
-   
+    BOOM_INLINE entt::entity CreateEnemySphere(entt::registry& reg, const std::string& name,
+        const glm::vec3& pos, float radius)
+    {
+        Entity e{ &reg };
+        // Name + transform
+        auto& info = e.Attach<InfoComponent>(); info.name = name;
+        auto& tr = e.Attach<TransformComponent>().transform;
+        tr.translate = pos;
+        tr.scale = glm::vec3(radius);   // 1:1 radius if your collider reads scale
+
+        // Visuals (optional if you rely on PhysX debug viz):
+        // If you have a sphere model/material, attach ModelComponent here.
+
+        // Physics
+        auto& rb = e.Attach<RigidBodyComponent>().RigidBody;
+        rb.type = RigidBody3D::STATIC;    // your code already toggles this type elsewhere
+
+        e.Attach<ColliderComponent>();     // collider details are handled by physics on Add/Update
+        // (Your Application calls m_Context->physics->AddRigidBody(...) elsewhere when (re)initializing scene.)
+
+        // AI
+		e.Attach<NavAgentComponent>().speed = 2.0f;
+
+        return e.ID();
+    }
     inline void DecomposeMatrix(const glm::mat4& matrix,
         glm::vec3& translation,
         glm::vec3& rotation,
@@ -43,6 +67,7 @@ namespace Boom {
         matrix = glm::scale(matrix, scale);
         return matrix;
     }
+   
 }
 
 namespace Boom
@@ -215,7 +240,7 @@ namespace Boom
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
             LoadScene("default");
-
+            InitNavRuntime();
             CameraController camera(
                 m_Context->window.get()
             );
@@ -278,7 +303,7 @@ namespace Boom
                     }
                     prevF10 = f10Pressed;
                 }
-
+               
                 //   F11 for testing change of rigid body type
                 {
                     static bool prevF11 = false;
@@ -528,7 +553,7 @@ namespace Boom
                         }
                         });
                 }
-
+               
                 //pbr ecs (always render)
                 EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
                     static int renderCount = 0;
@@ -644,7 +669,11 @@ namespace Boom
                             m_DebugLinesShader->Draw(dbgView, dbgProj, filtered, 1.5f);
                     }
                 }
-
+                if (m_Context->ShowNavDebug && m_Nav && m_DebugLinesShader) {
+                    const float drawRadius = 30.f; // tune
+                    m_Nav->DrawDetourNavMesh_Query(*m_DebugLinesShader, dbgView, dbgProj,
+                        dbgCamPos, drawRadius);
+                }
                 //skybox ecs (should be drawn at the end)
                 EnttView<Entity, SkyboxComponent>([this](auto entity, SkyboxComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
@@ -674,6 +703,7 @@ namespace Boom
 
 
         /**
+        * 
          * @brief Saves the current scene and assets to files
          * @param sceneName The name of the scene (without extension)
          * @param scenePath Optional custom path for scene files (defaults to "Scenes/")
@@ -846,8 +876,23 @@ namespace Boom
                     }
                 });
         }
-
+        public:
+        BOOM_INLINE static void AppendLine(std::vector<Boom::LineVert>& out,
+            const glm::vec3& a, const glm::vec3& b,
+            const glm::vec4& cA, const glm::vec4& cB)
+        {
+            out.push_back(Boom::LineVert{ a, cA });
+            out.push_back(Boom::LineVert{ b, cB });
+        }
     private:
+        std::unordered_map<std::string, std::pair<glm::vec3, glm::vec3>> m_SphereInitialStates;
+
+        BOOM_INLINE void RegisterSphereInitialState(const std::string& name,
+            const glm::vec3& pos,
+            const glm::vec3& vel = glm::vec3(0.0f)) {
+            m_SphereInitialStates[name] = { pos, vel };
+        }
+		bool m_NavInitialized = false;
         std::unique_ptr<Boom::DebugLinesShader> m_DebugLinesShader;
         std::vector<Boom::PhysicsContext::DebugLine> m_PhysLinesCPU;
         bool m_DebugRigidBodiesOnly = true;
@@ -859,56 +904,74 @@ namespace Boom
         entt::entity                           m_AgentE = entt::null;
         BOOM_INLINE void InitNavRuntime()
         {
-            // 1) Load navmesh binary
-            const char* kNavPath = "Resources/NavData/solo_navmesh.bin";
-            m_Nav = std::make_unique<Boom::DetourNavSystem>();
-            if (!m_Nav || !m_Nav->initFromFile(kNavPath)) { // if your API is Load(...), rename here
-                BOOM_ERROR("[Nav] Failed to load navmesh: {}", kNavPath);
-                return;
-            }
-            BOOM_INFO("[Nav] Loaded navmesh: {}", kNavPath);
+            if (m_NavInitialized) return;
 
-            // 2) Find the Player entity by name
             auto& reg = m_Context->scene;
-            m_PlayerE = Boom::FindEntityByName(reg, "Player");  // uses ECS helper
+
+            // 1) Build / load navmesh only once
+            if (!m_Nav) {
+                const char* kNavPath = "Resources/NavData/solo_navmesh.bin";
+                m_Nav = std::make_unique<Boom::DetourNavSystem>();
+                if (!m_Nav || !m_Nav->initFromFile(kNavPath)) {
+                    BOOM_ERROR("[Nav] Failed to load navmesh: {}", kNavPath);
+                    m_Nav.reset();
+                    return;
+                }
+                BOOM_INFO("[Nav] Loaded navmesh.");
+            }
+
+            // 2) Cache the player (if any)
+            m_PlayerE = Boom::FindEntityByName(reg, "Player");
             if (m_PlayerE == entt::null) {
-                BOOM_WARN("[Nav] Could not find entity named 'Player' to follow.");
+                BOOM_WARN("[Nav] 'Player' not found; agent will idle until one exists.");
             }
 
-            // 3) Find or create a follower agent (try an existing "Enemy" first)
-            m_AgentE = Boom::FindEntityByName(reg, "Enemy");
-            if (m_AgentE == entt::null) {
-                // Create a simple agent entity
-                Boom::Entity agent{ &reg };
-                agent.Attach<Boom::InfoComponent>().name = "NavAgent";
-                auto& tc = agent.Attach<Boom::TransformComponent>().transform;
-                tc.translate = glm::vec3(0.f, 0.f, 0.f); // spawn where you like
-                agent.Attach<Boom::NavAgentComponent>();
-                m_AgentE = agent.ID();
-                BOOM_INFO("[Nav] Spawned 'NavAgent' entity.");
-            }
-            else {
-                // Ensure the existing entity has required components
-                if (!reg.all_of<Boom::TransformComponent>(m_AgentE))
-                    reg.emplace<Boom::TransformComponent>(m_AgentE);
-                if (!reg.all_of<Boom::NavAgentComponent>(m_AgentE))
-                    reg.emplace<Boom::NavAgentComponent>(m_AgentE);
+            // 3) Find an existing agent FIRST (prefer 'NavAgent', then allow 'Enemy' to be used as agent)
+            if (m_AgentE == entt::null || !reg.valid(m_AgentE)) {
+                entt::entity byName = Boom::FindEntityByName(reg, "NavAgent");
+                if (byName == entt::null) {
+                    byName = Boom::FindEntityByName(reg, "Enemy"); // optional reuse
+                }
+
+                if (byName != entt::null) {
+                    m_AgentE = byName;
+                }
+                else {
+                    // Create a single agent as a sphere
+                    glm::vec3 spawnPos{ 2.f, 1.f, 2.f }; // default
+                    if (auto ground = Boom::FindEntityByName(reg, "ground");
+                        ground != entt::null && reg.all_of<TransformComponent>(ground)) {
+                        const auto& gt = reg.get<TransformComponent>(ground).transform;
+                        spawnPos.y = gt.translate.y + 1.0f; // float above ground
+                    }
+
+                    // Uses your helper (speed = 2.0f set inside NavAgentComponent)
+                    m_AgentE = CreateEnemySphere(reg, "NavAgent", spawnPos, /*radius*/0.5f);
+                    RegisterSphereInitialState("NavAgent", spawnPos /*, glm::vec3(0)*/);
+                  
+                    BOOM_INFO("[Nav] Spawned 'NavAgent' sphere at ({}, {}, {}), r = {}",
+                        spawnPos.x, spawnPos.y, spawnPos.z, 0.5f);
+                }
             }
 
-            // 4) Configure the agent to follow the Player
+            // 4) Ensure required components exist on the chosen agent
+            if (!reg.all_of<Boom::TransformComponent>(m_AgentE))
+                reg.emplace<Boom::TransformComponent>(m_AgentE);
+            if (!reg.all_of<Boom::NavAgentComponent>(m_AgentE))
+                reg.emplace<Boom::NavAgentComponent>(m_AgentE);
+
+            // 5) Configure follow target once
             if (m_PlayerE != entt::null) {
                 auto& ag = reg.get<Boom::NavAgentComponent>(m_AgentE);
                 ag.follow = m_PlayerE;
-                ag.dirty = true;        // force first path build
-                BOOM_INFO("[Nav] Agent is now following 'Player'.");
+                ag.dirty = true; // force first path build
+                BOOM_INFO("[Nav] Agent now follows 'Player'.");
             }
+
+            m_NavInitialized = true;  // ← prevents re-entering
         }
-        std::map<std::string, std::pair<glm::vec3, glm::vec3>> m_SphereInitialStates = {
-        { "Sphere1", { glm::vec3(10, 0, 0),    glm::vec3(-5, 0, 0) } }, // Pos, Vel
-        { "Sphere2", { glm::vec3(-10, 0, 0),   glm::vec3(5, 0, 0) } },  // Pos, Vel
-        { "Sphere3", { glm::vec3(0, 0, 10),    glm::vec3(0, 0, -5) } }, // Pos, Vel
-        { "Sphere4", { glm::vec3(0, -0, -10),   glm::vec3(0, 0, 5) } }   // Pos, Vel
-        };
+
+
 
         /**
         * @brief Cleans up the current scene and physics actors
@@ -1190,14 +1253,8 @@ namespace Boom
             return m;
         }
 
-        BOOM_INLINE static void AppendLine(std::vector<Boom::LineVert>& out,
-            const glm::vec3& a, const glm::vec3& b,
-            const glm::vec4& cA, const glm::vec4& cB)
-        {
-            out.push_back(Boom::LineVert{ a, cA });
-            out.push_back(Boom::LineVert{ b, cB });
-        }
-
+       
+       
         BOOM_INLINE static void AppendBoxWire(const physx::PxBoxGeometry& g,
             const physx::PxTransform& world,
             std::vector<Boom::LineVert>& out,

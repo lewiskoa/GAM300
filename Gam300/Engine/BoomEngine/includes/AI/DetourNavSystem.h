@@ -10,7 +10,7 @@
 //#include <Recast.h>
 
 namespace Boom {
-
+    class DebugLinesShader;
     // Poly flags (mirror the RecastDemo defaults; adjust for your project)
     constexpr unsigned short POLYFLAGS_WALK = 0x01;
   
@@ -44,7 +44,7 @@ namespace Boom {
         bool initFromFile(const std::string& filepath);
 
         void shutdown();
-
+        
         // Basic path query from 'start' to 'end'.
         PathResult findPath(const glm::vec3& start, const glm::vec3& end,
             const dtQueryFilter* customFilter = nullptr,
@@ -61,7 +61,9 @@ namespace Boom {
             dtPolyRef& outRef,
             const dtQueryFilter* customFilter = nullptr,
             const float* searchExtents = nullptr) const;
-
+        void DrawDetourNavMesh_Query(Boom::DebugLinesShader& shader,
+            const glm::mat4& view, const glm::mat4& proj,
+            const glm::vec3& centerWs, float radiusMeters) const;
         // Accessors
         BOOM_INLINE dtNavMesh* mesh()  const { return m_mesh; }
         BOOM_INLINE dtNavMeshQuery* query() const { return m_query; }
@@ -76,6 +78,7 @@ namespace Boom {
         void setDefaultSearchExtents(const float ext[3]);
 
     private:
+        std::unique_ptr<Boom::DebugLinesShader> m_debug;
         dtNavMesh* m_mesh{ nullptr };
         dtNavMeshQuery* m_query{ nullptr };
         dtQueryFilter    m_filter{};

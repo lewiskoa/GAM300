@@ -9,6 +9,7 @@
 #include "Core.h"          // AssetID, EMPTY_ASSET, glm, etc.
 #include "../src/Recast/RecastBaker.h"
 #include "Auxiliaries/Assets.h"
+
 namespace Boom { struct AppContext; struct Application; struct AppInterface; }
 
 namespace EditorUI {
@@ -30,9 +31,9 @@ namespace EditorUI {
             std::vector<uint32_t>  indices;    // triangles (3*n)
         };
 
-        // Callback to fetch mesh data for a given model AssetID.
+       
    
-
+        
        
 
         // Output path for the Detour .bin file
