@@ -10,6 +10,7 @@
 #include "../src/Recast/RecastBaker.h"       // RecastBakeToFile()
 #include "Vendors/imgui/imgui.h"
 #include "Vendors/imGuizmo/ImGuizmo.h"
+#include "AI/DetourNavSystem.h"
 namespace EditorUI {
 
     NavmeshPanel::NavmeshPanel(Editor* owner)
@@ -150,7 +151,7 @@ namespace EditorUI {
         ImGui::Separator();
         char buf[260];
         std::snprintf(buf, sizeof(buf), "%s", m_OutPath.c_str());
-        if (ImGui::InputText("Output", buf, IM_ARRAYSIZE(buf))) {
+        if (ImGui::InputText("Bake Output (.bin)", buf, IM_ARRAYSIZE(buf))) {
             m_OutPath = buf; // push changes back into std::string
         }
 
@@ -161,8 +162,6 @@ namespace EditorUI {
             }
             else {
                 std::string err;
-               
-
                 RecastBakeInput in = GatherTriangleSoupFromScene(m_Ctx ? m_Ctx->scene : *m_Reg);
                 if (in.verts.empty() || in.tris.empty()) {
                     BOOM_WARN("[NavBake] No geometry gathered. Check your Model asset CPU arrays.");
@@ -172,17 +171,110 @@ namespace EditorUI {
                 }
                 else {
                     BOOM_INFO("[NavBake] Success: {}", m_OutPath);
+
+                    // Hot-reload into live runtime via AppInterface
+                    if (m_App) {
+                        if (auto* nav = m_App->GetNavSystem()) {
+                            if (nav->reloadFromFile(m_OutPath))
+                                BOOM_INFO("[Nav] Reloaded runtime navmesh: {}", m_OutPath);
+                            else
+                                BOOM_ERROR("[Nav] Reload failed for: {}", m_OutPath);
+                        }
+                    }
                 }
             }
         }
+
+        // ---------------------------
+        // Load Section (folder + list)
+        // ---------------------------
+        ImGui::Separator();
+        ImGui::TextUnformatted("Load Navmesh (.bin)");
+
+        // Static UI state for the load panel
+        static std::string              s_BinDir = "Resources/NavData";
+        static std::vector<std::string> s_BinFiles;
+        static int                      s_Selected = -1;
+        static bool                     s_FirstScan = true;
+
+        auto RefreshBinList = [&]() {
+            s_BinFiles.clear();
+            std::error_code ec;
+            if (!std::filesystem::exists(s_BinDir, ec) || !std::filesystem::is_directory(s_BinDir, ec)) {
+                s_Selected = -1;
+                return;
+            }
+            for (auto& e : std::filesystem::directory_iterator(s_BinDir, ec)) {
+                if (e.is_regular_file(ec) && e.path().extension() == ".bin")
+                    s_BinFiles.push_back(e.path().filename().string());
+            }
+            if (s_BinFiles.empty()) s_Selected = -1;
+            else if (s_Selected < 0 || s_Selected >= (int)s_BinFiles.size()) s_Selected = 0;
+            };
+
+        // Folder field + Refresh button
+        static char dirBuf[260];
+        std::snprintf(dirBuf, sizeof(dirBuf), "%s", s_BinDir.c_str());
+        if (ImGui::InputText("Folder", dirBuf, IM_ARRAYSIZE(dirBuf))) {
+            s_BinDir = dirBuf;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Refresh")) {
+            RefreshBinList();
+        }
+        if (s_FirstScan) { RefreshBinList(); s_FirstScan = false; }
+
+        // Combo + Load
+        if (s_BinFiles.empty()) {
+            ImGui::TextDisabled("No .bin files found in folder.");
+        }
+        else {
+            const char* preview = (s_Selected >= 0 && s_Selected < (int)s_BinFiles.size())
+                ? s_BinFiles[s_Selected].c_str() : "(none)";
+
+            if (ImGui::BeginCombo("File", preview)) {
+                for (int i = 0; i < (int)s_BinFiles.size(); ++i) {
+                    const bool sel = (i == s_Selected);
+                    if (ImGui::Selectable(s_BinFiles[i].c_str(), sel)) s_Selected = i;
+                    if (sel) ImGui::SetItemDefaultFocus();
+                }
+                ImGui::EndCombo();
+            }
+
+            const bool canLoad = (s_Selected >= 0 && s_Selected < (int)s_BinFiles.size());
+            if (!canLoad) ImGui::BeginDisabled();
+
+            if (ImGui::Button("Load Navmesh", ImVec2(-1, 28))) {
+                const std::string full = (std::filesystem::path(s_BinDir) / s_BinFiles[s_Selected]).string();
+                bool ok = false;
+
+                if (m_App) {
+                    if (auto* nav = m_App->GetNavSystem())
+                        ok = nav->reloadFromFile(full);
+                }
+
+                if (ok) BOOM_INFO("[Nav] Loaded: {}", full);
+                else    BOOM_ERROR("[Nav] Failed to load: {}", full);
+            }
+
+            if (!canLoad) ImGui::EndDisabled();
+        }
+
+        // --- Debug toggles ---
         ImGui::Separator();
         ImGui::TextUnformatted("Debug Visualization");
-        if (!m_Ctx) ImGui::TextDisabled("No context");
+        if (!m_Ctx) {
+            ImGui::TextDisabled("No context");
+        }
         else {
             ImGui::Checkbox("Draw Navmesh (edges + centroids)", &m_Ctx->ShowNavDebug);
             ImGui::SameLine();
+            // add more toggles if needed…
         }
+
         ImGui::End();
     }
+
+
 
 } // namespace EditorUI

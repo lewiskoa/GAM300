@@ -42,7 +42,13 @@ namespace Boom {
 
         // Convenience: read a .bin produced by your editor/export step.
         bool initFromFile(const std::string& filepath);
+        bool reloadFromFile(const std::string& filepath);
 
+        // Reload the last file that was successfully loaded
+        bool reloadLast();
+
+        // Optional helper
+        BOOM_INLINE const std::string& lastFile() const { return m_lastFile; }
         void shutdown();
         
         // Basic path query from 'start' to 'end'.
@@ -83,6 +89,26 @@ namespace Boom {
         dtNavMeshQuery* m_query{ nullptr };
         dtQueryFilter    m_filter{};
         float            m_extents[3]{ 2.f, 4.f, 2.f };
+        std::string      m_lastFile;
+        std::string              m_BinDir = "Resources/NavData"; // default scan folder
+        std::vector<std::string> m_BinFiles;                        // file names only
+        int                      m_Selected = -1;
+        void RefreshBinList()
+        {
+            m_BinFiles.clear();
+            if (!std::filesystem::exists(m_BinDir)) return;
+
+            for (auto& e : std::filesystem::directory_iterator(m_BinDir))
+            {
+                if (!e.is_regular_file()) continue;
+                const auto& p = e.path();
+                if (p.extension() == ".bin")
+                    m_BinFiles.push_back(p.filename().string());
+            }
+            // keep selection valid
+            if (m_BinFiles.empty()) m_Selected = -1;
+            else if (m_Selected < 0 || m_Selected >= (int)m_BinFiles.size()) m_Selected = 0;
+        }
     };
 
 } // namespace Boom

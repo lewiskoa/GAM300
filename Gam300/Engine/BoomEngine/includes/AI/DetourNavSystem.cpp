@@ -57,11 +57,37 @@ namespace Boom {
 
     bool DetourNavSystem::initFromFile(const std::string& filepath)
     {
-        std::ifstream f(filepath, std::ios::binary);
-        if (!f) return false;
-        std::vector<unsigned char> bytes((std::istreambuf_iterator<char>(f)), {});
-        if (bytes.empty()) return false;
-        return initFromDetourData(bytes.data(), (int)bytes.size());
+        std::ifstream in(filepath, std::ios::binary | std::ios::ate);
+        if (!in) return false;
+
+        std::streamsize sz = in.tellg();
+        if (sz < 0) return false;
+
+        in.seekg(0, std::ios::beg);
+
+        std::vector<unsigned char> bytes(static_cast<size_t>(sz));
+        if (sz > 0 && !in.read(reinterpret_cast<char*>(bytes.data()), sz))
+            return false;
+
+        if (!initFromDetourData(bytes.data(), static_cast<int>(bytes.size())))
+            return false;
+
+        m_lastFile = filepath;   // make sure this member exists
+        return true;
+    }
+
+    bool DetourNavSystem::reloadFromFile(const std::string& filepath)
+    {
+        // Free whatever is currently loaded
+        shutdown();
+        // Rebuild mesh & query from the new file
+        return initFromFile(filepath);
+    }
+
+    bool DetourNavSystem::reloadLast()
+    {
+        if (m_lastFile.empty()) return false;
+        return reloadFromFile(m_lastFile);
     }
 
     bool DetourNavSystem::nearestPoint(const glm::vec3& in, glm::vec3& out, dtPolyRef& outRef,

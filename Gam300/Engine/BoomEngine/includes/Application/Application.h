@@ -884,6 +884,8 @@ namespace Boom
             out.push_back(Boom::LineVert{ a, cA });
             out.push_back(Boom::LineVert{ b, cB });
         }
+        BOOM_INLINE DetourNavSystem* GetNavSystem() override { return m_Nav.get(); }
+        BOOM_INLINE const DetourNavSystem* GetNavSystem() const override { return m_Nav.get(); }
     private:
         std::unordered_map<std::string, std::pair<glm::vec3, glm::vec3>> m_SphereInitialStates;
 

@@ -9,7 +9,7 @@
 
 #include "Context.h"
 #include "Auxiliaries/DataSerializer.h"
-
+namespace Boom { class DetourNavSystem; }
 namespace Boom
 {
 
@@ -22,6 +22,9 @@ namespace Boom
      */
     struct BOOM_API AppInterface
     {
+
+        BOOM_INLINE virtual DetourNavSystem* GetNavSystem() { return nullptr; }
+        BOOM_INLINE virtual const DetourNavSystem* GetNavSystem() const { return nullptr; }
         /**
          * @brief  Virtual destructor for safe polymorphic cleanup.
          *
