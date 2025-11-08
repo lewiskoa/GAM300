@@ -68,7 +68,9 @@ namespace Boom {
 
 			if (!ai_scene || ai_scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !ai_scene->mRootNode)
 			{
-				BOOM_ERROR("failed to load model-{}", importer.GetErrorString());
+				std::string tmp{ std::filesystem::path(filename).filename().string() };
+				std::string err{ strcmp(importer.GetErrorString(), "") == 0 ? "incomplete model" : importer.GetErrorString()};
+				BOOM_ERROR("failed to load model({})-{}", tmp, err);
 				return;
 			}
 
@@ -117,9 +119,11 @@ namespace Boom {
 				ShadedVert vert;
 				vert.pos = AssimpToVec3(mesh->mVertices[i]);
 				vert.norm = AssimpToVec3(mesh->mNormals[i]);
-				vert.uv = { mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y };
-				vert.biTangent = glm::normalize(AssimpToVec3(mesh->mBitangents[i]));
-				vert.tangent = glm::normalize(AssimpToVec3(mesh->mTangents[i]));
+				if (mesh->HasTextureCoords(i)) vert.uv = {mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y};
+				if (mesh->HasTangentsAndBitangents()) {
+					vert.biTangent = glm::normalize(AssimpToVec3(mesh->mBitangents[i]));
+					vert.tangent = glm::normalize(AssimpToVec3(mesh->mTangents[i]));
+				}
 
 				meshData.vtx.push_back(vert);
 			}
@@ -364,8 +368,11 @@ namespace Boom {
 				// normals
 				vertex.norm = AssimpToVec3(ai_mesh->mNormals[i]);
 				// texcoords
-				vertex.uv.x = ai_mesh->mTextureCoords[0][i].x;
-				vertex.uv.y = ai_mesh->mTextureCoords[0][i].y;
+				if (ai_mesh->HasTextureCoords(i)) {
+					vertex.uv.x = ai_mesh->mTextureCoords[0][i].x;
+					vertex.uv.y = ai_mesh->mTextureCoords[0][i].y;
+				}
+				
 				// push vertex
 				data.vtx.push_back(std::move(vertex));
 			}
