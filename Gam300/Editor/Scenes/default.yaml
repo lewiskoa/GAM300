@@ -176,7 +176,7 @@ ENTITIES:
         DynamicFriction: 0.5
         StaticFriction: 0.5
         Restitution: 0
-        Type: BOX
+        Type: PLANE
     InfoComponent:
       Parent: 0
       Name: Ground
@@ -185,13 +185,13 @@ ENTITIES:
       Transform:
         Translate: [0, -1.29999995, 0]
         Rotate: [0, 0, 0]
-        Scale: [20, 0.200000003, 20]
+        Scale: [20, 0.2, 20]
     RigidBodyComponent:
       RigidBody:
         Density: 1
         Mass: 0
         InitialVelocity: [0, 0, 0]
-        Previous Scale: [20, 0.200000003, 20]
+        Previous Scale: [20, 0.2, 20]
         Type: STATIC
     ModelComponent:
       ModelID: 7633162898494281895
