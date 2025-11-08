@@ -9,6 +9,7 @@
 				$(ProjectDir)src\Vendors;
 				$(ProjectDir)src\Vendors\Recast\Include;
 				$(ProjectDir)src\Vendors\DebugUtils\Include;
+				$(SolutionDir)Engine\BoomEngine\Vendors\Detour\Include;
 				%(AdditionalIncludeDirectories)
 			</AdditionalIncludeDirectories>
 		</ClCompile>
