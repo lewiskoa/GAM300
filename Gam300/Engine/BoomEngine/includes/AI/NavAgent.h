@@ -25,7 +25,7 @@ namespace Boom {
 
     class DetourNavSystem; // fwd
 
-    class NavAgentSystem {
+    class BOOM_API NavAgentSystem {
     public:
         void requestPath(entt::registry& reg, entt::entity e, DetourNavSystem& nav);
 

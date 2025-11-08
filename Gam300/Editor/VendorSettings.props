@@ -15,6 +15,11 @@
 		</ClCompile>
 	</ItemDefinitionGroup>
 
+	<ItemGroup>
+		<ClCompile Include="src\Vendors\Recast\Source\*.cpp" />
+		<!-- Or list them individually if needed -->
+	</ItemGroup>
+
 	<!-- Disable PCH and warnings for all vendor files -->
 	<ItemDefinitionGroup>
 		<ClCompile>

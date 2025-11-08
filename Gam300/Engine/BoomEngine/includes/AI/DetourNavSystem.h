@@ -24,8 +24,14 @@ namespace Boom {
         std::vector<glm::vec3>              points;       // straight-path world positions
         std::vector<dtPolyRef>              polys;        // poly corridor (useful for debugging)
     };
+    // Suppress C4251 for this class since we're intentionally exposing Detour types
+    #ifdef _MSC_VER
+    #pragma warning(push)
+    #pragma warning(disable: 4251)
+    #endif
 
-    class DetourNavSystem {
+
+    class BOOM_API DetourNavSystem {
     public:
         DetourNavSystem();
         ~DetourNavSystem();
