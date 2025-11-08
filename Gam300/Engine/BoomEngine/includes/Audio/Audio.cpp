@@ -238,7 +238,6 @@ BOOM_API void SoundEngine::PlaySound(const std::string& name, const std::string&
 
 BOOM_API void SoundEngine::PlaySound(const std::string& name, const std::string& filePath, bool loop, const std::string& groupName)
 {
-    // Create/load same as other PlaySound
     if (!mSystem) 
     {
         std::cerr << "FMOD system not initialized!\n";
@@ -265,7 +264,6 @@ BOOM_API void SoundEngine::PlaySound(const std::string& name, const std::string&
         return;
     }
 
-    // Route to requested group if present
     FMOD::ChannelGroup* targetGroup = nullptr;
     {
         std::scoped_lock lock(mMutex);
@@ -273,7 +271,6 @@ BOOM_API void SoundEngine::PlaySound(const std::string& name, const std::string&
         if (it != mChannelGroups.end()) targetGroup = it->second;
     }
 
-    // fallback heuristic
     if (!targetGroup) targetGroup = loop ? sMusicGroup : sSFXGroup;
 
     if (channel && targetGroup) { channel->setChannelGroup(targetGroup); }
@@ -451,6 +448,22 @@ BOOM_API void SoundEngine::SetSoundPosition(const std::string& name, const glm::
     FMOD_VECTOR fpos = { position.x, position.y, position.z };
     FMOD_VECTOR fvel = {0.0f,0.0f,0.0f };
     channel->set3DAttributes(&fpos, &fvel);
+}
+
+BOOM_API void SoundEngine::SetListenerAttributes(const glm::vec3& pos, const glm::vec3& vel, const glm::vec3& forward, const glm::vec3& up)
+{
+	if (!mSystem) return;
+	FMOD_VECTOR p = { pos.x, pos.y, pos.z };
+	FMOD_VECTOR v = { vel.x, vel.y, vel.z };
+	FMOD_VECTOR f = { forward.x, forward.y, forward.z };
+	FMOD_VECTOR u = { up.x, up.y, up.z };
+	mSystem->set3DListenerAttributes(0, &p, &v, &f, &u);
+}
+
+BOOM_API bool SoundEngine::HasChannelGroup(const std::string& groupName) const
+{
+	std::scoped_lock lock(mMutex);
+	return mChannelGroups.find(groupName) != mChannelGroups.end();
 }
 
 BOOM_API std::vector<std::string> SoundEngine::GetChannelGroupNames() const

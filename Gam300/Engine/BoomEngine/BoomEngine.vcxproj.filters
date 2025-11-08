@@ -16,6 +16,7 @@
     <ClCompile Include="src\Scripting\ScriptRunTime.cpp" />
     <ClCompile Include="src\Textures\Texture.cpp" />
     <ClCompile Include="src\Textures\Compression.cpp" />
+    <ClCompile Include="src\SoundSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Application\Application.h" />
@@ -71,6 +72,7 @@
     <ClInclude Include="includes\Input\CameraManager.h" />
     <ClInclude Include="includes\Input\InputHandler.h" />
     <ClInclude Include="includes\Graphics\Textures\Compression.h" />
+    <ClInclude Include="includes\Audio\SoundSystem.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="thirdparty\dotnet\nethost.lib" />

@@ -177,6 +177,7 @@
     <ClInclude Include="includes\Application\Interface.h" />
     <ClInclude Include="includes\AppWindow.h" />
     <ClInclude Include="includes\Audio\Audio.hpp" />
+    <ClInclude Include="includes\Audio\SoundSystem.hpp" />
     <ClInclude Include="includes\Auxiliaries\Assets.h" />
     <ClInclude Include="includes\Auxiliaries\DataSerializer.h" />
     <ClInclude Include="includes\Auxiliaries\PrefabUtility.h" />
@@ -263,6 +264,7 @@
     <ClCompile Include="src\Scripting\ScriptRunTime.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\SoundSystem.cpp" />
     <ClCompile Include="src\Textures\Compression.cpp" />
     <ClCompile Include="src\Textures\Texture.cpp" />
   </ItemGroup>
