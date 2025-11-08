@@ -37,7 +37,7 @@ namespace Boom {
 			auto actor2 = header.actors[1];
 
 			// check if actors
-			if (m_Callback && actor1 && actor2)
+			if (m_Callback && actor1 && actor2 && actor1->userData && actor2->userData)
 			{
 				PxPayload event;
 				event.Event = PxEvent::CONTACT;
@@ -63,7 +63,7 @@ namespace Boom {
 				const PxRigidActor* actor1 = pairs[i].otherActor;
 
 				// Check if actors are valid before using
-				if (actor0 && actor1)
+				if (actor0 && actor1 && actor0->userData && actor1->userData)
 				{
 					PxPayload event;
 					event.Event = PxEvent::TRIGGER;

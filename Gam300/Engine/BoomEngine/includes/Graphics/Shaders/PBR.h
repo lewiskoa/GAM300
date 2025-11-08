@@ -115,7 +115,8 @@ namespace Boom {
 			SetUniform(ditherThresholdLoc, showDither ? ditherThreshold : 0.f);
 			SetUniform(showNormalTextureLoc, showNormal);
 
-			SetUniform(modelMatLoc, transform.Matrix());
+			//world transformation * model transformation
+			SetUniform(modelMatLoc, transform.Matrix() * model->modelTransform.Matrix());
 			SetUniform(albedoLoc, material.albedo);
 			SetUniform(roughLoc, material.roughness);
 			SetUniform(metalLoc, material.metallic);

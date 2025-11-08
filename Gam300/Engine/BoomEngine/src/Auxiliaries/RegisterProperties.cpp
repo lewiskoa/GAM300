@@ -16,6 +16,8 @@ XPROPERTY_REG(Skybox)
 XPROPERTY_REG(RigidBody3D)
 XPROPERTY_REG(Collider3D)
 XPROPERTY_REG(Texture2D)
+XPROPERTY_REG(StaticModel)
+XPROPERTY_REG(SkeletalModel)
 
 //===============COMPONENTS=================
 XPROPERTY_REG(TransformComponent)
