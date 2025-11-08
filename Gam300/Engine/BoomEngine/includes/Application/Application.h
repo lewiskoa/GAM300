@@ -236,6 +236,7 @@ namespace Boom
             while (m_Context->window->PollEvents() && !m_ShouldExit)
             {
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
+                SoundEngine::Instance().Update();
                 Camera3D* activeCam = nullptr;
                 EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
                     if (!activeCam && comp.camera.cameraType == Camera3D::CameraType::Main)

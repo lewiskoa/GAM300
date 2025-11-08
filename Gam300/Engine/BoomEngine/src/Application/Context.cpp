@@ -9,6 +9,7 @@ namespace Boom
         for (AppInterface*& layer : layers)
         {
             BOOM_DELETE(layer);
+            SoundEngine::Instance().Shutdown();
         }
     }
 }

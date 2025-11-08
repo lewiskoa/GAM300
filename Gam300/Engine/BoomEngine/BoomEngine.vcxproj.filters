@@ -73,6 +73,7 @@
     <ClInclude Include="includes\Input\InputHandler.h" />
     <ClInclude Include="includes\Graphics\Textures\Compression.h" />
     <ClInclude Include="includes\Audio\SoundSystem.hpp" />
+    <ClInclude Include="includes\Audio\TrackLibrary.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="thirdparty\dotnet\nethost.lib" />

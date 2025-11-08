@@ -178,6 +178,7 @@
     <ClInclude Include="includes\AppWindow.h" />
     <ClInclude Include="includes\Audio\Audio.hpp" />
     <ClInclude Include="includes\Audio\SoundSystem.hpp" />
+    <ClInclude Include="includes\Audio\TrackLibrary.h" />
     <ClInclude Include="includes\Auxiliaries\Assets.h" />
     <ClInclude Include="includes\Auxiliaries\DataSerializer.h" />
     <ClInclude Include="includes\Auxiliaries\PrefabUtility.h" />
