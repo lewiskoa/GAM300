@@ -43,7 +43,8 @@ namespace Boom {
         BOOM_INLINE Collider3D() = default;
 
 
-
+        glm::vec3 localPosition = glm::vec3(0.0f);
+        glm::vec3 localRotation = glm::vec3(0.0f);
         // collider matrial pointer
         PxMaterial* material = nullptr;
 
@@ -65,13 +66,16 @@ namespace Boom {
             BOX = 0,
             SPHERE,
             CAPSULE,
-            MESH
+            MESH,
+            PLANE
         } type;
 
 
         // Collider3D
         XPROPERTY_DEF(
             "Collider3D", Boom::Collider3D,
+            obj_member<"LocalPosition", &Boom::Collider3D::localPosition>,
+            obj_member<"LocalRotation", &Boom::Collider3D::localRotation>,
             obj_member<"DynamicFriction", &Boom::Collider3D::dynamicFriction>,
             obj_member<"StaticFriction", &Boom::Collider3D::staticFriction>,
             obj_member<"Restitution", &Boom::Collider3D::restitution>,
@@ -80,7 +84,8 @@ namespace Boom {
             member_enum_value<"BOX", Boom::Collider3D::Type::BOX>,
             member_enum_value<"SPHERE", Boom::Collider3D::Type::SPHERE>,
             member_enum_value<"CAPSULE", Boom::Collider3D::Type::CAPSULE>,
-            member_enum_value<"MESH", Boom::Collider3D::Type::MESH>
+            member_enum_value<"MESH", Boom::Collider3D::Type::MESH>,
+            member_enum_value<"PLANE", Boom::Collider3D::Type::PLANE>
             >
         )
     };

@@ -358,10 +358,12 @@ namespace EditorUI {
                 ImGui::Spacing();
 
                 auto& col = selected.Get<Boom::ColliderComponent>();
-
+                auto* collider = &col.Collider;
                 float oldDynamicFriction = col.Collider.dynamicFriction;
                 float oldStaticFriction = col.Collider.staticFriction;
                 float oldRestitution = col.Collider.restitution;
+                glm::vec3 oldPos = collider->localPosition;
+                glm::vec3 oldRot = collider->localRotation;
 
                 Collider3D::Type currentType = col.Collider.type;
                 const char* currentTypeName = "Unknown";
@@ -371,6 +373,7 @@ namespace EditorUI {
                 case Collider3D::Type::SPHERE:  currentTypeName = "Sphere";  break;
                 case Collider3D::Type::CAPSULE: currentTypeName = "Capsule"; break;
                 case Collider3D::Type::MESH:    currentTypeName = "Mesh";    break;
+                case Collider3D::Type::PLANE: currentTypeName = "Plane"; break;
                 }
 
                 ImGui::AlignTextToFramePadding();
@@ -380,7 +383,7 @@ namespace EditorUI {
 
                 if (ImGui::BeginCombo("##ColliderType", currentTypeName))
                 {
-                    const char* types[] = { "Box", "Sphere", "Capsule", "Mesh" };
+                    const char* types[] = { "Box", "Sphere", "Capsule", "Mesh", "Plane"};
                     for (int i = 0; i < IM_ARRAYSIZE(types); ++i) {
                         bool isSelected = (currentType == static_cast<Collider3D::Type>(i));
                         if (ImGui::Selectable(types[i], isSelected)) {
@@ -434,8 +437,20 @@ namespace EditorUI {
                     ImGui::Spacing();
                 }
 
-                auto* collider = &col.Collider;
 
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Local Position");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat3("##LocalPosition", &collider->localPosition.x, 0.01f);
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Local Rotation");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat3("##LocalRotation", &collider->localRotation.x, 0.1f);
+
+                ImGui::Spacing();
                 ImGui::AlignTextToFramePadding();
                 ImGui::Text("Dynamic Friction");
                 ImGui::SameLine(150);
@@ -454,12 +469,19 @@ namespace EditorUI {
                 ImGui::SetNextItemWidth(-1);
                 ImGui::DragFloat("##Restitution", &collider->restitution, 0.01f, 0.0f, 100.0f);
 
+                if (collider->localPosition != oldPos ||
+                    collider->localRotation != oldRot)
+                {
+                    m_App->GetPhysicsContext().UpdateColliderShape(selected, m_App->GetAssetRegistry());
+                }
+
                 if (col.Collider.dynamicFriction != oldDynamicFriction ||
                     col.Collider.staticFriction != oldStaticFriction ||
                     col.Collider.restitution != oldRestitution)
                 {
                     m_App->GetPhysicsContext().UpdatePhysicsMaterial(selected);
                 }
+
 
                 ImGui::Spacing();
                 ImGui::Unindent(12.0f);
