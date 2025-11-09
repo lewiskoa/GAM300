@@ -9,6 +9,7 @@
 #include "Application/Interface.h"
 #include "Auxiliaries/Assets.h"
 #include <glm/vec3.hpp>
+#include <GLFW/glfw3.h>
 
 namespace Boom {
 
@@ -63,6 +64,15 @@ namespace Boom {
         return glfwGetKey(win.get(), key) == GLFW_PRESS;
     }
 
+    static bool ICALL_API_IsMouseDown(int button) {
+        if (!s_Ctx || !s_Ctx->window) return false;
+        auto win = s_Ctx->window->Handle();
+        if (!win) return false;
+        return glfwGetMouseButton(win.get(), button) == GLFW_PRESS;
+    }
+
+
+
     void RegisterScriptInternalCalls(AppContext* ctx)
     {
         s_Ctx = ctx;
@@ -74,6 +84,7 @@ namespace Boom {
         mono_add_internal_call("GameScripts.Native::Boom_API_GetPosition", (const void*)ICALL_API_GetPosition);
         mono_add_internal_call("GameScripts.Native::Boom_API_SetPosition", (const void*)ICALL_API_SetPosition);
         mono_add_internal_call("GameScripts.Native::Boom_API_IsKeyDown", (const void*)ICALL_API_IsKeyDown);
+        mono_add_internal_call("GameScripts.Native::Boom_API_IsMouseDown", (const void*)ICALL_API_IsMouseDown);
 
     }
 }

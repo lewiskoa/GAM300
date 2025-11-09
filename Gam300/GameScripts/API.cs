@@ -18,6 +18,8 @@ namespace Boom
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Boom_API_SetPosition(ulong handle, ref Vec3 pos);
+
+        
     }
 
     [StructLayout(LayoutKind.Sequential)]

@@ -12,6 +12,7 @@ namespace GameScripts
         [MethodImpl(MethodImplOptions.InternalCall)] internal static extern void Boom_API_GetPosition(ulong handle, out Vec3 pos);
         [MethodImpl(MethodImplOptions.InternalCall)] internal static extern void Boom_API_SetPosition(ulong handle, ref Vec3 pos);
         [MethodImpl(MethodImplOptions.InternalCall)] internal static extern bool Boom_API_IsKeyDown(int key);
+        [MethodImpl(MethodImplOptions.InternalCall)] internal static extern bool Boom_API_IsMouseDown(int button);
     }
 
     public static class API
@@ -21,6 +22,7 @@ namespace GameScripts
         public static Vec3 GetPosition(ulong h) { Native.Boom_API_GetPosition(h, out var p); return p; }
         public static void SetPosition(ulong h, Vec3 p) => Native.Boom_API_SetPosition(h, ref p);
         public static bool IsKeyDown(int glfwKey) => Native.Boom_API_IsKeyDown(glfwKey);
+        public static bool IsMouseDown(int button) => Native.Boom_API_IsMouseDown(button);
 
         // GLFW key codes
         public const int KEY_LEFT = 263;
