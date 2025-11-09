@@ -80,7 +80,7 @@ namespace Boom {
             if (!enable) return;
 
             // Keep shapes only; turn off extra clutter that can block view.
-            m_Scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
+            //m_Scene->setVisualizationParameter(PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
             m_Scene->setVisualizationParameter(PxVisualizationParameter::eACTOR_AXES, 1.0f);
             m_Scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_POINT, 1.0f);
             m_Scene->setVisualizationParameter(PxVisualizationParameter::eCONTACT_NORMAL, 1.0f);
@@ -800,7 +800,9 @@ namespace Boom {
             (void)constantBlockSize;
             // generate contacts and triggers for actors
             pairFlags |= PxPairFlag::eCONTACT_DEFAULT |
-                PxPairFlag::eTRIGGER_DEFAULT;
+                PxPairFlag::eTRIGGER_DEFAULT |
+                PxPairFlag::eNOTIFY_TOUCH_FOUND |   
+                PxPairFlag::eNOTIFY_TOUCH_PERSISTS; 
 
             return PxFilterFlag::eDEFAULT;
         }

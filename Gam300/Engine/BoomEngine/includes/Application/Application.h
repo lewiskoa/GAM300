@@ -356,7 +356,7 @@ namespace Boom
                 {
                     static bool prevF9 = false;
                     bool f9Pressed = glfwGetKey(engineWindow.get(), GLFW_KEY_F9) == GLFW_PRESS;
-                    if (f9Pressed && !prevF9)
+                    if (f9Pressed && !prevF9)   
                     {
                         m_PhysDebugViz = !m_PhysDebugViz;
                         m_Context->physics->EnableDebugVisualization(m_PhysDebugViz, 1.0f);
@@ -365,20 +365,6 @@ namespace Boom
                     prevF9 = f9Pressed;
                 }
 
-                // NEW: toggle debug rigidbodies with F10
-                {
-                    static bool prevF10 = false;
-                    bool f10Pressed = glfwGetKey(engineWindow.get(), GLFW_KEY_F10) == GLFW_PRESS;
-                    if (f10Pressed && !prevF10)
-                    {
-                        m_DebugRigidBodiesOnly = !m_DebugRigidBodiesOnly;
-                        // Turn off PhysX global viz when we use RB-only to avoid duplication
-                        m_Context->physics->EnableDebugVisualization(!m_DebugRigidBodiesOnly && m_PhysDebugViz, 1.0f);
-                        BOOM_INFO("[Debug] Rigidbody-only collider viz: {}", m_DebugRigidBodiesOnly ? "ON" : "OFF");
-                    }
-                    prevF10 = f10Pressed;
-                }
-               
                 //   F11 for testing change of rigid body type
                 {
                     static bool prevF11 = false;
@@ -518,6 +504,10 @@ namespace Boom
 
                 // Only update rotation when running
                 if (m_AppState == ApplicationState::RUNNING) {
+                    EnttView<Entity, RigidBodyComponent>([](auto, RigidBodyComponent& rb) {
+                        rb.RigidBody.isColliding = false;
+                        });
+                    script_update_all(static_cast<float>(m_Context->DeltaTime));
                     UpdateStaticTransforms();
                     RunPhysicsSimulation();
                     InitNavRuntime();
@@ -720,14 +710,15 @@ namespace Boom
                         }
 
                         if (!filtered.empty())
-                            m_DebugLinesShader->Draw(dbgView, dbgProj, filtered, 1.5f);
+                            m_DebugLinesShader->Draw(dbgView, dbgProj, filtered, 50.5f);
                     }
                 }
-                if (m_Context->ShowNavDebug && m_Nav && m_DebugLinesShader) {
-                    const float drawRadius = 30.f; // tune
-                    m_Nav->DrawDetourNavMesh_Query(*m_DebugLinesShader, dbgView, dbgProj,
-                        dbgCamPos, drawRadius);
+
+                if (m_PhysDebugViz && m_DebugLinesShader)
+                {
+                    DrawRigidBodiesDebugOnly(dbgView, dbgProj);
                 }
+
                 //skybox ecs (should be drawn at the end)
                 EnttView<Entity, SkyboxComponent>([this](auto entity, SkyboxComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
@@ -953,7 +944,6 @@ namespace Boom
 		bool m_NavInitialized = false;
         std::unique_ptr<Boom::DebugLinesShader> m_DebugLinesShader;
         std::vector<Boom::PhysicsContext::DebugLine> m_PhysLinesCPU;
-        bool m_DebugRigidBodiesOnly = true;
         char m_CurrentScenePath[512] = "\0";
         bool m_SceneLoaded = false;
         std::unique_ptr<DetourNavSystem> m_Nav;
@@ -1125,7 +1115,25 @@ namespace Boom
             // Set physics event callback (mark unused param to avoid warnings)
             m_Context->physics->SetEventCallback([this](auto e)
                 {
-                    (void)e;
+                    // Check if this is a contact event
+                    if (e.Event == PxEvent::CONTACT)
+                    {
+                        // Get both entities from the event payload
+                        entt::entity ent1 = (entt::entity)e.Entity1;
+                        entt::entity ent2 = (entt::entity)e.Entity2;
+
+                        // Safely get the RigidBodyComponent for entity 1 and set its flag
+                        if (m_Context->scene.valid(ent1) && m_Context->scene.all_of<RigidBodyComponent>(ent1))
+                        {
+                            m_Context->scene.get<RigidBodyComponent>(ent1).RigidBody.isColliding = true;
+                        }
+
+                        // Safely get the RigidBodyComponent for entity 2 and set its flag
+                        if (m_Context->scene.valid(ent2) && m_Context->scene.all_of<RigidBodyComponent>(ent2))
+                        {
+                            m_Context->scene.get<RigidBodyComponent>(ent2).RigidBody.isColliding = true;
+                        }
+                    }
                 });
 
             // Attach window resize event callback
@@ -1387,7 +1395,7 @@ namespace Boom
                 };
 
             const float step = glm::pi<float>() / (float)segments; // Step over 180 degrees
-            const float offset = positiveHalf ? 0.0f : glm::pi<float>();
+            const float offset = positiveHalf ? -glm::half_pi<float>() : glm::half_pi<float>();
 
             for (int i = 0; i < segments; ++i) {
                 glm::vec3 a = P(offset + i * step);
@@ -1448,10 +1456,14 @@ namespace Boom
 
             std::vector<Boom::LineVert> verts;
             verts.reserve(1024);
-            const glm::vec4 color(0.1f, 1.0f, 0.1f, 1.0f);
+            //const glm::vec4 color(0.1f, 1.0f, 0.1f, 1.0f);
 
             EnttView<Entity, RigidBodyComponent>([&](auto entity, RigidBodyComponent& rb) {
                 if (!entity.template Has<ColliderComponent>()) return;
+
+                const glm::vec4 color = rb.RigidBody.isColliding
+                    ? glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) // Bright Red when colliding
+                    : glm::vec4(1.1f, 0.0f, 1.0f, 1.0f);
 
                 physx::PxRigidActor* actor = rb.RigidBody.actor;
                 if (!actor) return;
@@ -1485,7 +1497,7 @@ namespace Boom
                 });
 
             if (!verts.empty())
-                m_DebugLinesShader->Draw(view, proj, verts, 1.5f);
+                m_DebugLinesShader->Draw(view, proj, verts, 10.5f);
         }
 
         BOOM_INLINE static float DistancePointSegment(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b)

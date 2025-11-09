@@ -22,6 +22,7 @@ namespace Boom {
             STATIC,
         } type;
 
+        bool isColliding = false;
 
         // RigidBody3D
         XPROPERTY_DEF(
