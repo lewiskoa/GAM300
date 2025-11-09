@@ -140,6 +140,10 @@ namespace Boom
         // === SKYBOX COMPONENT ===
 		RegisterPropertyComponent<SkyboxComponent>("SkyboxComponent");
 
+        // === THIRD PERSON CAMERA COMPONENT ===
+        RegisterPropertyComponent<ThirdPersonCameraComponent>("ThirdPersonCameraComponent");
+
+
        
 
         BOOM_INFO("[ComponentSerializers] All component serializers registered");

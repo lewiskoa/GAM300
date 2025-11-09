@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <entt/entt.hpp>
 #include <nlohmann/json.hpp>
 #include "Graphics/Utilities/Data.h"
@@ -19,21 +19,23 @@ namespace Boom {
         INFO, TRANSFORM, CAMERA, RIGIDBODY, COLLIDER,
         MODEL, ANIMATOR, DIRECT_LIGHT, POINT_LIGHT, SPOT_LIGHT,
         SOUND, SCRIPT,
+        THIRD_PERSON_CAMERA,
         COUNT
     };
     constexpr std::string_view COMPONENT_NAMES[]{
-        "Info",         //0
-        "Transform",    //1
-        "Camera",       //2
-        "Rigidbody",    //3
-        "Collider",     //4
-        "Model",        //5
-        "Animator",     //6
-        "Direct Light", //7
-        "Point Light",  //8
-        "Spot Light",   //9
-        "Sound",        //10
-        "Script"        //11
+        "Info",                 //0
+        "Transform",            //1
+        "Camera",               //2
+        "Rigidbody",            //3
+        "Collider",             //4
+        "Model",                //5
+        "Animator",             //6
+        "Direct Light",         //7
+        "Point Light",          //8
+        "Spot Light",           //9
+        "Sound",                //10
+        "Script",               //11
+        "Third Person Camera"   //12
     };
 
     // transform component
@@ -245,7 +247,7 @@ namespace Boom {
         std::string TypeName;
 
         // Runtime handle returned by script_create_instance(...).
-        // Do NOT serialize this; it�s valid only while the game is running.
+        // Do NOT serialize this; it’s valid only while the game is running.
         uint64_t InstanceId = 0;
 
         // Allow toggling without removing the component
@@ -287,6 +289,7 @@ namespace Boom {
         // Add this back in
         XPROPERTY_DEF(
             "ThirdPersonCameraComponent", ThirdPersonCameraComponent,
+
             obj_member<"Offset", &ThirdPersonCameraComponent::offset>,
             obj_member<"Current Distance", &ThirdPersonCameraComponent::currentDistance>,
             obj_member<"Min Distance", &ThirdPersonCameraComponent::minDistance>,
