@@ -46,6 +46,7 @@ namespace Boom {
 
         glm::vec3 localPosition = glm::vec3(0.0f);
         glm::vec3 localRotation = glm::vec3(0.0f);
+        glm::vec3 localScale = glm::vec3(1.0f);
         // collider matrial pointer
         PxMaterial* material = nullptr;
 
@@ -77,6 +78,7 @@ namespace Boom {
             "Collider3D", Boom::Collider3D,
             obj_member<"LocalPosition", &Boom::Collider3D::localPosition>,
             obj_member<"LocalRotation", &Boom::Collider3D::localRotation>,
+            obj_member<"LocalScale", &Boom::Collider3D::localScale>,
             obj_member<"DynamicFriction", &Boom::Collider3D::dynamicFriction>,
             obj_member<"StaticFriction", &Boom::Collider3D::staticFriction>,
             obj_member<"Restitution", &Boom::Collider3D::restitution>,

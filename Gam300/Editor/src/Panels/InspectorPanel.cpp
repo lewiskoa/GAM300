@@ -415,10 +415,13 @@ namespace EditorUI {
                 ImGui::Spacing();
 
                 auto& col = selected.Get<Boom::ColliderComponent>();
-
+                auto* collider = &col.Collider;
                 float oldDynamicFriction = col.Collider.dynamicFriction;
                 float oldStaticFriction = col.Collider.staticFriction;
                 float oldRestitution = col.Collider.restitution;
+                glm::vec3 oldPos = collider->localPosition;
+                glm::vec3 oldRot = collider->localRotation;
+                glm::vec3 oldScale = collider->localScale;
 
                 Collider3D::Type currentType = col.Collider.type;
                 const char* currentTypeName = "Unknown";
@@ -428,6 +431,7 @@ namespace EditorUI {
                 case Collider3D::Type::SPHERE:  currentTypeName = "Sphere";  break;
                 case Collider3D::Type::CAPSULE: currentTypeName = "Capsule"; break;
                 case Collider3D::Type::MESH:    currentTypeName = "Mesh";    break;
+                case Collider3D::Type::PLANE: currentTypeName = "Plane"; break;
                 }
 
                 ImGui::AlignTextToFramePadding();
@@ -437,7 +441,7 @@ namespace EditorUI {
 
                 if (ImGui::BeginCombo("##ColliderType", currentTypeName))
                 {
-                    const char* types[] = { "Box", "Sphere", "Capsule", "Mesh" };
+                    const char* types[] = { "Box", "Sphere", "Capsule", "Mesh", "Plane" };
                     for (int i = 0; i < IM_ARRAYSIZE(types); ++i) {
                         bool isSelected = (currentType == static_cast<Collider3D::Type>(i));
                         if (ImGui::Selectable(types[i], isSelected)) {
@@ -491,8 +495,28 @@ namespace EditorUI {
                     ImGui::Spacing();
                 }
 
-                auto* collider = &col.Collider;
 
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Local Position");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat3("##LocalPosition", &collider->localPosition.x, 0.01f);
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Local Rotation");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat3("##LocalRotation", &collider->localRotation.x, 0.1f);
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Local Scale");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat3("##LocalScale", &collider->localScale.x, 0.01f);
+                collider->localScale = glm::max(collider->localScale, glm::vec3(0.01f)); // Enforce positive scale
+
+
+                ImGui::Spacing();
                 ImGui::AlignTextToFramePadding();
                 ImGui::Text("Dynamic Friction");
                 ImGui::SameLine(150);
@@ -511,12 +535,20 @@ namespace EditorUI {
                 ImGui::SetNextItemWidth(-1);
                 ImGui::DragFloat("##Restitution", &collider->restitution, 0.01f, 0.0f, 100.0f);
 
+                if (collider->localPosition != oldPos ||
+                    collider->localRotation != oldRot ||
+                    collider->localScale != oldScale)
+                {
+                    m_App->GetPhysicsContext().UpdateColliderShape(selected, m_App->GetAssetRegistry());
+                }
+
                 if (col.Collider.dynamicFriction != oldDynamicFriction ||
                     col.Collider.staticFriction != oldStaticFriction ||
                     col.Collider.restitution != oldRestitution)
                 {
                     m_App->GetPhysicsContext().UpdatePhysicsMaterial(selected);
                 }
+
 
                 ImGui::Spacing();
                 ImGui::Unindent(12.0f);
@@ -718,8 +750,8 @@ namespace EditorUI {
                     UpdateComponent<Boom::InfoComponent>(Boom::ComponentID::INFO, selected);
                     UpdateComponent<Boom::TransformComponent>(Boom::ComponentID::TRANSFORM, selected);
                     UpdateComponent<Boom::CameraComponent>(Boom::ComponentID::CAMERA, selected);
-                    //UpdateComponent<Boom::RigidBodyComponent>(Boom::ComponentID::RIGIDBODY, selected);
-                    //UpdateComponent<Boom::ColliderComponent>(Boom::ComponentID::COLLIDER, selected);
+                    UpdateComponent<Boom::RigidBodyComponent>(Boom::ComponentID::RIGIDBODY, selected);
+                    UpdateComponent<Boom::ColliderComponent>(Boom::ComponentID::COLLIDER, selected);
                     UpdateComponent<Boom::ModelComponent>(Boom::ComponentID::MODEL, selected);
                     //UpdateComponent<Boom::AnimatorComponent>(Boom::ComponentID::ANIMATOR, selected);
                     UpdateComponent<Boom::DirectLightComponent>(Boom::ComponentID::DIRECT_LIGHT, selected);
@@ -744,10 +776,41 @@ namespace EditorUI {
             ImGui::TableSetColumnIndex(0);
             ImGui::PushID(static_cast<int>(id));
             if (ImGui::Selectable(COMPONENT_NAMES[static_cast<size_t>(id)].data())) {
-                selected.Attach<Type>();
-                ImGui::CloseCurrentPopup();
+
+                if constexpr (std::is_same_v<Type, Boom::ColliderComponent>) {
+                    if (!selected.Has<Boom::RigidBodyComponent>()) {
+                        // Open the warning popup but DON'T close the "Add Component" popup
+                        ImGui::OpenPopup("ColliderRequiresRigidbody");
+                    }
+                    else {
+                        // It has a rigidbody, so proceed
+                        selected.Attach<Type>();
+                        m_App->GetPhysicsContext().AddRigidBody(selected, m_App->GetAssetRegistry());
+                        ImGui::CloseCurrentPopup();
+                    }
+                }
+                else {
+                    // This is not a collider, add it normally
+                    selected.Attach<Type>();
+                    if constexpr (std::is_same_v<Type, Boom::RigidBodyComponent>) {
+                        m_App->GetPhysicsContext().AddRigidBody(selected, m_App->GetAssetRegistry());
+                    }
+                    ImGui::CloseCurrentPopup();
+                }
             }
             ImGui::PopID();
+
+            // Modal popup definition
+            if (ImGui::BeginPopupModal("ColliderRequiresRigidbody", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                ImGui::Text("A RigidBodyComponent is required to add a ColliderComponent.\n\nPlease add a Rigidbody first.");
+                ImGui::Separator();
+                ImGui::SetItemDefaultFocus();
+                if (ImGui::Button("OK", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
         }
     }
 

@@ -510,7 +510,7 @@ namespace Boom
                     UpdateStaticTransforms();
                     RunPhysicsSimulation();
                     InitNavRuntime();
-                    UpdateThirdPersonCameras();
+                    //UpdateThirdPersonCameras();
                 }
 
                 m_SphereTimer += m_Context->DeltaTime;
@@ -1750,84 +1750,84 @@ namespace Boom
         }
 
 
-        BOOM_INLINE void UpdateThirdPersonCameras()
-        {
-            // 1. Get input
-            glm::vec2 mouseDelta = m_Context->window->input.mouseDeltaLast();
-            glm::vec2 scrollDelta = m_Context->window->input.scrollDelta();
+        //BOOM_INLINE void UpdateThirdPersonCameras()
+        //{
+        //    // 1. Get input
+        //    glm::vec2 mouseDelta = m_Context->window->input.mouseDeltaLast();
+        //    glm::vec2 scrollDelta = m_Context->window->input.scrollDelta();
 
-            // 2. Iterate over all third-person cameras
-            EnttView<Entity, ThirdPersonCameraComponent, TransformComponent>(
-                [this, &mouseDelta, &scrollDelta](Entity entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
-                {
-                    // 3. Find the target entity by its UID
-                    if (cam.targetUID == 0) return; // No target UID set
+        //    // 2. Iterate over all third-person cameras
+        //    EnttView<Entity, ThirdPersonCameraComponent, TransformComponent>(
+        //        [this, &mouseDelta, &scrollDelta](Entity entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
+        //        {
+        //            // 3. Find the target entity by its UID
+        //            if (cam.targetUID == 0) return; // No target UID set
 
-                    entt::entity targetEnttID = entt::null;
-                    auto infoView = m_Context->scene.view<InfoComponent>();
-                    for (auto e : infoView) {
-                        if (infoView.get<InfoComponent>(e).uid == cam.targetUID) {
-                            targetEnttID = e;
-                            break;
-                        }
-                    }
+        //            entt::entity targetEnttID = entt::null;
+        //            auto infoView = m_Context->scene.view<InfoComponent>();
+        //            for (auto e : infoView) {
+        //                if (infoView.get<InfoComponent>(e).uid == cam.targetUID) {
+        //                    targetEnttID = e;
+        //                    break;
+        //                }
+        //            }
 
-                    if (targetEnttID == entt::null) return; // Target not found
+        //            if (targetEnttID == entt::null) return; // Target not found
 
-                    Entity target{ &m_Context->scene, targetEnttID };
-                    if (!target.Has<TransformComponent>()) return; // Target has no position
+        //            Entity target{ &m_Context->scene, targetEnttID };
+        //            if (!target.Has<TransformComponent>()) return; // Target has no position
 
-                    //
-                    // === NEW LOGIC STARTS HERE ===
-                    //
+        //            //
+        //            // === NEW LOGIC STARTS HERE ===
+        //            //
 
-                    // 4. Get the target's full transform
-                    Transform3D& targetTransform = target.Get<TransformComponent>().transform;
-                    glm::vec3 targetPosition = targetTransform.translate;
-                    float targetYaw = targetTransform.rotate.y; // Get the player's Y rotation
+        //            // 4. Get the target's full transform
+        //            Transform3D& targetTransform = target.Get<TransformComponent>().transform;
+        //            glm::vec3 targetPosition = targetTransform.translate;
+        //            float targetYaw = targetTransform.rotate.y; // Get the player's Y rotation
 
-                    // 5. Update Pitch (up/down) from the mouse
-                    cam.currentPitch -= mouseDelta.y * cam.mouseSensitivity;
+        //            // 5. Update Pitch (up/down) from the mouse
+        //            cam.currentPitch -= mouseDelta.y * cam.mouseSensitivity;
 
-                    // 6. Apply new Pitch Limits
-                    //    We clamp the pitch from 5 (slightly looking down) to 40 (about 45 degrees)
-                    //    This prevents the camera from going "below the plane".
-                    cam.currentPitch = glm::clamp(cam.currentPitch, 2.0f, 40.0f);
+        //            // 6. Apply new Pitch Limits
+        //            //    We clamp the pitch from 5 (slightly looking down) to 40 (about 45 degrees)
+        //            //    This prevents the camera from going "below the plane".
+        //            cam.currentPitch = glm::clamp(cam.currentPitch, 2.0f, 40.0f);
 
-                    // 7. Lock Yaw (left/right) to the target's yaw
-                    //    This keeps the camera locked behind the player.
-                    cam.currentYaw = targetYaw + 180.0f;
+        //            // 7. Lock Yaw (left/right) to the target's yaw
+        //            //    This keeps the camera locked behind the player.
+        //            cam.currentYaw = targetYaw + 180.0f;
 
-                    // 8. Update distance (zoom) from the scroll wheel
-                    cam.currentDistance -= scrollDelta.y * cam.scrollSensitivity;
-                    cam.currentDistance = glm::clamp(cam.currentDistance, cam.minDistance, cam.maxDistance);
+        //            // 8. Update distance (zoom) from the scroll wheel
+        //            cam.currentDistance -= scrollDelta.y * cam.scrollSensitivity;
+        //            cam.currentDistance = glm::clamp(cam.currentDistance, cam.minDistance, cam.maxDistance);
 
-                    // 9. Calculate the camera's final orientation
-                    glm::quat orientation = glm::quat(glm::vec3(glm::radians(cam.currentPitch),
-                        glm::radians(cam.currentYaw),
-                        0.0f));
+        //            // 9. Calculate the camera's final orientation
+        //            glm::quat orientation = glm::quat(glm::vec3(glm::radians(cam.currentPitch),
+        //                glm::radians(cam.currentYaw),
+        //                0.0f));
 
-                    // 10. Define the pivot point (e.g., 5 units above the player's origin)
-                    glm::vec3 pivotPosition = targetPosition + glm::vec3(0.0f, cam.offset.y, 0.0f);
+        //            // 10. Define the pivot point (e.g., 5 units above the player's origin)
+        //            glm::vec3 pivotPosition = targetPosition + glm::vec3(0.0f, cam.offset.y, 0.0f);
 
-                    // 11. Calculate the final camera position
-                    //     Start with a vector pointing "back" by the zoom distance
-                    glm::vec3 offsetVector = glm::vec3(0.0f, 0.0f, -cam.currentDistance);
-                    //     Rotate that vector by the final orientation
-                    glm::vec3 rotatedOffset = orientation * offsetVector;
-                    //     Add it to the pivot point
-                    glm::vec3 desiredPosition = pivotPosition + rotatedOffset;
+        //            // 11. Calculate the final camera position
+        //            //     Start with a vector pointing "back" by the zoom distance
+        //            glm::vec3 offsetVector = glm::vec3(0.0f, 0.0f, -cam.currentDistance);
+        //            //     Rotate that vector by the final orientation
+        //            glm::vec3 rotatedOffset = orientation * offsetVector;
+        //            //     Add it to the pivot point
+        //            glm::vec3 desiredPosition = pivotPosition + rotatedOffset;
 
-                    // 12. Update the camera's actual transform
-                    tc.transform.translate = desiredPosition;
+        //            // 12. Update the camera's actual transform
+        //            tc.transform.translate = desiredPosition;
 
-                    // 13. Make the camera look at the pivot point
-                    tc.transform.rotate = glm::degrees(glm::eulerAngles(
-                        glm::quatLookAt(glm::normalize(pivotPosition - desiredPosition), glm::vec3(0, 1, 0))
-                    ));
-                }
-            );
-        }
+        //            // 13. Make the camera look at the pivot point
+        //            tc.transform.rotate = glm::degrees(glm::eulerAngles(
+        //                glm::quatLookAt(glm::normalize(pivotPosition - desiredPosition), glm::vec3(0, 1, 0))
+        //            ));
+        //        }
+        //    );
+        //}
     };
 
 

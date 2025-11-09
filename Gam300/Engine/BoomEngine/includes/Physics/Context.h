@@ -159,7 +159,7 @@ namespace Boom {
             auto& transform = entity.Get<TransformComponent>().transform;
             auto& body = entity.Get<RigidBodyComponent>().RigidBody;
             auto& collider = entity.Get<ColliderComponent>().Collider;
-            PxTransform userLocalPose(ToPxVec3(collider.localPosition), ToPxQuat(collider.localRotation)); 
+            PxTransform userLocalPose(ToPxVec3(collider.localPosition), ToPxQuat(collider.localRotation));
             if (!body.actor) return;
 
             // 1. --- Destroy the old shape ---
@@ -171,18 +171,18 @@ namespace Boom {
 
             // 2. --- Re-create the shape with the new scale (logic moved from AddRigidBody) ---
             if (collider.type == Collider3D::BOX) {
-                PxBoxGeometry box(ToPxVec3(transform.scale / 2.0f));
+                PxBoxGeometry box(ToPxVec3((transform.scale * collider.localScale) / 2.0f));
                 collider.Shape = m_Physics->createShape(box, *collider.material);
                 collider.Shape->setLocalPose(userLocalPose);
             }
             else if (collider.type == Collider3D::SPHERE) {
-                PxSphereGeometry sphere(transform.scale.x / 2.0f);
+                PxSphereGeometry sphere((transform.scale.x * collider.localScale.x) / 2.0f);
                 collider.Shape = m_Physics->createShape(sphere, *collider.material);
                 collider.Shape->setLocalPose(userLocalPose);
             }
             else if (collider.type == Collider3D::CAPSULE) {
                 // (Your existing, correct capsule creation logic goes here)
-                const glm::vec3 s = glm::abs(transform.scale);
+                const glm::vec3 s = glm::abs(transform.scale * collider.localScale);
                 enum Axis { AXIS_X = 0, AXIS_Y = 1, AXIS_Z = 2 };
                 Axis majorAxis = AXIS_X;
                 if (s.y > s.x && s.y > s.z) majorAxis = AXIS_Y;
@@ -201,7 +201,7 @@ namespace Boom {
                 if (majorAxis == AXIS_Y) localQ = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
                 else if (majorAxis == AXIS_Z) localQ = PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f));
                 PxTransform capsuleAxisPose(PxVec3(0.0f), localQ);
-                collider.Shape->setLocalPose(userLocalPose* capsuleAxisPose);
+                collider.Shape->setLocalPose(userLocalPose * capsuleAxisPose);
             }
             else if (collider.type == Collider3D::MESH) {
                 if (collider.physicsMeshID == EMPTY_ASSET) {
@@ -217,7 +217,7 @@ namespace Boom {
 
                 if (physicsMeshAsset.mesh) {
                     // Create the geometry and apply the entity's scale
-                    PxConvexMeshGeometry convexGeom(physicsMeshAsset.mesh, PxMeshScale(ToPxVec3(transform.scale)));
+                    PxConvexMeshGeometry convexGeom(physicsMeshAsset.mesh, PxMeshScale(ToPxVec3(transform.scale * collider.localScale)));
                     collider.Shape = m_Physics->createShape(convexGeom, *collider.material);
                     collider.Shape->setLocalPose(userLocalPose);
                 }
@@ -237,8 +237,8 @@ namespace Boom {
                 PxPlaneGeometry planeGeom;
                 collider.Shape = m_Physics->createShape(planeGeom, *collider.material);
 
-				// Check rotation and adjust normal accordingly
-                const glm::vec3 s = glm::abs(transform.scale);
+                // Check rotation and adjust normal accordingly
+                const glm::vec3 s = glm::abs(transform.scale * collider.localScale);
                 PxQuat planeRot = PxQuat(PxIdentity); // Default: +X normal (for YZ walls)
 
                 if (s.y < s.x && s.y < s.z) {
@@ -285,8 +285,6 @@ namespace Boom {
 
             pose.q = PxQuat(rot.x, rot.y, rot.z, rot.w);
 
-            body.previousScale = transform.scale;
-
             // create a rigid body actor
             if (entity.template Has<ColliderComponent>())
             {
@@ -301,14 +299,13 @@ namespace Boom {
 
                 if (collider.type == Collider3D::BOX)
                 {
-                    PxBoxGeometry
-                        box(ToPxVec3(transform.scale / 2.0f));
+                    PxBoxGeometry box(ToPxVec3((transform.scale * collider.localScale) / 2.0f));
                     collider.Shape = m_Physics->createShape(box, *collider.material);
                     collider.Shape->setLocalPose(userLocalPose);
                 }
                 else if (collider.type == Collider3D::SPHERE) {
                     PxSphereGeometry
-                        sphere(transform.scale.x / 2.0f);
+                        sphere((transform.scale.x * collider.localScale.x) / 2.0f);
                     collider.Shape = m_Physics->createShape(sphere, *collider.material);
                     PxTransform relativePose(PxQuat(0, PxVec3(0, 0, 1)));
                     collider.Shape->setLocalPose(userLocalPose);
@@ -319,7 +316,7 @@ namespace Boom {
                     }
 
                     // Decide which axis the capsule should align to based on the largest scale component.
-                    const glm::vec3 s = glm::abs(transform.scale);
+                    const glm::vec3 s = glm::abs(transform.scale * collider.localScale);
                     enum Axis { AXIS_X = 0, AXIS_Y = 1, AXIS_Z = 2 };
                     Axis majorAxis = AXIS_X;
                     if (s.y > s.x && s.y > s.z) {
@@ -375,7 +372,7 @@ namespace Boom {
                     }
 
                     PxTransform capsuleAxisPose(PxVec3(0.0f), localQ);
-                    collider.Shape->setLocalPose(userLocalPose* capsuleAxisPose);
+                    collider.Shape->setLocalPose(userLocalPose * capsuleAxisPose);
                 }
 
                 else if (collider.type == Collider3D::MESH) {
@@ -396,7 +393,7 @@ namespace Boom {
                         PxConvexMeshGeometry convexGeom(physicsMeshAsset.mesh);
 
                         // Apply the entity's scale to the geometry
-                        convexGeom.scale.scale = ToPxVec3(transform.scale);
+                        convexGeom.scale.scale = ToPxVec3(transform.scale * collider.localScale);
 
                         collider.Shape = m_Physics->createShape(convexGeom, *collider.material);
                         collider.Shape->setLocalPose(userLocalPose);
@@ -417,7 +414,7 @@ namespace Boom {
                     PxPlaneGeometry planeGeom;
                     collider.Shape = m_Physics->createShape(planeGeom, *collider.material);
 
-                    const glm::vec3 s = glm::abs(transform.scale);
+                    const glm::vec3 s = glm::abs(transform.scale * collider.localScale);
                     PxQuat planeRot = PxQuat(PxIdentity); // Default: +X normal (for YZ walls)
 
                     if (s.y < s.x && s.y < s.z) {
@@ -452,15 +449,15 @@ namespace Boom {
 
                     PxRigidDynamic* dyn = static_cast<PxRigidDynamic*>(body.actor);
                     if (dyn) {
-                        // You can remove dyn->setMass(body.mass); as updateMassAndInertia handles it.
+                        // You can remove dyn->setMass(body.mass); as updateMassAndInertIA handles it.
                         dyn->setLinearVelocity(PxVec3(body.initialVelocity.x, body.initialVelocity.y, body.initialVelocity.z));
                     }
                 }
                 else if (body.type == RigidBody3D::STATIC)
                 {
-                    body.actor 
+                    body.actor
                         = PxCreateStatic(*m_Physics,
-                        pose, *collider.Shape);
+                            pose, *collider.Shape);
                 }
             }
             else
