@@ -506,7 +506,6 @@ namespace Boom
                     EnttView<Entity, RigidBodyComponent>([](auto, RigidBodyComponent& rb) {
                         rb.RigidBody.isColliding = false;
                         });
-                    script_update_all(static_cast<float>(m_Context->DeltaTime));
                     UpdateStaticTransforms();
                     RunPhysicsSimulation();
                     InitNavRuntime();
@@ -1526,13 +1525,6 @@ namespace Boom
 #endif
         }
 
-            // 2. Iterate over all entities that have BOTH a camera and a transform
-            EnttView<Entity, ThirdPersonCameraComponent, TransformComponent>(
-                [this, &mouseDelta, &scrollDelta](Entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
-                {
-                    // 3. Find the target entity by its UID
-                    if (cam.targetUID == 0) return; // No target UID set
-
         BOOM_INLINE bool InitMonoRuntime(const std::string& monoBaseDir,
             const std::string& assembliesDir,
             const char* domainName = "BoomDomain")
@@ -1723,7 +1715,78 @@ namespace Boom
             }
             return true;
         }
+
+
+        BOOM_INLINE void UpdateThirdPersonCameras()
+        {
+            // 1. Get input (mouse delta and scroll)
+            // You'll need to get this from your input system.
+            // Assuming m_Context->window->input.mouseDeltaLast() and scrollDelta() exist.
+            // This is a placeholder; you must replace it with your actual input polling.
+            glm::vec2 mouseDelta = m_Context->window->input.mouseDeltaLast();
+            glm::vec2 scrollDelta = m_Context->window->input.scrollDelta();
+
+            // 2. Iterate over all entities that have BOTH a camera and a transform
+            EnttView<Entity, ThirdPersonCameraComponent, TransformComponent>(
+                [this, &mouseDelta, &scrollDelta](Entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
+                {
+                    // 3. Find the target entity by its UID
+                    if (cam.targetUID == 0) return; // No target UID set
+
+                    entt::entity targetEnttID = entt::null;
+                    auto infoView = m_Context->scene.view<InfoComponent>();
+                    for (auto e : infoView) {
+                        if (infoView.get<InfoComponent>(e).uid == cam.targetUID) {
+                            targetEnttID = e;
+                            break;
+                        }
+                    }
+
+                    // 4. Get the target's transform
+                    if (targetEnttID == entt::null) return; // Target not found
+
+                    Entity target{ &m_Context->scene, targetEnttID };
+                    if (!target.Has<TransformComponent>()) return; // Target has no position
+
+                    glm::vec3 targetPosition = target.Get<TransformComponent>().transform.translate;
+
+                    // 5. Update orbit (yaw/pitch) based on mouse input
+                    cam.currentYaw -= mouseDelta.x * cam.mouseSensitivity;
+                    cam.currentPitch -= mouseDelta.y * cam.mouseSensitivity;
+
+                    // ... (rest of the logic from Step 6 onward is the same) ...
+
+                    // Clamp pitch
+                    cam.currentPitch = glm::clamp(cam.currentPitch, -30.0f, 80.0f);
+
+                    // Update distance (zoom)
+                    cam.currentDistance -= scrollDelta.y * cam.scrollSensitivity;
+                    cam.currentDistance = glm::clamp(cam.currentDistance, cam.minDistance, cam.maxDistance);
+
+                    // Calculate rotation
+                    glm::quat orientation = glm::quat(glm::vec3(glm::radians(cam.currentPitch),
+                        glm::radians(cam.currentYaw),
+                        0.0f));
+
+                    // Calculate position
+                    glm::vec3 offset = glm::vec3(0.0f, 0.0f, -cam.currentDistance);
+                    glm::vec3 desiredPosition = targetPosition + (orientation * offset);
+
+                    // (Optional Raycast)
+
+                    // Update transform
+                    tc.transform.translate = desiredPosition;
+
+                    // Look at target
+                    tc.transform.rotate = glm::degrees(glm::eulerAngles(
+                        glm::quatLookAt(glm::normalize(targetPosition - desiredPosition), glm::vec3(0, 1, 0))
+                    ));
+                }
+            );
+        }
     };
+
+
 
 }
 
