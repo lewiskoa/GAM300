@@ -28,14 +28,15 @@ namespace Boom {
     bool ScriptingSystem::CallStart()
     {
         // Fully-qualified static method: Namespace.Type:Method(signature)
-        return m_Mono.InvokeStatic("Scripts.Entry:Start()");
+        return m_Mono.InvokeStatic("GameScripts.Entry:Start()");
     }
 
     bool ScriptingSystem::CallUpdate(float dt)
     {
         void* args[1];
         args[0] = &dt; // Mono expects float* for single-precision
-        return m_Mono.InvokeStatic("Scripts.Entry:Update(single)", args, 1);
+        return m_Mono.InvokeStatic("GameScripts.Entry:Update(single)", args, 1);
     }
+
 
 } // namespace Boom

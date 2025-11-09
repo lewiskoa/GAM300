@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.7.34024.191
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BoomEngine", "Engine\BoomEngine\BoomEngine.vcxproj", "{7317F319-DB09-4872-8B6E-D3C5F6A5E163}"
+	ProjectSection(ProjectDependencies) = postProject
+		{48A044EF-F6D5-4C10-B635-DBA25035A60F} = {48A044EF-F6D5-4C10-B635-DBA25035A60F}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Editor", "Editor\Editor.vcxproj", "{D7714CC2-91DB-45AB-8DE4-EB497A9CA141}"
 EndProject

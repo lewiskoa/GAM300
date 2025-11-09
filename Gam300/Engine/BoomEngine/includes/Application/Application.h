@@ -29,9 +29,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include "Scripting/MonoRuntime.h"
-
-
-
+#include "Scripting/ScriptingSystem.h"
+#include "Scripting/ScriptBinding.h"
 
 namespace Boom {
 
@@ -240,9 +239,11 @@ namespace Boom
         {
             BOOM_INFO("[Application] RunContext started");
             LoadScene("default");
+            
 
             // -- LOADING in MONO --
             const std::string exeDir = GetExeDir();
+            
 
             std::filesystem::path repoRoot = std::filesystem::path(exeDir)
                 .parent_path()  // Debug -> x64
@@ -266,6 +267,7 @@ namespace Boom
 
             else
             {
+                RegisterScriptInternalCalls(m_Context);
                 if (!LoadGameAssembly("GameScripts.dll"))
                 {
 #ifdef _DEBUG
@@ -376,6 +378,7 @@ namespace Boom
 
                 // Always update delta time, but adjust for pause state
                 ComputeFrameDeltaTime();
+                InvokeStatic1Float("GameScripts", "Entry", "Update", static_cast<float>(m_Context->DeltaTime));
 
                 // Animation testing controls
                 {
@@ -1509,6 +1512,36 @@ namespace Boom
 #ifdef _DEBUG
                 BOOM_ERROR("[Mono] Exception: {}", utf8 ? utf8 : "(null)");
 #endif // DEBUG
+                if (utf8) mono_free(utf8);
+                return false;
+            }
+            return true;
+        }
+
+        BOOM_INLINE bool InvokeStatic1Float(const char* nsName,
+            const char* className,
+            const char* methodName,
+            float value)
+        {
+            if (!m_GameImage) { BOOM_ERROR("[Mono] No assembly image loaded."); return false; }
+
+            MonoClass* klass = mono_class_from_name(m_GameImage, nsName, className);
+            if (!klass) { BOOM_ERROR("[Mono] Class not found: {}.{}", nsName, className); return false; }
+
+            // method with 1 parameter
+            MonoMethod* method = mono_class_get_method_from_name(klass, methodName, 1);
+            if (!method) { BOOM_ERROR("[Mono] Method not found: {}.{}", className, methodName); return false; }
+
+            void* args[1];
+            args[0] = &value;
+
+            MonoObject* exc = nullptr;
+            mono_runtime_invoke(method, nullptr, args, &exc);
+            if (exc)
+            {
+                MonoString* s = mono_object_to_string(exc, nullptr);
+                char* utf8 = mono_string_to_utf8(s);
+                BOOM_ERROR("[Mono] Exception: {}", utf8 ? utf8 : "(null)");
                 if (utf8) mono_free(utf8);
                 return false;
             }

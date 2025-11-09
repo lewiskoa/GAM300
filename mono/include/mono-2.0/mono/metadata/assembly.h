@@ -72,7 +72,7 @@ mono_install_assembly_load_hook (MonoAssemblyLoadFunc func, void* user_data);
  * assemblies for a given assembly name.
  */
 typedef MonoAssembly *(*MonoAssemblySearchFunc)         (MonoAssemblyName *aname, void* user_data);
-MONO_API MONO_RT_EXTERNAL_ONLY
+MONO_API MONO_RT_EXTERNAL_ONLY	
 void          mono_install_assembly_search_hook (MonoAssemblySearchFunc func, void* user_data);
 MONO_API MONO_RT_EXTERNAL_ONLY
 void 	      mono_install_assembly_refonly_search_hook (MonoAssemblySearchFunc func, void* user_data);
