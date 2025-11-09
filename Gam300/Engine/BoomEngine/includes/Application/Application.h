@@ -98,7 +98,7 @@ namespace Boom
         PAUSED,
         STOPPED
     };
-
+   
     /**
      * @class Application
      * @brief Core application that owns the context and drives all layers.
@@ -317,6 +317,7 @@ namespace Boom
             // --- END MONO INITIALIZE ---
 
             InitNavRuntime();
+			EnsureNinjaSeeksSamurai();
             CameraController camera(
                 m_Context->window.get()
             );
@@ -954,6 +955,33 @@ namespace Boom
         Boom::NavAgentSystem                   m_NavAgents;
         entt::entity                           m_PlayerE = entt::null;
         entt::entity                           m_AgentE = entt::null;
+        BOOM_INLINE void EnsureNinjaSeeksSamurai()
+        {
+            auto& reg = m_Context->scene;
+
+            // Find target (player) named "Samurai"
+            entt::entity samurai = Boom::FindEntityByName(reg, "Samurai");
+            if (samurai == entt::null) {
+                BOOM_WARN("[Nav] 'Samurai' not found in scene; Ninja will idle.");
+                return;
+            }
+
+            // Find or create the seeker named "Ninja"
+            entt::entity ninja = Boom::FindEntityByName(reg, "Ninja");
+       
+
+            // Ensure Ninja has a NavAgentComponent and configure it to follow Samurai
+            auto& nac = reg.get_or_emplace<Boom::NavAgentComponent>(ninja);
+
+            // NOTE: NavAgentComponent wraps NavAgent as 'agent'
+            nac.follow = samurai;
+            nac.active = true;
+            nac.dirty = true;   // force first path build on the next update
+            nac.speed = 2.5f;   // tune as you like
+            nac.arrive = 0.15f;
+
+            BOOM_INFO("[Nav] 'Ninja' will seek 'Samurai'.");
+        }
         BOOM_INLINE void InitNavRuntime()
         {
             if (m_NavInitialized) return;
@@ -962,7 +990,7 @@ namespace Boom
 
             // 1) Build / load navmesh only once
             if (!m_Nav) {
-                const char* kNavPath = "Resources/NavData/solo_navmesh.bin";
+                const char* kNavPath = "Resources/NavData/level1.bin";
                 m_Nav = std::make_unique<Boom::DetourNavSystem>();
                 if (!m_Nav || !m_Nav->initFromFile(kNavPath)) {
                     BOOM_ERROR("[Nav] Failed to load navmesh: {}", kNavPath);
