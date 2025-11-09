@@ -12,7 +12,7 @@ namespace GameScripts
         public static void Start()
         {
             // Match this to your scene entity name (e.g., "Player" or "Sphere")
-            _player = API.FindEntity("Player");
+            _player = API.FindEntity("Samurai");
             API.Log(_player != 0
                 ? "[C#] Player entity found."
                 : "[C#] Player entity NOT found. Rename an entity to 'Player'.");

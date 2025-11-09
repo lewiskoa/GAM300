@@ -266,7 +266,7 @@ namespace Boom
         BOOM_INLINE void RunContext(bool showFrame = false)
         {
             BOOM_INFO("[Application] RunContext started");
-            LoadScene("default");
+            LoadScene("level");
             
 
             // -- LOADING in MONO --
