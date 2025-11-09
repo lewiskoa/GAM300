@@ -192,7 +192,7 @@ namespace EditorUI {
         ImGui::TextUnformatted("Load Navmesh (.bin)");
 
         // Static UI state for the load panel
-        static std::string              s_BinDir = "Resources/NavData";
+        static std::string              s_BinDir = "Resources/NavData/";
         static std::vector<std::string> s_BinFiles;
         static int                      s_Selected = -1;
         static bool                     s_FirstScan = true;
