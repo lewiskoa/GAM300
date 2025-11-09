@@ -39,30 +39,27 @@ ASSETS:
     Name: sphere
     Source: Resources/Physics/sphere.pxm
   - Type: PREFAB
-    UID: 8959324902145137880
-    Name: Dancing Model
-    Source: Prefabs/Dancing Model.prefab
+    UID: 5076640578672151242
+    Name: Dance
+    Source: Prefabs/Dance.prefab
     Properties:
       SerializedData: |
         InfoComponent:
-          Parent: 0
-          Name: Player
           UID: 18299148976802030936
+          Name: Player
+          Parent: 0
         TransformComponent:
-          Transform:
-            Translate: [0, -1.20000005, 0]
-            Rotate: [0, 0, 0]
-            Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+          Translate: [0, -1.20000005, 0]
+          Rotate: [0, 0, 0]
+          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
         ModelComponent:
           ModelID: 9625104056789884581
           MaterialID: 11573253777835523025
-          ModelName: ""
-          MaterialName: ""
-          ModelSource: ""
-          MaterialSource: ""
+          ModelSource: dance.fbx
+          MaterialSource: Marble
         AnimatorComponent:
           Sequence: 0
-          Time: 870.897278
+          Time: 832.96283
 
   - Type: PREFAB
     UID: 18004803294149376765
@@ -88,27 +85,30 @@ ASSETS:
           Time: 30.0344028
 
   - Type: PREFAB
-    UID: 5076640578672151242
-    Name: Dance
-    Source: Prefabs/Dance.prefab
+    UID: 8959324902145137880
+    Name: Dancing Model
+    Source: Prefabs/Dancing Model.prefab
     Properties:
       SerializedData: |
         InfoComponent:
-          UID: 18299148976802030936
-          Name: Player
           Parent: 0
+          Name: Player
+          UID: 18299148976802030936
         TransformComponent:
-          Translate: [0, -1.20000005, 0]
-          Rotate: [0, 0, 0]
-          Scale: [0.00999999978, 0.00999999978, 0.00999999978]
+          Transform:
+            Translate: [0, -1.20000005, 0]
+            Rotate: [0, 0, 0]
+            Scale: [0.00999999978, 0.00999999978, 0.00999999978]
         ModelComponent:
           ModelID: 9625104056789884581
           MaterialID: 11573253777835523025
-          ModelSource: dance.fbx
-          MaterialSource: Marble
+          ModelName: ""
+          MaterialName: ""
+          ModelSource: ""
+          MaterialSource: ""
         AnimatorComponent:
           Sequence: 0
-          Time: 832.96283
+          Time: 870.897278
 
   - Type: TEXTURE
     UID: 16300877889967123005
@@ -117,28 +117,6 @@ ASSETS:
     Properties:
       Data:
         CompileAsCompressed: false
-        quality: 0.5
-        alphaThreshold: 128
-        mipLevel: 10
-        isGamma: true
-  - Type: TEXTURE
-    UID: 2000641971401327177
-    Name: folder.png
-    Source: Resources/Textures/Icons/folder.png
-    Properties:
-      Data:
-        CompileAsCompressed: false
-        quality: 0.5
-        alphaThreshold: 128
-        mipLevel: 10
-        isGamma: true
-  - Type: TEXTURE
-    UID: 16490361536122300952
-    Name: roughness.png
-    Source: Resources/Textures/Marble/roughness.png
-    Properties:
-      Data:
-        CompileAsCompressed: true
         quality: 0.5
         alphaThreshold: 128
         mipLevel: 10
@@ -155,9 +133,9 @@ ASSETS:
         mipLevel: 10
         isGamma: true
   - Type: TEXTURE
-    UID: 5741204174820446725
-    Name: albedo.png
-    Source: Resources/Textures/Marble/albedo.png
+    UID: 16490361536122300952
+    Name: roughness.png
+    Source: Resources/Textures/Marble/roughness.png
     Properties:
       Data:
         CompileAsCompressed: true
@@ -166,9 +144,20 @@ ASSETS:
         mipLevel: 10
         isGamma: true
   - Type: TEXTURE
-    UID: 18399105239901256411
-    Name: normal.png
-    Source: Resources/Textures/Marble/normal.png
+    UID: 2000641971401327177
+    Name: folder.png
+    Source: Resources/Textures/Icons/folder.png
+    Properties:
+      Data:
+        CompileAsCompressed: false
+        quality: 0.5
+        alphaThreshold: 128
+        mipLevel: 10
+        isGamma: true
+  - Type: TEXTURE
+    UID: 5741204174820446725
+    Name: albedo.png
+    Source: Resources/Textures/Marble/albedo.png
     Properties:
       Data:
         CompileAsCompressed: true
@@ -187,6 +176,17 @@ ASSETS:
         alphaThreshold: 128
         mipLevel: 10
         isGamma: true
+  - Type: TEXTURE
+    UID: 18399105239901256411
+    Name: normal.png
+    Source: Resources/Textures/Marble/normal.png
+    Properties:
+      Data:
+        CompileAsCompressed: true
+        quality: 0.5
+        alphaThreshold: 128
+        mipLevel: 10
+        isGamma: true
   - Type: SKYBOX
     UID: 10427935764841817814
     Name: sky.DDS
@@ -194,31 +194,20 @@ ASSETS:
     Properties:
       Size: 2048
   - Type: MODEL
-    UID: 11553622136344308773
-    Name: Cube - Copy (3).FBX
-    Source: Resources/Models/Cube - Copy (3).FBX
-    Properties:
-      Model Transform:
-        transform:
-          Translate: [0, 0, 0]
-          Rotate: [0, 0, 0]
-          Scale: [1, 1, 1]
-      HasJoints: false
-  - Type: MODEL
     UID: 9625104056789884581
     Name: dance.FBX
     Source: Resources/Models/dance.fbx
     Properties:
       Model Transform:
         transform:
-          Translate: [0, 0, 0]
+          Translate: [0, -1, 0]
           Rotate: [0, 0, 0]
           Scale: [0.00999999978, 0.00999999978, 0.00999999978]
       HasJoints: true
   - Type: MODEL
-    UID: 1538943657792452404
-    Name: Cube - Copy (2).FBX
-    Source: Resources/Models/Cube - Copy (2).FBX
+    UID: 11553622136344308773
+    Name: Cube - Copy (3).FBX
+    Source: Resources/Models/Cube - Copy (3).FBX
     Properties:
       Model Transform:
         transform:
@@ -238,9 +227,9 @@ ASSETS:
           Scale: [1, 1, 1]
       HasJoints: false
   - Type: MODEL
-    UID: 4930468099905886477
-    Name: Cube - Copy.FBX
-    Source: Resources/Models/Cube - Copy.FBX
+    UID: 1538943657792452404
+    Name: Cube - Copy (2).FBX
+    Source: Resources/Models/Cube - Copy (2).FBX
     Properties:
       Model Transform:
         transform:
@@ -263,6 +252,17 @@ ASSETS:
     UID: 7633162898494281895
     Name: Cube.FBX
     Source: Resources/Models/Cube.FBX
+    Properties:
+      Model Transform:
+        transform:
+          Translate: [0, 0, 0]
+          Rotate: [0, 0, 0]
+          Scale: [1, 1, 1]
+      HasJoints: false
+  - Type: MODEL
+    UID: 4930468099905886477
+    Name: Cube - Copy.FBX
+    Source: Resources/Models/Cube - Copy.FBX
     Properties:
       Model Transform:
         transform:
