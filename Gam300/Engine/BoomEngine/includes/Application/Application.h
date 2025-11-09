@@ -397,7 +397,6 @@ namespace Boom
 
                             }
                         }
-                        static bool lastIState = iPressed;
                         lastIPressed = iPressed;
                         });
                 }
@@ -416,7 +415,6 @@ namespace Boom
                     script_update_all(static_cast<float>(m_Context->DeltaTime));
                     UpdateStaticTransforms();
                     RunPhysicsSimulation();
-
                     UpdateThirdPersonCameras();
                 }
 
@@ -1343,7 +1341,7 @@ namespace Boom
 
             // 2. Iterate over all entities that have BOTH a camera and a transform
             EnttView<Entity, ThirdPersonCameraComponent, TransformComponent>(
-                [this, &mouseDelta, &scrollDelta](Entity entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
+                [this, &mouseDelta, &scrollDelta](Entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
                 {
                     // 3. Find the target entity by its UID
                     if (cam.targetUID == 0) return; // No target UID set
