@@ -17,6 +17,9 @@
     <ClCompile Include="src\Scripting\ScriptingSystem.cpp" />
     <ClCompile Include="src\Scripting\ScriptBinding.cpp" />
     <ClCompile Include="src\SoundSystem.cpp" />
+    <ClCompile Include="includes\AI\DetourNavSystem.cpp" />
+    <ClCompile Include="includes\AI\NavAgent.cpp" />
+    <ClCompile Include="includes\AI\DetourBuildAPI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Application\Application.h" />
@@ -69,5 +72,18 @@
     <ClInclude Include="includes\Graphics\Textures\Compression.h" />
     <ClInclude Include="includes\Audio\SoundSystem.hpp" />
     <ClInclude Include="includes\Audio\TrackLibrary.h" />
+    <ClInclude Include="includes\AI\Grid.h" />
+    <ClInclude Include="includes\AI\GridAStar.h" />
+    <ClInclude Include="includes\AI\GridReverseDjik.h" />
+    <ClInclude Include="includes\AI\GridChaseAI.h" />
+    <ClInclude Include="includes\AI\DetourNavSystem.h" />
+    <ClInclude Include="includes\AI\NavAgent.h" />
+    <ClInclude Include="includes\AI\DetourBuildAPI.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="thirdparty\dotnet\nethost.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="VendorSettings.props" />
   </ItemGroup>
 </Project>

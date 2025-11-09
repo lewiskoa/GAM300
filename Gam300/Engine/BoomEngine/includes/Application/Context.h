@@ -22,7 +22,7 @@ namespace Boom
 	struct AppContext
 	{
 		/// BOOM_INLINE hints to the compiler to inline destructor calls
-		/// reducing function-call overhead in the engine’s core update loop
+		/// reducing function-call overhead in the engineï¿½s core update loop
 		BOOM_INLINE AppContext()
 			: dispatcher{}
 			, window{ std::make_unique<AppWindow>(&dispatcher, CONSTANTS::WINDOW_WIDTH, CONSTANTS::WINDOW_HEIGHT, "Boom Engine") }
@@ -62,6 +62,8 @@ namespace Boom
 		double DeltaTime{};
 		EntityRegistry scene;
 
+		bool ShowNavDebug = false;      // draw mesh edges + poly "nodes"
+		bool ShowNavCorridor = false;   // (optional) draw agent path corridor
 	};
 
 }// namespace Boom

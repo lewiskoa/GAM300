@@ -65,9 +65,11 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="VendorSettings.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="VendorSettings.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -137,6 +139,11 @@
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>
+				$(CompressonatorInc);
+				$(FMODCoreInc);$(FMODStudioInc);%(AdditionalIncludeDirectories)
+			;$(ProjectDir)Vendors;$(ProjectDir)Vendors\Recast\Include;$(ProjectDir)Vendors\DetourCrowd\Include;$(ProjectDir)Vendors\DetourTileCache\Include;$(ProjectDir)Vendors\Detour\Include;$(ProjectDir)Vendors\DebugUtils\Include</AdditionalIncludeDirectories>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -159,9 +166,10 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)\Core</PrecompiledHeaderOutputFile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <AdditionalIncludeDirectories>$(ProjectDir)src\Vendors\xproperty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)src\Vendors\xproperty;%(AdditionalIncludeDirectories);$(ProjectDir)Vendors;$(ProjectDir)Vendors\Recast\Include;$(ProjectDir)Vendors\DetourCrowd\Include;$(ProjectDir)Vendors\DetourTileCache\Include;$(ProjectDir)Vendors\Detour\Include;$(ProjectDir)Vendors\DebugUtils\Include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4273</DisableSpecificWarnings>
       <MultiProcessorCompilation>false</MultiProcessorCompilation>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -172,6 +180,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="includes\AI\DetourBuildAPI.h" />
+    <ClInclude Include="includes\AI\DetourNavSystem.h" />
+    <ClInclude Include="includes\AI\Grid.h" />
+    <ClInclude Include="includes\AI\GridAStar.h" />
+    <ClInclude Include="includes\AI\GridChaseAI.h" />
+    <ClInclude Include="includes\AI\GridReverseDjik.h" />
+    <ClInclude Include="includes\AI\NavAgent.h" />
     <ClInclude Include="includes\Application\Application.h" />
     <ClInclude Include="includes\Application\Context.h" />
     <ClInclude Include="includes\Application\Interface.h" />
@@ -227,6 +242,9 @@
     <ClInclude Include="includes\Window\InputSystem.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="includes\AI\DetourBuildAPI.cpp" />
+    <ClCompile Include="includes\AI\DetourNavSystem.cpp" />
+    <ClCompile Include="includes\AI\NavAgent.cpp" />
     <ClCompile Include="includes\Audio\Audio.cpp" />
     <ClCompile Include="src\Application\Context.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
@@ -266,6 +284,9 @@
     <ClCompile Include="src\SoundSystem.cpp" />
     <ClCompile Include="src\Textures\Compression.cpp" />
     <ClCompile Include="src\Textures\Texture.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="VendorSettings.props" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

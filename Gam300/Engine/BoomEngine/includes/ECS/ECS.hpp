@@ -170,7 +170,13 @@ namespace Boom {
             obj_member<"UID", &InfoComponent::uid>
         )
     };
-
+    BOOM_INLINE entt::entity FindEntityByName(entt::registry& reg, std::string_view name) {
+        auto view = reg.view<const InfoComponent>();
+        for (auto [e, info] : view.each()) {
+            if (info.name == name) return e;
+        }
+        return entt::null;
+    }
     struct DirectLightComponent
     {
         BOOM_INLINE DirectLightComponent(const DirectLightComponent&) = default;

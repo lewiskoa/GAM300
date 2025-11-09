@@ -47,6 +47,7 @@ namespace EditorUI {
              m.showLoadDialog = &m_Owner->m_ShowLoadDialog;
              m.sceneNameBuffer = m_Owner->m_SceneNameBuffer;
              m.sceneNameBufferSize = sizeof(m_Owner->m_SceneNameBuffer);
+             
              m.RefreshSceneList = [this](bool force){ m_Owner->RefreshSceneList(force); };
         }
     }
