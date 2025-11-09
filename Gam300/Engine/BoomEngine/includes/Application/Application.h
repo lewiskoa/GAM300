@@ -488,7 +488,6 @@ namespace Boom
 
                             }
                         }
-                        static bool lastIState = iPressed;
                         lastIPressed = iPressed;
                         });
                 }
@@ -511,6 +510,7 @@ namespace Boom
                     UpdateStaticTransforms();
                     RunPhysicsSimulation();
                     InitNavRuntime();
+                    UpdateThirdPersonCameras();
                 }
 
                 m_SphereTimer += m_Context->DeltaTime;
@@ -1526,6 +1526,12 @@ namespace Boom
 #endif
         }
 
+            // 2. Iterate over all entities that have BOTH a camera and a transform
+            EnttView<Entity, ThirdPersonCameraComponent, TransformComponent>(
+                [this, &mouseDelta, &scrollDelta](Entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
+                {
+                    // 3. Find the target entity by its UID
+                    if (cam.targetUID == 0) return; // No target UID set
 
         BOOM_INLINE bool InitMonoRuntime(const std::string& monoBaseDir,
             const std::string& assembliesDir,
