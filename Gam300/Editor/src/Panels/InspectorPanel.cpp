@@ -178,6 +178,63 @@ namespace EditorUI {
                 [&]() { ctx->scene.remove<Boom::CameraComponent>(m_App->SelectedEntity()); });
         }
 
+        if (selected.Has<Boom::ThirdPersonCameraComponent>())
+        {
+            bool component_open = ImGui::CollapsingHeader("Third Person Camera", ImGuiTreeNodeFlags_DefaultOpen);
+
+            // Add a "..." button to remove the component (optional but good to have)
+            ComponentSettings<Boom::ThirdPersonCameraComponent>(ctx);
+
+            if (component_open)
+            {
+                auto& tpc = selected.Get<Boom::ThirdPersonCameraComponent>();
+
+                // --- BEGIN CUSTOM UI WIDGET ---
+                ImGui::Text("Target Entity");
+                ImGui::SameLine();
+
+                // Find the name of the currently targeted entity
+                const char* currentTargetName = "None";
+                if (tpc.targetUID != 0) {
+                    auto infoView = ctx->scene.view<Boom::InfoComponent>();
+                    for (auto e : infoView) {
+                        const auto& info = infoView.get<Boom::InfoComponent>(e);
+                        if (info.uid == tpc.targetUID) {
+                            currentTargetName = info.name.c_str();
+                            break;
+                        }
+                    }
+                }
+
+                // Draw the dropdown menu
+                if (ImGui::BeginCombo("##TargetEntity", currentTargetName))
+                {
+                    // Add a "None" option
+                    if (ImGui::Selectable("None", tpc.targetUID == 0)) {
+                        tpc.targetUID = 0;
+                    }
+
+                    // Loop through all entities with an InfoComponent to populate the list
+                    auto infoView = ctx->scene.view<Boom::InfoComponent>();
+                    for (auto e : infoView) {
+                        const auto& info = infoView.get<Boom::InfoComponent>(e);
+                        const bool isSelected = (tpc.targetUID == info.uid);
+                        if (ImGui::Selectable(info.name.c_str(), isSelected)) {
+                            tpc.targetUID = info.uid; // Set the UID when selected
+                        }
+                        if (isSelected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+                // --- END CUSTOM UI WIDGET ---
+
+                // Now draw the rest of the properties automatically using xproperty
+                DrawPropertiesUI(Boom::GetThirdPersonCameraComponentProperties(&tpc), &tpc);
+            }
+        }
+
         // Model Component
         if (selected.Has<Boom::ModelComponent>()) {
             auto& mc = selected.Get<Boom::ModelComponent>();
@@ -798,6 +855,26 @@ namespace EditorUI {
         }
     }
 
+    template <>
+    void InspectorPanel::UpdateComponent<Boom::ThirdPersonCameraComponent>(Boom::ComponentID id, Boom::Entity& selected) {
+
+        // --- OUR CUSTOM LOGIC ---
+        // Only show this component in the list if the entity
+        // 1. Has a CameraComponent
+        // 2. Does NOT already have a ThirdPersonCameraComponent
+        //
+        if (selected.Has<Boom::CameraComponent>() && !selected.Has<Boom::ThirdPersonCameraComponent>()) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::PushID(static_cast<int>(id));
+            if (ImGui::Selectable(COMPONENT_NAMES[static_cast<size_t>(id)].data())) {
+                selected.Attach<Boom::ThirdPersonCameraComponent>();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::PopID();
+        }
+    }
+
     void InspectorPanel::ComponentSelector(Boom::Entity& selected) {
         if (ImGui::BeginPopup("AddComponentPopup")) {
             ImGui::SetNextWindowSizeConstraints(ImVec2(300, 200), ImVec2(500, 600));
@@ -819,6 +896,8 @@ namespace EditorUI {
                     UpdateComponent<Boom::SpotLightComponent>(Boom::ComponentID::SPOT_LIGHT, selected);
                     UpdateComponent<Boom::SoundComponent>(Boom::ComponentID::SOUND, selected);
                     //UpdateComponent<Boom::ScriptComponent>(Boom::ComponentID::SCRIPT, selected);
+
+                    UpdateComponent<Boom::ThirdPersonCameraComponent>(Boom::ComponentID::THIRD_PERSON_CAMERA, selected);
                     ImGui::EndTable();
                 }
             }
