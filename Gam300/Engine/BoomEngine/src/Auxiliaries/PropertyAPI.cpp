@@ -25,7 +25,6 @@ namespace Boom {
         IMPLEMENT_COMPONENT_PROPERTY_API(SkyboxComponent)
         IMPLEMENT_COMPONENT_PROPERTY_API(RigidBodyComponent)
         IMPLEMENT_COMPONENT_PROPERTY_API(ColliderComponent)
-		IMPLEMENT_COMPONENT_PROPERTY_API(ThirdPersonCameraComponent)
         // Add more as needed - one line each
 
 } // namespace Boom

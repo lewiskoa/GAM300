@@ -33,7 +33,6 @@ XPROPERTY_REG(InfoComponent)
 XPROPERTY_REG(DirectLightComponent)
 XPROPERTY_REG(PointLightComponent)
 XPROPERTY_REG(SpotLightComponent)
-XPROPERTY_REG(ThirdPersonCameraComponent)
 
 //===============ASSETS================= 
 XPROPERTY_REG(MaterialAsset)

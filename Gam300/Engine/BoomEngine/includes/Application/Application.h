@@ -488,8 +488,6 @@ namespace Boom
                 if (m_AppState == ApplicationState::RUNNING) {
                     UpdateStaticTransforms();
                     RunPhysicsSimulation();
-
-                    UpdateThirdPersonCameras();
                 }
 
                 m_SphereTimer += m_Context->DeltaTime;
@@ -529,11 +527,6 @@ namespace Boom
 
                 //temp input for mouse motion
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);
-
-                if (m_AppState != ApplicationState::RUNNING) {
-                    camera.update(static_cast<float>(m_Context->DeltaTime));
-                }
-
                 camera.update(static_cast<float>(m_Context->DeltaTime));
 
                 glm::mat4 dbgView(1.0f);
@@ -543,24 +536,23 @@ namespace Boom
                 EnttView<Entity, CameraComponent>([this, &curMP, &prevMP, &dbgView, &dbgProj, &dbgCamPos](auto entity, CameraComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
 
-                    if (m_AppState != ApplicationState::RUNNING)
-                    {
-                        // This is the flycam logic, only run when not playing                     
-                        transform.rotate.x += m_Context->window->camRot.x;
-                        transform.rotate.y += m_Context->window->camRot.y;
-                        glm::quat quat{ glm::radians(transform.rotate) };
-                        glm::vec3 dir{ quat * m_Context->window->camMoveDir };
-                        transform.translate += dir;
+                    //get dir vector of current camera
+                    transform.rotate.x += m_Context->window->camRot.x;
+                    transform.rotate.y += m_Context->window->camRot.y;
+                    glm::quat quat{ glm::radians(transform.rotate) };
+                    glm::vec3 dir{ quat * m_Context->window->camMoveDir };
+                    transform.translate += dir;
 
-                        if (curMP == prevMP) {
-                            m_Context->window->camRot = {};
-                            if (m_Context->window->isMiddleClickDown)
-                                m_Context->window->camMoveDir = {};
-                        }
+                    //comp.camera.FOV = m_Context->window->camFOV;
+                    if (curMP == prevMP) {
+                        m_Context->window->camRot = {};
+                        if (m_Context->window->isMiddleClickDown)
+                            m_Context->window->camMoveDir = {};
                     }
 
-                    // This part is needed by BOTH cameras, so leave it outside the 'if'
                     m_Context->renderer->SetCamera(comp.camera, transform);
+
+                    // Cache matrices and camera world position
                     dbgView = comp.camera.View(transform);
                     dbgProj = comp.camera.Projection(m_Context->renderer->Aspect());
                     dbgCamPos = transform.translate;
@@ -1582,72 +1574,6 @@ namespace Boom
                 return false;
             }
             return true;
-        BOOM_INLINE void UpdateThirdPersonCameras()
-        {
-            // 1. Get input (mouse delta and scroll)
-            // You'll need to get this from your input system.
-            // Assuming m_Context->window->input.mouseDeltaLast() and scrollDelta() exist.
-            // This is a placeholder; you must replace it with your actual input polling.
-            glm::vec2 mouseDelta = m_Context->window->input.mouseDeltaLast();
-            glm::vec2 scrollDelta = m_Context->window->input.scrollDelta();
-
-            // 2. Iterate over all entities that have BOTH a camera and a transform
-            EnttView<Entity, ThirdPersonCameraComponent, TransformComponent>(
-                [this, &mouseDelta, &scrollDelta](Entity entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
-                {
-                    // 3. Find the target entity by its UID
-                    if (cam.targetUID == 0) return; // No target UID set
-
-                    entt::entity targetEnttID = entt::null;
-                    auto infoView = m_Context->scene.view<InfoComponent>();
-                    for (auto e : infoView) {
-                        if (infoView.get<InfoComponent>(e).uid == cam.targetUID) {
-                            targetEnttID = e;
-                            break;
-                        }
-                    }
-
-                    // 4. Get the target's transform
-                    if (targetEnttID == entt::null) return; // Target not found
-
-                    Entity target{ &m_Context->scene, targetEnttID };
-                    if (!target.Has<TransformComponent>()) return; // Target has no position
-
-                    glm::vec3 targetPosition = target.Get<TransformComponent>().transform.translate;
-
-                    // 5. Update orbit (yaw/pitch) based on mouse input
-                    cam.currentYaw -= mouseDelta.x * cam.mouseSensitivity;
-                    cam.currentPitch -= mouseDelta.y * cam.mouseSensitivity;
-
-                    // ... (rest of the logic from Step 6 onward is the same) ...
-
-                    // Clamp pitch
-                    cam.currentPitch = glm::clamp(cam.currentPitch, -30.0f, 80.0f);
-
-                    // Update distance (zoom)
-                    cam.currentDistance -= scrollDelta.y * cam.scrollSensitivity;
-                    cam.currentDistance = glm::clamp(cam.currentDistance, cam.minDistance, cam.maxDistance);
-
-                    // Calculate rotation
-                    glm::quat orientation = glm::quat(glm::vec3(glm::radians(cam.currentPitch),
-                        glm::radians(cam.currentYaw),
-                        0.0f));
-
-                    // Calculate position
-                    glm::vec3 offset = glm::vec3(0.0f, 0.0f, -cam.currentDistance);
-                    glm::vec3 desiredPosition = targetPosition + (orientation * offset);
-
-                    // (Optional Raycast)
-
-                    // Update transform
-                    tc.transform.translate = desiredPosition;
-
-                    // Look at target
-                    tc.transform.rotate = glm::degrees(glm::eulerAngles(
-                        glm::quatLookAt(glm::normalize(targetPosition - desiredPosition), glm::vec3(0, 1, 0))
-                    ));
-                }
-            );
         }
     };
 

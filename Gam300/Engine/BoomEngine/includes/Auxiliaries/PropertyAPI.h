@@ -27,7 +27,6 @@ namespace Boom {
     DECLARE_COMPONENT_PROPERTY_API(SkyboxComponent);
     DECLARE_COMPONENT_PROPERTY_API(RigidBodyComponent);
     DECLARE_COMPONENT_PROPERTY_API(ColliderComponent);
-	DECLARE_COMPONENT_PROPERTY_API(ThirdPersonCameraComponent);
     // Add more as needed - one line each
 
 } // namespace Boom

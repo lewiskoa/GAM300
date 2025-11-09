@@ -19,23 +19,21 @@ namespace Boom {
         INFO, TRANSFORM, CAMERA, RIGIDBODY, COLLIDER,
         MODEL, ANIMATOR, DIRECT_LIGHT, POINT_LIGHT, SPOT_LIGHT,
         SOUND, SCRIPT,
-        THIRD_PERSON_CAMERA,
         COUNT
     };
     constexpr std::string_view COMPONENT_NAMES[]{
-        "Info",                 //0
-        "Transform",            //1
-        "Camera",               //2
-        "Rigidbody",            //3
-        "Collider",             //4
-        "Model",                //5
-        "Animator",             //6
-        "Direct Light",         //7
-        "Point Light",          //8
-        "Spot Light",           //9
-        "Sound",                //10
-        "Script",               //11
-		"Third Person Camera"   //12
+        "Info",         //0
+        "Transform",    //1
+        "Camera",       //2
+        "Rigidbody",    //3
+        "Collider",     //4
+        "Model",        //5
+        "Animator",     //6
+        "Direct Light", //7
+        "Point Light",  //8
+        "Spot Light",   //9
+        "Sound",        //10
+        "Script"        //11
     };
 
     // transform component
@@ -267,32 +265,6 @@ namespace Boom {
             // Ensure runtime handle starts cleared when loading a scene
             InstanceId = 0;
         }
-    };
-
-    struct ThirdPersonCameraComponent {
-        AssetID targetUID = 0;       // The UID of the target entity
-        glm::vec3 offset = glm::vec3(0.0f, 5.0f, -10.0f);
-        float currentDistance = 10.0f;
-        float minDistance = 2.0f;
-        float maxDistance = 20.0f;
-        float currentYaw = 0.0f;
-        float currentPitch = 20.0f;
-        float mouseSensitivity = 0.2f;
-        float scrollSensitivity = 1.0f;
-
-        // Add this back in
-        XPROPERTY_DEF(
-            "ThirdPersonCameraComponent", ThirdPersonCameraComponent,
-
-            obj_member<"Offset", &ThirdPersonCameraComponent::offset>,
-            obj_member<"Current Distance", &ThirdPersonCameraComponent::currentDistance>,
-            obj_member<"Min Distance", &ThirdPersonCameraComponent::minDistance>,
-            obj_member<"Max Distance", &ThirdPersonCameraComponent::maxDistance>,
-            obj_member<"Current Yaw", &ThirdPersonCameraComponent::currentYaw>,
-            obj_member<"Current Pitch", &ThirdPersonCameraComponent::currentPitch>,
-            obj_member<"Mouse Sensitivity", &ThirdPersonCameraComponent::mouseSensitivity>,
-            obj_member<"Scroll Sensitivity", &ThirdPersonCameraComponent::scrollSensitivity>
-        )
     };
 
     struct Entity
