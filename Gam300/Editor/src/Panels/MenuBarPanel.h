@@ -45,7 +45,7 @@ namespace EditorUI {
         bool* showSavePrefabDialog{ nullptr };
 
         // Selected entity handle (optional; used by Save/Delete Selected)
-        entt::entity* selectedEntity{ nullptr };
+        entt::entity selectedEntity{ entt::null};
 
         // Scene name text buffer (for Save/Save As defaults)
         char* sceneNameBuffer{ nullptr };

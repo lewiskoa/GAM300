@@ -136,6 +136,7 @@ namespace Boom {
 				);
 
 				if (glGetError() != GL_NO_ERROR) {
+					glDeleteTextures(1, &id);
 					isFailed = true;
 					++failedCounter;
 					break;

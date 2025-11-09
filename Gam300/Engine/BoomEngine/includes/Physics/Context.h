@@ -159,7 +159,7 @@ namespace Boom {
             auto& transform = entity.Get<TransformComponent>().transform;
             auto& body = entity.Get<RigidBodyComponent>().RigidBody;
             auto& collider = entity.Get<ColliderComponent>().Collider;
-
+            PxTransform userLocalPose(ToPxVec3(collider.localPosition), ToPxQuat(collider.localRotation)); 
             if (!body.actor) return;
 
             // 1. --- Destroy the old shape ---
@@ -173,10 +173,12 @@ namespace Boom {
             if (collider.type == Collider3D::BOX) {
                 PxBoxGeometry box(ToPxVec3(transform.scale / 2.0f));
                 collider.Shape = m_Physics->createShape(box, *collider.material);
+                collider.Shape->setLocalPose(userLocalPose);
             }
             else if (collider.type == Collider3D::SPHERE) {
                 PxSphereGeometry sphere(transform.scale.x / 2.0f);
                 collider.Shape = m_Physics->createShape(sphere, *collider.material);
+                collider.Shape->setLocalPose(userLocalPose);
             }
             else if (collider.type == Collider3D::CAPSULE) {
                 // (Your existing, correct capsule creation logic goes here)
@@ -198,7 +200,8 @@ namespace Boom {
                 PxQuat localQ = PxQuat(PxIdentity);
                 if (majorAxis == AXIS_Y) localQ = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
                 else if (majorAxis == AXIS_Z) localQ = PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f));
-                collider.Shape->setLocalPose(PxTransform(PxVec3(0.0f), localQ));
+                PxTransform capsuleAxisPose(PxVec3(0.0f), localQ);
+                collider.Shape->setLocalPose(userLocalPose* capsuleAxisPose);
             }
             else if (collider.type == Collider3D::MESH) {
                 if (collider.physicsMeshID == EMPTY_ASSET) {
@@ -216,11 +219,40 @@ namespace Boom {
                     // Create the geometry and apply the entity's scale
                     PxConvexMeshGeometry convexGeom(physicsMeshAsset.mesh, PxMeshScale(ToPxVec3(transform.scale)));
                     collider.Shape = m_Physics->createShape(convexGeom, *collider.material);
+                    collider.Shape->setLocalPose(userLocalPose);
                 }
                 else {
                     BOOM_ERROR("Failed to load or create mesh shape for asset ID {}", collider.physicsMeshID);
                     return; // Return early
                 }
+            }
+            else if (collider.type == Collider3D::PLANE)
+            {
+                if (body.type == RigidBody3D::DYNAMIC) {
+                    BOOM_WARN("Plane colliders must be STATIC. Forcing body type to STATIC.");
+                    body.type = RigidBody3D::STATIC;
+                }
+
+                // Create the default plane geometry
+                PxPlaneGeometry planeGeom;
+                collider.Shape = m_Physics->createShape(planeGeom, *collider.material);
+
+				// Check rotation and adjust normal accordingly
+                const glm::vec3 s = glm::abs(transform.scale);
+                PxQuat planeRot = PxQuat(PxIdentity); // Default: +X normal (for YZ walls)
+
+                if (s.y < s.x && s.y < s.z) {
+                    // Y is smallest -> Ground plane (+Y normal)
+                    planeRot = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f)); // +90 deg around Z
+                }
+                else if (s.z < s.x && s.z < s.y) {
+                    // Z is smallest -> XY wall (+Z normal)
+                    planeRot = PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)); // -90 deg around Y
+                }
+                // Else: X is smallest, use Identity (default +X normal)
+
+                // Combine user's local pose with our auto-rotation
+                collider.Shape->setLocalPose(userLocalPose * PxTransform(PxVec3(0.0f), planeRot));
             }
 
             // 3. --- Attach the new shape and update physics properties ---
@@ -261,7 +293,7 @@ namespace Boom {
                 // create collider shape
 
                 auto& collider = entity.Get<ColliderComponent>().Collider;
-
+                PxTransform userLocalPose(ToPxVec3(collider.localPosition), ToPxQuat(collider.localRotation));
                 // create collider material
                 collider.material = m_Physics->createMaterial(collider.staticFriction,
                     collider.dynamicFriction,
@@ -272,13 +304,14 @@ namespace Boom {
                     PxBoxGeometry
                         box(ToPxVec3(transform.scale / 2.0f));
                     collider.Shape = m_Physics->createShape(box, *collider.material);
+                    collider.Shape->setLocalPose(userLocalPose);
                 }
                 else if (collider.type == Collider3D::SPHERE) {
                     PxSphereGeometry
                         sphere(transform.scale.x / 2.0f);
                     collider.Shape = m_Physics->createShape(sphere, *collider.material);
                     PxTransform relativePose(PxQuat(0, PxVec3(0, 0, 1)));
-                    collider.Shape->setLocalPose(relativePose);
+                    collider.Shape->setLocalPose(userLocalPose);
                 }
                 else if (collider.type == Collider3D::CAPSULE) {
                     if (!m_Physics || !collider.material) {
@@ -341,7 +374,8 @@ namespace Boom {
                         localQ = PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f));
                     }
 
-                    collider.Shape->setLocalPose(PxTransform(PxVec3(0.0f), localQ));
+                    PxTransform capsuleAxisPose(PxVec3(0.0f), localQ);
+                    collider.Shape->setLocalPose(userLocalPose* capsuleAxisPose);
                 }
 
                 else if (collider.type == Collider3D::MESH) {
@@ -365,11 +399,39 @@ namespace Boom {
                         convexGeom.scale.scale = ToPxVec3(transform.scale);
 
                         collider.Shape = m_Physics->createShape(convexGeom, *collider.material);
+                        collider.Shape->setLocalPose(userLocalPose);
                     }
                     else {
                         BOOM_ERROR("Failed to load or create mesh shape for asset ID {}", collider.physicsMeshID);
                         return;
                     }
+                }
+                else if (collider.type == Collider3D::PLANE)
+                {
+                    if (body.type == RigidBody3D::DYNAMIC) {
+                        BOOM_WARN("Plane colliders must be STATIC. Forcing actor type to STATIC.");
+                        body.type = RigidBody3D::STATIC;
+                    }
+
+                    // Create the default plane geometry
+                    PxPlaneGeometry planeGeom;
+                    collider.Shape = m_Physics->createShape(planeGeom, *collider.material);
+
+                    const glm::vec3 s = glm::abs(transform.scale);
+                    PxQuat planeRot = PxQuat(PxIdentity); // Default: +X normal (for YZ walls)
+
+                    if (s.y < s.x && s.y < s.z) {
+                        // Y is smallest -> Ground plane (+Y normal)
+                        planeRot = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f)); // +90 deg around Z
+                    }
+                    else if (s.z < s.x && s.z < s.y) {
+                        // Z is smallest -> XY wall (+Z normal)
+                        planeRot = PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f)); // -90 deg around Y
+                    }
+                    // Else: X is smallest, use Identity (default +X normal)
+
+                    // Combine user's local pose with our auto-rotation
+                    collider.Shape->setLocalPose(userLocalPose * PxTransform(PxVec3(0.0f), planeRot));
                 }
 
                 // Ensure shape is included in debug viz
@@ -672,7 +734,54 @@ namespace Boom {
             m_EventCallback.m_Callback = callback;
         }
 
+        BOOM_INLINE PxScene* GetPxScene() const { return m_Scene; }
 
+        // Add this new function inside your PhysicsContext struct in Context.h
+//
+        BOOM_INLINE void RemoveRigidBody(Entity& entity)
+        {
+            // 1. Make sure the entity has a body to remove
+            if (!entity.Has<RigidBodyComponent>()) {
+                return;
+            }
+
+            auto& rb = entity.Get<RigidBodyComponent>();
+            auto* actor = rb.RigidBody.actor;
+
+            if (!actor) {
+                return; // Nothing to remove
+            }
+
+            // 2. Clean up Collider Pointers (if they exist)
+            if (entity.Has<ColliderComponent>())
+            {
+                auto& collider = entity.Get<ColliderComponent>().Collider;
+                if (collider.material) {
+                    collider.material->release();
+                    collider.material = nullptr;
+                }
+                if (collider.Shape) {
+                    // The shape is auto-detached by removeActor,
+                    // but we must release its memory.
+                    collider.Shape->release();
+                    collider.Shape = nullptr;
+                }
+            }
+
+            // 3. Clean up User Data
+            if (actor->userData) {
+                EntityID* owner = static_cast<EntityID*>(actor->userData);
+                BOOM_DELETE(owner);
+                actor->userData = nullptr;
+            }
+
+            // 4. Remove Actor from Scene (The missing step!)
+            m_Scene->removeActor(*actor);
+
+            // 5. Release Actor Memory
+            actor->release();
+            rb.RigidBody.actor = nullptr;
+        }
 
     private:
         // custom collision filter shader callback

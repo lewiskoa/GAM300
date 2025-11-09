@@ -91,6 +91,7 @@ namespace EditorUI {
                 // Move cursor but DON'T create any interactive widget
                 ImGui::Dummy(viewportSize);
 
+
                 // 6) Determine the viewport rect in ImGui space
                 const ImVec2 itemMin = ImGui::GetItemRectMin();
                 const ImVec2 itemMax = ImGui::GetItemRectMax();
@@ -215,8 +216,8 @@ namespace EditorUI {
                     );
                 }
             }
+            ImGui::End();
         }
-        ImGui::End();
     }
 
     void ViewportPanel::OnSelect(std::uint32_t entity_id)

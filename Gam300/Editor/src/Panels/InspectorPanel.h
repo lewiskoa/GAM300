@@ -5,6 +5,7 @@
 #include "Vendors/imgui/imgui.h"
 #include "GlobalConstants.h"
 #include "ECS/ECS.hpp"
+#include "Audio/TrackLibrary.h"
 
 namespace Boom { struct AppContext; struct AppInterface; }
 

@@ -8,6 +8,8 @@
 #include "ECS/ECS.hpp"
 #include "Physics/Context.h"
 #include "Auxiliaries/Profiler.h"
+#include "Audio/Audio.hpp"
+
 namespace Boom
 {
 	// Forward declaration of the base interface
@@ -29,6 +31,7 @@ namespace Boom
 			, physics{ std::make_unique<PhysicsContext>() }
 			, scene{}
 		{
+			SoundEngine::Instance().Init();
 		}
 
 
@@ -58,6 +61,7 @@ namespace Boom
 		Boom::Profiler profiler;
 		double DeltaTime{};
 		EntityRegistry scene;
+
 	};
 
 }// namespace Boom

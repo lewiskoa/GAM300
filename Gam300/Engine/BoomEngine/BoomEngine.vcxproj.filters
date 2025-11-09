@@ -16,6 +16,7 @@
     <ClCompile Include="src\Scripting\MonoRuntime.cpp" />
     <ClCompile Include="src\Scripting\ScriptingSystem.cpp" />
     <ClCompile Include="src\Scripting\ScriptBinding.cpp" />
+    <ClCompile Include="src\SoundSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="includes\Application\Application.h" />
@@ -66,8 +67,7 @@
     <ClInclude Include="includes\Input\CameraManager.h" />
     <ClInclude Include="includes\Input\InputHandler.h" />
     <ClInclude Include="includes\Graphics\Textures\Compression.h" />
-    <ClInclude Include="includes\Scripting\MonoRuntime.h" />
-    <ClInclude Include="includes\Scripting\ScriptingSystem.h" />
-    <ClInclude Include="includes\Scripting\ScriptBinding.h" />
+    <ClInclude Include="includes\Audio\SoundSystem.hpp" />
+    <ClInclude Include="includes\Audio\TrackLibrary.h" />
   </ItemGroup>
 </Project>

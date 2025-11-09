@@ -6,6 +6,9 @@
 #include "Auxiliaries/Assets.h"
 #include "Context/DebugHelpers.h"
 #include "Panels/PropertiesImgui.h"
+#include "Audio/Audio.hpp"
+#include"Physics/Context.h"
+
 using namespace EditorUI;
 
 Boom::AppContext* InspectorPanel::GetContext() const {
@@ -355,10 +358,12 @@ namespace EditorUI {
                 ImGui::Spacing();
 
                 auto& col = selected.Get<Boom::ColliderComponent>();
-
+                auto* collider = &col.Collider;
                 float oldDynamicFriction = col.Collider.dynamicFriction;
                 float oldStaticFriction = col.Collider.staticFriction;
                 float oldRestitution = col.Collider.restitution;
+                glm::vec3 oldPos = collider->localPosition;
+                glm::vec3 oldRot = collider->localRotation;
 
                 Collider3D::Type currentType = col.Collider.type;
                 const char* currentTypeName = "Unknown";
@@ -368,6 +373,7 @@ namespace EditorUI {
                 case Collider3D::Type::SPHERE:  currentTypeName = "Sphere";  break;
                 case Collider3D::Type::CAPSULE: currentTypeName = "Capsule"; break;
                 case Collider3D::Type::MESH:    currentTypeName = "Mesh";    break;
+                case Collider3D::Type::PLANE: currentTypeName = "Plane"; break;
                 }
 
                 ImGui::AlignTextToFramePadding();
@@ -377,7 +383,7 @@ namespace EditorUI {
 
                 if (ImGui::BeginCombo("##ColliderType", currentTypeName))
                 {
-                    const char* types[] = { "Box", "Sphere", "Capsule", "Mesh" };
+                    const char* types[] = { "Box", "Sphere", "Capsule", "Mesh", "Plane"};
                     for (int i = 0; i < IM_ARRAYSIZE(types); ++i) {
                         bool isSelected = (currentType == static_cast<Collider3D::Type>(i));
                         if (ImGui::Selectable(types[i], isSelected)) {
@@ -431,8 +437,20 @@ namespace EditorUI {
                     ImGui::Spacing();
                 }
 
-                auto* collider = &col.Collider;
 
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Local Position");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat3("##LocalPosition", &collider->localPosition.x, 0.01f);
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Local Rotation");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat3("##LocalRotation", &collider->localRotation.x, 0.1f);
+
+                ImGui::Spacing();
                 ImGui::AlignTextToFramePadding();
                 ImGui::Text("Dynamic Friction");
                 ImGui::SameLine(150);
@@ -451,12 +469,19 @@ namespace EditorUI {
                 ImGui::SetNextItemWidth(-1);
                 ImGui::DragFloat("##Restitution", &collider->restitution, 0.01f, 0.0f, 100.0f);
 
+                if (collider->localPosition != oldPos ||
+                    collider->localRotation != oldRot)
+                {
+                    m_App->GetPhysicsContext().UpdateColliderShape(selected, m_App->GetAssetRegistry());
+                }
+
                 if (col.Collider.dynamicFriction != oldDynamicFriction ||
                     col.Collider.staticFriction != oldStaticFriction ||
                     col.Collider.restitution != oldRestitution)
                 {
                     m_App->GetPhysicsContext().UpdatePhysicsMaterial(selected);
                 }
+
 
                 ImGui::Spacing();
                 ImGui::Unindent(12.0f);
@@ -492,6 +517,153 @@ namespace EditorUI {
             auto& sky = selected.Get<SkyboxComponent>();
             DrawComponentSection("Skybox", &sky, GetSkyboxComponentProperties, true,
                 [&]() { ctx->scene.remove<SkyboxComponent>(m_App->SelectedEntity()); });
+        }
+
+        if (selected.Has<Boom::SoundComponent>()) {
+            ImGui::PushID("Sound");
+
+            // 1. Draw Header
+            bool isOpen = ImGui::CollapsingHeader("Sound", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+
+            // 2. Draw "..." Button
+            const ImVec2 headerMin = ImGui::GetItemRectMin();
+            const ImVec2 headerMax = ImGui::GetItemRectMax();
+            const float  lineH = ImGui::GetFrameHeight();
+            const float y = headerMin.y + (headerMax.y - headerMin.y - lineH) * 0.5f;
+            ImGui::SetCursorScreenPos(ImVec2(headerMax.x - lineH, y));
+            if (ImGui::Button("...", ImVec2(lineH, lineH)))
+                ImGui::OpenPopup("SoundSettings");
+
+            bool removed = false;
+            if (ImGui::BeginPopup("SoundSettings")) {
+                if (ImGui::MenuItem("Remove Component")) {
+                    removed = true;
+                }
+                ImGui::EndPopup();
+            }
+
+            // 3. Reset cursor
+            ImGui::SetCursorScreenPos(ImVec2(headerMin.x, headerMax.y + ImGui::GetStyle().ItemSpacing.y));
+
+            // 4. Draw Contents
+            if (isOpen) {
+                ImGui::Indent(12.0f);
+                ImGui::Spacing();
+
+                auto& sound = selected.Get<Boom::SoundComponent>();
+
+                // ----- Preset picker (same choices as AudioPanel) -----
+                {
+                    const auto& tracks = Boom::GetBuiltinTracks();
+                    int idx = Boom::FindTrackIndexByName(tracks, sound.name);
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Preset");
+                    ImGui::SameLine(150);
+                    ImGui::SetNextItemWidth(-1);
+
+                    const char* current = (idx >= 0) ? tracks[(size_t)idx].name.c_str() : "<choose>";
+                    if (ImGui::BeginCombo("##Preset", current))
+                    {
+                        for (int i = 0; i < (int)tracks.size(); ++i)
+                        {
+                            bool selectedNow = (i == idx);
+                            if (ImGui::Selectable(tracks[(size_t)i].name.c_str(), selectedNow))
+                            {
+                                // Fill component from preset
+                                sound.name = tracks[(size_t)i].name;
+                                sound.filePath = tracks[(size_t)i].path;
+
+                                // Optional: immediately preview the choice
+                                auto& au = SoundEngine::Instance();
+                                au.StopAllExcept(std::string{});
+                                au.PlaySound(sound.name, sound.filePath, sound.loop);
+                                au.SetVolume(sound.name, sound.volume);
+                            }
+                            if (selectedNow) ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+                }
+
+                // ----- Sound Name -----
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Sound Name");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                char nameBuffer[256];
+#ifdef _MSC_VER
+                strncpy_s(nameBuffer, sizeof(nameBuffer), sound.name.c_str(), _TRUNCATE);
+#else
+                std::strncpy(nameBuffer, sound.name.c_str(), sizeof(nameBuffer) - 1);
+                nameBuffer[sizeof(nameBuffer) - 1] = '\0';
+#endif
+                if (ImGui::InputText("##SoundName", nameBuffer, sizeof(nameBuffer))) {
+                    sound.name = std::string(nameBuffer);
+                }
+
+                // ----- File Path -----
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("File Path");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                char pathBuffer[512];
+#ifdef _MSC_VER
+                strncpy_s(pathBuffer, sizeof(pathBuffer), sound.filePath.c_str(), _TRUNCATE);
+#else
+                std::strncpy(pathBuffer, sound.filePath.c_str(), sizeof(pathBuffer) - 1);
+                pathBuffer[sizeof(pathBuffer) - 1] = '\0';
+#endif
+                if (ImGui::InputText("##FilePath", pathBuffer, sizeof(pathBuffer))) {
+                    sound.filePath = std::string(pathBuffer);
+                }
+
+                // ----- Volume / Loop / Play on start -----
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Volume");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::SliderFloat("##Volume", &sound.volume, 0.0f, 1.0f, "%.2f")) {
+                    SoundEngine::Instance().SetVolume(sound.name, sound.volume);
+                }
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Loop");
+                ImGui::SameLine(150);
+                ImGui::Checkbox("##Loop", &sound.loop);
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Play on Start");
+                ImGui::SameLine(150);
+                ImGui::Checkbox("##PlayOnStart", &sound.playOnStart);
+
+                // ----- Controls -----
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
+                if (ImGui::Button("Play", ImVec2(-1, 0))) {
+                    SoundEngine::Instance().StopAllExcept(std::string{});
+                    SoundEngine::Instance().PlaySound(sound.name, sound.filePath, sound.loop);
+                    SoundEngine::Instance().SetVolume(sound.name, sound.volume);
+                }
+                if (ImGui::Button("Stop", ImVec2(-1, 0))) {
+                    SoundEngine::Instance().StopSound(sound.name);
+                }
+
+                ImGui::Spacing();
+                ImGui::Unindent(12.0f);
+
+            }
+
+            ImGui::PopID();
+
+            if (removed) {
+                auto& sound = ctx->scene.get<Boom::SoundComponent>(m_App->SelectedEntity());
+                SoundEngine::Instance().StopSound(sound.name);
+                ctx->scene.remove<Boom::SoundComponent>(m_App->SelectedEntity());
+                return;
+            }
+            ImGui::Spacing();
         }
 
         // ===== Add Component =====
@@ -592,6 +764,20 @@ namespace EditorUI {
                 ImGui::Separator();
                 if (ImGui::Button("Yes", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Enter, false)) {
                     if (m_App->SelectedEntity() != entt::null) {
+
+                        // === BEGIN PHYSICS CLEANUP ===
+
+                        // 1. Get the entity
+                        Boom::Entity entity{ &m_App->GetEntityRegistry(), m_App->SelectedEntity() };
+
+                        // 2. Call your new function
+                        Boom::PhysicsContext* physicsCtx = &m_App->GetPhysicsContext();
+                        if (physicsCtx) {
+                            physicsCtx->RemoveRigidBody(entity);
+                        }
+
+                        // === END PHYSICS CLEANUP ===
+
                         m_App->GetEntityRegistry().destroy(m_App->SelectedEntity());
                         m_App->ResetAllSelected();
                     }
@@ -631,7 +817,7 @@ namespace EditorUI {
                     UpdateComponent<Boom::DirectLightComponent>(Boom::ComponentID::DIRECT_LIGHT, selected);
                     UpdateComponent<Boom::PointLightComponent>(Boom::ComponentID::POINT_LIGHT, selected);
                     UpdateComponent<Boom::SpotLightComponent>(Boom::ComponentID::SPOT_LIGHT, selected);
-                    //UpdateComponent<Boom::SoundComponent>(Boom::ComponentID::SOUND, selected);
+                    UpdateComponent<Boom::SoundComponent>(Boom::ComponentID::SOUND, selected);
                     //UpdateComponent<Boom::ScriptComponent>(Boom::ComponentID::SCRIPT, selected);
                     ImGui::EndTable();
                 }

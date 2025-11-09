@@ -177,6 +177,8 @@
     <ClInclude Include="includes\Application\Interface.h" />
     <ClInclude Include="includes\AppWindow.h" />
     <ClInclude Include="includes\Audio\Audio.hpp" />
+    <ClInclude Include="includes\Audio\SoundSystem.hpp" />
+    <ClInclude Include="includes\Audio\TrackLibrary.h" />
     <ClInclude Include="includes\Auxiliaries\Assets.h" />
     <ClInclude Include="includes\Auxiliaries\DataSerializer.h" />
     <ClInclude Include="includes\Auxiliaries\PrefabUtility.h" />
@@ -261,6 +263,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\SoundSystem.cpp" />
     <ClCompile Include="src\Textures\Compression.cpp" />
     <ClCompile Include="src\Textures\Texture.cpp" />
   </ItemGroup>
