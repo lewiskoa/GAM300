@@ -250,6 +250,7 @@ if exist "$(glew_BIN_DIRS)" xcopy /y /i "$(glew_BIN_DIRS)\*.dll" "$(TargetDir)"<
     <ClInclude Include="src\Context\DebugHelpers.h" />
     <ClInclude Include="src\Context\Events.h" />
     <ClInclude Include="src\Context\Helpers.h" />
+    <ClInclude Include="src\Context\InputBridge.h" />
     <ClInclude Include="src\Context\Inputs.h" />
     <ClInclude Include="src\Context\Widgets.h" />
     <ClInclude Include="src\Editor.h" />

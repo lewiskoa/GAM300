@@ -10,7 +10,9 @@
 #include "Auxiliaries/Assets.h"
 #include <glm/vec3.hpp>
 #include <GLFW/glfw3.h>
-
+     
+#include "AppWindow.h"
+#include "Input/InputHandler.h"
 namespace Boom {
 
     static AppContext* s_Ctx = nullptr;
@@ -59,16 +61,12 @@ namespace Boom {
     static bool ICALL_API_IsKeyDown(int key)
     {
         if (!s_Ctx || !s_Ctx->window) return false;
-        auto win = s_Ctx->window->Handle();
-        if (!win) return false;
-        return glfwGetKey(win.get(), key) == GLFW_PRESS;
+        return s_Ctx->window->input.keyDown(key);
     }
 
     static bool ICALL_API_IsMouseDown(int button) {
         if (!s_Ctx || !s_Ctx->window) return false;
-        auto win = s_Ctx->window->Handle();
-        if (!win) return false;
-        return glfwGetMouseButton(win.get(), button) == GLFW_PRESS;
+        return s_Ctx->window->input.mouseDown(button);
     }
 
 

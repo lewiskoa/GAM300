@@ -13,7 +13,7 @@
 #include "Context/Context.h"
 // GLFW (needed for window/context handle)
 #include <GLFW/glfw3.h>
-
+#include "../src/Context/InputBridge.h"            // EditorUI::InstallEditorInputCallbacks
 int32_t main()
 {
     try
@@ -63,13 +63,14 @@ int32_t main()
                 io.ConfigWindowsMoveFromTitleBarOnly = true;
 
                 // --- ImGui backends ---
-                const bool platformOk = ImGui_ImplGlfw_InitForOpenGL(engineWindow.get(), true);
+                const bool platformOk = ImGui_ImplGlfw_InitForOpenGL(engineWindow.get(), false);
                 const bool rendererOk = ImGui_ImplOpenGL3_Init("#version 450");
 
                 if (platformOk && rendererOk)
                 {
                     BOOM_INFO("ImGui initialized successfully!");
                     ImGui::StyleColorsDark();
+                    EditorUI::InstallEditorInputCallbacks(engineWindow.get());
                 }
                 else
                 {

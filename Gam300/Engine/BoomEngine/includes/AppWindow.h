@@ -3,6 +3,7 @@
 #include "common/Events.h"
 #include "GlobalConstants.h"
 #include "Input/InputHandler.h"
+
 namespace Boom {
 	struct AppWindow {
 	public:
@@ -253,6 +254,9 @@ namespace Boom {
 		BOOM_INLINE int getHeight() {
 			return height;
 		}	
+		//accesssors
+		BOOM_INLINE EventDispatcher* GetDispatcher() const { return dispatcher; }
+		BOOM_INLINE InputSystem& GetInputSystem() { return input; }
 	private:
 		int32_t width;
 		int32_t height;
