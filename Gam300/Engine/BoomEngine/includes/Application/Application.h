@@ -723,7 +723,11 @@ namespace Boom
                 {
                     DrawRigidBodiesDebugOnly(dbgView, dbgProj);
                 }
-
+                if (m_Context->ShowNavDebug && m_DebugLinesShader && m_Nav) {
+                    // Draw navmesh edges & centroids near the camera. Tweak radius to taste.
+                    const float navDrawRadius = 60.0f; // try 40–100 to see more/less
+                    m_Nav->DrawDetourNavMesh_Query(*m_DebugLinesShader, dbgView, dbgProj, dbgCamPos, navDrawRadius);
+                }
                 //skybox ecs (should be drawn at the end)
                 EnttView<Entity, SkyboxComponent>([this](auto entity, SkyboxComponent& comp) {
                     Transform3D& transform{ entity.template Get<TransformComponent>().transform };
