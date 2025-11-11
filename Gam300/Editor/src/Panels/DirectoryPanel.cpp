@@ -367,7 +367,7 @@ namespace EditorUI {
                 ++first;
                 for (auto it{ first }; it != map.end(); ) {
                     std::string ext{ GetExtension(it->second->source) };
-                    if (ext != "png" || ext != "dds" || ext != ".fbx") {
+                    if (ext != "png" || ext != "dds" || ext != "fbx") {
                         ++it;
                         continue;
                     }

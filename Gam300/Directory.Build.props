@@ -85,15 +85,19 @@
 
   <!-- ===== Copy runtime DLLs for Editor only ===== -->
   <ItemDefinitionGroup Condition="'$(MSBuildProjectName)'=='Editor'">
+	<PreBuildEvent>
+		<Command>
+			REM --- Mono runtime (required by managed scripting) ---
+			xcopy /Y /D "$(MonoBinDir)\mono-2.0-sgen.dll" "$(OutDir)"
+			REM Optional helper (present in many Mono builds)
+			if exist "$(MonoBinDir)\MonoPosixHelper.dll" xcopy /Y /D "$(MonoBinDir)\MonoPosixHelper.dll" "$(OutDir)"
+		</Command>
+	</PreBuildEvent>
     <PostBuildEvent>
       <Command>
         REM --- FMOD runtime ---
         xcopy /Y /D "$(FMODCoreLibDir)\fmod$(FMODDebugSuffix).dll" "$(OutDir)"
         xcopy /Y /D "$(FMODStudioLibDir)\fmodstudio$(FMODDebugSuffix).dll" "$(OutDir)"
-        REM --- Mono runtime (required by managed scripting) ---
-        xcopy /Y /D "$(MonoBinDir)\mono-2.0-sgen.dll" "$(OutDir)"
-        REM Optional helper (present in many Mono builds)
-        if exist "$(MonoBinDir)\MonoPosixHelper.dll" xcopy /Y /D "$(MonoBinDir)\MonoPosixHelper.dll" "$(OutDir)"
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
