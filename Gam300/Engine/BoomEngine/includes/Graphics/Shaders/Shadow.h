@@ -45,7 +45,7 @@ namespace Boom {
 
         BOOM_INLINE void Draw(Model3D& model, Transform3D& transform)
         {
-            glUniformMatrix4fv(u_Model, 1, GL_FALSE, glm::value_ptr(transform.Matrix()));
+            SetUniform(u_Model, transform.Matrix());
            // glCullFace(GL_FRONT);
             model->Draw();
             
@@ -55,11 +55,10 @@ namespace Boom {
         BOOM_INLINE void BeginFrame(const glm::mat4& lightSpaceMtx)
         {
             // bind shadow shader
-            glUseProgram(shaderId);
+            Use();
 
             // set view projection matrix
-            glUniformMatrix4fv(u_LightSpace, 1, GL_FALSE,
-                glm::value_ptr(lightSpaceMtx));
+            SetUniform(u_LightSpace, lightSpaceMtx);
 
             // bind target frame buffer
             glBindFramebuffer(GL_FRAMEBUFFER, m_FrameBuffer);
