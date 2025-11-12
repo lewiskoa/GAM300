@@ -520,6 +520,7 @@ namespace Boom
                         // ffinalize frame
                         m_Context->renderer->EndShadowPass();
                     });
+
                 m_Context->renderer->NewFrame();
                 m_Context->profiler.End("Renderer Start Frame");
 
@@ -568,6 +569,7 @@ namespace Boom
                         });
                     m_Context->renderer->SetSpotLightCount(spots);
                 }
+                
 
                 //temp input for mouse motion
                 glfwGetCursorPos(m_Context->window->Handle().get(), &curMP.x, &curMP.y);

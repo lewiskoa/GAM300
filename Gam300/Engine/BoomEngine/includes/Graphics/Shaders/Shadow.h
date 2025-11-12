@@ -44,7 +44,7 @@ namespace Boom {
 
         BOOM_INLINE void Draw(Model3D& model, Transform3D& transform)
         {
-            SetUniform(u_Model, transform.Matrix());
+            SetUniform(u_Model, transform.Matrix() * model->modelTransform.Matrix());
             glCullFace(GL_FRONT);
             model->Draw();
             glCullFace(GL_BACK);

@@ -85,8 +85,9 @@ namespace Boom {
         BOOM_INLINE void BeginShadowPass(const glm::vec3& LightDir)
         {
             // prepare projection and view mtx
-            static auto proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f);
-            auto view = glm::lookAt(LightDir, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            static auto proj = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, 0.1f, 50.0f);
+            glm::vec3 lightPos{ -glm::normalize(LightDir) * 200.f };
+            auto view = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
             // compute light space
             auto lightSpaceMtx = (proj * view);
