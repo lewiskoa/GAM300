@@ -252,9 +252,9 @@ namespace Boom {
 
     public:  // ---------------------- ImGui-exposed toggles ----------------
         bool isDrawDebugMode{};
-        bool showLowPoly{ true };
+        bool showLowPoly{};
         bool showNormalTexture{};
-        bool enabledBloom{ false };
+        bool enabledBloom{};
     };
 
 } // namespace Boom
