@@ -100,7 +100,19 @@ namespace Boom {
 		BOOM_INLINE void SetPointLightCount(int32_t count) {
 			SetUniform(noPointLightLoc, count);
 		}
+		BOOM_INLINE void SetLightSpaceMatrix(const glm::mat4& lightSpaceMtx)
+		{
+			// set view projection matrix
+			SetUniform(u_LightSpace, lightSpaceMtx);
+		}
 	public:
+		BOOM_INLINE void SetEnvMaps(uint32_t, uint32_t, uint32_t, uint32_t depthMap) {
+			Use();
+
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, depthMap);
+			glUniform1i(u_DepthMap, 0);
+		}
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
 			SetUniform(frustumMatLoc, cam.Frustum(transform, ratio));
 			SetUniform(viewPosLoc, transform.translate);
@@ -167,7 +179,7 @@ namespace Boom {
 			SetUniform(modelMatLoc, transform.Matrix() * model->modelTransform.Matrix());
 			
 			//material texture maps
-			SetMaterial(material, 0);
+			SetMaterial(material, 1);
 
 			SetUniform(jointsLoc, model->HasJoint());
 			model->Draw();

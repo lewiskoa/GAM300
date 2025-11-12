@@ -363,13 +363,12 @@ namespace EditorUI {
     {
         for (auto& [type, map] : m_App->GetAssetRegistry().GetAll()) {
             if (!map.empty()) {
-                auto first{ map.begin() };
-                ++first;
-                for (auto it{ first }; it != map.end(); ) {
+                for (auto it{ map.begin() }; it != map.end(); ) {
                     std::string ext{ GetExtension(it->second->source) };
-                    if (ext != "png" || ext != "dds" || ext != "fbx") {
+                    //ignore empty asset
+                    if (ext == "" || (ext != "png" && ext != "dds" && ext != "fbx")) {
                         ++it;
-                        continue;
+                        continue; //ignore wrong types
                     }
                     //if file not located in seen path = deleted, must remove from assetmanager
                     if (seen.find(it->second->source) == seen.end()) {

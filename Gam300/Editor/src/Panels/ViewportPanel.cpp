@@ -169,9 +169,18 @@ namespace EditorUI {
                                     glm::vec3 newPosition, newRotation, newScale;
                                     DecomposeTransform(matrix, newPosition, newRotation, newScale);
 
-                                    ltrans.transform.translate = newPosition;
-                                    ltrans.transform.rotate = newRotation;
-                                    ltrans.transform.scale = newScale;
+                                    //must be within switch to prevent overwrite
+                                    switch (m_GizmoOperation) {
+                                    case ImGuizmo::TRANSLATE:
+                                        ltrans.transform.translate = newPosition;
+                                        break;
+                                    case ImGuizmo::ROTATE:
+                                        ltrans.transform.rotate = newRotation;
+                                        break;
+                                    case ImGuizmo::SCALE:
+                                        ltrans.transform.scale = newScale;
+                                        break;
+                                    }
                                 }
                             }
                         }

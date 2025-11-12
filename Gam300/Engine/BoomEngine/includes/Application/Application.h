@@ -495,10 +495,31 @@ namespace Boom
 
 
                 // ============ END NEW SECTION ============
-
                 m_Context->profiler.BeginFrame();
                 m_Context->profiler.Start("Total Frame");
                 m_Context->profiler.Start("Renderer Start Frame");
+
+                //building shadows
+                EnttView<Entity, DirectLightComponent, TransformComponent>(
+                    [this](auto, DirectLightComponent&, TransformComponent& tc)
+                    {
+                        // light direction
+                        auto& lightDir = tc.transform.rotate;
+
+                        // begin rendering
+                        m_Context->renderer->BeginShadowPass(lightDir);
+
+                        // render depth 
+                        EnttView<Entity, ModelComponent, TransformComponent>(
+                            [this](auto entity, ModelComponent& comp, TransformComponent& transform)
+                            {
+                                auto& model = m_Context->assets->Get<ModelAsset>(comp.modelID);
+                                m_Context->renderer->DrawDepth(model.data, transform.transform);
+                            });
+
+                        // ffinalize frame
+                        m_Context->renderer->EndShadowPass();
+                    });
                 m_Context->renderer->NewFrame();
                 m_Context->profiler.End("Renderer Start Frame");
 

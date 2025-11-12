@@ -46,21 +46,7 @@ namespace EditorUI {
 			CreateEmptyMaterial();
 		}
 
-
-		/*
-		bool CompressAllTextures::ProgressCallback(float percent, size_t, size_t) {
-			BOOM_INFO("Progress: {}%", percent);
-			return false;
-		}
-		*/
 		ImGui::SameLine();
-		
-		/*
-		if (ImGui::Button("Compress Textures", { 160, 20 })) {
-			auto textureMap = m_App->GetAssetRegistry().GetMap<TextureAsset>();
-			CompressAllTextures(textureMap, CONSTANTS::COMPRESSED_TEXTURE_OUTPUT_PATH);
-		}*/
-
 		static bool isCompressionStarted{};
 		static std::future<void> g_CompressFuture;
 		static float compressionTimeElapsed{};

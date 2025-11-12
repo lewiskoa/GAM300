@@ -177,7 +177,7 @@ void main() {
         out_fragment = vec4(normalize(vertex.normal) * 0.5 + 0.5, 1.0); //normal map colors
         return;
     }
-    vec3 V = normalize(vertex.position - viewPos);
+    vec3 V = normalize(viewPos - vertex.position);
 
     //material or texture maps
     vec3 N = normalize(vertex.normal);
