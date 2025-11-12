@@ -13,8 +13,7 @@ namespace Boom {
             // create depth texture
             glGenTextures(1, &m_DepthMap);
             glBindTexture(GL_TEXTURE_2D, m_DepthMap);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-                MapSize, MapSize, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, MapSize, MapSize, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 
             // set texture parameters
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -46,10 +45,9 @@ namespace Boom {
         BOOM_INLINE void Draw(Model3D& model, Transform3D& transform)
         {
             SetUniform(u_Model, transform.Matrix());
-           // glCullFace(GL_FRONT);
+            glCullFace(GL_FRONT);
             model->Draw();
-            
-           // glCullFace(GL_BACK);
+            glCullFace(GL_BACK);
         }
 
         BOOM_INLINE void BeginFrame(const glm::mat4& lightSpaceMtx)
@@ -78,7 +76,7 @@ namespace Boom {
         {
             glDisable(GL_DEPTH_TEST);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glUseProgram(0);
+            UnUse();
         }
 
         BOOM_INLINE ~ShadowShader()
