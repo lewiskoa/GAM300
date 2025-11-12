@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <algorithm>
 #include <cctype>
+#include <future>
 
 // pull Interface so we can call AppInterface methods
 #include "Application/Interface.h"   // include path per your include dirs
@@ -93,10 +94,16 @@ namespace EditorUI {
             m_App ? m_App->GetDeltaTime()
             : (m_Ctx ? m_Ctx->DeltaTime : 0.0);
 
-        if (ImGui::Button("Refresh") || ((rTimer += dt) > AUTO_REFRESH_SEC))
+        static std::future<std::unique_ptr<FileNode>> refreshFuture;
+
+        if ((ImGui::Button("Refresh") || ((rTimer += dt) > AUTO_REFRESH_SEC) && !refreshFuture.valid()))
         {
-            rootNode = BuildDirectoryTree();
+            refreshFuture = std::async(std::launch::async, [this]() {return BuildDirectoryTree(); });
             rTimer = 0.0;
+        }
+
+        if (refreshFuture.valid() && refreshFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            rootNode = refreshFuture.get();
             UpdateAssetRegistry();
         }
     }
