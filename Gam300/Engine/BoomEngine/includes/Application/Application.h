@@ -1770,6 +1770,12 @@ namespace Boom
             EnttView<Entity, ThirdPersonCameraComponent, TransformComponent>(
                 [this, &mouseDelta, &scrollDelta](Entity entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
                 {
+
+#define UNUSED(x) (void)(x)
+                    UNUSED(entity);
+
+
+
                     // 3. Find the target entity by its UID
                     if (cam.targetUID == 0) return; // No target UID set
 

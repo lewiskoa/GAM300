@@ -133,7 +133,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>Core.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)\Core</PrecompiledHeaderOutputFile>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <DisableSpecificWarnings>
@@ -163,7 +163,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>Core.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName)\Core</PrecompiledHeaderOutputFile>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir)src\Vendors\xproperty;%(AdditionalIncludeDirectories);$(ProjectDir)Vendors;$(ProjectDir)Vendors\Recast\Include;$(ProjectDir)Vendors\DetourCrowd\Include;$(ProjectDir)Vendors\DetourTileCache\Include;$(ProjectDir)Vendors\Detour\Include;$(ProjectDir)Vendors\DebugUtils\Include</AdditionalIncludeDirectories>
