@@ -243,6 +243,11 @@ namespace EditorUI {
             if (ImGui::CollapsingHeader("Model Renderer", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap)) {
                 ComponentSettings<Boom::ModelComponent>(ctx);
 
+                // Track previous model per-entity to detect change
+                static std::unordered_map<entt::entity, AssetID> previousModelIDs;
+                AssetID& previousModelID = previousModelIDs[m_App->SelectedEntity()];
+                const bool modelChanged = (mc.modelID != previousModelID);
+
                 // --- UI for assigning model and material ---
                 ImGui::BeginTable("##maps", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersInnerV);
                 ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed);
@@ -251,10 +256,55 @@ namespace EditorUI {
                 InputAssetWidget<CONSTANTS::DND_PAYLOAD_MATERIAL>("Material", mc.materialID);
                 ImGui::EndTable();
 
-                ImGui::Spacing();
-                ImGui::SeparatorText("Physics"); // A nice separator
+                // ---- Handle animator add/remove on model change (Unity-like) ----
+                if (modelChanged) {
+                    previousModelID = mc.modelID;
 
-                // --- UI for cooking the mesh collider ---
+                    if (mc.modelID != EMPTY_ASSET) {
+                        // Resolve the chosen model
+                        auto& modelAsset = m_App->GetAssetRegistry().Get<ModelAsset>(mc.modelID);
+
+                        // If this model is skeletal, ensure we (re)provision an AnimatorComponent
+                        if (modelAsset.hasJoints && modelAsset.data) {
+                            // Try to fetch a skeletal interface / animator from the model
+                            // (Your SkeletalModel should expose GetAnimator() or similar.)
+                            auto skeletalModel = std::dynamic_pointer_cast<Boom::SkeletalModel>(modelAsset.data);
+                            if (skeletalModel && skeletalModel->GetAnimator()) {
+                                if (selected.Has<Boom::AnimatorComponent>()) {
+                                    // Refresh existing animator instance from the model (clone state machine/clips)
+                                    auto& animComp = selected.Get<Boom::AnimatorComponent>();
+                                    animComp.animator = skeletalModel->GetAnimator()->Clone();
+                                    BOOM_INFO("Updated AnimatorComponent after model change (skeletal).");
+                                }
+                                else {
+                                    // Auto-add like Unity: Skinned mesh ⇒ Animator component
+                                    auto& animComp = selected.Attach<Boom::AnimatorComponent>();
+                                    animComp.animator = skeletalModel->GetAnimator()->Clone();
+                                    BOOM_INFO("Auto-added AnimatorComponent for skeletal model.");
+                                }
+                            }
+                        }
+                        else {
+                            // Non-skeletal model: remove AnimatorComponent if present (Unity behavior)
+                            if (selected.Has<Boom::AnimatorComponent>()) {
+                                ctx->scene.remove<Boom::AnimatorComponent>(m_App->SelectedEntity());
+                                BOOM_INFO("Removed AnimatorComponent (model is non-skeletal).");
+                            }
+                        }
+                    }
+                    else {
+                        // Cleared the model asset entirely; remove animator if present
+                        if (selected.Has<Boom::AnimatorComponent>()) {
+                            ctx->scene.remove<Boom::AnimatorComponent>(m_App->SelectedEntity());
+                            BOOM_INFO("Removed AnimatorComponent (no model assigned).");
+                        }
+                    }
+                }
+
+                ImGui::Spacing();
+                ImGui::SeparatorText("Physics");
+
+                // --- UI for cooking the mesh collider (unchanged UX) ---
                 if (mc.modelID != EMPTY_ASSET) {
                     ModelAsset& modelAsset = m_App->GetAssetRegistry().Get<ModelAsset>(mc.modelID);
 
@@ -264,13 +314,13 @@ namespace EditorUI {
                             if (!std::filesystem::exists(saveDir)) {
                                 std::filesystem::create_directories(saveDir);
                             }
+
                             // Use model name for the .pxm file
                             std::string savePath = saveDir + modelAsset.name + ".pxm";
-
                             bool success = m_App->GetPhysicsContext().CompileAndSavePhysicsMesh(modelAsset, savePath);
 
                             if (success) {
-                                AssetID newID = RandomU64(); // Assumes RandomU64() is available
+                                AssetID newID = RandomU64();
                                 m_App->GetAssetRegistry().AddPhysicsMesh(newID, savePath)->name = modelAsset.name;
                                 BOOM_INFO("Successfully cooked and created PhysicsMeshAsset '{}'", modelAsset.name);
                                 m_App->SaveAssets();
@@ -287,6 +337,104 @@ namespace EditorUI {
                 else {
                     ImGui::TextDisabled("Assign a model to enable mesh cooking.");
                 }
+            }
+        }
+
+        if (selected.Has<Boom::AnimatorComponent>()) {
+            ImGui::PushID("Animator");
+
+            // 1. Header
+            bool isOpen = ImGui::CollapsingHeader("Animator", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+
+            // 2. Settings button
+            const ImVec2 headerMin = ImGui::GetItemRectMin();
+            const ImVec2 headerMax = ImGui::GetItemRectMax();
+            const float lineH = ImGui::GetFrameHeight();
+            const float y = headerMin.y + (headerMax.y - headerMin.y - lineH) * 0.5f;
+            ImGui::SetCursorScreenPos(ImVec2(headerMax.x - lineH, y));
+            if (ImGui::Button("...", ImVec2(lineH, lineH)))
+                ImGui::OpenPopup("AnimatorSettings");
+
+            bool removed = false;
+            if (ImGui::BeginPopup("AnimatorSettings")) {
+                if (ImGui::MenuItem("Remove Component")) {
+                    removed = true;
+                }
+                ImGui::EndPopup();
+            }
+
+            // 3. Reset cursor
+            ImGui::SetCursorScreenPos(ImVec2(headerMin.x, headerMax.y + ImGui::GetStyle().ItemSpacing.y));
+
+            // 4. Draw contents
+            if (isOpen) {
+                ImGui::Indent(12.0f);
+                ImGui::Spacing();
+
+                auto& animComp = selected.Get<Boom::AnimatorComponent>();
+                auto& animator = animComp.animator;
+
+                if (animator) {
+                    // Show current clip info
+                    ImGui::Text("Clips: %zu", animator->GetClipCount());
+
+                    if (animator->GetClipCount() > 0) {
+                        // Current clip dropdown
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::Text("Current Clip");
+                        ImGui::SameLine(150);
+                        ImGui::SetNextItemWidth(-1);
+
+                        const auto* currentClip = animator->GetClip(animator->GetCurrentClip());
+                        const char* currentName = currentClip ? currentClip->name.c_str() : "None";
+
+                        if (ImGui::BeginCombo("##CurrentClip", currentName)) {
+                            for (size_t i = 0; i < animator->GetClipCount(); ++i) {
+                                const auto* clip = animator->GetClip(i);
+                                if (clip) {
+                                    bool isSelected = (i == animator->GetCurrentClip());
+                                    if (ImGui::Selectable(clip->name.c_str(), isSelected)) {
+                                        animator->PlayClip(i);
+                                    }
+                                    if (isSelected) ImGui::SetItemDefaultFocus();
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
+
+                        // Show clip info
+                        if (currentClip) {
+                            ImGui::AlignTextToFramePadding();
+                            ImGui::Text("Duration");
+                            ImGui::SameLine(150);
+                            ImGui::Text("%.2f seconds", currentClip->duration);
+
+                            ImGui::AlignTextToFramePadding();
+                            ImGui::Text("Current Time");
+                            ImGui::SameLine(150);
+                            ImGui::Text("%.2f seconds", animator->GetTime());
+
+                            // Time scrubber
+                            float time = animator->GetTime();
+                            if (ImGui::SliderFloat("##Timeline", &time, 0.0f, currentClip->duration, "%.2f")) {
+                                animator->SetTime(time);
+                            }
+                        }
+                    }
+                    else {
+                        ImGui::TextDisabled("No animation clips available.");
+                    }
+                    ImGui::Spacing();
+                    ImGui::Unindent(12.0f);
+                }
+
+                ImGui::PopID();
+
+                if (removed) {
+                    ctx->scene.remove<Boom::AnimatorComponent>(m_App->SelectedEntity());
+                    return;
+                }
+                ImGui::Spacing();
             }
         }
 
@@ -753,7 +901,7 @@ namespace EditorUI {
                     UpdateComponent<Boom::RigidBodyComponent>(Boom::ComponentID::RIGIDBODY, selected);
                     UpdateComponent<Boom::ColliderComponent>(Boom::ComponentID::COLLIDER, selected);
                     UpdateComponent<Boom::ModelComponent>(Boom::ComponentID::MODEL, selected);
-                    //UpdateComponent<Boom::AnimatorComponent>(Boom::ComponentID::ANIMATOR, selected);
+                    UpdateComponent<Boom::AnimatorComponent>(Boom::ComponentID::ANIMATOR, selected);
                     UpdateComponent<Boom::DirectLightComponent>(Boom::ComponentID::DIRECT_LIGHT, selected);
                     UpdateComponent<Boom::PointLightComponent>(Boom::ComponentID::POINT_LIGHT, selected);
                     UpdateComponent<Boom::SpotLightComponent>(Boom::ComponentID::SPOT_LIGHT, selected);
