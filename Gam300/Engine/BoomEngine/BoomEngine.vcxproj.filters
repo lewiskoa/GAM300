@@ -79,9 +79,9 @@
     <ClInclude Include="includes\AI\DetourNavSystem.h" />
     <ClInclude Include="includes\AI\NavAgent.h" />
     <ClInclude Include="includes\AI\DetourBuildAPI.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="thirdparty\dotnet\nethost.lib" />
+    <ClInclude Include="includes\Scripting\MonoRuntime.h" />
+    <ClInclude Include="includes\Scripting\ScriptBinding.h" />
+    <ClInclude Include="includes\Scripting\ScriptingSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="VendorSettings.props" />

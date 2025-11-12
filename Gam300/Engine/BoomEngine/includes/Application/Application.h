@@ -618,13 +618,19 @@ namespace Boom
                     }
                     ModelAsset& model{ *modelPtr };
 
-                    //set animator uniform if model has one
-                    if (entity.template Has<AnimatorComponent>()) {
-                        AnimatorComponent& an{ entity.template Get<AnimatorComponent>() };
-                        // Only animate if not paused
-                        float deltaTime = (m_AppState == ApplicationState::RUNNING) ? static_cast<float>(m_Context->DeltaTime) : 0.0f;
-                        auto& joints{ an.animator->Animate(deltaTime) };
-                        m_Context->renderer->SetJoints(joints);
+                    if (entity.Has<AnimatorComponent>()) {
+                        auto& an = entity.Get<AnimatorComponent>();
+                        float dt = (m_AppState == ApplicationState::RUNNING) ? (float)m_Context->DeltaTime : 0.0f;
+                        auto& joints = an.animator->Animate(dt);
+                        m_Context->renderer->SetJoints(joints);           // existing
+                    }
+                    else {
+                        // NEW: ensure no stale palette leaks into this draw
+                        if (model.hasJoints)
+                        {
+                            static std::vector<glm::mat4> identityPalette(100, glm::mat4(1.0f));
+                            m_Context->renderer->SetJoints(identityPalette);
+                        }
                     }
 
                     glm::mat4 worldMatrix = GetWorldMatrix(entity);
@@ -1764,6 +1770,12 @@ namespace Boom
             EnttView<Entity, ThirdPersonCameraComponent, TransformComponent>(
                 [this, &mouseDelta, &scrollDelta](Entity entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
                 {
+
+#define UNUSED(x) (void)(x)
+                    UNUSED(entity);
+
+
+
                     // 3. Find the target entity by its UID
                     if (cam.targetUID == 0) return; // No target UID set
 
