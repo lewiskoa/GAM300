@@ -191,7 +191,7 @@ namespace Boom {
             else {
                 if (m_TouchViewport) glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
                 //shadowShader->GetDepthMap() //frame->GetTexture()
-                finalShader->Render(shadowShader->GetDepthMap(), bloom->GetMap(), useFBO, enabledBloom); // toggle bloom inside final if needed
+                finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, enabledBloom); // toggle bloom inside final if needed
             }
         }
 
