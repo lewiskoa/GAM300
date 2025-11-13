@@ -380,110 +380,17 @@ namespace EditorUI {
                     ImGui::Separator();
                     ImGui::Spacing();
 
-                    // === STATE LIST ===
-                    if (stateCount > 0) {
-                        ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "States");
-                        ImGui::Spacing();
-
-                        size_t currentStateIdx = animator->GetCurrentStateIndex();
-
-                        for (size_t i = 0; i < stateCount; ++i) {
-                            const auto* state = animator->GetState(i);
-                            if (!state) continue;
-
-                            ImGui::PushID(static_cast<int>(i));
-
-                            // Highlight current state
-                            bool isCurrent = (i == currentStateIdx);
-                            if (isCurrent) {
-                                ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.2f, 0.3f, 0.2f, 0.3f));
-                            }
-
-                            // State container
-                            ImGui::BeginChild("StateItem", ImVec2(0, 100), true);  // Increased height for buttons
-
-                            // State name (larger text)
-                            if (isCurrent) {
-                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "%s", state->name.c_str());
-                            }
-                            else {
-                                ImGui::Text("%s", state->name.c_str());
-                            }
-
-                            // Clip info
-                            const char* clipName = "None";
-                            if (state->clipIndex < clipCount) {
-                                const auto* clip = animator->GetClip(state->clipIndex);
-                                if (clip) clipName = clip->name.c_str();
-                            }
-                            ImGui::TextDisabled("Clip: %s", clipName);
-
-                            // Properties (read-only for now)
-                            ImGui::Text("Speed: %.2f | Loop: %s",
-                                state->speed,
-                                state->loop ? "Yes" : "No");
-
-                            ImGui::Spacing();
-
-                            // === ACTION BUTTONS ===
-                            if (ImGui::Button("Edit", ImVec2(60, 0))) {
-                                // We'll implement editing in next step
-                                BOOM_INFO("Edit state '{}'", state->name);
-                            }
-                            ImGui::SameLine();
-
-                            if (ImGui::Button("Remove", ImVec2(60, 0))) {
-                                animator->RemoveState(i);
-                                BOOM_INFO("Removed state at index {}", i);
-                                ImGui::EndChild();
-                                if (isCurrent) ImGui::PopStyleColor();
-                                ImGui::PopID();
-                                break;  // Exit loop after removal
-                            }
-                            ImGui::SameLine();
-
-                            // Set as default button
-                            if (!isCurrent) {
-                                if (ImGui::Button("Set Default", ImVec2(80, 0))) {
-                                    animator->SetDefaultState(i);
-                                    BOOM_INFO("Set '{}' as default state", state->name);
-                                }
-                            }
-                            else {
-                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "[DEFAULT]");
-                            }
-
-                            ImGui::EndChild();
-
-                            if (isCurrent) {
-                                ImGui::PopStyleColor();
-                            }
-
-                            ImGui::PopID();
-                            ImGui::Spacing();
+                    if (clipCount > 0) {
+                        if (ImGui::Button("+ Add State", ImVec2(-1, 0))) {
+                            std::string stateName = "State " + std::to_string(stateCount);
+                            animator->AddState(stateName, 0);  // Default to clip 0
+                            BOOM_INFO("Added state '{}'", stateName);
                         }
                     }
                     else {
-                        ImGui::TextDisabled("No states defined");
-                        ImGui::Spacing();
-
-                        // === ADD STATE BUTTON ===
-                        if (clipCount > 0) {
-                            if (ImGui::Button("+ Add State", ImVec2(-1, 0))) {
-                                std::string stateName = "State " + std::to_string(stateCount);
-                                animator->AddState(stateName, 0);  // Default to clip 0
-                                BOOM_INFO("Added state '{}'", stateName);
-                            }
-                        }
-                        else {
-                            ImGui::BeginDisabled();
-                            ImGui::Button("+ Add State (No clips loaded)", ImVec2(-1, 0));
-                            ImGui::EndDisabled();
-                        }
-
-                        ImGui::Spacing();
-                        ImGui::Separator();
-                        ImGui::Spacing();
+                        ImGui::BeginDisabled();
+                        ImGui::Button("+ Add State (No clips loaded)", ImVec2(-1, 0));
+                        ImGui::EndDisabled();
                     }
 
                     ImGui::Spacing();
@@ -580,6 +487,7 @@ namespace EditorUI {
                     ImGui::Spacing();
                     ImGui::Separator();
                     ImGui::Spacing();
+
                 }
                 else {
                     ImGui::TextDisabled("No animator available.");
