@@ -434,14 +434,107 @@ namespace EditorUI {
                 }
             }
 
-            // Handle removal and PopID in ONE place, regardless of isOpen state
+            // Handle removal and PopID OUTSIDE the isOpen block
             if (removed) {
                 ImGui::PopID();  // Pop BEFORE early return
                 ctx->scene.remove<Boom::AnimatorComponent>(m_App->SelectedEntity());
                 return;
             }
 
-            ImGui::PopID();  // Only ONE PopID here, always executed
+            ImGui::PopID();  // This PopID ALWAYS executes, regardless of isOpen state
+            ImGui::Spacing();
+        }
+
+        if (selected.Has<Boom::RigidBodyComponent>()) {
+            ImGui::PushID("Rigid Body");
+
+            // 1. Draw Header
+            bool isOpen = ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
+
+            // 2. Draw "..." Button (to match photo)
+            const ImVec2 headerMin = ImGui::GetItemRectMin();
+            const ImVec2 headerMax = ImGui::GetItemRectMax();
+            const float  lineH = ImGui::GetFrameHeight();
+            const float y = headerMin.y + (headerMax.y - headerMin.y - lineH) * 0.5f;
+            ImGui::SetCursorScreenPos(ImVec2(headerMax.x - lineH, y));
+            if (ImGui::Button("...", ImVec2(lineH, lineH)))
+                ImGui::OpenPopup("RigidBodySettings");
+
+            bool removed = false;
+            if (ImGui::BeginPopup("RigidBodySettings")) {
+                if (ImGui::MenuItem("Remove Component")) {
+                    removed = true; // Set flag to remove later
+                }
+                ImGui::EndPopup();
+            }
+
+            // 3. Reset cursor
+            ImGui::SetCursorScreenPos(ImVec2(headerMin.x, headerMax.y + ImGui::GetStyle().ItemSpacing.y));
+
+            // 4. Draw Contents
+            if (isOpen) {
+                ImGui::Indent(12.0f);
+                ImGui::Spacing();
+
+                auto& rc = selected.Get<Boom::RigidBodyComponent>();
+
+                RigidBody3D::Type currentType = rc.RigidBody.type;
+                const char* currentTypeName;
+                switch (currentType)
+                {
+                case RigidBody3D::Type::STATIC:  currentTypeName = "Static";  break;
+                case RigidBody3D::Type::DYNAMIC: currentTypeName = "Dynamic"; break;
+                default:                         currentTypeName = "Unknown"; break;
+                }
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Body Type");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+
+                if (ImGui::BeginCombo("##BodyType", currentTypeName))
+                {
+                    bool isStaticSelected = (currentType == RigidBody3D::Type::STATIC);
+                    if (ImGui::Selectable("Static", isStaticSelected))
+                    {
+                        m_App->GetPhysicsContext().SetRigidBodyType(selected, RigidBody3D::Type::STATIC);
+                    }
+                    if (isStaticSelected) ImGui::SetItemDefaultFocus();
+
+                    bool isDynamicSelected = (currentType == RigidBody3D::Type::DYNAMIC);
+                    if (ImGui::Selectable("Dynamic", isDynamicSelected))
+                    {
+                        m_App->GetPhysicsContext().SetRigidBodyType(selected, RigidBody3D::Type::DYNAMIC);
+                    }
+                    if (isDynamicSelected) ImGui::SetItemDefaultFocus();
+
+                    ImGui::EndCombo();
+                }
+
+                auto* rigidBody = &rc.RigidBody;
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Density");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##Density", &rigidBody->density, 0.01f, 0.0f, 1000.0f);
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Mass");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##Mass", &rigidBody->mass, 0.1f, 0.0f, 1000.0f);
+
+                ImGui::Spacing();
+                ImGui::Unindent(12.0f);
+            }
+
+            ImGui::PopID();
+
+            if (removed) {
+                ctx->scene.remove<Boom::RigidBodyComponent>(m_App->SelectedEntity());
+                return; // Exit EntityUpdate early
+            }
             ImGui::Spacing();
         }
 
@@ -615,14 +708,12 @@ namespace EditorUI {
                 ImGui::Spacing();
                 ImGui::Unindent(12.0f);
             }
-            
+            ImGui::PopID();
 
             if (removed) {
-                ImGui::PopID();
                 ctx->scene.remove<Boom::ColliderComponent>(m_App->SelectedEntity());
                 return; // Exit EntityUpdate early
             }
-            ImGui::PopID();
             ImGui::Spacing();
         }
 
