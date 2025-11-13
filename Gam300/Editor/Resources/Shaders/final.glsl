@@ -26,7 +26,8 @@ uniform bool u_enableBloom;
 
 void main() 
 { 
-    vec3 result = texture(map, uvs).rgb;
+  /*
+  vec3 result = texture(map, uvs).rgb;
   // sample color from map
     if (u_enableBloom) {
         result += texture(u_bloom, uvs).rgb;
@@ -38,7 +39,12 @@ void main()
   result = pow(result, vec3(1.0 / max(GAMMA, MIN_GAMMA)));
 
   // fragment color
-  out_fragment = vec4(result, 1.0); 
+  out_fragment = vec4(result, 1.0); */
+
+  //depth map
+  float depth = texture(map, uvs).r;
+  out_fragment = vec4(depth, depth, depth, 1.0);
+
 }
 
 ==FRAGMENT==

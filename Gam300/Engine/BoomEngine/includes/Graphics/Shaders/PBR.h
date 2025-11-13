@@ -126,6 +126,7 @@ namespace Boom {
 		}
 
 		BOOM_INLINE void SetMaterial(PbrMaterial const& material, int32_t unit) {
+			glBindTexture(GL_TEXTURE_2D, 0);
 			SetUniform(albedoLoc, material.albedo);
 			SetUniform(roughLoc, material.roughness);
 			SetUniform(metalLoc, material.metallic);
@@ -189,7 +190,7 @@ namespace Boom {
 			SetUniform(isDebugModeLoc, true);
 			SetUniform(ditherThresholdLoc, showDither ? ditherThreshold : 0.f);
 			SetUniform(showNormalTextureLoc, showNormal);
-			SetUniform(modelMatLoc, transform.Matrix());
+			SetUniform(modelMatLoc, transform.Matrix() * model->modelTransform.Matrix());
 			SetUniform(albedoLoc, albedo);
 
 			SetUniform(jointsLoc, model->HasJoint());

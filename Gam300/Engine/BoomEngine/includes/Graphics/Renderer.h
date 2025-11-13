@@ -79,18 +79,20 @@ namespace Boom {
         BOOM_INLINE void SetPointLightCount(int32_t count) { pbrShader->SetPointLightCount(count); }
         BOOM_INLINE void SetDirectionalLightCount(int32_t count) { pbrShader->SetDirectionalLightCount(count); }
 
-        BOOM_INLINE void DrawDepth(Model3D& model, Transform3D& transform) {
+        BOOM_INLINE void DrawShadow(Model3D& model, Transform3D& transform, std::vector<glm::mat4>& joints) {
+            if (!joints.empty()) shadowShader->SetJoints(joints);
+            //glCullFace(GL_FRONT);
             shadowShader->Draw(model, transform);
+            //glCullFace(GL_BACK);
         }
         BOOM_INLINE void BeginShadowPass(const glm::vec3& LightDir)
         {
             // prepare projection and view mtx
-            static auto proj = glm::ortho(-15.0f, 15.0f, -15.0f, 15.0f, 0.1f, 50.0f);
-            glm::vec3 lightPos{ -glm::normalize(LightDir) * 200.f };
-            auto view = glm::lookAt(lightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+            static auto proj = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 10.0f);
+            auto view = glm::lookAt(LightDir, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
             // compute light space
-            auto lightSpaceMtx = (proj * view);
+            auto lightSpaceMtx = proj * view;
 
             // set pbr shader light space mtx and depth map
             pbrShader->Use();
@@ -99,7 +101,6 @@ namespace Boom {
             // begin depth rendering
             shadowShader->BeginFrame(lightSpaceMtx);
         }
-
         BOOM_INLINE void EndShadowPass()
         {
             shadowShader->EndFrame();
@@ -189,7 +190,8 @@ namespace Boom {
             }
             else {
                 if (m_TouchViewport) glViewport(0, 0, frame->GetWidth(), frame->GetHeight());
-                finalShader->Render(frame->GetTexture(), bloom->GetMap(), useFBO, enabledBloom); // toggle bloom inside final if needed
+                //shadowShader->GetDepthMap() //frame->GetTexture()
+                finalShader->Render(shadowShader->GetDepthMap(), bloom->GetMap(), useFBO, enabledBloom); // toggle bloom inside final if needed
             }
         }
 

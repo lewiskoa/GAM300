@@ -18,6 +18,7 @@ out Vertex {
     vec2 uv;
 } vertex;
 layout (location = 1) out vec3 viewPos;
+layout (location = 2) out vec4 fragPosLight;
 
 uniform mat4 modelMat;
 uniform mat4 frustumMat; // proj * view
@@ -117,11 +118,16 @@ uniform bool isDebugMode;
 uniform bool showNormalTexture;
 
 // shadow mapping
-uniform sampler2D u_depthMap; 
 uniform mat4 u_lightSpace;
+uniform sampler2D u_depthMap;
+float ComputeShadow()
+{
+  vec4 pos = u_lightSpace * vec4(vertex.position, 1.0);
+  vec3 uvs = (pos.xyz / pos.w) * 0.5 + 0.5;
+  float depth = texture(u_depthMap, uvs.xy).r;
 
-// compute shadow
-float ComputeShadow();
+  return pos.z > depth ? 1.0 : 0.0;
+}
 
 //this effect influences the appearance of surfaces
 // for example, higher reflectivity at grazing angles than dielectrics
@@ -199,9 +205,9 @@ void main() {
                 ComputeDirLights(N, V, f0, albedo, roughness, metallic) + 
                 ComputeSpotLights(N, V, f0, albedo, roughness, metallic);
     
-    //occ and em
-    color = color * occlusion + emissive;
-    color *= (1.0 - ComputeShadow());
+    //shadows, occ and em
+    color = (color * occlusion) + emissive;
+    color *= 1.0 - ComputeShadow();
 
     if (dot(color,BLOOM_THRESHOLD)>1.0) {
         out_brightness=vec4(color,1.0);
@@ -209,7 +215,6 @@ void main() {
     else {
         out_brightness=vec4(0.0,0.0,0.0,1.0);
     }
-
 
     //simulate low bit depth
     float colorDepth = 32.0;
@@ -341,32 +346,5 @@ vec3 ComputeSpotLights(vec3 N, vec3 V, vec3 f0, vec3 albedo, float roughness, fl
     }
 
     return result;
-}
-
-float ComputeShadow()
-{
-  vec4 position = u_lightSpace * vec4(vertex.position, 1.0); 
-  vec3 coords = (position.xyz / position.w) * 0.5 + 0.5;
-
-  // pixel size (1024 -> map size)
-  float pixelSize = 1.0/1024;
-  float shadow = 0.0;
-  float bias = 0.005;
-
-  // compute average pcf
-  for(int x = -1; x <= 1; ++x)
-  {
-    for(int y = -1; y <= 1; ++y)
-    {
-      float depth = texture(u_depthMap, coords.xy + vec2(x, y) * pixelSize).r; 
-      shadow += (position.z - bias) > depth ? 0.7 : 0.0;        
-    }    
-  }
-  shadow /= 9.0;
-
-  if(coords.z > 1.0)
-    shadow = 0.0;
-
-  return shadow;
 }
 ==FRAGMENT==
