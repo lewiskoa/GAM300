@@ -270,18 +270,10 @@ namespace EditorUI {
                             // (Your SkeletalModel should expose GetAnimator() or similar.)
                             auto skeletalModel = std::dynamic_pointer_cast<Boom::SkeletalModel>(modelAsset.data);
                             if (skeletalModel && skeletalModel->GetAnimator()) {
-                                if (selected.Has<Boom::AnimatorComponent>()) {
-                                    // Refresh existing animator instance from the model (clone state machine/clips)
-                                    auto& animComp = selected.Get<Boom::AnimatorComponent>();
-                                    animComp.animator = skeletalModel->GetAnimator()->Clone();
-                                    BOOM_INFO("Updated AnimatorComponent after model change (skeletal).");
-                                }
-                                else {
                                     // Auto-add like Unity: Skinned mesh ⇒ Animator component
                                     auto& animComp = selected.Attach<Boom::AnimatorComponent>();
                                     animComp.animator = skeletalModel->GetAnimator()->Clone();
                                     BOOM_INFO("Auto-added AnimatorComponent for skeletal model.");
-                                }
                             }
                         }
                         else {
@@ -363,6 +355,8 @@ namespace EditorUI {
                 ImGui::EndPopup();
             }
 
+
+
             // 3. Reset cursor
             ImGui::SetCursorScreenPos(ImVec2(headerMin.x, headerMax.y + ImGui::GetStyle().ItemSpacing.y));
 
@@ -375,57 +369,217 @@ namespace EditorUI {
                 auto& animator = animComp.animator;
 
                 if (animator) {
-                    // Show current clip info
-                    ImGui::Text("Clips: %zu", animator->GetClipCount());
+                    size_t clipCount = animator->GetClipCount();
+                    size_t stateCount = animator->GetStateCount();
 
-                    if (animator->GetClipCount() > 0) {
-                        // Current clip dropdown
-                        ImGui::AlignTextToFramePadding();
-                        ImGui::Text("Current Clip");
-                        ImGui::SameLine(150);
-                        ImGui::SetNextItemWidth(-1);
+                    // === HEADER INFO ===
+                    ImGui::Text("Clips: %zu", clipCount);
+                    ImGui::Text("States: %zu", stateCount);
 
-                        const auto* currentClip = animator->GetClip(animator->GetCurrentClip());
-                        const char* currentName = currentClip ? currentClip->name.c_str() : "None";
+                    ImGui::Spacing();
+                    ImGui::Separator();
+                    ImGui::Spacing();
 
-                        if (ImGui::BeginCombo("##CurrentClip", currentName)) {
-                            for (size_t i = 0; i < animator->GetClipCount(); ++i) {
-                                const auto* clip = animator->GetClip(i);
-                                if (clip) {
-                                    bool isSelected = (i == animator->GetCurrentClip());
-                                    if (ImGui::Selectable(clip->name.c_str(), isSelected)) {
-                                        animator->PlayClip(i);
-                                    }
-                                    if (isSelected) ImGui::SetItemDefaultFocus();
+                    // === STATE LIST ===
+                    if (stateCount > 0) {
+                        ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "States");
+                        ImGui::Spacing();
+
+                        size_t currentStateIdx = animator->GetCurrentStateIndex();
+
+                        for (size_t i = 0; i < stateCount; ++i) {
+                            const auto* state = animator->GetState(i);
+                            if (!state) continue;
+
+                            ImGui::PushID(static_cast<int>(i));
+
+                            // Highlight current state
+                            bool isCurrent = (i == currentStateIdx);
+                            if (isCurrent) {
+                                ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.2f, 0.3f, 0.2f, 0.3f));
+                            }
+
+                            // State container
+                            ImGui::BeginChild("StateItem", ImVec2(0, 100), true);  // Increased height for buttons
+
+                            // State name (larger text)
+                            if (isCurrent) {
+                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "%s", state->name.c_str());
+                            }
+                            else {
+                                ImGui::Text("%s", state->name.c_str());
+                            }
+
+                            // Clip info
+                            const char* clipName = "None";
+                            if (state->clipIndex < clipCount) {
+                                const auto* clip = animator->GetClip(state->clipIndex);
+                                if (clip) clipName = clip->name.c_str();
+                            }
+                            ImGui::TextDisabled("Clip: %s", clipName);
+
+                            // Properties (read-only for now)
+                            ImGui::Text("Speed: %.2f | Loop: %s",
+                                state->speed,
+                                state->loop ? "Yes" : "No");
+
+                            ImGui::Spacing();
+
+                            // === ACTION BUTTONS ===
+                            if (ImGui::Button("Edit", ImVec2(60, 0))) {
+                                // We'll implement editing in next step
+                                BOOM_INFO("Edit state '{}'", state->name);
+                            }
+                            ImGui::SameLine();
+
+                            if (ImGui::Button("Remove", ImVec2(60, 0))) {
+                                animator->RemoveState(i);
+                                BOOM_INFO("Removed state at index {}", i);
+                                ImGui::EndChild();
+                                if (isCurrent) ImGui::PopStyleColor();
+                                ImGui::PopID();
+                                break;  // Exit loop after removal
+                            }
+                            ImGui::SameLine();
+
+                            // Set as default button
+                            if (!isCurrent) {
+                                if (ImGui::Button("Set Default", ImVec2(80, 0))) {
+                                    animator->SetDefaultState(i);
+                                    BOOM_INFO("Set '{}' as default state", state->name);
                                 }
                             }
-                            ImGui::EndCombo();
-                        }
-
-                        // Show clip info
-                        if (currentClip) {
-                            ImGui::AlignTextToFramePadding();
-                            ImGui::Text("Duration");
-                            ImGui::SameLine(150);
-                            ImGui::Text("%.2f seconds", currentClip->duration);
-
-                            ImGui::AlignTextToFramePadding();
-                            ImGui::Text("Current Time");
-                            ImGui::SameLine(150);
-                            ImGui::Text("%.2f seconds", animator->GetTime());
-
-                            // Time scrubber
-                            float time = animator->GetTime();
-                            if (ImGui::SliderFloat("##Timeline", &time, 0.0f, currentClip->duration, "%.2f")) {
-                                animator->SetTime(time);
+                            else {
+                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "[DEFAULT]");
                             }
+
+                            ImGui::EndChild();
+
+                            if (isCurrent) {
+                                ImGui::PopStyleColor();
+                            }
+
+                            ImGui::PopID();
+                            ImGui::Spacing();
                         }
                     }
                     else {
-                        ImGui::TextDisabled("No animation clips available.");
+                        ImGui::TextDisabled("No states defined");
+                        ImGui::Spacing();
+
+                        // === ADD STATE BUTTON ===
+                        if (clipCount > 0) {
+                            if (ImGui::Button("+ Add State", ImVec2(-1, 0))) {
+                                std::string stateName = "State " + std::to_string(stateCount);
+                                animator->AddState(stateName, 0);  // Default to clip 0
+                                BOOM_INFO("Added state '{}'", stateName);
+                            }
+                        }
+                        else {
+                            ImGui::BeginDisabled();
+                            ImGui::Button("+ Add State (No clips loaded)", ImVec2(-1, 0));
+                            ImGui::EndDisabled();
+                        }
+
+                        ImGui::Spacing();
+                        ImGui::Separator();
+                        ImGui::Spacing();
                     }
+
                     ImGui::Spacing();
-                    ImGui::Unindent(12.0f);
+                    ImGui::Separator();
+                    ImGui::Spacing();
+
+                    // === STATE LIST ===
+                    if (stateCount > 0) {
+                        ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "States");
+                        ImGui::Spacing();
+
+                        size_t currentStateIdx = animator->GetCurrentStateIndex();
+
+                        for (size_t i = 0; i < stateCount; ++i) {
+                            const auto* state = animator->GetState(i);
+                            if (!state) continue;
+
+                            ImGui::PushID(static_cast<int>(i));
+
+                            // Highlight current state
+                            bool isCurrent = (i == currentStateIdx);
+                            if (isCurrent) {
+                                ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.2f, 0.3f, 0.2f, 0.3f));
+                            }
+
+                            // State container
+                            ImGui::BeginChild("StateItem", ImVec2(0, 100), true);
+
+                            // State name
+                            if (isCurrent) {
+                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "%s", state->name.c_str());
+                            }
+                            else {
+                                ImGui::Text("%s", state->name.c_str());
+                            }
+
+                            // Clip info
+                            const char* clipName = "None";
+                            if (state->clipIndex < clipCount) {
+                                const auto* clip = animator->GetClip(state->clipIndex);
+                                if (clip) clipName = clip->name.c_str();
+                            }
+                            ImGui::TextDisabled("Clip: %s", clipName);
+
+                            // Properties
+                            ImGui::Text("Speed: %.2f | Loop: %s",
+                                state->speed,
+                                state->loop ? "Yes" : "No");
+
+                            ImGui::Spacing();
+
+                            // === ACTION BUTTONS ===
+                            if (ImGui::Button("Edit", ImVec2(60, 0))) {
+                                BOOM_INFO("Edit state '{}'", state->name);
+                            }
+                            ImGui::SameLine();
+
+                            if (ImGui::Button("Remove", ImVec2(60, 0))) {
+                                animator->RemoveState(i);
+                                BOOM_INFO("Removed state at index {}", i);
+                                ImGui::EndChild();
+                                if (isCurrent) ImGui::PopStyleColor();
+                                ImGui::PopID();
+                                break;
+                            }
+                            ImGui::SameLine();
+
+                            // Set as default
+                            if (!isCurrent) {
+                                if (ImGui::Button("Set Default", ImVec2(80, 0))) {
+                                    animator->SetDefaultState(i);
+                                    BOOM_INFO("Set '{}' as default state", state->name);
+                                }
+                            }
+                            else {
+                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "[DEFAULT]");
+                            }
+
+                            ImGui::EndChild();
+
+                            if (isCurrent) {
+                                ImGui::PopStyleColor();
+                            }
+
+                            ImGui::PopID();
+                            ImGui::Spacing();
+                        }
+                    }
+                    else {
+                        ImGui::TextDisabled("No states defined. Click '+ Add State' above to create one.");
+                        ImGui::Spacing();
+                    }
+
+                    ImGui::Spacing();
+                    ImGui::Separator();
+                    ImGui::Spacing();
                 }
                 else {
                     ImGui::TextDisabled("No animator available.");
@@ -869,6 +1023,44 @@ namespace EditorUI {
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::EndPopup();
+            }
+        }
+    }
+
+	//Template for AnimatorComponent addition logic
+    template <>
+    void InspectorPanel::UpdateComponent<Boom::AnimatorComponent>(Boom::ComponentID id, Boom::Entity& selected)
+    {
+        // Only show if:
+        // 1. Entity doesn't already have AnimatorComponent
+        // 2. Entity has a ModelComponent
+        // 3. Model has joints
+
+        if (!selected.Has<Boom::AnimatorComponent>() &&
+            selected.Has<Boom::ModelComponent>())
+        {
+            auto& modelComp = selected.Get<Boom::ModelComponent>();
+            auto& assets = m_App->GetAssetRegistry();
+
+            if (modelComp.modelID != 0) {
+                auto& modelAsset = assets.Get<Boom::ModelAsset>(modelComp.modelID);
+
+                if (modelAsset.hasJoints) {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::PushID(static_cast<int>(id));
+
+                    if (ImGui::Selectable(COMPONENT_NAMES[static_cast<size_t>(id)].data())) {
+                        auto skeletalModel = std::dynamic_pointer_cast<Boom::SkeletalModel>(modelAsset.data);
+                        if (skeletalModel && skeletalModel->GetAnimator()) {
+                            auto& animComp = selected.Attach<Boom::AnimatorComponent>();
+                            animComp.animator = skeletalModel->GetAnimator()->Clone();
+                            BOOM_INFO("Added AnimatorComponent");
+                        }
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::PopID();
+                }
             }
         }
     }
