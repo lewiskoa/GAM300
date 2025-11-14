@@ -17,6 +17,7 @@
 #include "Panels/PerformancePanel.h"
 #include "Panels/PlaybackControlsPanel.h"
 #include "Panels/NavMeshPanel.h"
+#include "Panels/RayCast.h"
 #include "BoomEngine.h"
 
 // Gizmo
