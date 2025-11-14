@@ -250,6 +250,12 @@ namespace Boom
         BOOM_INLINE std::vector<State>& GetStates() { return m_States; }
         BOOM_INLINE const std::vector<State>& GetStates() const { return m_States; }
 
+        BOOM_INLINE void RemoveClip(size_t index) {
+            if (index < m_Clips.size()) {
+                m_Clips.erase(m_Clips.begin() + index);
+            }
+        }
+
     private:
          // === STATE MACHINE HELPERS ===
 
@@ -565,6 +571,7 @@ namespace Boom
             clip->name = clipName.empty() ? ai_anim->mName.C_Str() : clipName;
             clip->duration = (float)ai_anim->mDuration;
             clip->ticksPerSecond = (float)ai_anim->mTicksPerSecond;
+            clip->filePath = filepath; // Store source file path
 
             // Parse animation channels
             for (uint32_t j = 0; j < ai_anim->mNumChannels; j++)

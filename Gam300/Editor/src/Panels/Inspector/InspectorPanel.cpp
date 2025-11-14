@@ -270,10 +270,12 @@ namespace EditorUI {
                             // (Your SkeletalModel should expose GetAnimator() or similar.)
                             auto skeletalModel = std::dynamic_pointer_cast<Boom::SkeletalModel>(modelAsset.data);
                             if (skeletalModel && skeletalModel->GetAnimator()) {
-                                    // Auto-add like Unity: Skinned mesh ⇒ Animator component
+                                // Only auto-add if it doesn't exist (don't overwrite existing animator setup!)
+                                if (!selected.Has<Boom::AnimatorComponent>()) {
                                     auto& animComp = selected.Attach<Boom::AnimatorComponent>();
                                     animComp.animator = skeletalModel->GetAnimator()->Clone();
                                     BOOM_INFO("Auto-added AnimatorComponent for skeletal model.");
+                                }
                             }
                         }
                         else {

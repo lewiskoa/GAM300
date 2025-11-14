@@ -4,6 +4,7 @@
 #include "Vendors/imgui/imgui.h"
 #include "Auxiliaries/Assets.h"
 #include "Context/DebugHelpers.h"
+#include <filesystem>
 
 
 using namespace EditorUI;
@@ -65,6 +66,86 @@ namespace EditorUI {
                 }
                 for (auto& [name, value] : animator->GetBoolParams()) {
                     ImGui::TextDisabled("  %s = %s", name.c_str(), value ? "true" : "false");
+                }
+
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Spacing();
+
+                // === Clips Management ===
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "Animation Clips");
+                ImGui::Spacing();
+
+                // Display loaded clips
+                std::vector<size_t> clipsToRemove;
+                for (size_t i = 0; i < clipCount; ++i) {
+                    const auto* clip = animator->GetClip(i);
+                    if (!clip) continue;
+
+                    ImGui::PushID(static_cast<int>(i));
+                    ImGui::BulletText("%s (%.2fs)", clip->name.c_str(), clip->duration);
+                    ImGui::SameLine();
+                    if (ImGui::SmallButton("Remove")) {
+                        clipsToRemove.push_back(i);
+                    }
+                    if (!clip->filePath.empty()) {
+                        ImGui::SameLine();
+                        ImGui::TextDisabled("- %s", clip->filePath.c_str());
+                    }
+                    ImGui::PopID();
+                }
+
+                // Remove clips (reverse order to preserve indices)
+                for (auto it = clipsToRemove.rbegin(); it != clipsToRemove.rend(); ++it) {
+                    animator->RemoveClip(*it);
+                }
+
+                // Load clip via drag & drop
+                ImGui::Spacing();
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Load Clip:");
+                ImGui::SameLine();
+
+                ImVec2 dropZoneSize(ImGui::GetContentRegionAvail().x, 40);
+                ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+
+                ImGui::InvisibleButton("##AnimDropZone", dropZoneSize);
+
+                // Draw drop zone
+                ImDrawList* drawList = ImGui::GetWindowDrawList();
+                ImU32 borderCol = ImGui::IsItemHovered() ? IM_COL32(100, 200, 100, 255) : IM_COL32(80, 80, 80, 255);
+                drawList->AddRect(cursorPos, ImVec2(cursorPos.x + dropZoneSize.x, cursorPos.y + dropZoneSize.y), borderCol, 4.0f, 0, 2.0f);
+
+                ImVec2 textSize = ImGui::CalcTextSize("Drag animation file here (.fbx, .gltf)");
+                ImVec2 textPos(cursorPos.x + (dropZoneSize.x - textSize.x) * 0.5f, cursorPos.y + (dropZoneSize.y - textSize.y) * 0.5f);
+                drawList->AddText(textPos, IM_COL32(150, 150, 150, 255), "Drag animation file here (.fbx, .gltf)");
+
+                // Accept drop
+                if (ImGui::BeginDragDropTarget()) {
+                    // Accept animation file path
+                    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(CONSTANTS::DND_PAYLOAD_ANIM_FILE.data())) {
+                        std::string filePath((const char*)payload->Data);
+
+                        // Extract filename without extension as default name
+                        std::filesystem::path p(filePath);
+                        std::string defaultName = p.stem().string();
+
+                        animator->LoadAnimationFromFile(filePath, defaultName);
+                        BOOM_INFO("Loaded animation clip from file: {}", filePath);
+                    }
+                    // Also accept model asset (from resource panel)
+                    else if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(CONSTANTS::DND_PAYLOAD_MODEL.data())) {
+                        Boom::AssetID assetID = *(Boom::AssetID*)payload->Data;
+                        auto& assetReg = m_App->GetAssetRegistry();
+                        auto* modelAsset = assetReg.TryGet<Boom::ModelAsset>(assetID);
+                        if (modelAsset && modelAsset->uid != EMPTY_ASSET) {
+                            std::filesystem::path p(modelAsset->source);
+                            std::string defaultName = p.stem().string();
+                            animator->LoadAnimationFromFile(modelAsset->source, defaultName);
+                            BOOM_INFO("Loaded animation clip from asset: {}", modelAsset->source);
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
                 }
 
                 ImGui::Spacing();
