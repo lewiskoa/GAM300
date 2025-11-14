@@ -44,12 +44,17 @@ namespace EditorUI {
 		void AnimatorComponentUI(Boom::Entity& selected);
 
     private:
-        Editor* m_Owner = nullptr;     
+        Editor* m_Owner = nullptr;
         Boom::AppInterface* m_App = nullptr;
         bool* m_ShowInspector = nullptr;
         bool showDeletePopup{};
         bool           m_HasSelection{ false };
         char           m_NameBuffer[128]{};
+
+        // Animator state editing
+        int            m_EditingStateIndex = -1;
+        bool m_OpenEditStatePopup = false;
+        char           m_StateNameBuffer[128]{};
 
         template<typename TComponent, typename GetPropsFn>
         void DrawComponentSection(const char* title,

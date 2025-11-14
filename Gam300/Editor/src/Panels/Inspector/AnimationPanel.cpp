@@ -123,8 +123,12 @@ namespace EditorUI {
                     ImGui::Spacing();
 
                     if (ImGui::Button("Edit", ImVec2(60, 0))) {
-                        BOOM_INFO("Edit state '{}'", state->name);
+                        m_EditingStateIndex = static_cast<int>(i);
+                        strncpy_s(m_StateNameBuffer, state->name.c_str(), sizeof(m_StateNameBuffer) - 1);
+                        m_StateNameBuffer[sizeof(m_StateNameBuffer) - 1] = '\0';
+                        m_OpenEditStatePopup = true;        // <-- just set a flag
                     }
+
                     ImGui::SameLine();
 
                     if (ImGui::Button("Remove", ImVec2(60, 0))) {
@@ -178,6 +182,99 @@ namespace EditorUI {
 
         ImGui::PopID();
         ImGui::Spacing();
+
+        // === State Edit Popup (at function level) ===
+        if (selected.Has<Boom::AnimatorComponent>()) {
+            auto& animComp = selected.Get<Boom::AnimatorComponent>();
+            auto& animator = animComp.animator;
+
+            // Open the popup on the same ID stack as BeginPopupModal
+            if (m_OpenEditStatePopup) {
+                ImGui::OpenPopup("EditStatePopup");
+                m_OpenEditStatePopup = false;
+            }
+
+            if (animator &&
+                ImGui::BeginPopupModal("EditStatePopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+            {
+                size_t stateCount = animator->GetStateCount();
+                size_t clipCount = animator->GetClipCount();
+
+                if (m_EditingStateIndex >= 0 &&
+                    m_EditingStateIndex < static_cast<int>(stateCount))
+                {
+                    auto* editState = animator->GetState(m_EditingStateIndex);
+
+                    ImGui::Text("Edit State");
+                    ImGui::Separator();
+                    ImGui::Spacing();
+
+                    // Name
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Name");
+                    ImGui::SameLine(100);
+                    ImGui::SetNextItemWidth(200);
+                    ImGui::InputText("##StateName", m_StateNameBuffer, sizeof(m_StateNameBuffer));
+
+                    // Clip selection
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Clip");
+                    ImGui::SameLine(100);
+                    ImGui::SetNextItemWidth(200);
+
+                    const char* currentClipName = "None";
+                    if (editState->clipIndex < clipCount) {
+                        const auto* clip = animator->GetClip(editState->clipIndex);
+                        if (clip) currentClipName = clip->name.c_str();
+                    }
+
+                    if (ImGui::BeginCombo("##ClipSelect", currentClipName)) {
+                        for (size_t c = 0; c < clipCount; ++c) {
+                            const auto* clip = animator->GetClip(c);
+                            if (!clip) continue;
+                            bool isSelected = (editState->clipIndex == c);
+                            if (ImGui::Selectable(clip->name.c_str(), isSelected)) {
+                                editState->clipIndex = c;
+                            }
+                            if (isSelected) ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+
+                    // Speed
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Speed");
+                    ImGui::SameLine(100);
+                    ImGui::SetNextItemWidth(200);
+                    ImGui::DragFloat("##Speed", &editState->speed, 0.01f, 0.0f, 10.0f);
+
+                    // Loop
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Loop");
+                    ImGui::SameLine(100);
+                    ImGui::Checkbox("##Loop", &editState->loop);
+
+                    ImGui::Spacing();
+                    ImGui::Separator();
+                    ImGui::Spacing();
+
+                    // Buttons
+                    if (ImGui::Button("Save", ImVec2(120, 0))) {
+                        editState->name = std::string(m_StateNameBuffer);
+                        m_EditingStateIndex = -1;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                        m_EditingStateIndex = -1;
+                        ImGui::CloseCurrentPopup();
+                    }
+                }
+
+                ImGui::EndPopup();
+            }
+        }
+
     }
 
 
