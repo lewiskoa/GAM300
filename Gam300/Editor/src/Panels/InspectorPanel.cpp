@@ -582,7 +582,9 @@ namespace EditorUI {
                 "Nav Agent", &ag,
                 [&](void* p) -> const xproperty::type::object* {
                     auto* a = static_cast<Boom::NavAgentComponent*>(p);
+                    auto& reg = GetContext()->scene;
 
+                    // --- UTILITIES TABLE -----------------------------------------------------
                     ImGui::BeginTable("##navtools", 2, ImGuiTableFlags_SizingStretchProp);
                     ImGui::TableSetupColumn("l", ImGuiTableColumnFlags_WidthStretch);
                     ImGui::TableSetupColumn("r", ImGuiTableColumnFlags_WidthFixed, 140.0f);
@@ -594,27 +596,177 @@ namespace EditorUI {
                     if (ImGui::Button("Target = Player##btn", ImVec2(-1, 0))) {
                         if (selected.Has<Boom::AIComponent>()) {
                             auto& ai = selected.Get<Boom::AIComponent>();
-                            auto& reg = GetContext()->scene;
                             if (ai.player != entt::null && reg.all_of<Boom::TransformComponent>(ai.player)) {
                                 a->target = reg.get<Boom::TransformComponent>(ai.player).transform.translate;
-                                a->dirty = true;
+                                a->dirty = true; a->repathTimer = 0.f;
                             }
                         }
                     }
                     if (ImGui::Button("Target = Here##btn", ImVec2(-1, 0))) {
                         if (selected.Has<Boom::TransformComponent>()) {
                             a->target = selected.Get<Boom::TransformComponent>().transform.translate;
-                            a->dirty = true;
+                            a->dirty = true; a->repathTimer = 0.f;
                         }
                     }
                     ImGui::EndTable();
                     ImGui::Separator();
 
+                    // --- BASIC PROPERTIES ----------------------------------------------------
+                    bool changed = false;
+
+                    // Target
+                    {
+                        glm::vec3 t = a->target;
+                        if (ImGui::DragFloat3("Target", &t.x, 0.01f)) { a->target = t; changed = true; }
+                        if (ImGui::IsItemDeactivatedAfterEdit()) { a->dirty = true; a->repathTimer = 0.f; }
+                    }
+
+                    // Speed
+                    {
+                        float sp = a->speed;
+                        if (ImGui::DragFloat("Speed (m/s)", &sp, 0.05f, 0.0f, 100.0f)) { a->speed = sp; }
+                    }
+
+                    // Arrive radius
+                    {
+                        float ar = a->arrive;
+                        if (ImGui::DragFloat("Arrive Radius (m)", &ar, 0.01f, 0.01f, 5.0f)) { a->arrive = ar; }
+                    }
+
+                    // Active
+                    ImGui::Checkbox("Active", &a->active);
+
+                    // Repath tuning
+                    {
+                        float cd = a->repathCooldown;
+                        float rd = a->retargetDist;
+                        bool c1 = ImGui::DragFloat("Repath Cooldown (s)", &cd, 0.01f, 0.01f, 10.0f);
+                        bool c2 = ImGui::DragFloat("Retarget Distance (m)", &rd, 0.01f, 0.0f, 10.0f);
+                        if (c1) a->repathCooldown = cd;
+                        if (c2) a->retargetDist = rd;
+                        if (c1 || c2) { a->dirty = true; a->repathTimer = 0.f; }
+                    }
+
+                    // --- FOLLOW ENTITY PICKER -----------------------------------------------
+                    ImGui::SeparatorText("Follow");
+                    {
+                        // Current label
+                        std::string current = "None";
+                        if (a->follow != entt::null && reg.all_of<Boom::InfoComponent>(a->follow)) {
+                            current = reg.get<Boom::InfoComponent>(a->follow).name;
+                        }
+
+                        if (ImGui::BeginCombo("Follow Entity", current.c_str())) {
+                            // None option
+                            bool isNone = (a->follow == entt::null);
+                            if (ImGui::Selectable("None", isNone)) { a->follow = entt::null; a->dirty = true; a->repathTimer = 0.f; }
+                            if (isNone) ImGui::SetItemDefaultFocus();
+
+                            // List all entities with InfoComponent
+                            auto view = reg.view<Boom::InfoComponent>();
+                            for (auto e : view) {
+                                const auto& info = view.get<Boom::InfoComponent>(e);
+                                bool sel = (a->follow == e);
+                                if (ImGui::Selectable(info.name.c_str(), sel)) {
+                                    a->follow = e; a->dirty = true; a->repathTimer = 0.f;
+                                }
+                                if (sel) ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+
+                        // Quick actions
+                        ImGui::SameLine();
+                        if (ImGui::Button("Rebuild Path")) { a->dirty = true; a->repathTimer = 0.f; }
+                        ImGui::SameLine();
+                        if (ImGui::Button("Clear Follow")) { a->follow = entt::null; a->dirty = true; a->repathTimer = 0.f; }
+                    }
+
+                    // --- PATH / WAYPOINT TOOLS ----------------------------------------------
+                    ImGui::SeparatorText("Path");
                     ImGui::Text("Waypoints: %d / %zu", a->waypoint, a->path.size());
                     ImGui::SameLine();
-                    if (ImGui::Button("Clear Path")) { a->path.clear(); a->waypoint = 0; }
+                    if (ImGui::Button("Clear Path")) { a->path.clear(); a->waypoint = 0; } // view-only for path unless edited below
 
-                    return nullptr; // <--- skip DrawPropertiesUI for NavAgent for now
+                    if (!a->path.empty()) {
+                        // Select current waypoint
+                        if (ImGui::BeginListBox("##pathbox", ImVec2(-1, 140))) {
+                            for (int i = 0; i < static_cast<int>(a->path.size()); ++i) {
+                                char label[64];
+                                std::snprintf(label, sizeof(label), "%02d: (%.2f, %.2f, %.2f)", i, a->path[i].x, a->path[i].y, a->path[i].z);
+                                bool selectedRow = (a->waypoint == i);
+                                if (ImGui::Selectable(label, selectedRow)) { a->waypoint = i; }
+                                if (selectedRow) ImGui::SetItemDefaultFocus();
+
+                                // Context menu per waypoint
+                                if (ImGui::BeginPopupContextItem(label)) {
+                                    if (ImGui::MenuItem("Remove")) {
+                                        a->path.erase(a->path.begin() + i);
+                                        if (a->waypoint >= static_cast<int>(a->path.size()))
+                                            a->waypoint = (int)std::max<size_t>(0, a->path.size() ? a->path.size() - 1 : 0);
+                                        ImGui::EndPopup();
+                                        break;
+                                    }
+                                    if (ImGui::MenuItem("Insert After (use Selected Transform if any)")) {
+                                        glm::vec3 p = a->path[i];
+                                        if (selected.Has<Boom::TransformComponent>())
+                                            p = selected.Get<Boom::TransformComponent>().transform.translate;
+                                        a->path.insert(a->path.begin() + i + 1, p);
+                                        ImGui::EndPopup();
+                                        break;
+                                    }
+                                    ImGui::EndPopup();
+                                }
+                            }
+                            ImGui::EndListBox();
+                        }
+
+                        // Edit currently selected waypoint
+                        if (a->waypoint >= 0 && a->waypoint < (int)a->path.size()) {
+                            glm::vec3 wp = a->path[a->waypoint];
+                            if (ImGui::DragFloat3("Edit Selected Waypoint", &wp.x, 0.01f)) {
+                                a->path[a->waypoint] = wp;
+                                // editing path does not need immediate rebuild unless you want:
+                                // a->dirty = true; a->repathTimer = 0.f;
+                            }
+                            if (ImGui::Button("Snap Selected to This Entity")) {
+                                if (selected.Has<Boom::TransformComponent>()) {
+                                    a->path[a->waypoint] = selected.Get<Boom::TransformComponent>().transform.translate;
+                                }
+                            }
+                            ImGui::SameLine();
+                            if (ImGui::Button("Reverse Path")) {
+                                std::reverse(a->path.begin(), a->path.end());
+                                a->waypoint = (int)a->path.size() - 1 - a->waypoint;
+                            }
+                        }
+                    }
+                    else {
+                        ImGui::TextDisabled("No path computed.");
+                    }
+
+                    // --- RUNTIME / DEBUG -----------------------------------------------------
+                    ImGui::SeparatorText("Runtime");
+                    {
+                        float frac = 0.f;
+                        if (a->repathCooldown > 0.f) frac = std::clamp(a->repathTimer / a->repathCooldown, 0.f, 1.f);
+                        ImGui::ProgressBar(frac, ImVec2(-1, 0), "Repath Timer");
+
+                        bool dirty = a->dirty;
+                        if (ImGui::Checkbox("Dirty (force rebuild)", &dirty)) {
+                            a->dirty = dirty;
+                            if (dirty) a->repathTimer = 0.f;
+                        }
+                        int wp = a->waypoint;
+                        if (ImGui::DragInt("Current Waypoint Index", &wp, 1, 0, (int)std::max<size_t>(1, a->path.size()) - 1)) {
+                            a->waypoint = std::clamp(wp, 0, (int)std::max<size_t>(0, a->path.size() ? a->path.size() - 1 : 0));
+                        }
+                    }
+
+                    // If you want your xproperty-driven editor to also show (for the subset you declared),
+                    // return its meta-object here instead of nullptr. If your XPROPERTY_DEF exposes a getter like `xmeta()`,
+                    // do: `return &NavAgentComponent::xmeta();`. Otherwise, keep nullptr and rely on the manual UI above.
+                    return nullptr;
                 },
                 /*removable=*/true,
                 [&]() { GetContext()->scene.remove<Boom::NavAgentComponent>(m_App->SelectedEntity()); }
