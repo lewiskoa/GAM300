@@ -7,7 +7,7 @@
 // Panels (full definitions MUST be included here before ~Editor and method calls)
 #include "Panels/MenuBarPanel.h"
 #include "Panels/HierarchyPanel.h"
-#include "Panels/InspectorPanel.h"
+#include "Panels/Inspector/InspectorPanel.h"
 #include "Panels/ConsolePanel.h"
 #include "Panels/ResourcePanel.h"
 #include "Panels/DirectoryPanel.h"

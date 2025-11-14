@@ -1,5 +1,5 @@
 ﻿// Panels/InspectorPanel.cpp
-#include "Panels/InspectorPanel.h"
+#include "Panels/Inspector/InspectorPanel.h"
 #include "Editor.h"          // for Editor::GetContext()
 #include "Context/Context.h"        // for Boom::AppContext + scene access
 #include "Vendors/imgui/imgui.h"
@@ -333,178 +333,7 @@ namespace EditorUI {
         }
 
         if (selected.Has<Boom::AnimatorComponent>()) {
-            ImGui::PushID("Animator");
-
-            // 1. Header
-            bool isOpen = ImGui::CollapsingHeader("Animator", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
-
-            // 2. Settings button
-            const ImVec2 headerMin = ImGui::GetItemRectMin();
-            const ImVec2 headerMax = ImGui::GetItemRectMax();
-            const float lineH = ImGui::GetFrameHeight();
-            const float y = headerMin.y + (headerMax.y - headerMin.y - lineH) * 0.5f;
-            ImGui::SetCursorScreenPos(ImVec2(headerMax.x - lineH, y));
-            if (ImGui::Button("...", ImVec2(lineH, lineH)))
-                ImGui::OpenPopup("AnimatorSettings");
-
-            bool removed = false;
-            if (ImGui::BeginPopup("AnimatorSettings")) {
-                if (ImGui::MenuItem("Remove Component")) {
-                    removed = true;
-                }
-                ImGui::EndPopup();
-            }
-
-
-
-            // 3. Reset cursor
-            ImGui::SetCursorScreenPos(ImVec2(headerMin.x, headerMax.y + ImGui::GetStyle().ItemSpacing.y));
-
-            // 4. Draw contents
-            if (isOpen) {
-                ImGui::Indent(12.0f);
-                ImGui::Spacing();
-
-                auto& animComp = selected.Get<Boom::AnimatorComponent>();
-                auto& animator = animComp.animator;
-
-                if (animator) {
-                    size_t clipCount = animator->GetClipCount();
-                    size_t stateCount = animator->GetStateCount();
-
-                    // === HEADER INFO ===
-                    ImGui::Text("Clips: %zu", clipCount);
-                    ImGui::Text("States: %zu", stateCount);
-
-                    ImGui::Spacing();
-                    ImGui::Separator();
-                    ImGui::Spacing();
-
-                    if (clipCount > 0) {
-                        if (ImGui::Button("+ Add State", ImVec2(-1, 0))) {
-                            std::string stateName = "State " + std::to_string(stateCount);
-                            animator->AddState(stateName, 0);  // Default to clip 0
-                            BOOM_INFO("Added state '{}'", stateName);
-                        }
-                    }
-                    else {
-                        ImGui::BeginDisabled();
-                        ImGui::Button("+ Add State (No clips loaded)", ImVec2(-1, 0));
-                        ImGui::EndDisabled();
-                    }
-
-                    ImGui::Spacing();
-                    ImGui::Separator();
-                    ImGui::Spacing();
-
-                    // === STATE LIST ===
-                    if (stateCount > 0) {
-                        ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "States");
-                        ImGui::Spacing();
-
-                        size_t currentStateIdx = animator->GetCurrentStateIndex();
-
-                        for (size_t i = 0; i < stateCount; ++i) {
-                            const auto* state = animator->GetState(i);
-                            if (!state) continue;
-
-                            ImGui::PushID(static_cast<int>(i));
-
-                            // Highlight current state
-                            bool isCurrent = (i == currentStateIdx);
-                            if (isCurrent) {
-                                ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.2f, 0.3f, 0.2f, 0.3f));
-                            }
-
-                            // State container
-                            ImGui::BeginChild("StateItem", ImVec2(0, 100), true);
-
-                            // State name
-                            if (isCurrent) {
-                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "%s", state->name.c_str());
-                            }
-                            else {
-                                ImGui::Text("%s", state->name.c_str());
-                            }
-
-                            // Clip info
-                            const char* clipName = "None";
-                            if (state->clipIndex < clipCount) {
-                                const auto* clip = animator->GetClip(state->clipIndex);
-                                if (clip) clipName = clip->name.c_str();
-                            }
-                            ImGui::TextDisabled("Clip: %s", clipName);
-
-                            // Properties
-                            ImGui::Text("Speed: %.2f | Loop: %s",
-                                state->speed,
-                                state->loop ? "Yes" : "No");
-
-                            ImGui::Spacing();
-
-                            // === ACTION BUTTONS ===
-                            if (ImGui::Button("Edit", ImVec2(60, 0))) {
-                                BOOM_INFO("Edit state '{}'", state->name);
-                            }
-                            ImGui::SameLine();
-
-                            if (ImGui::Button("Remove", ImVec2(60, 0))) {
-                                animator->RemoveState(i);
-                                BOOM_INFO("Removed state at index {}", i);
-                                ImGui::EndChild();
-                                if (isCurrent) ImGui::PopStyleColor();
-                                ImGui::PopID();
-                                break;
-                            }
-                            ImGui::SameLine();
-
-                            // Set as default
-                            if (!isCurrent) {
-                                if (ImGui::Button("Set Default", ImVec2(80, 0))) {
-                                    animator->SetDefaultState(i);
-                                    BOOM_INFO("Set '{}' as default state", state->name);
-                                }
-                            }
-                            else {
-                                ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "[DEFAULT]");
-                            }
-
-                            ImGui::EndChild();
-
-                            if (isCurrent) {
-                                ImGui::PopStyleColor();
-                            }
-
-                            ImGui::PopID();
-                            ImGui::Spacing();
-                        }
-                    }
-                    else {
-                        ImGui::TextDisabled("No states defined. Click '+ Add State' above to create one.");
-                        ImGui::Spacing();
-                    }
-
-                    ImGui::Spacing();
-                    ImGui::Separator();
-                    ImGui::Spacing();
-
-                }
-                else {
-                    ImGui::TextDisabled("No animator available.");
-                    ImGui::Spacing();
-                    ImGui::Unindent(12.0f);
-                }
-            }
-
-            // Handle removal and PopID OUTSIDE the isOpen block
-            if (removed) {
-                ImGui::PopID();  // Pop BEFORE early return
-                ctx->scene.remove<Boom::AnimatorComponent>(m_App->SelectedEntity());
-                return;
-            }
-
-            ImGui::PopID();  // This PopID ALWAYS executes, regardless of isOpen state
-            ImGui::Spacing();
+            AnimatorComponentUI(selected);
         }
 
         if (selected.Has<Boom::RigidBodyComponent>()) {
@@ -935,15 +764,13 @@ namespace EditorUI {
         }
     }
 
-	//Template for AnimatorComponent addition logic
-    template <>
-    void InspectorPanel::UpdateComponent<Boom::AnimatorComponent>(Boom::ComponentID id, Boom::Entity& selected)
+    // === Animator-specific UpdateComponent specialization ===
+    template<>
+    void InspectorPanel::UpdateComponent<Boom::AnimatorComponent>(
+        Boom::ComponentID id,
+        Boom::Entity& selected
+    )
     {
-        // Only show if:
-        // 1. Entity doesn't already have AnimatorComponent
-        // 2. Entity has a ModelComponent
-        // 3. Model has joints
-
         if (!selected.Has<Boom::AnimatorComponent>() &&
             selected.Has<Boom::ModelComponent>())
         {
@@ -959,7 +786,8 @@ namespace EditorUI {
                     ImGui::PushID(static_cast<int>(id));
 
                     if (ImGui::Selectable(COMPONENT_NAMES[static_cast<size_t>(id)].data())) {
-                        auto skeletalModel = std::dynamic_pointer_cast<Boom::SkeletalModel>(modelAsset.data);
+                        auto skeletalModel =
+                            std::dynamic_pointer_cast<Boom::SkeletalModel>(modelAsset.data);
                         if (skeletalModel && skeletalModel->GetAnimator()) {
                             auto& animComp = selected.Attach<Boom::AnimatorComponent>();
                             animComp.animator = skeletalModel->GetAnimator()->Clone();
@@ -967,6 +795,7 @@ namespace EditorUI {
                         }
                         ImGui::CloseCurrentPopup();
                     }
+
                     ImGui::PopID();
                 }
             }

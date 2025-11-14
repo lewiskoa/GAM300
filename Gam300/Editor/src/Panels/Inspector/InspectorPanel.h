@@ -41,6 +41,8 @@ namespace EditorUI {
         template <std::string_view const& Payload>
         void InputAssetWidget(char const* label, uint64_t& data);
 
+		void AnimatorComponentUI(Boom::Entity& selected);
+
     private:
         Editor* m_Owner = nullptr;     
         Boom::AppInterface* m_App = nullptr;
