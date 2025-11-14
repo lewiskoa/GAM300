@@ -58,6 +58,15 @@ namespace EditorUI {
                 ImGui::Text("Clips: %zu", clipCount);
                 ImGui::Text("States: %zu", stateCount);
 
+                // Debug: Show current runtime values
+                ImGui::TextDisabled("Runtime Values:");
+                for (auto& [name, value] : animator->GetFloatParams()) {
+                    ImGui::TextDisabled("  %s = %.2f", name.c_str(), value);
+                }
+                for (auto& [name, value] : animator->GetBoolParams()) {
+                    ImGui::TextDisabled("  %s = %s", name.c_str(), value ? "true" : "false");
+                }
+
                 ImGui::Spacing();
                 ImGui::Separator();
                 ImGui::Spacing();
@@ -159,6 +168,93 @@ namespace EditorUI {
 
                     ImGui::PopID();
                     ImGui::Spacing();
+                }
+
+                // === Parameters Section ===
+                ImGui::TextColored(ImVec4(0.7f, 0.7f, 1.0f, 1.0f), "Parameters");
+                ImGui::Spacing();
+
+                // Display existing parameters
+                auto& floatParams = animator->GetFloatParams();
+                auto& boolParams = animator->GetBoolParams();
+                auto& triggers = animator->GetTriggers();
+
+                // Float parameters
+                std::vector<std::string> floatsToRemove;
+                for (auto& [name, value] : floatParams) {
+                    ImGui::PushID(name.c_str());
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("[F] %s", name.c_str());
+                    ImGui::SameLine(150);
+                    ImGui::SetNextItemWidth(-60);
+                    float newVal = value;
+                    if (ImGui::DragFloat("##value", &newVal, 0.01f)) {
+                        animator->SetFloat(name, newVal);
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("X", ImVec2(20, 0))) {
+                        floatsToRemove.push_back(name);
+                    }
+                    ImGui::PopID();
+                }
+                for (auto& name : floatsToRemove) {
+                    animator->GetFloatParams().erase(name);
+                }
+
+                // Bool parameters
+                std::vector<std::string> boolsToRemove;
+                for (auto& [name, value] : boolParams) {
+                    ImGui::PushID(name.c_str());
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("[B] %s", name.c_str());
+                    ImGui::SameLine(150);
+                    ImGui::SetNextItemWidth(-60);
+                    bool newVal = value;
+                    if (ImGui::Checkbox("##value", &newVal)) {
+                        animator->SetBool(name, newVal);
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("X", ImVec2(20, 0))) {
+                        boolsToRemove.push_back(name);
+                    }
+                    ImGui::PopID();
+                }
+                for (auto& name : boolsToRemove) {
+                    animator->GetBoolParams().erase(name);
+                }
+
+                // Triggers (display only, triggers are auto-cleared each frame)
+                if (!triggers.empty()) {
+                    for (auto& name : triggers) {
+                        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.4f, 1.0f), "[T] %s (active)", name.c_str());
+                    }
+                }
+
+                ImGui::Spacing();
+
+                // Add new parameter
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Add Parameter:");
+                ImGui::SetNextItemWidth(100);
+                const char* paramTypes[] = { "Float", "Bool", "Trigger" };
+                ImGui::Combo("##ParamType", &m_NewParamType, paramTypes, 3);
+                ImGui::SameLine();
+                ImGui::SetNextItemWidth(150);
+                ImGui::InputText("##ParamName", m_NewParamNameBuffer, sizeof(m_NewParamNameBuffer));
+                ImGui::SameLine();
+                if (ImGui::Button("Add", ImVec2(50, 0))) {
+                    std::string paramName(m_NewParamNameBuffer);
+                    if (!paramName.empty()) {
+                        if (m_NewParamType == 0) {
+                            animator->SetFloat(paramName, 0.0f);
+                        } else if (m_NewParamType == 1) {
+                            animator->SetBool(paramName, false);
+                        } else if (m_NewParamType == 2) {
+                            // Triggers don't need to be added upfront, just document them
+                            BOOM_INFO("Trigger '{}' can be set via SetTrigger()", paramName);
+                        }
+                        m_NewParamNameBuffer[0] = '\0';
+                    }
                 }
 
                 ImGui::Spacing();

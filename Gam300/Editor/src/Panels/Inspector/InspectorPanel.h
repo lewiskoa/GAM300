@@ -56,6 +56,10 @@ namespace EditorUI {
         bool m_OpenEditStatePopup = false;
         char           m_StateNameBuffer[128]{};
 
+        // Animator parameters
+        char           m_NewParamNameBuffer[128]{};
+        int            m_NewParamType = 0; // 0=Float, 1=Bool, 2=Trigger
+
         template<typename TComponent, typename GetPropsFn>
         void DrawComponentSection(const char* title,
             TComponent* comp,

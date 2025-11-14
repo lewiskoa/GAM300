@@ -235,9 +235,17 @@ namespace Boom
         }
 
         // Access to all parameters (for editor UI)
+        // Floats
         BOOM_INLINE const auto& GetFloatParams() const { return m_FloatParams; }
+        BOOM_INLINE auto& GetFloatParams() { return m_FloatParams; }
+
+        // Bools
         BOOM_INLINE const auto& GetBoolParams() const { return m_BoolParams; }
+        BOOM_INLINE auto& GetBoolParams() { return m_BoolParams; }
+
+        // Triggers
         BOOM_INLINE const auto& GetTriggers() const { return m_Triggers; }
+        BOOM_INLINE auto& GetTriggers() { return m_Triggers; }
 
         BOOM_INLINE std::vector<State>& GetStates() { return m_States; }
         BOOM_INLINE const std::vector<State>& GetStates() const { return m_States; }
