@@ -6,7 +6,8 @@
 #include "GlobalConstants.h"
 #include "ECS/ECS.hpp"
 #include "Audio/TrackLibrary.h"
-
+#include "AI/AIComponent.h"
+#include "AI/NavAgent.h"
 namespace Boom { struct AppContext; struct AppInterface; }
 
 namespace EditorUI {

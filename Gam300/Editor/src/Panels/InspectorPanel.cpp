@@ -1,4 +1,5 @@
 ﻿// Panels/InspectorPanel.cpp
+#include "Core.h"
 #include "Panels/InspectorPanel.h"
 #include "Editor.h"          // for Editor::GetContext()
 #include "Context/Context.h"        // for Boom::AppContext + scene access
@@ -6,9 +7,8 @@
 #include "Auxiliaries/Assets.h"
 #include "Context/DebugHelpers.h"
 #include "Panels/PropertiesImgui.h"
-
 #include"Physics/Context.h"
-
+//#include "BoomProperties.h"
 using namespace EditorUI;
 
 Boom::AppContext* InspectorPanel::GetContext() const {
@@ -530,7 +530,107 @@ namespace EditorUI {
             }
             ImGui::Spacing();
         }
+        if (selected.Has<Boom::AIComponent>()) {
+            auto& ai = selected.Get<Boom::AIComponent>();
 
+            DrawComponentSection(
+                "AI (Behaviour Tree)",
+                &ai,
+                // getProps: draw custom UI first, then return the schema for DrawPropertiesUI
+                [&](void* p) -> const xproperty::type::object* {
+                    auto* a = static_cast<Boom::AIComponent*>(p);
+
+                    // --- Custom UI: Player picker ---
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Player (by name)");
+                    ImGui::SameLine(150);
+                    ImGui::SetNextItemWidth(-1);
+
+                    const char* currentPlayerName = a->playerName.c_str();
+                    if (ImGui::BeginCombo("##AI_PlayerName", currentPlayerName)) {
+                        bool isNone = (a->playerName.empty());
+                        if (ImGui::Selectable("None", isNone)) { a->playerName.clear(); a->player = entt::null; }
+                        if (isNone) ImGui::SetItemDefaultFocus();
+
+                        auto& reg = GetContext()->scene;
+                        auto view = reg.view<Boom::InfoComponent>();
+                        for (auto e : view) {
+                            const auto& info = view.get<Boom::InfoComponent>(e);
+                            bool sel = (a->playerName == info.name);
+                            if (ImGui::Selectable(info.name.c_str(), sel)) { a->playerName = info.name; a->player = entt::null; }
+                            if (sel) ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+
+                    // --- Custom UI: Add patrol point from this entity pos ---
+                    if (ImGui::Button("Add Patrol Point From Entity Pos", ImVec2(-1, 0))) {
+                        if (selected.Has<Boom::TransformComponent>()) {
+                            auto& tc = selected.Get<Boom::TransformComponent>();
+                            a->patrolPoints.push_back(tc.transform.translate);
+                        }
+                    }
+                    ImGui::Separator();
+
+                    // Hand back the schema so DrawComponentSection can call DrawPropertiesUI
+                    return Boom::GetAIComponentProperties(p);
+                },
+                /*removable=*/true,
+                [&]() { GetContext()->scene.remove<Boom::AIComponent>(m_App->SelectedEntity()); }
+            );
+        }
+
+        // --- NavAgentComponent (Detour pathing) ---
+        if (selected.Has<Boom::NavAgentComponent>()) {
+            auto& ag = selected.Get<Boom::NavAgentComponent>();
+
+            DrawComponentSection(
+                "Nav Agent",
+                &ag,
+                [&](void* p) -> const xproperty::type::object* {
+                    auto* a = static_cast<Boom::NavAgentComponent*>(p);
+
+                    // --- Custom UI: little utilities row ---
+                    ImGui::BeginTable("##navtools", 2, ImGuiTableFlags_SizingStretchProp);
+                    ImGui::TableSetupColumn("l", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("r", ImGuiTableColumnFlags_WidthFixed, 140.0f);
+
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::TextDisabled("Utilities");
+
+                    ImGui::TableSetColumnIndex(1);
+                    if (ImGui::Button("Target = Player##btn", ImVec2(-1, 0))) {
+                        if (selected.Has<Boom::AIComponent>()) {
+                            auto& ai = selected.Get<Boom::AIComponent>();
+                            auto& reg = GetContext()->scene;
+                            if (ai.player != entt::null && reg.all_of<Boom::TransformComponent>(ai.player)) {
+                                a->target = reg.get<Boom::TransformComponent>(ai.player).transform.translate;
+                                a->dirty = true;
+                            }
+                        }
+                    }
+                    if (ImGui::Button("Target = Here##btn", ImVec2(-1, 0))) {
+                        if (selected.Has<Boom::TransformComponent>()) {
+                            a->target = selected.Get<Boom::TransformComponent>().transform.translate;
+                            a->dirty = true;
+                        }
+                    }
+                    ImGui::EndTable();
+                    ImGui::Separator();
+
+                    // Show path info and clear button (before schema if you like)
+                    ImGui::Text("Waypoints: %d / %zu", a->waypoint, a->path.size());
+                    ImGui::SameLine();
+                    if (ImGui::Button("Clear Path")) { a->path.clear(); a->waypoint = 0; }
+
+                    // Return schema for auto-drawn fields
+                    return Boom::GetNavAgentComponentProperties(p);
+                },
+                /*removable=*/true,
+                [&]() { GetContext()->scene.remove<Boom::NavAgentComponent>(m_App->SelectedEntity()); }
+            );
+        }
         if (selected.Has<Boom::ColliderComponent>()) {
             ImGui::PushID("Collider");
 
@@ -907,7 +1007,8 @@ namespace EditorUI {
                     UpdateComponent<Boom::SpotLightComponent>(Boom::ComponentID::SPOT_LIGHT, selected);
                     //UpdateComponent<Boom::SoundComponent>(Boom::ComponentID::SOUND, selected);
                     //UpdateComponent<Boom::ScriptComponent>(Boom::ComponentID::SCRIPT, selected);
-
+                    UpdateComponent<Boom::NavAgentComponent>(Boom::ComponentID::NAV_AGENT_COMPONENT, selected);
+                    UpdateComponent<Boom::AIComponent>(Boom::ComponentID::AI_COMPONENT, selected);
                     UpdateComponent<Boom::ThirdPersonCameraComponent>(Boom::ComponentID::THIRD_PERSON_CAMERA, selected);
                     ImGui::EndTable();
                 }

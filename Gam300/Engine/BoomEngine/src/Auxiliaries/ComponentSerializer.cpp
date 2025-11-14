@@ -143,7 +143,8 @@ namespace Boom
         // === THIRD PERSON CAMERA COMPONENT ===
         RegisterPropertyComponent<ThirdPersonCameraComponent>("ThirdPersonCameraComponent");
 
-
+        RegisterPropertyComponent<NavAgentComponent>("NavAgentComponent");
+        RegisterPropertyComponent<AIComponent>("AIComponent");
        
 
         BOOM_INFO("[ComponentSerializers] All component serializers registered");
