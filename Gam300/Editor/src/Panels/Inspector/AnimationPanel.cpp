@@ -129,6 +129,42 @@ namespace EditorUI {
                         state->loop ? "Yes" : "No"
                     );
 
+                    ImGui::TextDisabled("Transitions: %zu", state->transitions.size());
+
+                    // Show transitions (clickable)
+                    for (size_t t = 0; t < state->transitions.size(); ++t) {
+                        const auto& trans = state->transitions[t];
+                        const char* targetName = "???";
+                        if (trans.targetStateIndex < stateCount) {
+                            const auto* targetState = animator->GetState(trans.targetStateIndex);
+                            if (targetState) targetName = targetState->name.c_str();
+                        }
+
+                        const char* condType = "None";
+                        switch (trans.conditionType) {
+                            case Boom::Animator::Transition::FLOAT_GREATER: condType = "Float>"; break;
+                            case Boom::Animator::Transition::FLOAT_LESS: condType = "Float<"; break;
+                            case Boom::Animator::Transition::BOOL_EQUALS: condType = "Bool=="; break;
+                            case Boom::Animator::Transition::TRIGGER: condType = "Trigger"; break;
+                        }
+
+                        ImGui::Bullet();
+                        ImGui::SameLine();
+                        ImGui::PushID(static_cast<int>(t));
+                        if (ImGui::SmallButton("Edit")) {
+                            m_EditingTransitionStateIndex = static_cast<int>(i);
+                            m_EditingTransitionIndex = static_cast<int>(t);
+                            // Load existing transition data
+                            m_TempTransition = state->transitions[t];
+                            strncpy_s(m_TransitionParamNameBuffer, m_TempTransition.parameterName.c_str(), sizeof(m_TransitionParamNameBuffer) - 1);
+                            m_TransitionParamNameBuffer[sizeof(m_TransitionParamNameBuffer) - 1] = '\0';
+                            m_OpenEditTransitionPopup = true;
+                        }
+                        ImGui::PopID();
+                        ImGui::SameLine();
+                        ImGui::Text("-> %s (%s)", targetName, condType);
+                    }
+
                     ImGui::Spacing();
 
                     if (ImGui::Button("Edit", ImVec2(60, 0))) {
@@ -158,6 +194,15 @@ namespace EditorUI {
                     }
                     else {
                         ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "[DEFAULT]");
+                    }
+
+                    // Add transition button
+                    if (ImGui::Button("+ Transition", ImVec2(-1, 0))) {
+                        m_EditingTransitionStateIndex = static_cast<int>(i);
+                        m_EditingTransitionIndex = -1; // -1 means new transition
+                        m_TempTransition = {}; // Reset
+                        m_TransitionParamNameBuffer[0] = '\0';
+                        m_OpenEditTransitionPopup = true;
                     }
 
                     ImGui::EndChild();
@@ -371,6 +416,156 @@ namespace EditorUI {
             }
         }
 
+        // === Transition Edit Popup ===
+        if (selected.Has<Boom::AnimatorComponent>()) {
+            auto& animComp = selected.Get<Boom::AnimatorComponent>();
+            auto& animator = animComp.animator;
+
+            if (m_OpenEditTransitionPopup) {
+                ImGui::OpenPopup("EditTransitionPopup");
+                m_OpenEditTransitionPopup = false;
+            }
+
+            if (animator && ImGui::BeginPopupModal("EditTransitionPopup", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+                size_t stateCount = animator->GetStateCount();
+
+                if (m_EditingTransitionStateIndex >= 0 && m_EditingTransitionStateIndex < static_cast<int>(stateCount)) {
+                    auto* fromState = animator->GetState(m_EditingTransitionStateIndex);
+                    bool isNewTransition = (m_EditingTransitionIndex == -1);
+
+                    if (isNewTransition) {
+                        ImGui::Text("Add Transition from '%s'", fromState->name.c_str());
+                    } else {
+                        ImGui::Text("Edit Transition from '%s'", fromState->name.c_str());
+                    }
+
+                    ImGui::Separator();
+                    ImGui::Spacing();
+
+                    // Target state
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Target State");
+                    ImGui::SameLine(150);
+                    ImGui::SetNextItemWidth(200);
+
+                    const char* currentTargetName = "Select...";
+                    if (m_TempTransition.targetStateIndex < stateCount) {
+                        const auto* target = animator->GetState(m_TempTransition.targetStateIndex);
+                        if (target) currentTargetName = target->name.c_str();
+                    }
+
+                    if (ImGui::BeginCombo("##TargetState", currentTargetName)) {
+                        for (size_t s = 0; s < stateCount; ++s) {
+                            const auto* state = animator->GetState(s);
+                            if (!state) continue;
+                            bool isSelected = (m_TempTransition.targetStateIndex == s);
+                            if (ImGui::Selectable(state->name.c_str(), isSelected)) {
+                                m_TempTransition.targetStateIndex = s;
+                            }
+                            if (isSelected) ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+
+                    // Condition type
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Condition");
+                    ImGui::SameLine(150);
+                    ImGui::SetNextItemWidth(200);
+
+                    const char* condTypes[] = { "None", "Float >", "Float <", "Bool ==", "Trigger" };
+                    int condTypeIdx = static_cast<int>(m_TempTransition.conditionType);
+                    if (ImGui::Combo("##CondType", &condTypeIdx, condTypes, 5)) {
+                        m_TempTransition.conditionType = static_cast<Boom::Animator::Transition::ConditionType>(condTypeIdx);
+                    }
+
+                    // Show parameter name input if condition needs it
+                    if (m_TempTransition.conditionType != Boom::Animator::Transition::NONE) {
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::Text("Parameter");
+                        ImGui::SameLine(150);
+                        ImGui::SetNextItemWidth(200);
+                        if (ImGui::InputText("##ParamName", m_TransitionParamNameBuffer, sizeof(m_TransitionParamNameBuffer))) {
+                            m_TempTransition.parameterName = std::string(m_TransitionParamNameBuffer);
+                        }
+
+                        // Value input for float/bool
+                        if (m_TempTransition.conditionType == Boom::Animator::Transition::FLOAT_GREATER ||
+                            m_TempTransition.conditionType == Boom::Animator::Transition::FLOAT_LESS) {
+                            ImGui::AlignTextToFramePadding();
+                            ImGui::Text("Value");
+                            ImGui::SameLine(150);
+                            ImGui::SetNextItemWidth(200);
+                            ImGui::DragFloat("##FloatValue", &m_TempTransition.floatValue, 0.1f);
+                        } else if (m_TempTransition.conditionType == Boom::Animator::Transition::BOOL_EQUALS) {
+                            ImGui::AlignTextToFramePadding();
+                            ImGui::Text("Value");
+                            ImGui::SameLine(150);
+                            ImGui::Checkbox("##BoolValue", &m_TempTransition.boolValue);
+                        }
+                    }
+
+                    ImGui::Spacing();
+                    ImGui::Separator();
+                    ImGui::Spacing();
+
+                    // Transition settings
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Duration");
+                    ImGui::SameLine(150);
+                    ImGui::SetNextItemWidth(200);
+                    ImGui::DragFloat("##Duration", &m_TempTransition.transitionDuration, 0.01f, 0.0f, 5.0f);
+
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::Text("Has Exit Time");
+                    ImGui::SameLine(150);
+                    ImGui::Checkbox("##HasExitTime", &m_TempTransition.hasExitTime);
+
+                    if (m_TempTransition.hasExitTime) {
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::Text("Exit Time");
+                        ImGui::SameLine(150);
+                        ImGui::SetNextItemWidth(200);
+                        ImGui::SliderFloat("##ExitTime", &m_TempTransition.exitTime, 0.0f, 1.0f);
+                    }
+
+                    ImGui::Spacing();
+                    ImGui::Separator();
+                    ImGui::Spacing();
+
+                    // Buttons
+                    if (ImGui::Button("Save", ImVec2(120, 0))) {
+                        if (isNewTransition) {
+                            fromState->transitions.push_back(m_TempTransition);
+                            BOOM_INFO("Added transition to '{}'", animator->GetState(m_TempTransition.targetStateIndex)->name);
+                        } else {
+                            fromState->transitions[m_EditingTransitionIndex] = m_TempTransition;
+                            BOOM_INFO("Updated transition");
+                        }
+                        m_EditingTransitionStateIndex = -1;
+                        m_EditingTransitionIndex = -1;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                        m_EditingTransitionStateIndex = -1;
+                        m_EditingTransitionIndex = -1;
+                        ImGui::CloseCurrentPopup();
+                    }
+                    if (!isNewTransition) {
+                        ImGui::SameLine();
+                        if (ImGui::Button("Delete", ImVec2(120, 0))) {
+                            fromState->transitions.erase(fromState->transitions.begin() + m_EditingTransitionIndex);
+                            m_EditingTransitionStateIndex = -1;
+                            m_EditingTransitionIndex = -1;
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
+                }
+
+                ImGui::EndPopup();
+            }
+        }
     }
 
 

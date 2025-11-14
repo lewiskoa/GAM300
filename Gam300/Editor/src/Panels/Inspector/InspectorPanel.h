@@ -60,6 +60,13 @@ namespace EditorUI {
         char           m_NewParamNameBuffer[128]{};
         int            m_NewParamType = 0; // 0=Float, 1=Bool, 2=Trigger
 
+        // Animator transitions
+        int            m_EditingTransitionStateIndex = -1;
+        int            m_EditingTransitionIndex = -1;
+        bool           m_OpenEditTransitionPopup = false;
+        Boom::Animator::Transition m_TempTransition;
+        char           m_TransitionParamNameBuffer[128]{};
+
         template<typename TComponent, typename GetPropsFn>
         void DrawComponentSection(const char* title,
             TComponent* comp,
