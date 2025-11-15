@@ -17,6 +17,7 @@
 #include "Panels/PerformancePanel.h"
 #include "Panels/PlaybackControlsPanel.h"
 #include "Panels/NavMeshPanel.h"
+#include "Panels/AnimatorGraphPanel.h"
 #include "Panels/RayCast.h"
 #include "BoomEngine.h"
 
@@ -148,6 +149,7 @@ namespace EditorUI {
         m_Performance = std::make_unique<PerformancePanel>(this);
         m_Playback = std::make_unique<PlaybackControlsPanel>(this, m_App);
 		m_Navmesh = std::make_unique<NavmeshPanel>(this);
+        m_AnimatorGraph = std::make_unique<AnimatorGraphPanel>(this);
         // Panel-specific init
         if (m_Directory) m_Directory->Init();
     }
@@ -200,6 +202,7 @@ namespace EditorUI {
         if (m_ShowPerformance && m_Performance)  m_Performance->Render();
         if (m_ShowPlaybackControls && m_Playback) m_Playback->OnShow();
 		if (m_ShowNavmesh && m_Navmesh)       m_Navmesh->Render();
+        if (m_ShowAnimatorGraph && m_AnimatorGraph) m_AnimatorGraph->Render();
         // --- End frame / draw ---
         EndImguiFrame();
     }
