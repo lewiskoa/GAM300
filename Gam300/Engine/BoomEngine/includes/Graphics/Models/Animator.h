@@ -28,10 +28,41 @@ namespace Boom
             bool EvaluateCondition(const Animator& animator) const;
         };
 
+        // === BLEND TREE STRUCTURES ===
+        struct BlendTreeMotion
+        {
+            size_t clipIndex = 0;
+            float threshold = 0.0f;  // Parameter value for this motion
+        };
+
+        struct BlendTree1D
+        {
+            std::string parameterName;
+            std::vector<BlendTreeMotion> motions;
+
+            // Sort motions by threshold for efficient blending
+            void SortMotions() {
+                std::sort(motions.begin(), motions.end(),
+                    [](const BlendTreeMotion& a, const BlendTreeMotion& b) {
+                        return a.threshold < b.threshold;
+                    });
+            }
+        };
+
         struct State
         {
             std::string name = "New State";
+
+            // Motion type
+            enum MotionType { SINGLE_CLIP, BLEND_TREE_1D };
+            MotionType motionType = SINGLE_CLIP;
+
+            // Single clip mode
             size_t clipIndex = 0;
+
+            // Blend tree mode
+            BlendTree1D blendTree;
+
             float speed = 1.0f;
             bool loop = true;
             std::vector<Transition> transitions;
@@ -65,8 +96,15 @@ namespace Boom
                 {
                     // Normal single-state animation
                     const State& currentState = m_States[m_CurrentStateIndex];
-                    if (currentState.clipIndex < m_Clips.size())
+
+                    if (currentState.motionType == State::BLEND_TREE_1D)
                     {
+                        // Blend tree mode
+                        EvaluateBlendTree1D(currentState, deltaTime);
+                    }
+                    else if (currentState.clipIndex < m_Clips.size())
+                    {
+                        // Single clip mode
                         auto& clip = m_Clips[currentState.clipIndex];
                         m_Time += clip->ticksPerSecond * currentState.speed * deltaTime;
 
@@ -312,6 +350,99 @@ namespace Boom
              }
          }
 
+         BOOM_INLINE void EvaluateBlendTree1D(const State& state, float deltaTime)
+         {
+             const BlendTree1D& blendTree = state.blendTree;
+
+             if (blendTree.motions.empty()) return;
+             if (blendTree.parameterName.empty()) return;
+
+             // Get parameter value
+             float paramValue = GetFloat(blendTree.parameterName);
+
+             // Find two closest motions to blend
+             size_t lowerIndex = 0;
+             size_t upperIndex = 0;
+             float blendWeight = 0.0f;
+
+             if (blendTree.motions.size() == 1)
+             {
+                 // Only one motion, no blending needed
+                 lowerIndex = upperIndex = 0;
+                 blendWeight = 0.0f;
+             }
+             else
+             {
+                 // Find the two motions to blend between
+                 bool found = false;
+                 for (size_t i = 0; i < blendTree.motions.size() - 1; ++i)
+                 {
+                     if (paramValue >= blendTree.motions[i].threshold &&
+                         paramValue <= blendTree.motions[i + 1].threshold)
+                     {
+                         lowerIndex = i;
+                         upperIndex = i + 1;
+
+                         float range = blendTree.motions[upperIndex].threshold - blendTree.motions[lowerIndex].threshold;
+                         if (range > 0.001f)
+                         {
+                             blendWeight = (paramValue - blendTree.motions[lowerIndex].threshold) / range;
+                         }
+                         found = true;
+                         break;
+                     }
+                 }
+
+                 if (!found)
+                 {
+                     // Clamp to edges
+                     if (paramValue < blendTree.motions[0].threshold)
+                     {
+                         lowerIndex = upperIndex = 0;
+                         blendWeight = 0.0f;
+                     }
+                     else
+                     {
+                         lowerIndex = upperIndex = blendTree.motions.size() - 1;
+                         blendWeight = 0.0f;
+                     }
+                 }
+             }
+
+             // Get the two clips
+             size_t lowerClipIdx = blendTree.motions[lowerIndex].clipIndex;
+             size_t upperClipIdx = blendTree.motions[upperIndex].clipIndex;
+
+             if (lowerClipIdx >= m_Clips.size() || upperClipIdx >= m_Clips.size())
+                 return;
+
+             auto& lowerClip = m_Clips[lowerClipIdx];
+             auto& upperClip = m_Clips[upperClipIdx];
+
+             // Advance time
+             m_Time += lowerClip->ticksPerSecond * state.speed * deltaTime;
+             if (state.loop)
+             {
+                 m_Time = fmod(m_Time, lowerClip->duration);
+             }
+             else
+             {
+                 m_Time = std::min(m_Time, lowerClip->duration);
+             }
+
+             // Blend the two animations
+             if (blendWeight < 0.001f)
+             {
+                 // Just use lower clip
+                 UpdateJoints(m_Root, glm::identity<glm::mat4>());
+             }
+             else
+             {
+                 // Blend between clips
+                 BlendJointsFromClips(m_Root, glm::identity<glm::mat4>(), lowerClip.get(), upperClip.get(), blendWeight);
+             }
+         }
+
          BOOM_INLINE void BlendStates(float deltaTime)
          {
              if (m_CurrentStateIndex >= m_States.size() || m_TargetStateIndex >= m_States.size())
@@ -411,6 +542,80 @@ namespace Boom
              for (auto& child : joint.children)
              {
                  BlendJoints(child, worldTransform, fromClip, toClip, weight);
+             }
+         }
+
+         BOOM_INLINE void BlendJointsFromClips(Joint& joint, const glm::mat4& parentTransform,
+             const AnimationClip* clip1, const AnimationClip* clip2, float weight)
+         {
+             glm::mat4 transform1 = glm::mat4(1.0f);
+             glm::mat4 transform2 = glm::mat4(1.0f);
+
+             // Get transform from clip1 at current time
+             const auto* keys1 = clip1->GetTrack(joint.name);
+             if (keys1 && !keys1->empty())
+             {
+                 if (keys1->size() >= 2)
+                 {
+                     KeyFrame prev, next;
+                     GetPreviousAndNextFrames(*keys1, prev, next);
+                     float prog = 0.0f;
+                     float dt = next.timeStamp - prev.timeStamp;
+                     if (dt > 0.0f) prog = (m_Time - prev.timeStamp) / dt;
+                     transform1 = Interpolate(prev, next, prog);
+                 }
+                 else
+                 {
+                     const KeyFrame& key = (*keys1)[0];
+                     transform1 = glm::translate(glm::mat4(1.0f), key.position) *
+                         glm::toMat4(key.rotation) *
+                         glm::scale(glm::mat4(1.0f), key.scale);
+                 }
+             }
+
+             // Get transform from clip2 at current time (synchronized)
+             const auto* keys2 = clip2->GetTrack(joint.name);
+             if (keys2 && !keys2->empty())
+             {
+                 if (keys2->size() >= 2)
+                 {
+                     KeyFrame prev, next;
+                     GetPreviousAndNextFrames(*keys2, prev, next);
+                     float prog = 0.0f;
+                     float dt = next.timeStamp - prev.timeStamp;
+                     if (dt > 0.0f) prog = (m_Time - prev.timeStamp) / dt;
+                     transform2 = Interpolate(prev, next, prog);
+                 }
+                 else
+                 {
+                     const KeyFrame& key = (*keys2)[0];
+                     transform2 = glm::translate(glm::mat4(1.0f), key.position) *
+                         glm::toMat4(key.rotation) *
+                         glm::scale(glm::mat4(1.0f), key.scale);
+                 }
+             }
+
+             // Decompose and blend
+             glm::vec3 pos1, pos2, scale1, scale2;
+             glm::quat rot1, rot2;
+
+             DecomposeMatrix(transform1, pos1, rot1, scale1);
+             DecomposeMatrix(transform2, pos2, rot2, scale2);
+
+             glm::vec3 blendedPos = glm::mix(pos1, pos2, weight);
+             glm::quat blendedRot = glm::slerp(rot1, rot2, weight);
+             glm::vec3 blendedScale = glm::mix(scale1, scale2, weight);
+
+             glm::mat4 localTransform = glm::translate(glm::mat4(1.0f), blendedPos) *
+                 glm::toMat4(blendedRot) *
+                 glm::scale(glm::mat4(1.0f), blendedScale);
+
+             glm::mat4 worldTransform = parentTransform * localTransform;
+             m_Transforms[joint.index] = worldTransform * m_GlobalTransform * joint.offset;
+
+             for (auto& child : joint.children)
+             {
+                 BlendJointsFromClips(child, worldTransform, clip1, clip2, weight);
              }
          }
 
