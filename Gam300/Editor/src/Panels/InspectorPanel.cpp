@@ -604,45 +604,101 @@ namespace EditorUI {
             auto& ai = selected.Get<Boom::AIComponent>();
             DrawComponentSection(
                 "AI (Behaviour Tree)", &ai,
-                // Manual UI only; return nullptr to skip DrawPropertiesUI
                 [&](void* p) -> const xproperty::type::object* {
                     auto* a = static_cast<Boom::AIComponent*>(p);
+                    auto& reg = GetContext()->scene;
 
-                    ImGui::AlignTextToFramePadding();
-                    ImGui::Text("Player (by name)");
-                    ImGui::SameLine(150);
-                    ImGui::SetNextItemWidth(-1);
-                    const char* currentPlayerName = a->playerName.empty() ? "None" : a->playerName.c_str();
-                    if (ImGui::BeginCombo("##AI_PlayerName", currentPlayerName)) {
+                    // --- MODE (this is what you’re missing) --------------------------------
+                    ImGui::SeparatorText("Mode");
+                    {
+                        static const char* kModes[] = { "Auto", "Idle", "Patrol", "Seek" };
+                        int idx = static_cast<int>(a->mode);
+                        if (ImGui::Combo("Mode", &idx, kModes, IM_ARRAYSIZE(kModes))) {
+                            a->mode = static_cast<Boom::AIComponent::AIMode>(idx);
+                            a->root.reset(); // force BT rebuild on next AISystem::update()
+                        }
+                    }
+
+                    // --- PLAYER PICKER ------------------------------------------------------
+                    const char* cur = a->playerName.empty() ? "None" : a->playerName.c_str();
+                    if (ImGui::BeginCombo("Player (by name)", cur)) {
                         bool isNone = a->playerName.empty();
                         if (ImGui::Selectable("None", isNone)) { a->playerName.clear(); a->player = entt::null; }
                         if (isNone) ImGui::SetItemDefaultFocus();
 
-                        auto& reg = GetContext()->scene;
                         auto view = reg.view<Boom::InfoComponent>();
                         for (auto e : view) {
                             const auto& info = view.get<Boom::InfoComponent>(e);
                             bool sel = (a->playerName == info.name);
-                            if (ImGui::Selectable(info.name.c_str(), sel)) { a->playerName = info.name; a->player = entt::null; }
+                            if (ImGui::Selectable(info.name.c_str(), sel)) {
+                                a->playerName = info.name; a->player = entt::null;
+                            }
                             if (sel) ImGui::SetItemDefaultFocus();
                         }
                         ImGui::EndCombo();
                     }
 
+                    // --- TUNING -------------------------------------------------------------
+                    ImGui::SeparatorText("Tuning");
+                    ImGui::DragFloat("Detect Radius", &a->detectRadius, 0.05f, 0.0f, 200.0f);
+                    ImGui::DragFloat("Lose Radius", &a->loseRadius, 0.05f, 0.0f, 200.0f);
+                    ImGui::DragFloat("Idle Wait (s)", &a->idleWait, 0.01f, 0.0f, 10.0f);
+                    ImGui::InputFloat("Idle Timer (runtime)", &a->idleTimer, 0, 0, "%.3f",
+                        ImGuiInputTextFlags_ReadOnly);
+
+                    // --- PATROL -------------------------------------------------------------
+                    ImGui::SeparatorText("Patrol");
                     if (selected.Has<Boom::TransformComponent>()) {
-                        if (ImGui::Button("Add Patrol Point From Entity Pos", ImVec2(-1, 0))) {
+                        if (ImGui::Button("Add Point From Entity Pos", ImVec2(-1, 0))) {
                             auto& tc = selected.Get<Boom::TransformComponent>();
                             a->patrolPoints.push_back(tc.transform.translate);
                         }
                     }
-                    ImGui::Separator();
+                    ImGui::Text("Points: %zu", a->patrolPoints.size());
+                    if (ImGui::BeginListBox("##patrol_pts", ImVec2(-1, 160))) {
+                        for (int i = 0; i < (int)a->patrolPoints.size(); ++i) {
+                            const auto& p3 = a->patrolPoints[i];
+                            char lbl[96]; std::snprintf(lbl, sizeof(lbl), "%02d: (%.2f, %.2f, %.2f)", i, p3.x, p3.y, p3.z);
+                            bool sel = (a->patrolIndex == i);
+                            if (ImGui::Selectable(lbl, sel)) a->patrolIndex = i;
+                            if (sel) ImGui::SetItemDefaultFocus();
 
-                    return nullptr; // <--- skip DrawPropertiesUI for AI for now
+                            if (ImGui::BeginPopupContextItem(lbl)) {
+                                if (ImGui::MenuItem("Remove")) {
+                                    a->patrolPoints.erase(a->patrolPoints.begin() + i);
+                                    if (a->patrolIndex >= (int)a->patrolPoints.size())
+                                        a->patrolIndex = std::max(0, (int)a->patrolPoints.size() - 1);
+                                    ImGui::EndPopup(); break;
+                                }
+                                if (ImGui::MenuItem("Insert After (Here)")) {
+                                    glm::vec3 p2 = p3;
+                                    if (selected.Has<Boom::TransformComponent>())
+                                        p2 = selected.Get<Boom::TransformComponent>().transform.translate;
+                                    a->patrolPoints.insert(a->patrolPoints.begin() + i + 1, p2);
+                                    ImGui::EndPopup(); break;
+                                }
+                                ImGui::EndPopup();
+                            }
+                        }
+                        ImGui::EndListBox();
+                    }
+                    if (a->patrolIndex >= 0 && a->patrolIndex < (int)a->patrolPoints.size()) {
+                        auto edit = a->patrolPoints[a->patrolIndex];
+                        if (ImGui::DragFloat3("Edit Selected Point", &edit.x, 0.01f))
+                            a->patrolPoints[a->patrolIndex] = edit;
+                    }
+
+                 
+                    return nullptr;
+
+               
                 },
                 /*removable=*/true,
                 [&]() { GetContext()->scene.remove<Boom::AIComponent>(m_App->SelectedEntity()); }
             );
         }
+
+
 
         // ----- Nav Agent -----
         if (selected.Has<Boom::NavAgentComponent>()) {

@@ -329,7 +329,9 @@ namespace Boom {
         )
     };
     struct AIComponent {
-        // Blackboard-ish data
+        enum class AIMode : int { Auto = 0, Idle = 1, Patrol = 2, Seek = 3 };
+        AIMode mode = AIMode::Auto;   // exposed in Inspector
+        AIMode lastMode = AIMode::Auto;
         float detectRadius = 8.0f;    // start seeking when within this distance
         float loseRadius = 12.0f;   // stop seeking when beyond this distance
         float idleWait = 1.0f;    // wait at patrol points

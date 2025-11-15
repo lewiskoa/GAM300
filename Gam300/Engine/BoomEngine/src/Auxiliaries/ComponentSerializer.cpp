@@ -1,4 +1,5 @@
 #include "Core.h"
+#include"BoomProperties.h"
 #include "Auxiliaries\SerializationRegistry.h"
 #include "ECS/ECS.hpp"
 
@@ -126,7 +127,57 @@ namespace Boom
                 }
             }
         );
+        registry.RegisterComponentSerializer(
+            "NavAgentComponent",
+            // ----- SERIALIZE -----
+            [](YAML::Emitter& e, EntityRegistry& reg, EntityID ent)
+            {
+                if (!reg.all_of<NavAgentComponent>(ent))
+                    return;
 
+                auto& nav = reg.get<NavAgentComponent>(ent);
+
+                e << YAML::Key << "NavAgentComponent" << YAML::Value << YAML::BeginMap;
+
+                // target
+                e << YAML::Key << "Target" << YAML::Value
+                    << YAML::Flow << YAML::BeginSeq
+                    << nav.target.x << nav.target.y << nav.target.z
+                    << YAML::EndSeq;
+
+                e << YAML::Key << "Speed" << YAML::Value << nav.speed;
+                e << YAML::Key << "ArriveRadius" << YAML::Value << nav.arrive;
+                e << YAML::Key << "Active" << YAML::Value << nav.active;
+                e << YAML::Key << "RepathCooldown" << YAML::Value << nav.repathCooldown;
+                e << YAML::Key << "RetargetDistance" << YAML::Value << nav.retargetDist;
+
+                e << YAML::EndMap;
+            },
+            // ----- DESERIALIZE -----
+            [](const YAML::Node& data, EntityRegistry& reg, EntityID ent, AssetRegistry&)
+            {
+                if (!data || !data.IsMap())
+                    return;
+
+                auto& nav = reg.get_or_emplace<NavAgentComponent>(ent);
+
+                // Target (vec3 as [x, y, z])
+                if (auto t = data["Target"]; t && t.IsSequence() && t.size() == 3) {
+                    nav.target.x = t[0].as<float>(nav.target.x);
+                    nav.target.y = t[1].as<float>(nav.target.y);
+                    nav.target.z = t[2].as<float>(nav.target.z);
+                }
+
+                if (auto v = data["Speed"])            nav.speed = v.as<float>(nav.speed);
+                if (auto v = data["ArriveRadius"])     nav.arrive = v.as<float>(nav.arrive);
+                if (auto v = data["Active"])           nav.active = v.as<bool>(nav.active);
+                if (auto v = data["RepathCooldown"])   nav.repathCooldown = v.as<float>(nav.repathCooldown);
+                if (auto v = data["RetargetDistance"]) nav.retargetDist = v.as<float>(nav.retargetDist);
+
+                // Runtime-only stuff is intentionally NOT loaded:
+                // nav.path, nav.waypoint, nav.dirty, nav.follow, nav.repathTimer
+            }
+        );
         // === DIRECT LIGHT COMPONENT ===
 		RegisterPropertyComponent<DirectLightComponent>("DirectLightComponent");
 
@@ -143,10 +194,14 @@ namespace Boom
         // === THIRD PERSON CAMERA COMPONENT ===
         RegisterPropertyComponent<ThirdPersonCameraComponent>("ThirdPersonCameraComponent");
 
-        RegisterPropertyComponent<NavAgentComponent>("NavAgentComponent");
+        
         RegisterPropertyComponent<AIComponent>("AIComponent");
        
 
         BOOM_INFO("[ComponentSerializers] All component serializers registered");
+       
     }
+ 
+
+   
 }

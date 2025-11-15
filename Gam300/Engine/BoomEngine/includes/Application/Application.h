@@ -317,7 +317,7 @@ namespace Boom
             // --- END MONO INITIALIZE ---
 
             InitNavRuntime();
-			EnsureNinjaSeeksSamurai();
+			//EnsureNinjaSeeksSamurai();
             CameraController camera(
                 m_Context->window.get()
             );
@@ -951,7 +951,11 @@ namespace Boom
     private:
         std::unordered_map<std::string, std::pair<glm::vec3, glm::vec3>> m_SphereInitialStates;
 
-        BOOM_INLINE void RegisterSphereInitialState(const std::string& name,
+        BOOM_INLINE void 
+            
+            
+            
+            SphereInitialState(const std::string& name,
             const glm::vec3& pos,
             const glm::vec3& vel = glm::vec3(0.0f)) {
             m_SphereInitialStates[name] = { pos, vel };
