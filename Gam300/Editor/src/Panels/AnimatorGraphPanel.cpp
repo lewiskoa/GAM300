@@ -121,14 +121,115 @@ void AnimatorGraphPanel::Render()
 
         // Graph editor - MUST have valid space before calling Show
         ImVec2 graphSize = ImGui::GetContentRegionAvail();
+
+        // This is the top-left of the graph canvas in *screen space*
+        ImVec2 canvasPos = ImGui::GetCursorScreenPos();
+
         if (graphSize.x > 100 && graphSize.y > 80) {
             try {
                 GraphEditor::Show(*this, m_Options, m_ViewState, true, &m_FitMode);
-            } catch (...) {
+            }
+            catch (...) {
                 ImGui::TextDisabled("Graph rendering error");
             }
-        } else {
+        }
+        else {
             ImGui::TextDisabled("Initializing graph view...");
+        }
+
+        if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            ImVec2 mouseScreen = ImGui::GetMousePos();
+
+            // Check if mouse is inside the graph canvas rect
+            bool insideCanvas =
+                mouseScreen.x >= canvasPos.x &&
+                mouseScreen.x <= canvasPos.x + graphSize.x &&
+                mouseScreen.y >= canvasPos.y &&
+                mouseScreen.y <= canvasPos.y + graphSize.y;
+
+            if (insideCanvas) {
+                // Mouse position in canvas-local coordinates
+                ImVec2 mouseGraph;
+                mouseGraph.x = mouseScreen.x - canvasPos.x;
+                mouseGraph.y = mouseScreen.y - canvasPos.y;
+
+                // Assume node positions are in the same canvas-local space as in GetNode
+                m_ContextNode = (size_t)-1;
+
+                for (size_t i = 0; i < m_CurrentAnimator->GetStateCount(); ++i) {
+                    auto it = m_NodePositions.find(i);
+                    if (it == m_NodePositions.end())
+                        continue;
+
+                    ImVec2 nodePos = it->second;
+                    ImRect nodeRect(nodePos, nodePos + ImVec2(200, 100));
+
+                    if (nodeRect.Contains(mouseGraph)) {
+                        m_ContextNode = i;
+                        break;
+                    }
+                }
+
+                m_ShowContextMenu = true;
+            }
+        }
+
+
+        // Context menu MUST be inside the GraphView child window
+        if (m_ShowContextMenu) {
+            ImGui::OpenPopup("GraphContextMenu");
+            m_ShowContextMenu = false;
+        }
+
+        if (ImGui::BeginPopup("GraphContextMenu")) {
+            bool clickedOnNode = (m_ContextNode != (size_t)-1) &&
+                (m_ContextNode < m_CurrentAnimator->GetStateCount());
+
+            // (you can temporarily debug here:)
+            // ImGui::Text("ContextNode = %d", (int)m_ContextNode);
+
+            if (clickedOnNode) {
+                auto* state = m_CurrentAnimator->GetState(m_ContextNode);
+                if (state) {
+                    ImGui::Text("State: %s", state->name.c_str());
+                    ImGui::Separator();
+
+                    if (ImGui::MenuItem("Edit State")) {
+                        m_EditingStateIndex = m_ContextNode;
+                        m_ShowEditStateDialog = true;
+                    }
+                    if (ImGui::MenuItem("Set as Default")) {
+                        m_CurrentAnimator->SetDefaultState(m_ContextNode);
+                    }
+                    ImGui::Separator();
+                    if (ImGui::MenuItem("Delete State")) {
+                        // ... your existing delete logic ...
+                    }
+                }
+            } else {
+                // Empty space menu
+                ImGui::Text("Graph Actions");
+                ImGui::Separator();
+
+                if (m_CurrentAnimator->GetClipCount() > 0) {
+                    if (ImGui::MenuItem("Add State")) {
+                        size_t idx = m_CurrentAnimator->AddState("New State", 0);
+                        CreateDefaultNodePosition(idx);
+                    }
+                    if (ImGui::MenuItem("Add Blend Tree 1D")) {
+                        size_t idx = m_CurrentAnimator->AddState("Blend Tree", 0);
+                        auto* state = m_CurrentAnimator->GetState(idx);
+                        if (state) {
+                            state->motionType = Boom::Animator::State::BLEND_TREE_1D;
+                            state->blendTree.parameterName = "Speed";
+                        }
+                        CreateDefaultNodePosition(idx);
+                    }
+                } else {
+                    ImGui::TextDisabled("Add State (no clips loaded)");
+                }
+            }
+            ImGui::EndPopup();
         }
     }
 
@@ -144,72 +245,7 @@ void AnimatorGraphPanel::Render()
         DrawParametersPanel();
     }
 
-    // Context menu
-    if (m_ShowContextMenu) {
-        ImGui::OpenPopup("GraphContextMenu");
-        m_ShowContextMenu = false;
-    }
-
-    if (ImGui::BeginPopup("GraphContextMenu")) {
-        // Check if we clicked on a valid node
-        bool clickedOnNode = (m_ContextNode != (size_t)-1) &&
-                             (m_ContextNode < m_CurrentAnimator->GetStateCount());
-
-        if (clickedOnNode) {
-            // Node-specific menu
-            auto* state = m_CurrentAnimator->GetState(m_ContextNode);
-            if (state) {
-                ImGui::Text("State: %s", state->name.c_str());
-                ImGui::Separator();
-
-                if (ImGui::MenuItem("Edit State")) {
-                    m_EditingStateIndex = m_ContextNode;
-                    m_ShowEditStateDialog = true;
-                }
-                if (ImGui::MenuItem("Set as Default")) {
-                    m_CurrentAnimator->SetDefaultState(m_ContextNode);
-                }
-                ImGui::Separator();
-                if (ImGui::MenuItem("Delete State")) {
-                    // Clean up associated data
-                    m_NodePositions.erase(m_ContextNode);
-                    if (m_ContextNode < m_NodeSelected.size()) {
-                        m_NodeSelected.erase(m_NodeSelected.begin() + m_ContextNode);
-                    }
-
-                    // Remove the state
-                    m_CurrentAnimator->RemoveState(m_ContextNode);
-
-                    // Rebuild node positions map for remaining states
-                    std::unordered_map<size_t, ImVec2> newPositions;
-                    for (auto& [idx, pos] : m_NodePositions) {
-                        if (idx > m_ContextNode) {
-                            newPositions[idx - 1] = pos; // Shift down
-                        } else if (idx < m_ContextNode) {
-                            newPositions[idx] = pos;
-                        }
-                    }
-                    m_NodePositions = newPositions;
-                }
-            }
-        } else {
-            // Empty space menu
-            ImGui::Text("Graph Actions");
-            ImGui::Separator();
-
-            if (m_CurrentAnimator->GetClipCount() > 0) {
-                if (ImGui::MenuItem("Add State")) {
-                    size_t idx = m_CurrentAnimator->AddState("New State", 0);
-                    CreateDefaultNodePosition(idx);
-                }
-            } else {
-                ImGui::TextDisabled("Add State (no clips loaded)");
-            }
-        }
-        ImGui::EndPopup();
-    }
-
-    // Edit state dialog
+    // Edit state dialog (modal, shown outside child windows)
     if (m_ShowEditStateDialog) {
         ImGui::OpenPopup("Edit State");
         m_ShowEditStateDialog = false;
@@ -231,13 +267,86 @@ void AnimatorGraphPanel::Render()
                     state->name = nameBuffer;
                 }
 
-                int clipIdx = (int)state->clipIndex;
-                if (ImGui::SliderInt("Clip", &clipIdx, 0, std::max(0, (int)m_CurrentAnimator->GetClipCount() - 1))) {
-                    state->clipIndex = clipIdx;
+                // Motion type selection
+                const char* motionTypes[] = { "Single Clip", "Blend Tree 1D" };
+                int motionType = (int)state->motionType;
+                if (ImGui::Combo("Motion Type", &motionType, motionTypes, 2)) {
+                    state->motionType = (Boom::Animator::State::MotionType)motionType;
                 }
 
-                ImGui::SliderFloat("Speed", &state->speed, 0.1f, 5.0f);
-                ImGui::Checkbox("Loop", &state->loop);
+                ImGui::Separator();
+
+                if (state->motionType == Boom::Animator::State::SINGLE_CLIP)
+                {
+                    // Single clip mode
+                    int clipIdx = (int)state->clipIndex;
+                    if (ImGui::SliderInt("Clip", &clipIdx, 0, std::max(0, (int)m_CurrentAnimator->GetClipCount() - 1))) {
+                        state->clipIndex = clipIdx;
+                    }
+
+                    ImGui::SliderFloat("Speed", &state->speed, 0.1f, 5.0f);
+                    ImGui::Checkbox("Loop", &state->loop);
+                }
+                else if (state->motionType == Boom::Animator::State::BLEND_TREE_1D)
+                {
+                    // Blend tree mode
+                    ImGui::Text("Blend Tree 1D");
+
+                    static char paramBuffer[64];
+                    #ifdef _MSC_VER
+                        strncpy_s(paramBuffer, state->blendTree.parameterName.c_str(), _TRUNCATE);
+                    #else
+                        std::strncpy(paramBuffer, state->blendTree.parameterName.c_str(), 63);
+                        paramBuffer[63] = '\0';
+                    #endif
+
+                    if (ImGui::InputText("Parameter", paramBuffer, 64)) {
+                        state->blendTree.parameterName = paramBuffer;
+                    }
+
+                    ImGui::SliderFloat("Speed", &state->speed, 0.1f, 5.0f);
+                    ImGui::Checkbox("Loop", &state->loop);
+
+                    ImGui::Separator();
+                    ImGui::Text("Motions:");
+
+                    // Display and edit motions
+                    for (size_t i = 0; i < state->blendTree.motions.size(); ++i) {
+                        ImGui::PushID((int)i);
+                        auto& motion = state->blendTree.motions[i];
+
+                        int clipIdx = (int)motion.clipIndex;
+                        if (ImGui::SliderInt("Clip", &clipIdx, 0, std::max(0, (int)m_CurrentAnimator->GetClipCount() - 1))) {
+                            motion.clipIndex = clipIdx;
+                        }
+
+                        ImGui::SameLine();
+                        ImGui::SetNextItemWidth(100);
+                        ImGui::InputFloat("Threshold", &motion.threshold);
+
+                        ImGui::SameLine();
+                        if (ImGui::SmallButton("X")) {
+                            state->blendTree.motions.erase(state->blendTree.motions.begin() + i);
+                            ImGui::PopID();
+                            break;
+                        }
+
+                        ImGui::PopID();
+                    }
+
+                    if (ImGui::Button("Add Motion") && m_CurrentAnimator->GetClipCount() > 0) {
+                        Boom::Animator::BlendTreeMotion newMotion;
+                        newMotion.clipIndex = 0;
+                        newMotion.threshold = state->blendTree.motions.empty() ? 0.0f :
+                            state->blendTree.motions.back().threshold + 1.0f;
+                        state->blendTree.motions.push_back(newMotion);
+                        state->blendTree.SortMotions();
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Sort Motions")) {
+                        state->blendTree.SortMotions();
+                    }
+                }
 
                 // Transitions
                 ImGui::Separator();
@@ -466,18 +575,36 @@ void AnimatorGraphPanel::CustomDraw(ImDrawList* drawList, ImRect rectangle, Grap
     auto* state = m_CurrentAnimator->GetState(nodeIndex);
     if (!state) return;
 
-    auto* clip = m_CurrentAnimator->GetClip(state->clipIndex);
-
     ImVec2 textPos = rectangle.Min + ImVec2(5, 5);
 
-    if (clip) {
-        drawList->AddText(textPos, IM_COL32(200, 200, 200, 255), clip->name.c_str());
-        textPos.y += 20;
-    }
+    // Show motion type
+    if (state->motionType == Boom::Animator::State::BLEND_TREE_1D)
+    {
+        drawList->AddText(textPos, IM_COL32(100, 200, 255, 255), "Blend Tree 1D");
+        textPos.y += 18;
 
-    char info[128];
-    std::snprintf(info, sizeof(info), "Speed: %.2f | Loop: %s", state->speed, state->loop ? "Yes" : "No");
-    drawList->AddText(textPos, IM_COL32(150, 150, 150, 255), info);
+        char param[64];
+        std::snprintf(param, sizeof(param), "Param: %s", state->blendTree.parameterName.c_str());
+        drawList->AddText(textPos, IM_COL32(180, 180, 180, 255), param);
+        textPos.y += 16;
+
+        char motions[64];
+        std::snprintf(motions, sizeof(motions), "Motions: %zu", state->blendTree.motions.size());
+        drawList->AddText(textPos, IM_COL32(150, 150, 150, 255), motions);
+    }
+    else
+    {
+        // Single clip
+        auto* clip = m_CurrentAnimator->GetClip(state->clipIndex);
+        if (clip) {
+            drawList->AddText(textPos, IM_COL32(200, 200, 200, 255), clip->name.c_str());
+            textPos.y += 20;
+        }
+
+        char info[128];
+        std::snprintf(info, sizeof(info), "Speed: %.2f | Loop: %s", state->speed, state->loop ? "Yes" : "No");
+        drawList->AddText(textPos, IM_COL32(150, 150, 150, 255), info);
+    }
 
     // Highlight current state
     if (m_CurrentAnimator->GetCurrentStateIndex() == nodeIndex) {
@@ -488,13 +615,13 @@ void AnimatorGraphPanel::CustomDraw(ImDrawList* drawList, ImRect rectangle, Grap
 void AnimatorGraphPanel::RightClick(GraphEditor::NodeIndex nodeIndex, GraphEditor::SlotIndex slotIndexInput,
     GraphEditor::SlotIndex slotIndexOutput)
 {
-    // nodeIndex is -1 when clicking on empty space
-    if (nodeIndex == (GraphEditor::NodeIndex)-1) {
-        m_ContextNode = (size_t)-1;
-    } else {
-        m_ContextNode = nodeIndex;
-    }
-    m_ShowContextMenu = true;
+    //// nodeIndex is -1 when clicking on empty space
+    //if (nodeIndex == (GraphEditor::NodeIndex)-1) {
+    //    m_ContextNode = (size_t)-1;
+    //} else {
+    //    m_ContextNode = nodeIndex;
+    //}
+    //m_ShowContextMenu = true;
 }
 
 const size_t AnimatorGraphPanel::GetTemplateCount()

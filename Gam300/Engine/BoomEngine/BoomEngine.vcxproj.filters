@@ -87,6 +87,7 @@
     <ClInclude Include="includes\AI\Actions.h" />
     <ClInclude Include="includes\AI\BehaviourTreeActions.h" />
     <ClInclude Include="includes\AI\AISystem.h" />
+    <ClInclude Include="includes\Graphics\Shaders\LoadingShader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="VendorSettings.props" />

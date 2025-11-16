@@ -1,8 +1,31 @@
 Version: 1.0
 ENTITIES:
-  - {}
-  - {}
-  - {}
+  - ColliderComponent:
+      Collider:
+        LocalPosition: [0, 0, 0]
+        LocalRotation: [0, 0, 0]
+        LocalScale: [1, 1, 1]
+        DynamicFriction: 0.5
+        StaticFriction: 0
+        Restitution: 0.100000001
+        PhysicsMesh: 0
+        Type: BOX
+    InfoComponent:
+      Parent: 0
+      Name: NavAgent
+      UID: 1992698266524408743
+    TransformComponent:
+      Transform:
+        Translate: [2, 1, 2]
+        Rotate: [0, 0, 0]
+        Scale: [0.5, 0.5, 0.5]
+    RigidBodyComponent:
+      RigidBody:
+        Density: 1
+        Mass: 1
+        InitialVelocity: [0, 0, 0]
+        Previous Scale: [0.5, 0.5, 0.5]
+        Type: STATIC
   - {}
   - {}
   - {}
@@ -91,12 +114,12 @@ ENTITIES:
     TransformComponent:
       Transform:
         Translate: [0, 0, 0]
-        Rotate: [6, 0, 0]
+        Rotate: [0, -1, 0]
         Scale: [1, 1, 1]
     DirectLightComponent:
       Light:
         Radiance: [1, 1, 0.899999976]
-        Intensity: 3
+        Intensity: 0.879999995
   - InfoComponent:
       Parent: 0
       Name: Spot Light
@@ -125,7 +148,7 @@ ENTITIES:
       UID: 12784200605494588253
     TransformComponent:
       Transform:
-        Translate: [-1.9985882, -1.14944398, 0.563020051]
+        Translate: [-1.16412485, -1.14540207, -0.968141139]
         Rotate: [0, -0, 0]
         Scale: [0.00999999978, 0.00999999978, 0.00999999978]
     ModelComponent:
@@ -135,30 +158,13 @@ ENTITIES:
       MaterialName: ""
       ModelSource: ""
       MaterialSource: ""
-    NavAgentComponent:
-      Target: [-1.56142235, -1.18457508, 0.433114707]
-      Speed: 2.5
-      ArriveRadius: 0.150000006
-      Active: false
-      RepathCooldown: 0.25
-      RetargetDistance: 0.5
-      FollowName: Samurai
-    AIComponent:
-      Mode: 1
-      PlayerName: Samurai
-      DetectRadius: 0
-      LoseRadius: 6.8499999
-      IdleWait: 1
-      PatrolPoints:
-        - [-1.9985882, -1.14944398, 0.563020051]
-      PatrolIndex: 0
   - InfoComponent:
       Parent: 0
       Name: Samurai
       UID: 16439367912350421013
     TransformComponent:
       Transform:
-        Translate: [-1.56142235, -1.18457508, 0.433114707]
+        Translate: [-0.64111948, -1.18457508, 0]
         Rotate: [0, -0, 0]
         Scale: [0.00999999978, 0.00999999978, 0.00999999978]
     ModelComponent:
@@ -184,7 +190,4 @@ ENTITIES:
       MaterialName: ""
       ModelSource: ""
       MaterialSource: ""
-  - {}
-  - {}
-  - {}
   - {}
