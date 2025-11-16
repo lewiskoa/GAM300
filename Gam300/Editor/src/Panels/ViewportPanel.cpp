@@ -228,8 +228,9 @@ namespace EditorUI {
                     );
                 }
             }
-            ImGui::End();
+            
         }
+        ImGui::End();
     }
 
     void ViewportPanel::HandleMouseClick(const ImVec2& mousePos, const ImVec2& viewportSize)

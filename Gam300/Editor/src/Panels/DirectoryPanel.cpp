@@ -267,6 +267,20 @@ namespace EditorUI {
             selectedPath = root->fullPath.string();
         }
 
+        // Drag source for animation files
+        if (!root->isDirectory) {
+            std::string ext = root->fullPath.extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+            if (ext == ".fbx" || ext == ".gltf" || ext == ".glb" || ext == ".dae") {
+                if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                    std::string pathStr = root->fullPath.string();
+                    ImGui::SetDragDropPayload(CONSTANTS::DND_PAYLOAD_ANIM_FILE.data(), pathStr.c_str(), pathStr.size() + 1);
+                    ImGui::Text("Animation: %s", root->name.c_str());
+                    ImGui::EndDragDropSource();
+                }
+            }
+        }
+
         if (root->isDirectory) {
             treeNodeOpenStatus[root->fullPath.string()] = nodeOpen;
         }
