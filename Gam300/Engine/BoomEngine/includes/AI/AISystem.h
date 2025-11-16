@@ -23,8 +23,13 @@ namespace Boom {
 
         case AIComponent::AIMode::Patrol:
             ag.active = true;
-            ag.follow = entt::null;
-            ag.dirty = true;
+            ag.follow = entt::null;   // patrol ignores follow
+            ag.dirty = true;         // force first path build
+            ag.repathTimer = 0.f;
+           
+            ai.idleTimer = 0.f;
+            if (ai.patrolIndex < 0 || ai.patrolIndex >= (int)ai.patrolPoints.size())
+                ai.patrolIndex = 0;
             break;
 
         case AIComponent::AIMode::Seek:

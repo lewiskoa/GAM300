@@ -353,7 +353,7 @@ namespace Boom {
             , obj_member<"IdleWait", &AIComponent::idleWait>
             , obj_member<"IdleTimer", &AIComponent::idleTimer>    // include if you want to see the live timer
             , obj_member<"PlayerName", &AIComponent::playerName>
-            , obj_member<"PatrolPoints", &AIComponent::patrolPoints> // assumes your XProperty supports vector<glm::vec3>
+           
             , obj_member<"PatrolIndex", &AIComponent::patrolIndex>
         )
     };
