@@ -1,7 +1,7 @@
 #version 450 core
 
 layout(location = 0) in vec2 pos;
-uniform vec4 uProj;
+uniform mat4 uProj;
 
 void main() {
     gl_Position = uProj * vec4(pos, 0.0, 1.0);

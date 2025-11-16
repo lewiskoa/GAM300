@@ -272,7 +272,6 @@ namespace Boom {
 		BOOM_INLINE InputSystem& GetInputSystem() { return input; }
 
 		BOOM_INLINE static void RenderLoading(GLFWwindow* win, float percentProgress) {
-			glViewport(0, 0, width, height);
 			static auto loadingShader{ std::make_unique<LoadingShader>("loading.glsl") };
 			auto proj = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, 1.0f);
 			std::apply(glClearColor, CONSTANTS::DEFAULT_BACKGROUND_COLOR);
@@ -281,16 +280,16 @@ namespace Boom {
 			// track (dark background)
 			const float barY = height * 0.45f;
 			const float barH = height * 0.10f;
-			const float trackX = width * 0.1f;
-			const float trackW = width * 0.8f;/*
+			const float trackX = width * 0.5f;
+			const float trackW = width * 0.4f;
 			loadingShader->SetColor({ 0.12f, 0.12f, 0.12f, 1.f });
-			loadingShader->SetTransform({ trackX + trackW * 0.5f, barY + barH * 0.5f}, { trackW, barH }, 0.f);
-			loadingShader->Show(proj);*/
+			loadingShader->SetTransform({trackX, barY + barH * 0.5f}, { trackW, barH }, 0.f);
+			loadingShader->Show(proj);
 
 			// fill (bright color)
 			const float fillW = trackW * percentProgress;
 			loadingShader->SetColor({ 0.0f, 0.7f, 1.f, 1.f });
-			loadingShader->SetTransform({ trackX + trackW * 0.5f, barY + barH * 0.5f }, { fillW, barH }, 0.f);
+			loadingShader->SetTransform({trackX - trackW + fillW, barY + barH * 0.5f }, { fillW, barH }, 0.f);
 			loadingShader->Show(proj);
 
 			glfwSwapBuffers(win);
