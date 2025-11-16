@@ -35,6 +35,7 @@
 #include "AI/GridChaseAI.h"
 #include "AI/DetourNavSystem.h"
 #include "AI/NavAgent.h"
+#include "AI/AISystem.h"
 namespace Boom {
     BOOM_INLINE entt::entity CreateEnemySphere(entt::registry& reg, const std::string& name,
         const glm::vec3& pos, float radius)
@@ -315,7 +316,7 @@ namespace Boom
                 }
             }
             // --- END MONO INITIALIZE ---
-
+      
             InitNavRuntime();
 			//EnsureNinjaSeeksSamurai();
             CameraController camera(
@@ -396,7 +397,7 @@ namespace Boom
                 // Always update delta time, but adjust for pause state
                 ComputeFrameDeltaTime();
                 InvokeStatic1Float("GameScripts", "Entry", "Update", static_cast<float>(m_Context->DeltaTime));
-
+                m_AIagents.update(m_Context->scene, static_cast<float>(m_Context->DeltaTime));
                 if (m_Nav) {
                     m_NavAgents.update(m_Context->scene, static_cast<float>(m_Context->DeltaTime), *m_Nav);
                 }
@@ -961,11 +962,14 @@ namespace Boom
             m_SphereInitialStates[name] = { pos, vel };
         }
 		bool m_NavInitialized = false;
+        bool m_AIinitialized = false;
         std::unique_ptr<Boom::DebugLinesShader> m_DebugLinesShader;
         std::vector<Boom::PhysicsContext::DebugLine> m_PhysLinesCPU;
         char m_CurrentScenePath[512] = "\0";
         bool m_SceneLoaded = false;
         std::unique_ptr<DetourNavSystem> m_Nav;
+       
+        Boom::AISystem                         m_AIagents;
         Boom::NavAgentSystem                   m_NavAgents;
         entt::entity                           m_PlayerE = entt::null;
         entt::entity                           m_AgentE = entt::null;
@@ -996,6 +1000,7 @@ namespace Boom
 
             BOOM_INFO("[Nav] 'Ninja' will seek 'Samurai'.");
         }
+        
         BOOM_INLINE void InitNavRuntime()
         {
             if (m_NavInitialized) return;

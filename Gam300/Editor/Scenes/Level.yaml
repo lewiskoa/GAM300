@@ -1,6 +1,8 @@
 Version: 1.0
 ENTITIES:
   - {}
+  - {}
+  - {}
   - InfoComponent:
       Parent: 0
       Name: Level
@@ -23,7 +25,7 @@ ENTITIES:
       UID: 16439367912350421013
     TransformComponent:
       Transform:
-        Translate: [-1.59176528, -1.18457508, -0.0784668028]
+        Translate: [-1.56142235, -1.18457508, 0.433114707]
         Rotate: [0, -0, 0]
         Scale: [0.00999999978, 0.00999999978, 0.00999999978]
     ModelComponent:
@@ -39,7 +41,7 @@ ENTITIES:
       UID: 12784200605494588253
     TransformComponent:
       Transform:
-        Translate: [-1.89471495, -1.14866674, -0.293079317]
+        Translate: [-1.9985882, -1.14944398, 0.563020051]
         Rotate: [0, -0, 0]
         Scale: [0.00999999978, 0.00999999978, 0.00999999978]
     ModelComponent:
@@ -50,12 +52,13 @@ ENTITIES:
       ModelSource: ""
       MaterialSource: ""
     NavAgentComponent:
-      Target: [-1.59176528, -1.18457508, -0.0784668028]
+      Target: [-1.56142235, -1.18457508, 0.433114707]
       Speed: 2.5
       ArriveRadius: 0.150000006
       Active: true
       RepathCooldown: 0.25
       RetargetDistance: 0.5
+      FollowName: Samurai
   - {}
   - {}
   - {}
@@ -164,6 +167,8 @@ ENTITIES:
       MaterialName: ""
       ModelSource: Resources/Models/Cube.fbx
       MaterialSource: Marble
+  - {}
+  - {}
   - {}
   - {}
   - {}

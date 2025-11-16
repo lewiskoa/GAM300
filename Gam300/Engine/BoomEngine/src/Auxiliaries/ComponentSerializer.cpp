@@ -266,7 +266,15 @@ namespace Boom
                 e << YAML::Key << "Active" << YAML::Value << nav.active;
                 e << YAML::Key << "RepathCooldown" << YAML::Value << nav.repathCooldown;
                 e << YAML::Key << "RetargetDistance" << YAML::Value << nav.retargetDist;
+                std::string followName = nav.followName;
+                // If empty, but follow is valid, derive it from InfoComponent:
+                if (followName.empty() &&
+                    nav.follow != entt::null &&
+                    reg.all_of<InfoComponent>(nav.follow)) {
+                    followName = reg.get<InfoComponent>(nav.follow).name;
+                }
 
+                e << YAML::Key << "FollowName" << YAML::Value << followName;
                 e << YAML::EndMap;
             },
             // ----- DESERIALIZE -----
@@ -290,7 +298,15 @@ namespace Boom
                 if (auto v = data["RepathCooldown"])   nav.repathCooldown = v.as<float>(nav.repathCooldown);
                 if (auto v = data["RetargetDistance"]) nav.retargetDist = v.as<float>(nav.retargetDist);
 
-                // Runtime-only stuff is intentionally NOT loaded:
+              
+
+                // FollowName -> nav.follow
+                if (auto f = data["FollowName"]) {
+                    nav.followName = f.as<std::string>(nav.followName);
+                    nav.follow = entt::null;   // will resolve lazily later
+                    nav.dirty = true;         // so we build path once follow is resolved
+                    nav.repathTimer = 0.f;
+                }
                 // nav.path, nav.waypoint, nav.dirty, nav.follow, nav.repathTimer
             }
         );

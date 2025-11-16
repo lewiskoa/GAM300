@@ -444,8 +444,11 @@ namespace EditorUI {
                         static const char* kModes[] = { "Auto", "Idle", "Patrol", "Seek" };
                         int idx = static_cast<int>(a->mode);
                         if (ImGui::Combo("Mode", &idx, kModes, IM_ARRAYSIZE(kModes))) {
-                            a->mode = static_cast<Boom::AIComponent::AIMode>(idx);
-                            a->root.reset(); // force BT rebuild on next AISystem::update()
+                            auto newMode = static_cast<Boom::AIComponent::AIMode>(idx);
+                            if (a->mode != newMode) {
+                                a->mode = newMode;
+                                // No more a->root.reset(); AISystem will see mode change and rebuild.
+                            }
                         }
                     }
 
@@ -623,7 +626,7 @@ namespace EditorUI {
                                 const auto& info = view.get<Boom::InfoComponent>(e);
                                 bool sel = (a->follow == e);
                                 if (ImGui::Selectable(info.name.c_str(), sel)) {
-                                    a->follow = e; a->dirty = true; a->repathTimer = 0.f;
+                                    a->follow = e; a->dirty = true; a->repathTimer = 0.f;  a->followName = info.name;
                                 }
                                 if (sel) ImGui::SetItemDefaultFocus();
                             }
@@ -634,7 +637,9 @@ namespace EditorUI {
                         ImGui::SameLine();
                         if (ImGui::Button("Rebuild Path")) { a->dirty = true; a->repathTimer = 0.f; }
                         ImGui::SameLine();
-                        if (ImGui::Button("Clear Follow")) { a->follow = entt::null; a->dirty = true; a->repathTimer = 0.f; }
+                        if (ImGui::Button("Clear Follow")) {
+                            a->follow = entt::null; a->dirty = true; a->repathTimer = 0.f; a->followName.clear();
+                        }
                     }
 
                     // --- PATH / WAYPOINT TOOLS ----------------------------------------------

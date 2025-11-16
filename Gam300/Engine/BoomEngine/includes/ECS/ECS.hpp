@@ -313,7 +313,7 @@ namespace Boom {
         float arrive = 0.15f; // meters
         bool  active = true;
         bool  dirty = false; // set true when target changes
-
+        std::string followName;
         entt::entity follow = entt::null; //this is player entity to follow
         float repathCooldown = 0.25f;     // seconds between path rebuilds
         float retargetDist = 0.5f;      // re-path if player moved this far
@@ -344,7 +344,7 @@ namespace Boom {
 
 
         // BT root
-        std::unique_ptr<BTNode> root;
+        BTNodePtr root;
 
         XPROPERTY_DEF
         ("AIComponent", AIComponent

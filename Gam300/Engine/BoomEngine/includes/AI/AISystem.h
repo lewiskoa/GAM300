@@ -1,9 +1,12 @@
 #pragma once
-#include "AIComponent.h"
-#include "BehaviourTreeActions.h"
-#include "Application/Interface.h"
+
+#include "Core.h"
+#include <unordered_map>
+#include "AI/BehaviourTreeActions.h"
 #include "ECS/ECS.hpp"
+
 namespace Boom {
+
     BOOM_INLINE void ApplyModeSideEffects(entt::registry& reg, entt::entity e, AIComponent& ai)
     {
         auto& ag = reg.get_or_emplace<NavAgentComponent>(e);
@@ -17,31 +20,35 @@ namespace Boom {
             ag.dirty = false;
             ag.repathTimer = 0.f;
             break;
+
         case AIComponent::AIMode::Patrol:
             ag.active = true;
             ag.follow = entt::null;
             ag.dirty = true;
-            ag.repathTimer = 0.f;
             break;
+
         case AIComponent::AIMode::Seek:
             ag.active = true;
-            if (ai.player != entt::null) {
-                ag.follow = ai.player;
-                ag.dirty = true;
-                ag.repathTimer = 0.f;
-            }
+            ag.dirty = true;
             break;
+
         case AIComponent::AIMode::Auto:
         default:
             ag.active = true;
             break;
         }
     }
+
     struct AISystem {
-        // Call once when creating an enemy
+
+        using TreeMap = std::unordered_map<entt::entity, BTNodePtr>;
+        TreeMap m_trees;  // one BT root per AI entity
+
+        // Helper to initialize an enemy AI component
         static void InitEnemy(entt::registry& reg, entt::entity e,
             const std::vector<glm::vec3>& patrolPts,
-            float detect = 8.f, float lose = 12.f, float idle = 1.f)
+            float detect = 8.f, float lose = 12.f, float idle = 1.f,
+            AIComponent::AIMode mode = AIComponent::AIMode::Auto)
         {
             auto& ai = reg.emplace_or_replace<AIComponent>(e);
             ai.patrolPoints = patrolPts;
@@ -50,23 +57,32 @@ namespace Boom {
             ai.idleWait = idle;
             ai.patrolIndex = 0;
             ai.idleTimer = 0.f;
-            ai.root = BuildPatrolSeekTree(); // attach tree
+
+            ai.mode = mode;
+            ai.lastMode = mode;
+
+            ApplyModeSideEffects(reg, e, ai);
+            // NOTE: we do NOT build the tree here; update() will do it lazily
         }
 
-        // Run every frame BEFORE NavAgentSystem::update (so it can flag ag.dirty)
         void update(entt::registry& reg, float dt)
         {
             auto view = reg.view<AIComponent>();
             for (auto e : view) {
                 auto& ai = view.get<AIComponent>(e);
 
-                if (ai.mode != ai.lastMode || !ai.root) {
+                BTNodePtr& root = m_trees[e];  // creates empty unique_ptr if missing
+
+                // 3) When Mode changes (ImGui) or no tree yet, rebuild it
+                if (ai.mode != ai.lastMode || !root) {
                     ApplyModeSideEffects(reg, e, ai);
-                    ai.root = BuildTreeForMode(ai.mode);
+                    root = BuildTreeForMode(ai.mode);
                     ai.lastMode = ai.mode;
                 }
 
-                if (ai.root) ai.root->tick(reg, e, dt);
+                if (root) {
+                    root->tick(reg, e, dt);
+                }
             }
         }
     };
