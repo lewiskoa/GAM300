@@ -509,7 +509,7 @@ namespace Boom
                     EnttView<Entity, RigidBodyComponent>([](auto, RigidBodyComponent& rb) {
                         rb.RigidBody.isColliding = false;
                         });
-                    UpdateStaticTransforms();
+                    UpdateKinematicTransforms();
                     RunPhysicsSimulation();
                     InitNavRuntime();
                     UpdateThirdPersonCameras();
@@ -919,13 +919,12 @@ namespace Boom
             return pMatrix_NoScale * localMatrix;
         }
 
-        BOOM_INLINE void UpdateStaticTransforms()
+        BOOM_INLINE void UpdateKinematicTransforms()
         {
             EnttView<Entity, RigidBodyComponent>(
                 [this](auto entity, RigidBodyComponent& rb)
                 {
-                    if (rb.RigidBody.type == RigidBody3D::Type::STATIC)
-                    {
+                    if (rb.RigidBody.type == RigidBody3D::Type::KINEMATIC) {
                         auto* actor = rb.RigidBody.actor;
                         if (!actor) return;
 
