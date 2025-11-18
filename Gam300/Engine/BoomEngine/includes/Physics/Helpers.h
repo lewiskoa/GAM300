@@ -19,7 +19,11 @@ namespace Boom
 
     BOOM_INLINE PxQuat ToPxQuat(const glm::vec3& eulerDegrees) {
         // Converts Euler degrees (in GLM's order) to a PhysX quaternion
-        glm::quat q = glm::quat(glm::radians(eulerDegrees));
+        glm::quat q = glm::yawPitchRoll(
+            glm::radians(eulerDegrees.y),
+            glm::radians(eulerDegrees.x),
+            glm::radians(eulerDegrees.z)
+        );
         return PxQuat(q.x, q.y, q.z, q.w);
     }
 }

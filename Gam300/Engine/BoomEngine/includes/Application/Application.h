@@ -2,7 +2,6 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#pragma once
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -24,8 +23,6 @@
 #include "../Graphics/Utilities/Culling.h"
 #include "Input/CameraManager.h"
 #include "Graphics/Shaders/DebugLines.h"
-//#include "../../../Editor/src/Vendors/imgui/imgui.h"
-//#include "../../../Editor/src/Vendors/imGuizmo/ImGuizmo.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include "Scripting/MonoRuntime.h"
@@ -340,20 +337,20 @@ namespace Boom
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
                 SoundEngine::Instance().Update();
                 Camera3D* activeCam = nullptr;
-                EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
-                    if (!activeCam && comp.camera.cameraType == Camera3D::CameraType::Main)
+				Transform3D camTransform{};
+                EnttView<Entity, CameraComponent>([&](auto en, CameraComponent& comp) {
+                    if (!activeCam && comp.camera.cameraType == Camera3D::CameraType::Main) {
+						camTransform = en.Get<TransformComponent>().transform;
                         activeCam = &comp.camera;
+                    }
                     });
                 if (!activeCam) { // fallback: first camera
-                    EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
-                        if (!activeCam) activeCam = &comp.camera;
-                        });
                 }
 
                 // 2) Attach BEFORE update so scroll/pan use this camera's FOV in this frame
                 if (activeCam) camera.attachCamera(activeCam);
                 glfwMakeContextCurrent(engineWindow.get());
-
+                
                 // NEW: runtime toggle with F9
                 {
                     static bool prevF9 = false;
@@ -402,6 +399,9 @@ namespace Boom
                     m_NavAgents.update(m_Context->scene, static_cast<float>(m_Context->DeltaTime), *m_Nav);
                 }
 
+                //compute camera position to colliders
+                //if (m_AppState == ApplicationState::RUNNING)
+                   //m_Context->physics->ResolveThirdPersonCameraPosition(, camTransform.translate);
 
                 // ============ END NEW SECTION ============
                 m_Context->profiler.BeginFrame();
@@ -461,6 +461,10 @@ namespace Boom
                             if (m_Context->window->isMiddleClickDown)
                                 m_Context->window->camMoveDir = {};
                         }
+                    }
+                    //standard 3rd person camera controls
+                    else if (m_AppState == ApplicationState::RUNNING) {
+                        //camera.UpdateThirdPerson()
                     }
 
                     // This part is needed by BOTH cameras, so leave it outside the 'if'
@@ -692,63 +696,79 @@ namespace Boom
         }
         
         BOOM_INLINE void RenderScene() {
+            std::vector<std::pair<SpriteComponent, Transform2D>> guiList;
             //pbr ecs (always render)
-            EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
-                if (!entity.Has<ModelComponent>() || comp.modelID == EMPTY_ASSET) {
-                    //BOOM_ERROR("[Render] Model data is null for ModelID: {} ({})", comp.modelID, comp.modelName);
-                    return; // Skip rendering this model
-                }
-
-                ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
-                if (entity.Has<AnimatorComponent>()) {
-                    auto& an = entity.Get<AnimatorComponent>();
-                    float dt = (m_AppState == ApplicationState::RUNNING) ? (float)m_Context->DeltaTime : 0.0f;
-                    auto& joints = an.animator->Animate(dt);
-                    m_Context->renderer->SetJoints(joints);           // existing
-                }
-                else {
-                    // NEW: ensure no stale palette leaks into this draw
-                    if (model.hasJoints)
-                    {
-                        static std::vector<glm::mat4> identityPalette(100, glm::mat4(1.0f));
-                        m_Context->renderer->SetJoints(identityPalette);
+            EnttView<Entity, TransformComponent>([this, &guiList](auto entity, TransformComponent& t) {
+                if (entity.Has<ModelComponent>()) {
+                    ModelComponent& comp{ entity.Get<ModelComponent>() };
+                    if (comp.modelID == EMPTY_ASSET) return;
+                    ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
+                    if (entity.Has<AnimatorComponent>()) {
+                        auto& an = entity.Get<AnimatorComponent>();
+                        float dt = (m_AppState == ApplicationState::RUNNING) ? (float)m_Context->DeltaTime : 0.0f;
+                        auto& joints = an.animator->Animate(dt);
+                        m_Context->renderer->SetJoints(joints);           // existing
                     }
-                }
-
-                glm::mat4 worldMatrix = GetWorldMatrix(entity);
-                Transform3D worldTransform;
-                DecomposeMatrix(worldMatrix, worldTransform.translate, worldTransform.rotate, worldTransform.scale);
-
-                //draw model with material if it has one otherwise draw default material
-                if (comp.materialID != EMPTY_ASSET) {
-                    auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
-
-                    // Only assign textures if they exist and are valid
-                    if (material.albedoMapID != EMPTY_ASSET) {
-                        auto& albedoTex = m_Context->assets->Get<TextureAsset>(material.albedoMapID);
-                        if (albedoTex.data) {
-                            material.data.albedoMap = albedoTex.data;
-                        }
-                    }
-                    if (material.normalMapID != EMPTY_ASSET) {
-                        auto& normalTex = m_Context->assets->Get<TextureAsset>(material.normalMapID);
-                        if (normalTex.data) {
-                            material.data.normalMap = normalTex.data;
-                        }
-                    }
-                    if (material.roughnessMapID != EMPTY_ASSET) {
-                        auto& roughnessTex = m_Context->assets->Get<TextureAsset>(material.roughnessMapID);
-                        if (roughnessTex.data) {
-                            material.data.roughnessMap = roughnessTex.data;
+                    else {
+                        // NEW: ensure no stale palette leaks into this draw
+                        if (model.hasJoints)
+                        {
+                            static std::vector<glm::mat4> identityPalette(100, glm::mat4(1.0f));
+                            m_Context->renderer->SetJoints(identityPalette);
                         }
                     }
 
-                    m_Context->renderer->Draw(model.data, worldTransform, material.data);
+                    glm::mat4 worldMatrix = GetWorldMatrix(entity);
+                    Transform3D worldTransform;
+                    DecomposeMatrix(worldMatrix, worldTransform.translate, worldTransform.rotate, worldTransform.scale);
+
+                    //draw model with material if it has one otherwise draw default material
+                    if (comp.materialID != EMPTY_ASSET) {
+                        auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
+
+                        // Only assign textures if they exist and are valid
+                        if (material.albedoMapID != EMPTY_ASSET) {
+                            auto& albedoTex = m_Context->assets->Get<TextureAsset>(material.albedoMapID);
+                            if (albedoTex.data) {
+                                material.data.albedoMap = albedoTex.data;
+                            }
+                        }
+                        if (material.normalMapID != EMPTY_ASSET) {
+                            auto& normalTex = m_Context->assets->Get<TextureAsset>(material.normalMapID);
+                            if (normalTex.data) {
+                                material.data.normalMap = normalTex.data;
+                            }
+                        }
+                        if (material.roughnessMapID != EMPTY_ASSET) {
+                            auto& roughnessTex = m_Context->assets->Get<TextureAsset>(material.roughnessMapID);
+                            if (roughnessTex.data) {
+                                material.data.roughnessMap = roughnessTex.data;
+                            }
+                        }
+
+                        m_Context->renderer->Draw(model.data, worldTransform, material.data);
+                    }
+                    else {
+                        m_Context->renderer->Draw(model.data, worldTransform);
+                    }
                 }
-                else {
-                    m_Context->renderer->Draw(model.data, worldTransform);
+                else if (entity.Has<SpriteComponent>()) {
+                    SpriteComponent& comp{ entity.Get<SpriteComponent>() };
+                    if (comp.textureID == EMPTY_ASSET) return;
+
+                    if (!comp.uiOverlay) {
+                        TextureAsset& texture{ m_Context->assets->Get<TextureAsset>(comp.textureID) };
+                        m_Context->renderer->DrawQuad(texture.data, t.transform, comp.color);
+                    }
+                    else guiList.push_back({ comp, t.transform });
                 }
-                });
+            });
+
+			//render gui overlays at the end
+            for (auto const& gui : guiList) {
+                TextureAsset& texture{ m_Context->assets->Get<TextureAsset>(gui.first.textureID) };
+                m_Context->renderer->DrawQuad(texture.data, gui.second, gui.first.color);
+			}
         }
 
         /**
@@ -873,11 +893,7 @@ namespace Boom
     private:
         std::unordered_map<std::string, std::pair<glm::vec3, glm::vec3>> m_SphereInitialStates;
 
-        BOOM_INLINE void 
-            
-            
-            
-            SphereInitialState(const std::string& name,
+        BOOM_INLINE void SphereInitialState(const std::string& name,
             const glm::vec3& pos,
             const glm::vec3& vel = glm::vec3(0.0f)) {
             m_SphereInitialStates[name] = { pos, vel };
@@ -926,7 +942,7 @@ namespace Boom
         {
             if (m_NavInitialized) return;
 
-            auto& reg = m_Context->scene;
+            //auto& reg = m_Context->scene;
 
             // 1) Build / load navmesh only once
             if (!m_Nav) {
@@ -1251,7 +1267,7 @@ namespace Boom
             if (m_AppState == ApplicationState::RUNNING)
             {
                 // Apply navigation velocities BEFORE physics simulation
-                EnttView<Entity, NavAgentComponent, RigidBodyComponent>([this](auto entity, auto& navAgent, auto& rb)
+                EnttView<Entity, NavAgentComponent, RigidBodyComponent>([this](auto /*entity*/, auto& navAgent, auto& rb)
                     {
                         if (!navAgent.active || !rb.RigidBody.actor) return;
 

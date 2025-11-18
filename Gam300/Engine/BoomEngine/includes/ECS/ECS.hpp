@@ -22,6 +22,7 @@ namespace Boom {
         THIRD_PERSON_CAMERA,
         NAV_AGENT_COMPONENT,
         AI_COMPONENT,
+        SPRITE,
         COUNT
     };
     constexpr std::string_view COMPONENT_NAMES[]{
@@ -37,10 +38,10 @@ namespace Boom {
         "Spot Light",           //9
         "Sound",                //10
         "Script",               //11
-        "Third Person Camera" ,  //12
-        "Nav Agent Component",
-        "AI Component"
-
+        "Third Person Camera" , //12
+        "Nav Agent Component",  //13
+        "AI Component",         //14
+        "Sprite"                //15
     };
 
     // transform component
@@ -359,6 +360,19 @@ namespace Boom {
             , obj_member<"PatrolIndex", &AIComponent::patrolIndex>
         )
     };
+
+    struct SpriteComponent {
+        AssetID textureID{ EMPTY_ASSET };
+		glm::vec4 color{ 1.0f };
+        bool uiOverlay{ true };
+
+        XPROPERTY_DEF(
+            "SpriteComponent", SpriteComponent,
+            obj_member<"textureID", &SpriteComponent::textureID>,
+            obj_member<"color", &SpriteComponent::color>,
+            obj_member<"uiOverlay", &SpriteComponent::uiOverlay>
+        )
+    };
     struct Entity
     {
         BOOM_INLINE Entity(EntityRegistry* registry, EntityID entity) :
@@ -390,7 +404,6 @@ namespace Boom {
         {
             return m_EnttID;
         }
-
 
         template<typename T, typename... Args>
         BOOM_INLINE T& Attach(Args&&... args)

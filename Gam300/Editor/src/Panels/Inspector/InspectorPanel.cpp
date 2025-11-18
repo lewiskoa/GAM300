@@ -333,6 +333,22 @@ namespace EditorUI {
             }
         }
 
+        if (selected.Has<Boom::SpriteComponent>()) {
+            if (ImGui::CollapsingHeader("Quad 2D", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap)) {
+                ComponentSettings<Boom::SpriteComponent>(ctx);
+
+                auto& q = selected.Get<Boom::SpriteComponent>();
+
+				ImGui::Checkbox("GUI", &q.uiOverlay);
+                ImGui::BeginTable("##maps", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersInnerV);
+                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("Asset", ImGuiTableColumnFlags_WidthStretch);
+                InputAssetWidget<CONSTANTS::DND_PAYLOAD_TEXTURE>("texture", q.textureID);
+                ImGui::EndTable();
+				ImGui::ColorEdit3("color", &q.color[0]);
+            }
+		}
+
         if (selected.Has<Boom::AnimatorComponent>()) {
             AnimatorComponentUI(selected);
         }
@@ -723,10 +739,10 @@ namespace EditorUI {
                                         break;
                                     }
                                     if (ImGui::MenuItem("Insert After (use Selected Transform if any)")) {
-                                        glm::vec3 p = a->path[i];
+                                        glm::vec3 path = a->path[i];
                                         if (selected.Has<Boom::TransformComponent>())
-                                            p = selected.Get<Boom::TransformComponent>().transform.translate;
-                                        a->path.insert(a->path.begin() + i + 1, p);
+                                            path = selected.Get<Boom::TransformComponent>().transform.translate;
+                                        a->path.insert(a->path.begin() + i + 1, path);
                                         ImGui::EndPopup();
                                         break;
                                     }
@@ -1205,6 +1221,7 @@ namespace EditorUI {
                     UpdateComponent<Boom::NavAgentComponent>(Boom::ComponentID::NAV_AGENT_COMPONENT, selected);
                     UpdateComponent<Boom::AIComponent>(Boom::ComponentID::AI_COMPONENT, selected);
                     UpdateComponent<Boom::ThirdPersonCameraComponent>(Boom::ComponentID::THIRD_PERSON_CAMERA, selected);
+					UpdateComponent<Boom::SpriteComponent>(Boom::ComponentID::SPRITE, selected);
                     ImGui::EndTable();
                 }
             }
