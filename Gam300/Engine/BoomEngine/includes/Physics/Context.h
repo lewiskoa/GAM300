@@ -3,7 +3,9 @@
 #include "Utilities.h"
 #include "Auxiliaries/Assets.h"
 #include <iostream>
-#include "PxPhysicsAPI.h"
+
+#include "common/Core.h"
+
 
 namespace Boom {
     struct PhysicsContext {

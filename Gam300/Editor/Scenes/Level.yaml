@@ -37,6 +37,9 @@ ENTITIES:
       RigidBody:
         Density: 1
         Mass: 0
+        FreezeRotationX: true
+        FreezeRotationY: true
+        FreezeRotationZ: true
         InitialVelocity: [0, 0, 0]
         Previous Scale: [0.01, 0.01, 0.01]
         Type: DYNAMIC
@@ -86,9 +89,12 @@ ENTITIES:
     RigidBodyComponent:
       RigidBody:
         Density: 1
-        Mass: 0
-        InitialVelocity: [0, 0, 0]
+        Mass: 1
+        InitialVelocity: [1, 0, 1]
         Previous Scale: [0.01, 0.01, 0.01]
+        FreezeRotationX: true
+        FreezeRotationY: true
+        FreezeRotationZ: true
         Type: DYNAMIC
     ColliderComponent:
       Collider:
