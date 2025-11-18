@@ -417,7 +417,7 @@ namespace Boom
                     EnttView<Entity, RigidBodyComponent>([](auto, RigidBodyComponent& rb) {
                         rb.RigidBody.isColliding = false;
                         });
-                    UpdateStaticTransforms();
+                    UpdateKinematicTransforms();
                     RunPhysicsSimulation();
                     InitNavRuntime();
                     UpdateThirdPersonCameras();
@@ -827,13 +827,12 @@ namespace Boom
             return pMatrix_NoScale * localMatrix;
         }
 
-        BOOM_INLINE void UpdateStaticTransforms()
+        BOOM_INLINE void UpdateKinematicTransforms()
         {
             EnttView<Entity, RigidBodyComponent>(
                 [this](auto entity, RigidBodyComponent& rb)
                 {
-                    if (rb.RigidBody.type == RigidBody3D::Type::STATIC)
-                    {
+                    if (rb.RigidBody.type == RigidBody3D::Type::KINEMATIC) {
                         auto* actor = rb.RigidBody.actor;
                         if (!actor) return;
 
@@ -1251,8 +1250,24 @@ namespace Boom
             // Only simulate physics if running
             if (m_AppState == ApplicationState::RUNNING)
             {
+                // Apply navigation velocities BEFORE physics simulation
+                EnttView<Entity, NavAgentComponent, RigidBodyComponent>([this](auto entity, auto& navAgent, auto& rb)
+                    {
+                        if (!navAgent.active || !rb.RigidBody.actor) return;
+
+                        auto* dyn = rb.RigidBody.actor->is<physx::PxRigidDynamic>();
+                        if (!dyn) return;
+
+                        // Convert glm velocity to PhysX and apply directly
+                        physx::PxVec3 pxVel(navAgent.velocity.x, navAgent.velocity.y, navAgent.velocity.z);
+                        dyn->setLinearVelocity(pxVel);
+
+                        // OPTIONAL: Lock Y rotation so the agent doesn't tip over
+                        dyn->setAngularVelocity(physx::PxVec3(0, 0, 0));
+                    });
 
                 m_Context->physics->Simulate(1, static_cast<float>(m_Context->DeltaTime));
+
                 EnttView<Entity, RigidBodyComponent>([this](auto entity, auto& comp)
                     {
                         auto& transform = entity.template Get<TransformComponent>().transform;
