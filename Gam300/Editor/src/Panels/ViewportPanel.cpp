@@ -117,7 +117,7 @@ namespace EditorUI {
                             {
                                 if (m_Ctx->scene.all_of<Boom::SpriteComponent>(selectedEntity) &&
                                     m_Ctx->scene.get<Boom::SpriteComponent>(selectedEntity).uiOverlay)
-                                    DrawGuizmo2D(itemMin, rectSz, proj, gizmoWantsInput);
+                                    DrawGuizmo2D(itemMin, rectSz, gizmoWantsInput);
                                 else DrawGuizmo3D(itemMin, rectSz, view, proj, gizmoWantsInput);
                             }
                         }
@@ -184,13 +184,14 @@ namespace EditorUI {
         ImGui::End();
     }
 
-    void ViewportPanel::DrawGuizmo2D(ImVec2 const& itemMin, ImVec2 const& rectSz, glm::mat4 const& proj, bool& gizmoWantsInput) {
+    void ViewportPanel::DrawGuizmo2D(ImVec2 const& itemMin, ImVec2 const& rectSz, bool& gizmoWantsInput) {
         entt::entity selectedEntity = m_App->SelectedEntity();
         auto& ltrans = m_Ctx->scene.get<Boom::TransformComponent>(selectedEntity);
         glm::mat4 matrix = ltrans.transform.Matrix();
 
         ImGuizmo::SetOrthographic(true);
         glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 proj = glm::ortho(-1.f, 1.f, -1.f, 1.f, 0.1f, 1.f);
         ImGuizmo::SetDrawlist();
         ImGuizmo::SetRect(itemMin.x, itemMin.y, rectSz.x, rectSz.y);
 
