@@ -4,6 +4,7 @@
 #include "Auxiliaries/Assets.h"
 #include <iostream>
 #include "PxPhysicsAPI.h"
+#include <foundation/PxMath.h>
 
 namespace Boom {
     struct PhysicsContext {
@@ -557,7 +558,20 @@ namespace Boom {
             UpdateColliderShape(entity, assetRegistry);
         }
 
+		//raycast functions
+        BOOM_INLINE PxVec3 ResolveThirdPersonCameraPosition(glm::vec3 const& playerEye, glm::vec3 const& idealCamPosition, float minDist = 0.5f)
+        {
+            PxVec3 targetPos{ ToPxVec3(playerEye) };
+			PxVec3 idealCamPos{ ToPxVec3(idealCamPosition) };
+            PxVec3 dir = (idealCamPos - targetPos).getNormalized();
+            PxReal maxDist = (idealCamPos - targetPos).magnitude();
 
+            PxRaycastBuffer hit;
+            if (m_Scene->raycast(targetPos, dir, maxDist, hit))
+                return targetPos + dir * PxMax(hit.block.distance - 0.05f, minDist);
+
+            return idealCamPos;
+        }
 
         // Mesh Colliders
         BOOM_INLINE PxConvexMeshGeometry CookMesh(const MeshData<ShadedVert>& data) {

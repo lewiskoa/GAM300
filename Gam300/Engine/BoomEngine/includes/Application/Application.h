@@ -340,20 +340,26 @@ namespace Boom
                 std::shared_ptr<GLFWwindow> engineWindow = m_Context->window->Handle();
                 SoundEngine::Instance().Update();
                 Camera3D* activeCam = nullptr;
-                EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
-                    if (!activeCam && comp.camera.cameraType == Camera3D::CameraType::Main)
+				Transform3D camTransform{};
+                EnttView<Entity, CameraComponent>([&](auto en, CameraComponent& comp) {
+                    if (!activeCam && comp.camera.cameraType == Camera3D::CameraType::Main) {
+						camTransform = en.Get<TransformComponent>().transform;
                         activeCam = &comp.camera;
+                    }
                     });
                 if (!activeCam) { // fallback: first camera
-                    EnttView<Entity, CameraComponent>([&](auto, CameraComponent& comp) {
-                        if (!activeCam) activeCam = &comp.camera;
+                    EnttView<Entity, CameraComponent>([&](auto en, CameraComponent& comp) {
+                        if (!activeCam) {
+                            camTransform = en.Get<TransformComponent>().transform;
+                            activeCam = &comp.camera;
+                        }
                         });
                 }
 
                 // 2) Attach BEFORE update so scroll/pan use this camera's FOV in this frame
                 if (activeCam) camera.attachCamera(activeCam);
                 glfwMakeContextCurrent(engineWindow.get());
-
+                
                 // NEW: runtime toggle with F9
                 {
                     static bool prevF9 = false;
@@ -494,6 +500,9 @@ namespace Boom
                         });
                 }
 
+                //compute camera position to colliders
+                //if (m_AppState == ApplicationState::RUNNING)
+                   //m_Context->physics->ResolveThirdPersonCameraPosition(, camTransform.translate);
 
                 // ============ END NEW SECTION ============
                 m_Context->profiler.BeginFrame();
@@ -553,6 +562,10 @@ namespace Boom
                             if (m_Context->window->isMiddleClickDown)
                                 m_Context->window->camMoveDir = {};
                         }
+                    }
+                    //standard 3rd person camera controls
+                    else if (m_AppState == ApplicationState::RUNNING) {
+                        //camera.UpdateThirdPerson()
                     }
 
                     // This part is needed by BOTH cameras, so leave it outside the 'if'
