@@ -2,7 +2,6 @@
 #ifndef APPLICATION_H
 #define APPLICATION_H
 
-#pragma once
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -797,63 +796,83 @@ namespace Boom
         }
         
         BOOM_INLINE void RenderScene() {
+            std::vector<std::pair<Quad2DComponent, Transform2D>> guiList;
             //pbr ecs (always render)
-            EnttView<Entity, ModelComponent>([this](auto entity, ModelComponent& comp) {
-                if (!entity.Has<ModelComponent>() || comp.modelID == EMPTY_ASSET) {
-                    //BOOM_ERROR("[Render] Model data is null for ModelID: {} ({})", comp.modelID, comp.modelName);
-                    return; // Skip rendering this model
-                }
-
-                ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
-                if (entity.Has<AnimatorComponent>()) {
-                    auto& an = entity.Get<AnimatorComponent>();
-                    float dt = (m_AppState == ApplicationState::RUNNING) ? (float)m_Context->DeltaTime : 0.0f;
-                    auto& joints = an.animator->Animate(dt);
-                    m_Context->renderer->SetJoints(joints);           // existing
-                }
-                else {
-                    // NEW: ensure no stale palette leaks into this draw
-                    if (model.hasJoints)
-                    {
-                        static std::vector<glm::mat4> identityPalette(100, glm::mat4(1.0f));
-                        m_Context->renderer->SetJoints(identityPalette);
+            EnttView<Entity>([this, &guiList](auto entity) {
+                if (entity.Has<ModelComponent>()) {
+                    ModelComponent& comp{ entity.Get<ModelComponent>() };
+                    if (comp.modelID == EMPTY_ASSET) return;
+                    ModelAsset& model{ m_Context->assets->Get<ModelAsset>(comp.modelID) };
+                    if (entity.Has<AnimatorComponent>()) {
+                        auto& an = entity.Get<AnimatorComponent>();
+                        float dt = (m_AppState == ApplicationState::RUNNING) ? (float)m_Context->DeltaTime : 0.0f;
+                        auto& joints = an.animator->Animate(dt);
+                        m_Context->renderer->SetJoints(joints);           // existing
                     }
-                }
-
-                glm::mat4 worldMatrix = GetWorldMatrix(entity);
-                Transform3D worldTransform;
-                DecomposeMatrix(worldMatrix, worldTransform.translate, worldTransform.rotate, worldTransform.scale);
-
-                //draw model with material if it has one otherwise draw default material
-                if (comp.materialID != EMPTY_ASSET) {
-                    auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
-
-                    // Only assign textures if they exist and are valid
-                    if (material.albedoMapID != EMPTY_ASSET) {
-                        auto& albedoTex = m_Context->assets->Get<TextureAsset>(material.albedoMapID);
-                        if (albedoTex.data) {
-                            material.data.albedoMap = albedoTex.data;
-                        }
-                    }
-                    if (material.normalMapID != EMPTY_ASSET) {
-                        auto& normalTex = m_Context->assets->Get<TextureAsset>(material.normalMapID);
-                        if (normalTex.data) {
-                            material.data.normalMap = normalTex.data;
-                        }
-                    }
-                    if (material.roughnessMapID != EMPTY_ASSET) {
-                        auto& roughnessTex = m_Context->assets->Get<TextureAsset>(material.roughnessMapID);
-                        if (roughnessTex.data) {
-                            material.data.roughnessMap = roughnessTex.data;
+                    else {
+                        // NEW: ensure no stale palette leaks into this draw
+                        if (model.hasJoints)
+                        {
+                            static std::vector<glm::mat4> identityPalette(100, glm::mat4(1.0f));
+                            m_Context->renderer->SetJoints(identityPalette);
                         }
                     }
 
-                    m_Context->renderer->Draw(model.data, worldTransform, material.data);
+                    glm::mat4 worldMatrix = GetWorldMatrix(entity);
+                    Transform3D worldTransform;
+                    DecomposeMatrix(worldMatrix, worldTransform.translate, worldTransform.rotate, worldTransform.scale);
+
+                    //draw model with material if it has one otherwise draw default material
+                    if (comp.materialID != EMPTY_ASSET) {
+                        auto& material{ m_Context->assets->Get<MaterialAsset>(comp.materialID) };
+
+                        // Only assign textures if they exist and are valid
+                        if (material.albedoMapID != EMPTY_ASSET) {
+                            auto& albedoTex = m_Context->assets->Get<TextureAsset>(material.albedoMapID);
+                            if (albedoTex.data) {
+                                material.data.albedoMap = albedoTex.data;
+                            }
+                        }
+                        if (material.normalMapID != EMPTY_ASSET) {
+                            auto& normalTex = m_Context->assets->Get<TextureAsset>(material.normalMapID);
+                            if (normalTex.data) {
+                                material.data.normalMap = normalTex.data;
+                            }
+                        }
+                        if (material.roughnessMapID != EMPTY_ASSET) {
+                            auto& roughnessTex = m_Context->assets->Get<TextureAsset>(material.roughnessMapID);
+                            if (roughnessTex.data) {
+                                material.data.roughnessMap = roughnessTex.data;
+                            }
+                        }
+
+                        m_Context->renderer->Draw(model.data, worldTransform, material.data);
+                    }
+                    else {
+                        m_Context->renderer->Draw(model.data, worldTransform);
+                    }
                 }
-                else {
-                    m_Context->renderer->Draw(model.data, worldTransform);
+                else if (entity.Has<Quad2DComponent>()) {
+                    Quad2DComponent& comp{ entity.Get<Quad2DComponent>() };
+                    if (comp.textureID == EMPTY_ASSET || !entity.Has<TransformComponent>()) return;
+
+                    Transform3D worldTransform{};
+                    DecomposeMatrix(, worldTransform.translate, worldTransform.rotate, worldTransform.scale);
+
+                    if (!comp.uiOverlay) {
+                        glm::mat4 worldMatrix = GetWorldMatrix(entity);
+                        TextureAsset& texture{ m_Context->assets->Get<TextureAsset>(comp.textureID) };
+                        m_Context->renderer->DrawQuad(texture.data, worldTransform, comp.color);
+                    }
+                    else guiList.push_back({ comp, worldTransform });
                 }
-                });
+            });
+
+			//render gui overlays at the end
+            for (auto const& gui : guiList) {
+                TextureAsset& texture{ m_Context->assets->Get<TextureAsset>(gui.first.textureID) };
+                m_Context->renderer->DrawQuad(texture.data, gui.second, gui.first.color);
+			}
         }
 
         /**
@@ -979,11 +998,7 @@ namespace Boom
     private:
         std::unordered_map<std::string, std::pair<glm::vec3, glm::vec3>> m_SphereInitialStates;
 
-        BOOM_INLINE void 
-            
-            
-            
-            SphereInitialState(const std::string& name,
+        BOOM_INLINE void SphereInitialState(const std::string& name,
             const glm::vec3& pos,
             const glm::vec3& vel = glm::vec3(0.0f)) {
             m_SphereInitialStates[name] = { pos, vel };

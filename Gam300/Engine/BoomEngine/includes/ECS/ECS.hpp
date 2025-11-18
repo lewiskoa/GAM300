@@ -22,6 +22,7 @@ namespace Boom {
         THIRD_PERSON_CAMERA,
         NAV_AGENT_COMPONENT,
         AI_COMPONENT,
+        QUAD_2D,
         COUNT
     };
     constexpr std::string_view COMPONENT_NAMES[]{
@@ -357,6 +358,19 @@ namespace Boom {
             , obj_member<"PatrolIndex", &AIComponent::patrolIndex>
         )
     };
+
+    struct Quad2DComponent {
+        AssetID textureID{ EMPTY_ASSET };
+		glm::vec4 color{ 1.0f };
+		bool uiOverlay = false;
+
+        XPROPERTY_DEF(
+            "Quad2DComponent", Quad2DComponent,
+            obj_member<"textureID", &Quad2DComponent::textureID>,
+            obj_member<"color", &Quad2DComponent::color>,
+            obj_member<"uiOverlay", &Quad2DComponent::uiOverlay>
+        )
+    };
     struct Entity
     {
         BOOM_INLINE Entity(EntityRegistry* registry, EntityID entity) :
@@ -388,7 +402,6 @@ namespace Boom {
         {
             return m_EnttID;
         }
-
 
         template<typename T, typename... Args>
         BOOM_INLINE T& Attach(Args&&... args)

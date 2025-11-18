@@ -2,19 +2,24 @@
 
 layout(location = 0) in vec2 pos;
 layout(location = 1) in vec2 in_uv;
-
 layout(location = 1) out vec2 out_uv;
+uniform mat3 mat;
+
 void main() {
     out_uv = in_uv;
-    gl_Position = vec4(pos, 0.0, 1.0);
+    vec3 res = mat * vec3(pos, 1.0);
+    gl_Position = vec4(res.x, res.y, 0.0, 1.0);
 }
 ==VERTEX==
 
 #version 450 core
 
+layout(location = 1) in vec2 uvs;
 out vec4 FragColor;
 uniform vec4 color;
+uniform sampler2D texMap;
 void main() {
-    FragColor = color;
+    vec3 result = texture(map, uvs).rgb;
+    FragColor = color * vec4(result, 1.0);
 }
 ==FRAGMENT==

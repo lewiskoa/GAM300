@@ -333,6 +333,18 @@ namespace EditorUI {
             }
         }
 
+        if (selected.Has<Boom::Quad2DComponent>()) {
+            if (ImGui::CollapsingHeader("Quad 2D", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap)) {
+                ComponentSettings<Boom::Quad2DComponent>(ctx);
+
+                auto& q = selected.Get<Boom::Quad2DComponent>();
+
+				ImGui::Checkbox("GUI", &q.uiOverlay);
+                InputAssetWidget<CONSTANTS::DND_PAYLOAD_TEXTURE>("texture", q.textureID);
+				ImGui::ColorEdit3("color", &q.color[0]);
+            }
+		}
+
         if (selected.Has<Boom::AnimatorComponent>()) {
             AnimatorComponentUI(selected);
         }
@@ -1150,6 +1162,7 @@ namespace EditorUI {
                     UpdateComponent<Boom::NavAgentComponent>(Boom::ComponentID::NAV_AGENT_COMPONENT, selected);
                     UpdateComponent<Boom::AIComponent>(Boom::ComponentID::AI_COMPONENT, selected);
                     UpdateComponent<Boom::ThirdPersonCameraComponent>(Boom::ComponentID::THIRD_PERSON_CAMERA, selected);
+					UpdateComponent<Boom::Quad2DComponent>(Boom::ComponentID::QUAD_2D, selected);
                     ImGui::EndTable();
                 }
             }
