@@ -143,12 +143,14 @@ namespace Boom {
 
 		glm::vec3 radiance;
 		float intensity;
-
+		float distance;
+		float range;
 		// ===== PointLight =====
 		XPROPERTY_DEF(
 			"PointLight", PointLight,
 			obj_member<"Radiance", &PointLight::radiance>,
-			obj_member<"Intensity", &PointLight::intensity>
+			obj_member<"Intensity", &PointLight::intensity>,
+			obj_member<"Range", &PointLight::range>
 		)
 
 	};
