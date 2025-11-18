@@ -23,8 +23,6 @@
 #include "../Graphics/Utilities/Culling.h"
 #include "Input/CameraManager.h"
 #include "Graphics/Shaders/DebugLines.h"
-//#include "../../../Editor/src/Vendors/imgui/imgui.h"
-//#include "../../../Editor/src/Vendors/imGuizmo/ImGuizmo.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include "Scripting/MonoRuntime.h"
@@ -347,12 +345,6 @@ namespace Boom
                     }
                     });
                 if (!activeCam) { // fallback: first camera
-                    EnttView<Entity, CameraComponent>([&](auto en, CameraComponent& comp) {
-                        if (!activeCam) {
-                            camTransform = en.Get<TransformComponent>().transform;
-                            activeCam = &comp.camera;
-                        }
-                        });
                 }
 
                 // 2) Attach BEFORE update so scroll/pan use this camera's FOV in this frame
@@ -796,9 +788,9 @@ namespace Boom
         }
         
         BOOM_INLINE void RenderScene() {
-            std::vector<std::pair<Quad2DComponent, Transform2D>> guiList;
+            std::vector<std::pair<SpriteComponent, Transform2D>> guiList;
             //pbr ecs (always render)
-            EnttView<Entity>([this, &guiList](auto entity) {
+            EnttView<Entity, TransformComponent>([this, &guiList](auto entity, TransformComponent& t) {
                 if (entity.Has<ModelComponent>()) {
                     ModelComponent& comp{ entity.Get<ModelComponent>() };
                     if (comp.modelID == EMPTY_ASSET) return;
@@ -852,19 +844,15 @@ namespace Boom
                         m_Context->renderer->Draw(model.data, worldTransform);
                     }
                 }
-                else if (entity.Has<Quad2DComponent>()) {
-                    Quad2DComponent& comp{ entity.Get<Quad2DComponent>() };
-                    if (comp.textureID == EMPTY_ASSET || !entity.Has<TransformComponent>()) return;
-
-                    Transform3D worldTransform{};
-                    DecomposeMatrix(, worldTransform.translate, worldTransform.rotate, worldTransform.scale);
+                else if (entity.Has<SpriteComponent>()) {
+                    SpriteComponent& comp{ entity.Get<SpriteComponent>() };
+                    if (comp.textureID == EMPTY_ASSET) return;
 
                     if (!comp.uiOverlay) {
-                        glm::mat4 worldMatrix = GetWorldMatrix(entity);
                         TextureAsset& texture{ m_Context->assets->Get<TextureAsset>(comp.textureID) };
-                        m_Context->renderer->DrawQuad(texture.data, worldTransform, comp.color);
+                        m_Context->renderer->DrawQuad(texture.data, t.transform, comp.color);
                     }
-                    else guiList.push_back({ comp, worldTransform });
+                    else guiList.push_back({ comp, t.transform });
                 }
             });
 
@@ -1047,7 +1035,7 @@ namespace Boom
         {
             if (m_NavInitialized) return;
 
-            auto& reg = m_Context->scene;
+            //auto& reg = m_Context->scene;
 
             // 1) Build / load navmesh only once
             if (!m_Nav) {

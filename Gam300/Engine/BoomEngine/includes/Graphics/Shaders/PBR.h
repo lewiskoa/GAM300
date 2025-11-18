@@ -172,6 +172,7 @@ namespace Boom {
 		}
 
 		BOOM_INLINE void Draw(Model3D const& model, Transform3D const& transform, PbrMaterial const& material, bool showNormal = false) {
+			Use();
 			SetUniform(isDebugModeLoc, false);
 			SetUniform(ditherThresholdLoc, showDither ? ditherThreshold : 0.f);
 			SetUniform(showNormalTextureLoc, showNormal);
@@ -184,6 +185,7 @@ namespace Boom {
 
 			SetUniform(jointsLoc, model->HasJoint());
 			model->Draw();
+			UnUse();
 		}
 		
 		BOOM_INLINE void DrawDebug(Model3D const& model, Transform3D const& transform, glm::vec3 albedo, bool showNormal = false) {

@@ -59,9 +59,9 @@ namespace Boom {
 		}
 		BOOM_INLINE glm::mat3 Matrix() const {
 			float rad{ glm::radians(rotate) };
-			return { cosf(rad), -sinf(rad), translate.x,
-					sinf(rad), cos(rad),   translate.y,
-					0.f,          0.f,           1.f };
+			return {  cosf(rad) * scale.x, -sinf(rad) * scale.x, 0.f,
+					  sinf(rad) * scale.y,  cosf(rad) * scale.y, 0.f,
+					  translate.x,		    translate.y,		 1.f };
 		}
 
 		glm::vec2 translate;

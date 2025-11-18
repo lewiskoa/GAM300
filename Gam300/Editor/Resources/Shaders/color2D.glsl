@@ -6,7 +6,7 @@ layout(location = 1) out vec2 out_uv;
 uniform mat3 mat;
 
 void main() {
-    out_uv = in_uv;
+    out_uv = vec2(in_uv.x, 1.0 - in_uv.y);
     vec3 res = mat * vec3(pos, 1.0);
     gl_Position = vec4(res.x, res.y, 0.0, 1.0);
 }
@@ -19,7 +19,7 @@ out vec4 FragColor;
 uniform vec4 color;
 uniform sampler2D texMap;
 void main() {
-    vec3 result = texture(map, uvs).rgb;
+    vec3 result = texture(texMap, uvs).rgb;
     FragColor = color * vec4(result, 1.0);
 }
 ==FRAGMENT==

@@ -49,6 +49,7 @@ namespace Boom {
 		{
 		}
 		BOOM_INLINE void SetCamera(Camera3D const& cam, Transform3D const& transform, float ratio) {
+			Use();
 			SetUniform(projLoc, cam.Frustum(transform, ratio));
 		}
 		BOOM_INLINE void ChangeColor(glm::vec4 const& col) {
@@ -61,7 +62,7 @@ namespace Boom {
 			SetUniform(texLoc, 0);
 			SetUniform(colLoc, color);
 			SetUniform(matLoc, t.Matrix());
-			quad->Draw(GL_TRIANGLE_STRIP);
+			quad->Draw(GL_TRIANGLES);
 			UnUse();
 		}
 
