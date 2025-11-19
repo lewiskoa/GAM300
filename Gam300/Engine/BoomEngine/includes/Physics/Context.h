@@ -571,7 +571,7 @@ namespace Boom {
         }
 
 		//raycast functions
-        BOOM_INLINE PxVec3 ResolveThirdPersonCameraPosition(glm::vec3 const& playerEye, glm::vec3 const& idealCamPosition, float minDist = 0.5f)
+        BOOM_INLINE glm::vec3 ResolveThirdPersonCameraPosition(glm::vec3 const& playerEye, glm::vec3 const& idealCamPosition, float minDist = 0.5f)
         {
             PxVec3 targetPos{ ToPxVec3(playerEye) };
 			PxVec3 idealCamPos{ ToPxVec3(idealCamPosition) };
@@ -580,9 +580,9 @@ namespace Boom {
 
             PxRaycastBuffer hit;
             if (m_Scene->raycast(targetPos, dir, maxDist, hit))
-                return targetPos + dir * PxMax(hit.block.distance - 0.05f, minDist);
+                return ToGLMVec3(targetPos + dir * PxMax(hit.block.distance - 0.05f, minDist));
 
-            return idealCamPos;
+            return ToGLMVec3(idealCamPos);
         }
 	BOOM_INLINE void SetRotationLock(Boom::Entity entity, bool lockX, bool lockY, bool lockZ)
         {

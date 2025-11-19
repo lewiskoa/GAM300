@@ -283,13 +283,13 @@ namespace Boom {
 
     struct ThirdPersonCameraComponent {
         AssetID targetUID = 0;       // The UID of the target entity
-        glm::vec3 offset = glm::vec3(0.0f, 2.0f, -10.0f);
+        glm::vec3 offset = glm::vec3(0.0f, 2.0f, 0.0f);
         float currentDistance = 2.0f;
-        float minDistance = 2.0f;
-        float maxDistance = 2.0f;
+        float minDistance = 1.0f;
+        float maxDistance = 5.0f;
         float currentYaw = 0.0f;
         float currentPitch = 20.0f;
-        float mouseSensitivity = 0.2f;
+        float mouseSensitivity = 1.0f;
         float scrollSensitivity = 1.0f;
 
         // Add this back in

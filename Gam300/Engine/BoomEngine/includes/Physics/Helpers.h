@@ -16,6 +16,9 @@ namespace Boom
     {
         return PxVec3(glmVec.x, glmVec.y, glmVec.z);
     }
+    BOOM_INLINE glm::vec3 ToGLMVec3(PxVec3 const& pxVec) {
+        return glm::vec3(pxVec.x, pxVec.y, pxVec.z);
+    }
 
     BOOM_INLINE PxQuat ToPxQuat(const glm::vec3& eulerDegrees) {
         // Converts Euler degrees (in GLM's order) to a PhysX quaternion

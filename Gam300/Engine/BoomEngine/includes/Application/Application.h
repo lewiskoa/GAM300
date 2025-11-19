@@ -462,10 +462,6 @@ namespace Boom
                                 m_Context->window->camMoveDir = {};
                         }
                     }
-                    //standard 3rd person camera controls
-                    else if (m_AppState == ApplicationState::RUNNING) {
-                        //camera.UpdateThirdPerson()
-                    }
 
                     // This part is needed by BOTH cameras, so leave it outside the 'if'
                     m_Context->renderer->SetCamera(comp.camera, transform);
@@ -490,6 +486,7 @@ namespace Boom
                 }
                
                 RenderScene();
+                //DrawDebugTPC();
                 if (m_PhysDebugViz && m_DebugLinesShader)
                 {
                     m_Context->physics->CollectDebugLines(m_PhysLinesCPU);
@@ -1721,7 +1718,7 @@ namespace Boom
             return true;
         }
 
-
+        glm::vec3 pivotPosition{};
         BOOM_INLINE void UpdateThirdPersonCameras()
         {
             // 1. Get input
@@ -1730,14 +1727,8 @@ namespace Boom
 
             // 2. Iterate over all third-person cameras
             EnttView<Entity, ThirdPersonCameraComponent, TransformComponent>(
-                [this, &mouseDelta, &scrollDelta](Entity entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
+                [this, &mouseDelta, &scrollDelta](Entity, ThirdPersonCameraComponent& cam, TransformComponent& tc)
                 {
-
-#define UNUSED(x) (void)(x)
-                    UNUSED(entity);
-
-
-
                     // 3. Find the target entity by its UID
                     if (cam.targetUID == 0) return; // No target UID set
 
@@ -1757,54 +1748,49 @@ namespace Boom
 
                     //
                     // === NEW LOGIC STARTS HERE ===
+                    // I am following Dark Souls k&m control scheme: mouse is camera only, does not change player's direction
                     //
 
-                    // 4. Get the target's full transform
+                    // the target
                     Transform3D& targetTransform = target.Get<TransformComponent>().transform;
                     glm::vec3 targetPosition = targetTransform.translate;
-                    float targetYaw = targetTransform.rotate.y; // Get the player's Y rotation
 
-                    // 5. Update Pitch (up/down) from the mouse
-                   // cam.currentPitch -= mouseDelta.y * cam.mouseSensitivity;
+                    //camera movement
+                    cam.currentYaw -= mouseDelta.x * cam.mouseSensitivity;
+                    cam.currentPitch += mouseDelta.y * cam.mouseSensitivity;
+                    cam.currentPitch = glm::clamp(cam.currentPitch, -85.f, 85.f);
 
-                    // 6. Apply new Pitch Limits
-                    //    We clamp the pitch from 5 (slightly looking down) to 40 (about 45 degrees)
-                    //    This prevents the camera from going "below the plane".
-                    cam.currentPitch = glm::clamp(cam.currentPitch, 2.0f, 40.0f);
-
-                    // 7. Lock Yaw (left/right) to the target's yaw
-                    //    This keeps the camera locked behind the player.
-                    cam.currentYaw = targetYaw + 180.0f;
-
-                    // 8. Update distance (zoom) from the scroll wheel
+                    // zoom
                     cam.currentDistance -= scrollDelta.y * cam.scrollSensitivity;
                     cam.currentDistance = glm::clamp(cam.currentDistance, cam.minDistance, cam.maxDistance);
-
+                    
                     // 9. Calculate the camera's final orientation
-                    glm::quat orientation = glm::quat(glm::vec3(glm::radians(cam.currentPitch),
+                    glm::quat orientation = glm::quat(
+                        glm::vec3(glm::radians(cam.currentPitch),
                         glm::radians(cam.currentYaw),
                         0.0f));
 
-                    // 10. Define the pivot point (e.g., 5 units above the player's origin)
-                    glm::vec3 pivotPosition = targetPosition + glm::vec3(0.0f, cam.offset.y, 0.0f);
+                    // camera target point
+                    pivotPosition = targetPosition + cam.offset;
 
-                    // 11. Calculate the final camera position
-                    //     Start with a vector pointing "back" by the zoom distance
+                    // calculate final new camera translate according to spherical movement
                     glm::vec3 offsetVector = glm::vec3(0.0f, 0.0f, -cam.currentDistance);
-                    //     Rotate that vector by the final orientation
                     glm::vec3 rotatedOffset = orientation * offsetVector;
-                    //     Add it to the pivot point
                     glm::vec3 desiredPosition = pivotPosition + rotatedOffset;
-
-                    // 12. Update the camera's actual transform
-                    tc.transform.translate = desiredPosition;
 
                     // 13. Make the camera look at the pivot point
                     tc.transform.rotate = glm::degrees(glm::eulerAngles(
                         glm::quatLookAt(glm::normalize(pivotPosition - desiredPosition), glm::vec3(0, 1, 0))
                     ));
+
+                    tc.transform.translate = m_Context->physics->ResolveThirdPersonCameraPosition(pivotPosition, desiredPosition);
                 }
             );
+        }
+
+        BOOM_INLINE void DrawDebugTPC() {
+            ModelAsset const* mdl{ m_Context->assets->TryGet<ModelAsset>("Cube.FBX") };
+            m_Context->renderer->Draw(mdl->data, Transform3D{ pivotPosition, glm::vec3(0.f), glm::vec3(.2f) });
         }
     };
 
