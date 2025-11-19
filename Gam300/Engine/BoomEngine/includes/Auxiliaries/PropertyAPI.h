@@ -28,6 +28,10 @@ namespace Boom {
     DECLARE_COMPONENT_PROPERTY_API(RigidBodyComponent);
     DECLARE_COMPONENT_PROPERTY_API(ColliderComponent);
     DECLARE_COMPONENT_PROPERTY_API(ThirdPersonCameraComponent);
-    // Add more as needed - one line each
+    DECLARE_COMPONENT_PROPERTY_API(NavAgentComponent);
+    DECLARE_COMPONENT_PROPERTY_API(AIComponent);
+    DECLARE_COMPONENT_PROPERTY_API(SpriteComponent);
 
+    // Add more as needed - one line each
+#undef DECLARE_COMPONENT_PROPERTY_API
 } // namespace Boom

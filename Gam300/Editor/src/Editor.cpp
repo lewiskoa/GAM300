@@ -17,7 +17,7 @@
 #include "Panels/PerformancePanel.h"
 #include "Panels/PlaybackControlsPanel.h"
 #include "Panels/NavMeshPanel.h"
-#include "Panels/AnimatorGraphPanel.h"
+#include "Panels/Inspector/AnimatorGraphPanel.h"
 #include "Panels/RayCast.h"
 #include "BoomEngine.h"
 
@@ -132,7 +132,7 @@ namespace EditorUI {
     {
         { //load assets
             DataSerializer serializer;
-            serializer.Deserialize(*m_Context->assets, "AssetsProp/assets.yaml");
+            serializer.Deserialize(*m_Context->assets, "AssetsProp/assets.yaml", m_App->GetWindowHandle().get());
         }
 
         // Construct panels here; they persist across frames.

@@ -1,12 +1,11 @@
 ﻿#pragma once
-#pragma once
 #include <functional>
 #include <entt/entt.hpp>
 #include "Vendors/imgui/imgui.h"
 #include "GlobalConstants.h"
 #include "ECS/ECS.hpp"
 #include "Audio/TrackLibrary.h"
-
+#include "AI/NavAgent.h"
 namespace Boom { struct AppContext; struct AppInterface; }
 
 namespace EditorUI {
@@ -66,6 +65,13 @@ namespace EditorUI {
         bool           m_OpenEditTransitionPopup = false;
         Boom::Animator::Transition m_TempTransition;
         char           m_TransitionParamNameBuffer[128]{};
+
+        // Animation events
+        int            m_EditingClipIndex = -1;
+        int            m_EditingEventIndex = -1;
+        bool           m_OpenEditEventPopup = false;
+        Boom::AnimationEvent m_TempEvent;
+        char           m_EventFunctionNameBuffer[128]{};
 
         template<typename TComponent, typename GetPropsFn>
         void DrawComponentSection(const char* title,

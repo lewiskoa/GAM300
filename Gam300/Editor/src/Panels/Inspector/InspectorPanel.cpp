@@ -6,9 +6,8 @@
 #include "Auxiliaries/Assets.h"
 #include "Context/DebugHelpers.h"
 #include "Panels/PropertiesImgui.h"
-
 #include"Physics/Context.h"
-
+//#include "BoomProperties.h"
 using namespace EditorUI;
 
 Boom::AppContext* InspectorPanel::GetContext() const {
@@ -334,9 +333,27 @@ namespace EditorUI {
             }
         }
 
+        if (selected.Has<Boom::SpriteComponent>()) {
+            if (ImGui::CollapsingHeader("Quad 2D", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap)) {
+                ComponentSettings<Boom::SpriteComponent>(ctx);
+
+                auto& q = selected.Get<Boom::SpriteComponent>();
+
+				ImGui::Checkbox("GUI", &q.uiOverlay);
+                ImGui::BeginTable("##maps", 2, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_BordersInnerV);
+                ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed);
+                ImGui::TableSetupColumn("Asset", ImGuiTableColumnFlags_WidthStretch);
+                InputAssetWidget<CONSTANTS::DND_PAYLOAD_TEXTURE>("texture", q.textureID);
+                ImGui::EndTable();
+				ImGui::ColorEdit3("color", &q.color[0]);
+            }
+		}
+
         if (selected.Has<Boom::AnimatorComponent>()) {
             AnimatorComponentUI(selected);
         }
+
+        // In: InspectorPanel.cpp
 
         if (selected.Has<Boom::RigidBodyComponent>()) {
             ImGui::PushID("Rigid Body");
@@ -344,7 +361,7 @@ namespace EditorUI {
             // 1. Draw Header
             bool isOpen = ImGui::CollapsingHeader("Rigidbody", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_AllowItemOverlap);
 
-            // 2. Draw "..." Button (to match photo)
+            // 2. Draw "..." Button
             const ImVec2 headerMin = ImGui::GetItemRectMin();
             const ImVec2 headerMax = ImGui::GetItemRectMax();
             const float  lineH = ImGui::GetFrameHeight();
@@ -375,9 +392,10 @@ namespace EditorUI {
                 const char* currentTypeName;
                 switch (currentType)
                 {
-                case RigidBody3D::Type::STATIC:  currentTypeName = "Static";  break;
-                case RigidBody3D::Type::DYNAMIC: currentTypeName = "Dynamic"; break;
-                default:                         currentTypeName = "Unknown"; break;
+                case RigidBody3D::Type::STATIC:    currentTypeName = "Static";    break;
+                case RigidBody3D::Type::DYNAMIC:   currentTypeName = "Dynamic";   break;
+                case RigidBody3D::Type::KINEMATIC: currentTypeName = "Kinematic"; break;
+                default:                           currentTypeName = "Unknown";   break;
                 }
 
                 ImGui::AlignTextToFramePadding();
@@ -401,6 +419,13 @@ namespace EditorUI {
                     }
                     if (isDynamicSelected) ImGui::SetItemDefaultFocus();
 
+                    bool isKinematicSelected = (currentType == RigidBody3D::Type::KINEMATIC);
+                    if (ImGui::Selectable("Kinematic", isKinematicSelected))
+                    {
+                        m_App->GetPhysicsContext().SetRigidBodyType(selected, RigidBody3D::Type::KINEMATIC);
+                    }
+                    if (isKinematicSelected) ImGui::SetItemDefaultFocus();
+
                     ImGui::EndCombo();
                 }
 
@@ -418,6 +443,51 @@ namespace EditorUI {
                 ImGui::SetNextItemWidth(-1);
                 ImGui::DragFloat("##Mass", &rigidBody->mass, 0.1f, 0.0f, 1000.0f);
 
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Initial Velocity");
+                ImGui::SameLine(150);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat3("##InitialVelocity", &rigidBody->initialVelocity.x, 0.01f);
+
+                // --- ADD THIS NEW SECTION ---
+                ImGui::Spacing();
+                ImGui::SeparatorText("Constraints"); // Uses a nice separator
+                ImGui::Spacing();
+
+                // Store old values to detect changes
+                bool oldFreezeX = rigidBody->freezeRotationX;
+                bool oldFreezeY = rigidBody->freezeRotationY;
+                bool oldFreezeZ = rigidBody->freezeRotationZ;
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Freeze Rotation");
+                ImGui::SameLine(150);
+
+                // We use Push/PopID to make the labels unique for ImGui
+                ImGui::PushID("FreezeRot");
+                ImGui::Checkbox("X", &rigidBody->freezeRotationX);
+                ImGui::SameLine();
+                ImGui::Checkbox("Y", &rigidBody->freezeRotationY);
+                ImGui::SameLine();
+                ImGui::Checkbox("Z", &rigidBody->freezeRotationZ);
+                ImGui::PopID();
+
+                // If any value changed, notify the physics context
+                if (rigidBody->freezeRotationX != oldFreezeX ||
+                    rigidBody->freezeRotationY != oldFreezeY ||
+                    rigidBody->freezeRotationZ != oldFreezeZ)
+                {
+                    // This is a new function we will need to create in PhysicsContext 
+                    m_App->GetPhysicsContext().SetRotationLock(
+                        selected,
+                        rigidBody->freezeRotationX,
+                        rigidBody->freezeRotationY,
+                        rigidBody->freezeRotationZ
+                    );
+                }
+                // --- END OF NEW SECTION ---
+
+
                 ImGui::Spacing();
                 ImGui::Unindent(12.0f);
             }
@@ -429,6 +499,309 @@ namespace EditorUI {
                 return; // Exit EntityUpdate early
             }
             ImGui::Spacing();
+        }
+        // ----- AI (Behaviour Tree) -----
+        if (selected.Has<Boom::AIComponent>()) {
+            auto& ai = selected.Get<Boom::AIComponent>();
+            DrawComponentSection(
+                "AI (Behaviour Tree)", &ai,
+                [&](void* p) -> const xproperty::type::object* {
+                    auto* a = static_cast<Boom::AIComponent*>(p);
+                    auto& reg = GetContext()->scene;
+
+                    // --- MODE (this is what you’re missing) --------------------------------
+                    ImGui::SeparatorText("Mode");
+                    {
+                        static const char* kModes[] = { "Auto", "Idle", "Patrol", "Seek" };
+                        int idx = static_cast<int>(a->mode);
+                        if (ImGui::Combo("Mode", &idx, kModes, IM_ARRAYSIZE(kModes))) {
+                            auto newMode = static_cast<Boom::AIComponent::AIMode>(idx);
+                            if (a->mode != newMode) {
+                                a->mode = newMode;
+                                // No more a->root.reset(); AISystem will see mode change and rebuild.
+                            }
+                        }
+                    }
+
+                    // --- PLAYER PICKER ------------------------------------------------------
+                    const char* cur = a->playerName.empty() ? "None" : a->playerName.c_str();
+                    if (ImGui::BeginCombo("Player (by name)", cur)) {
+                        bool isNone = a->playerName.empty();
+                        if (ImGui::Selectable("None", isNone)) { a->playerName.clear(); a->player = entt::null; }
+                        if (isNone) ImGui::SetItemDefaultFocus();
+
+                        auto view = reg.view<Boom::InfoComponent>();
+                        for (auto e : view) {
+                            const auto& info = view.get<Boom::InfoComponent>(e);
+                            bool sel = (a->playerName == info.name);
+                            if (ImGui::Selectable(info.name.c_str(), sel)) {
+                                a->playerName = info.name; a->player = entt::null;
+                            }
+                            if (sel) ImGui::SetItemDefaultFocus();
+                        }
+                        ImGui::EndCombo();
+                    }
+
+                    // --- TUNING -------------------------------------------------------------
+                    ImGui::SeparatorText("Tuning");
+                    ImGui::DragFloat("Detect Radius", &a->detectRadius, 0.05f, 0.0f, 200.0f);
+                    ImGui::DragFloat("Lose Radius", &a->loseRadius, 0.05f, 0.0f, 200.0f);
+                    ImGui::DragFloat("Idle Wait (s)", &a->idleWait, 0.01f, 0.0f, 10.0f);
+                    ImGui::InputFloat("Idle Timer (runtime)", &a->idleTimer, 0, 0, "%.3f",
+                        ImGuiInputTextFlags_ReadOnly);
+
+                    // --- PATROL -------------------------------------------------------------
+                    ImGui::SeparatorText("Patrol");
+                    if (selected.Has<Boom::TransformComponent>()) {
+                        if (ImGui::Button("Add Point From Entity Pos", ImVec2(-1, 0))) {
+                            auto& tc = selected.Get<Boom::TransformComponent>();
+                            a->patrolPoints.push_back(tc.transform.translate);
+                        }
+                    }
+                    ImGui::Text("Points: %zu", a->patrolPoints.size());
+                    if (ImGui::BeginListBox("##patrol_pts", ImVec2(-1, 160))) {
+                        for (int i = 0; i < (int)a->patrolPoints.size(); ++i) {
+                            const auto& p3 = a->patrolPoints[i];
+                            char lbl[96]; std::snprintf(lbl, sizeof(lbl), "%02d: (%.2f, %.2f, %.2f)", i, p3.x, p3.y, p3.z);
+                            bool sel = (a->patrolIndex == i);
+                            if (ImGui::Selectable(lbl, sel)) a->patrolIndex = i;
+                            if (sel) ImGui::SetItemDefaultFocus();
+
+                            if (ImGui::BeginPopupContextItem(lbl)) {
+                                if (ImGui::MenuItem("Remove")) {
+                                    a->patrolPoints.erase(a->patrolPoints.begin() + i);
+                                    if (a->patrolIndex >= (int)a->patrolPoints.size())
+                                        a->patrolIndex = std::max(0, (int)a->patrolPoints.size() - 1);
+                                    ImGui::EndPopup(); break;
+                                }
+                                if (ImGui::MenuItem("Insert After (Here)")) {
+                                    glm::vec3 p2 = p3;
+                                    if (selected.Has<Boom::TransformComponent>())
+                                        p2 = selected.Get<Boom::TransformComponent>().transform.translate;
+                                    a->patrolPoints.insert(a->patrolPoints.begin() + i + 1, p2);
+                                    ImGui::EndPopup(); break;
+                                }
+                                ImGui::EndPopup();
+                            }
+                        }
+                        ImGui::EndListBox();
+                    }
+                    if (a->patrolIndex >= 0 && a->patrolIndex < (int)a->patrolPoints.size()) {
+                        auto edit = a->patrolPoints[a->patrolIndex];
+                        if (ImGui::DragFloat3("Edit Selected Point", &edit.x, 0.01f))
+                            a->patrolPoints[a->patrolIndex] = edit;
+                    }
+
+                 
+                    return nullptr;
+
+               
+                },
+                /*removable=*/true,
+                [&]() { GetContext()->scene.remove<Boom::AIComponent>(m_App->SelectedEntity()); }
+            );
+        }
+
+
+
+        // ----- Nav Agent -----
+        if (selected.Has<Boom::NavAgentComponent>()) {
+            auto& ag = selected.Get<Boom::NavAgentComponent>();
+            DrawComponentSection(
+                "Nav Agent", &ag,
+                [&](void* p) -> const xproperty::type::object* {
+                    auto* a = static_cast<Boom::NavAgentComponent*>(p);
+                    auto& reg = GetContext()->scene;
+
+                    // --- UTILITIES TABLE -----------------------------------------------------
+                    ImGui::BeginTable("##navtools", 2, ImGuiTableFlags_SizingStretchProp);
+                    ImGui::TableSetupColumn("l", ImGuiTableColumnFlags_WidthStretch);
+                    ImGui::TableSetupColumn("r", ImGuiTableColumnFlags_WidthFixed, 140.0f);
+
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0); ImGui::TextDisabled("Utilities");
+                    ImGui::TableSetColumnIndex(1);
+
+                    if (ImGui::Button("Target = Player##btn", ImVec2(-1, 0))) {
+                        if (selected.Has<Boom::AIComponent>()) {
+                            auto& ai = selected.Get<Boom::AIComponent>();
+                            if (ai.player != entt::null && reg.all_of<Boom::TransformComponent>(ai.player)) {
+                                a->target = reg.get<Boom::TransformComponent>(ai.player).transform.translate;
+                                a->dirty = true; a->repathTimer = 0.f;
+                            }
+                        }
+                    }
+                    if (ImGui::Button("Target = Here##btn", ImVec2(-1, 0))) {
+                        if (selected.Has<Boom::TransformComponent>()) {
+                            a->target = selected.Get<Boom::TransformComponent>().transform.translate;
+                            a->dirty = true; a->repathTimer = 0.f;
+                        }
+                    }
+                    ImGui::EndTable();
+                    ImGui::Separator();
+
+                    // --- BASIC PROPERTIES ----------------------------------------------------
+                    bool changed = false;
+
+                    // Target
+                    {
+                        glm::vec3 t = a->target;
+                        if (ImGui::DragFloat3("Target", &t.x, 0.01f)) { a->target = t; changed = true; }
+                        if (ImGui::IsItemDeactivatedAfterEdit()) { a->dirty = true; a->repathTimer = 0.f; }
+                    }
+
+                    // Speed
+                    {
+                        float sp = a->speed;
+                        if (ImGui::DragFloat("Speed (m/s)", &sp, 0.05f, 0.0f, 100.0f)) { a->speed = sp; }
+                    }
+
+                    // Arrive radius
+                    {
+                        float ar = a->arrive;
+                        if (ImGui::DragFloat("Arrive Radius (m)", &ar, 0.01f, 0.01f, 5.0f)) { a->arrive = ar; }
+                    }
+
+                    // Active
+                    ImGui::Checkbox("Active", &a->active);
+
+                    // Repath tuning
+                    {
+                        float cd = a->repathCooldown;
+                        float rd = a->retargetDist;
+                        bool c1 = ImGui::DragFloat("Repath Cooldown (s)", &cd, 0.01f, 0.01f, 10.0f);
+                        bool c2 = ImGui::DragFloat("Retarget Distance (m)", &rd, 0.01f, 0.0f, 10.0f);
+                        if (c1) a->repathCooldown = cd;
+                        if (c2) a->retargetDist = rd;
+                        if (c1 || c2) { a->dirty = true; a->repathTimer = 0.f; }
+                    }
+
+                    // --- FOLLOW ENTITY PICKER -----------------------------------------------
+                    ImGui::SeparatorText("Follow");
+                    {
+                        // Current label
+                        std::string current = "None";
+                        if (a->follow != entt::null && reg.all_of<Boom::InfoComponent>(a->follow)) {
+                            current = reg.get<Boom::InfoComponent>(a->follow).name;
+                        }
+
+                        if (ImGui::BeginCombo("Follow Entity", current.c_str())) {
+                            // None option
+                            bool isNone = (a->follow == entt::null);
+                            if (ImGui::Selectable("None", isNone)) { a->follow = entt::null; a->dirty = true; a->repathTimer = 0.f; }
+                            if (isNone) ImGui::SetItemDefaultFocus();
+
+                            // List all entities with InfoComponent
+                            auto view = reg.view<Boom::InfoComponent>();
+                            for (auto e : view) {
+                                const auto& info = view.get<Boom::InfoComponent>(e);
+                                bool sel = (a->follow == e);
+                                if (ImGui::Selectable(info.name.c_str(), sel)) {
+                                    a->follow = e; a->dirty = true; a->repathTimer = 0.f;  a->followName = info.name;
+                                }
+                                if (sel) ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+
+                        // Quick actions
+                        ImGui::SameLine();
+                        if (ImGui::Button("Rebuild Path")) { a->dirty = true; a->repathTimer = 0.f; }
+                        ImGui::SameLine();
+                        if (ImGui::Button("Clear Follow")) {
+                            a->follow = entt::null; a->dirty = true; a->repathTimer = 0.f; a->followName.clear();
+                        }
+                    }
+
+                    // --- PATH / WAYPOINT TOOLS ----------------------------------------------
+                    ImGui::SeparatorText("Path");
+                    ImGui::Text("Waypoints: %d / %zu", a->waypoint, a->path.size());
+                    ImGui::SameLine();
+                    if (ImGui::Button("Clear Path")) { a->path.clear(); a->waypoint = 0; } // view-only for path unless edited below
+
+                    if (!a->path.empty()) {
+                        // Select current waypoint
+                        if (ImGui::BeginListBox("##pathbox", ImVec2(-1, 140))) {
+                            for (int i = 0; i < static_cast<int>(a->path.size()); ++i) {
+                                char label[64];
+                                std::snprintf(label, sizeof(label), "%02d: (%.2f, %.2f, %.2f)", i, a->path[i].x, a->path[i].y, a->path[i].z);
+                                bool selectedRow = (a->waypoint == i);
+                                if (ImGui::Selectable(label, selectedRow)) { a->waypoint = i; }
+                                if (selectedRow) ImGui::SetItemDefaultFocus();
+
+                                // Context menu per waypoint
+                                if (ImGui::BeginPopupContextItem(label)) {
+                                    if (ImGui::MenuItem("Remove")) {
+                                        a->path.erase(a->path.begin() + i);
+                                        if (a->waypoint >= static_cast<int>(a->path.size()))
+                                            a->waypoint = (int)std::max<size_t>(0, a->path.size() ? a->path.size() - 1 : 0);
+                                        ImGui::EndPopup();
+                                        break;
+                                    }
+                                    if (ImGui::MenuItem("Insert After (use Selected Transform if any)")) {
+                                        glm::vec3 path = a->path[i];
+                                        if (selected.Has<Boom::TransformComponent>())
+                                            path = selected.Get<Boom::TransformComponent>().transform.translate;
+                                        a->path.insert(a->path.begin() + i + 1, path);
+                                        ImGui::EndPopup();
+                                        break;
+                                    }
+                                    ImGui::EndPopup();
+                                }
+                            }
+                            ImGui::EndListBox();
+                        }
+
+                        // Edit currently selected waypoint
+                        if (a->waypoint >= 0 && a->waypoint < (int)a->path.size()) {
+                            glm::vec3 wp = a->path[a->waypoint];
+                            if (ImGui::DragFloat3("Edit Selected Waypoint", &wp.x, 0.01f)) {
+                                a->path[a->waypoint] = wp;
+                                // editing path does not need immediate rebuild unless you want:
+                                // a->dirty = true; a->repathTimer = 0.f;
+                            }
+                            if (ImGui::Button("Snap Selected to This Entity")) {
+                                if (selected.Has<Boom::TransformComponent>()) {
+                                    a->path[a->waypoint] = selected.Get<Boom::TransformComponent>().transform.translate;
+                                }
+                            }
+                            ImGui::SameLine();
+                            if (ImGui::Button("Reverse Path")) {
+                                std::reverse(a->path.begin(), a->path.end());
+                                a->waypoint = (int)a->path.size() - 1 - a->waypoint;
+                            }
+                        }
+                    }
+                    else {
+                        ImGui::TextDisabled("No path computed.");
+                    }
+
+                    // --- RUNTIME / DEBUG -----------------------------------------------------
+                    ImGui::SeparatorText("Runtime");
+                    {
+                        float frac = 0.f;
+                        if (a->repathCooldown > 0.f) frac = std::clamp(a->repathTimer / a->repathCooldown, 0.f, 1.f);
+                        ImGui::ProgressBar(frac, ImVec2(-1, 0), "Repath Timer");
+
+                        bool dirty = a->dirty;
+                        if (ImGui::Checkbox("Dirty (force rebuild)", &dirty)) {
+                            a->dirty = dirty;
+                            if (dirty) a->repathTimer = 0.f;
+                        }
+                        int wp = a->waypoint;
+                        if (ImGui::DragInt("Current Waypoint Index", &wp, 1, 0, (int)std::max<size_t>(1, a->path.size()) - 1)) {
+                            a->waypoint = std::clamp(wp, 0, (int)std::max<size_t>(0, a->path.size() ? a->path.size() - 1 : 0));
+                        }
+                    }
+
+                    // If you want your xproperty-driven editor to also show (for the subset you declared),
+                    // return its meta-object here instead of nullptr. If your XPROPERTY_DEF exposes a getter like `xmeta()`,
+                    // do: `return &NavAgentComponent::xmeta();`. Otherwise, keep nullptr and rely on the manual UI above.
+                    return nullptr;
+                },
+                /*removable=*/true,
+                [&]() { GetContext()->scene.remove<Boom::NavAgentComponent>(m_App->SelectedEntity()); }
+            );
         }
 
         if (selected.Has<Boom::ColliderComponent>()) {
@@ -612,20 +985,54 @@ namespace EditorUI {
 
         if (selected.Has<DirectLightComponent>()) {
             auto& dl = selected.Get<DirectLightComponent>();
-            DrawComponentSection("Directional Light", &dl, GetDirectLightComponentProperties, true,
-                [&]() { ctx->scene.remove<DirectLightComponent>(m_App->SelectedEntity()); });
+            DrawComponentSection(
+                "Direct Light",
+                &dl,
+                [&](void* p) -> const xproperty::type::object*
+                {
+                    auto* comp = static_cast<DirectLightComponent*>(p);
+                    ImGui::ColorEdit3("Irradiance", &comp->light.radiance[0]);
+
+                    return GetDirectLightComponentProperties(p);
+                },
+                true,
+                [&]() { ctx->scene.remove<DirectLightComponent>(m_App->SelectedEntity()); }
+            );
         }
 
         if (selected.Has<PointLightComponent>()) {
             auto& pl = selected.Get<PointLightComponent>();
-            DrawComponentSection("Point Light", &pl, GetPointLightComponentProperties, true,
-                [&]() { ctx->scene.remove<PointLightComponent>(m_App->SelectedEntity()); });
+
+            DrawComponentSection(
+                "Point Light",
+                &pl,
+                [&](void* p) -> const xproperty::type::object*
+                {
+                    auto* comp = static_cast<PointLightComponent*>(p);
+                    ImGui::ColorEdit3("Irradiance", &comp->light.radiance[0]);
+                    
+                    return GetPointLightComponentProperties(p);
+                },
+                true,
+                [&]() { ctx->scene.remove<PointLightComponent>(m_App->SelectedEntity()); }
+            );
         }
 
         if (selected.Has<SpotLightComponent>()) {
             auto& sl = selected.Get<SpotLightComponent>();
-            DrawComponentSection("Spot Light", &sl, GetSpotLightComponentProperties, true,
-                [&]() { ctx->scene.remove<SpotLightComponent>(m_App->SelectedEntity()); });
+            DrawComponentSection(
+                "Spot Light",
+                &sl,
+                [&](void* p) -> const xproperty::type::object*
+                {
+                    auto* comp = static_cast<SpotLightComponent*>(p);
+                    ImGui::ColorEdit3("Irradiance", &comp->light.radiance[0]);
+
+                    return GetSpotLightComponentProperties(p);
+                },
+                true,
+                [&]() { ctx->scene.remove<SpotLightComponent>(m_App->SelectedEntity()); }
+            );
         }
 
         if (selected.Has<SkyboxComponent>()) {
@@ -845,8 +1252,10 @@ namespace EditorUI {
                     UpdateComponent<Boom::SpotLightComponent>(Boom::ComponentID::SPOT_LIGHT, selected);
                     //UpdateComponent<Boom::SoundComponent>(Boom::ComponentID::SOUND, selected);
                     //UpdateComponent<Boom::ScriptComponent>(Boom::ComponentID::SCRIPT, selected);
-
+                    UpdateComponent<Boom::NavAgentComponent>(Boom::ComponentID::NAV_AGENT_COMPONENT, selected);
+                    UpdateComponent<Boom::AIComponent>(Boom::ComponentID::AI_COMPONENT, selected);
                     UpdateComponent<Boom::ThirdPersonCameraComponent>(Boom::ComponentID::THIRD_PERSON_CAMERA, selected);
+					UpdateComponent<Boom::SpriteComponent>(Boom::ComponentID::SPRITE, selected);
                     ImGui::EndTable();
                 }
             }
