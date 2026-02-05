@@ -248,15 +248,59 @@ namespace GameScripts
                 _proximityDetection?.OnUpdate(dt);
             }
 
-            // ======= OCCASIONAL GRUNT SOUNDS =======
-            // Only grunt while patrolling (not alert) and moving
-            if (!_isAlert && moving)
+            // Update Alert Video (Shared)
+            if (_sharedVideoEntity != 0)
             {
-                _gruntTimer += dt;
-                if (_gruntTimer >= _nextGruntTime)
+                // Visibility Update
+                bool isInProximity = (_proximityDetection != null && _proximityDetection.IsPlayerInProximity());
+                // Only show alert video for proximity detection, not for direct vision alert
+                bool isVisible = isInProximity && !Entry.IsPlayerDead;
+
+                if (isVisible)
                 {
-                    var pos = API.GetPosition(Entity);
-                    PlayRandomGrunt(pos);
+                    // Claim ownership
+                    _videoOwnerID = Entity;
+
+                    // 1. Position Update (Follow)
+                    Vec3 myPos = API.GetPosition(Entity);
+                    API.SetPosition(_sharedVideoEntity, new Vec3(myPos.X, myPos.Y + _alertVideoOffsetY, myPos.Z));
+
+                    // 2. Rotation Update (Face Camera)
+                    float camYaw = API.GetThirdPersonCameraYaw();
+                    float billboardYaw = camYaw + 180.0f;
+                    API.SetRotationY(_sharedVideoEntity, billboardYaw);
+
+                    if (!_isMyVideoVisible)
+                    {
+                        API.Log($"[PatrolEnemyController] Enemy {Entity} showing shared video.");
+                        API.SetScale(_sharedVideoEntity, _sharedVideoBaseScale);
+                        API.PlayVideo(_sharedVideoEntity);
+                        _isMyVideoVisible = true;
+                    }
+                }
+                else
+                {
+                    if (_isMyVideoVisible)
+                    {
+                        // Only hide if I am the owner
+                        if (_videoOwnerID == Entity)
+                        {
+                            API.Log($"[PatrolEnemyController] Enemy {Entity} hiding shared video.");
+                            API.StopVideo(_sharedVideoEntity);
+                            API.SetScale(_sharedVideoEntity, new Vec3(0, 0, 0));
+                            _videoOwnerID = 0;
+                        }
+                        _isMyVideoVisible = false;
+                    }
+                    // ======= OCCASIONAL GRUNT SOUNDS =======
+                    // Only grunt while patrolling (not alert) and moving
+                    if (!_isAlert && moving)
+                    {
+                        _gruntTimer += dt;
+                        if (_gruntTimer >= _nextGruntTime)
+                        {
+                            var pos = API.GetPosition(Entity);
+                            PlayRandomGrunt(pos);
 
                     // Reset timer with new random interval
                     _gruntTimer = 0f;
@@ -391,6 +435,18 @@ namespace GameScripts
 
             // Reset proximity
             _proximityDetection?.ResetDetection();
+
+            // Hide alert video if active
+            if (_isMyVideoVisible)
+            {
+                if (_sharedVideoEntity != 0 && _videoOwnerID == Entity)
+                {
+                    API.StopVideo(_sharedVideoEntity);
+                    API.SetScale(_sharedVideoEntity, new Vec3(0, 0, 0));
+                    _videoOwnerID = 0;
+                }
+                _isMyVideoVisible = false;
+            }
 
             //("[PatrolEnemyController] Player respawned - all states reset");
         }
